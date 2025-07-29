@@ -1,44 +1,30 @@
 import PocketBase from 'pocketbase';
 
-// Initialize PocketBase client
+interface RankingSession {
+  id: string;
+  showname: string;
+  city: string;
+  nr_players: number;
 const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io');
 
 // Disable auto cancellation
 pb.autoCancellation(false);
 
-// Simple auth helper
-const ensureAuth = async () => {
-  if (pb.authStore.isValid) return true;
-  
-  try {
-    // Try to authenticate with a simple approach
-    // For now, we'll make the collection public or handle auth in PocketBase admin
-    return true;
-  } catch (error) {
-    console.error('Auth failed:', error);
-    return false;
-  }
-};
-
-export default pb;
-
-// Helper functions for ranking management using existing schema
+// Helper functions for ranking management
 export const rankingService = {
   // Create a new ranking game session
-  async createRankingSession(sessionData: {
+  async createSession(sessionData: {
     showname: string;
     city: string;
     nr_players: number;
     nr_teams: number;
     playernames: string;
   }) {
-    await ensureAuth();
     return await pb.collection('ranking').create(sessionData);
   },
 
   // Get all ranking sessions
   async getAllSessions() {
-    await ensureAuth();
     return await pb.collection('ranking').getFullList({
       sort: '-created'
     });
@@ -50,7 +36,7 @@ export const rankingService = {
   },
 
   // Update ranking session
-  async updateSession(id: string, data: any) {
+  async updateSession(id: string, data: Record<string, unknown>) {
     return await pb.collection('ranking').update(id, data);
   },
 
@@ -59,14 +45,9 @@ export const rankingService = {
     return await pb.collection('ranking').delete(id);
   },
 
-  // Subscribe to ranking updates
-  subscribeToRankings(callback: (data: any) => void) {
+  // Subscribe to real-time updates
+  subscribeToRankings(callback: (data: unknown) => void) {
     return pb.collection('ranking').subscribe('*', callback);
-  },
-
-  // Unsubscribe from ranking updates
-  unsubscribeFromRankings() {
-    pb.collection('ranking').unsubscribe();
   },
 
   // Search sessions by show name or city
@@ -75,7 +56,7 @@ export const rankingService = {
       filter: `showname ~ "${query}" || city ~ "${query}"`,
       sort: '-created'
     });
-  }
+  },
 };
 
 // Additional helper functions for team management
@@ -91,10 +72,10 @@ export const teamService = {
   },
 
   // Get team statistics
-  getTeamStats(sessions: any[]) {
-    const totalPlayers = sessions.reduce((sum, session) => sum + session.nr_players, 0);
-    const totalTeams = sessions.reduce((sum, session) => sum + session.nr_teams, 0);
-    const cities = [...new Set(sessions.map(session => session.city))].length;
+  getTeamStats(sessions: Array<Record<string, unknown>>) {
+    const totalPlayers = sessions.reduce((sum, session) => (session as { nr_players: number }).nr_players || 0, 0);
+    const totalTeams = sessions.reduce((sum, session) => (session as { nr_teams: number }).nr_teams || 0, 0);
+    const cities = [...new Set(sessions.map(session => (session as { city: string }).city))].length;
     
     return {
       totalSessions: sessions.length,
