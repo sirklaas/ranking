@@ -5,6 +5,8 @@ interface RankingSession {
   showname: string;
   city: string;
   nr_players: number;
+}
+
 const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io');
 
 // Disable auto cancellation
@@ -73,15 +75,26 @@ export const teamService = {
 
   // Get team statistics
   getTeamStats(sessions: Array<Record<string, unknown>>) {
-    const totalPlayers = sessions.reduce((sum, session) => (session as { nr_players: number }).nr_players || 0, 0);
-    const totalTeams = sessions.reduce((sum, session) => (session as { nr_teams: number }).nr_teams || 0, 0);
-    const cities = [...new Set(sessions.map(session => (session as { city: string }).city))].length;
+    const totalPlayers = sessions.reduce((sum, session) => {
+      const s = session as { nr_players?: number };
+      return sum + (s.nr_players || 0);
+    }, 0);
     
+    const totalTeams = sessions.reduce((sum, session) => {
+      const s = session as { nr_teams?: number };
+      return sum + (s.nr_teams || 0);
+    }, 0);
+    
+    const cities = [...new Set(sessions.map(session => {
+      const s = session as { city?: string };
+      return s.city;
+    }))];
+
     return {
       totalSessions: sessions.length,
       totalPlayers,
       totalTeams,
-      uniqueCities: cities
+      uniqueCities: cities.length
     };
   }
 };

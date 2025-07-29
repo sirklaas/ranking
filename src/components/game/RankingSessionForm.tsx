@@ -94,10 +94,10 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         throw new Error('Number of players must be greater than 0');
       }
 
-      const session = await rankingService.createRankingSession(formData);
+      const session = await rankingService.createSession(formData);
       onSessionCreated(session as unknown as RankingSession);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create session');
+    } catch {
+      setError('Failed to create session. Please try again.');
     } finally {
       setIsLoading(false);
     }
