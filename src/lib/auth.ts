@@ -1,9 +1,12 @@
-import pb from './pocketbase';
+import { getPocketBase } from './pocketbase';
 
-// Simple authentication helper
+// Simple authentication helper - client-side only
 export const authService = {
   // Try to authenticate as admin or create a temporary user
   async ensureAuth() {
+    const pb = getPocketBase();
+    if (!pb) return false;
+
     // Check if already authenticated
     if (pb.authStore.isValid) {
       return true;
@@ -11,7 +14,6 @@ export const authService = {
 
     try {
       // Try to authenticate with admin credentials if available
-      // You'll need to set these in your environment or PocketBase admin panel
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
       const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
@@ -20,8 +22,6 @@ export const authService = {
         return true;
       }
 
-      // Alternative: Create or authenticate a regular user for the app
-      // This requires a 'users' collection with appropriate permissions
       console.warn('No admin credentials found. App may have limited access.');
       return false;
     } catch (error) {
@@ -32,17 +32,20 @@ export const authService = {
 
   // Logout
   logout() {
-    pb.authStore.clear();
+    const pb = getPocketBase();
+    if (pb) pb.authStore.clear();
   },
 
   // Check if authenticated
   isAuthenticated() {
-    return pb.authStore.isValid;
+    const pb = getPocketBase();
+    return pb ? pb.authStore.isValid : false;
   },
 
   // Get current user/admin
   getCurrentUser() {
-    return pb.authStore.model;
+    const pb = getPocketBase();
+    return pb ? pb.authStore.model : null;
   }
 };
 

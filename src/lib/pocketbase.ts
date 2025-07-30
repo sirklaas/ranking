@@ -5,12 +5,21 @@ interface RankingSession {
   showname: string;
   city: string;
   nr_players: number;
+  nr_teams: number;
+  playernames: string;
+  created?: string;
+  updated?: string;
 }
 
-const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io');
-
-// Disable auto cancellation
-pb.autoCancellation(false);
+// Client-side only - no build-time PocketBase dependency
+export const getPocketBase = () => {
+  if (typeof window === 'undefined') {
+    return null; // Return null for SSR/build time
+  }
+  const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io');
+  pb.autoCancellation(false);
+  return pb;
+};
 
 // Helper functions for ranking management
 export const rankingService = {
@@ -22,11 +31,15 @@ export const rankingService = {
     nr_teams: number;
     playernames: string;
   }) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('ranking').create(sessionData);
   },
 
   // Get all ranking sessions
   async getAllSessions() {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('ranking').getFullList({
       sort: '-created'
     });
@@ -34,26 +47,36 @@ export const rankingService = {
 
   // Get ranking session by ID
   async getSessionById(id: string) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('ranking').getOne(id);
   },
 
   // Update ranking session
   async updateSession(id: string, data: Record<string, unknown>) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('ranking').update(id, data);
   },
 
   // Delete ranking session
   async deleteSession(id: string) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('ranking').delete(id);
   },
 
   // Subscribe to real-time updates
   subscribeToRankings(callback: (data: unknown) => void) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
     return pb.collection('ranking').subscribe('*', callback);
   },
 
   // Search sessions by show name or city
   async searchSessions(query: string) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('ranking').getFullList({
       filter: `showname ~ "${query}" || city ~ "${query}"`,
       sort: '-created'
