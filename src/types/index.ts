@@ -3,7 +3,7 @@ export interface PocketBaseRecord {
   id: string;
   created: string;
   updated: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Ranking Session Types (based on existing PocketBase schema)
@@ -101,7 +101,7 @@ export interface PlayerScore {
 // Chart Types
 export interface ChartData {
   type: ChartType;
-  data: any;
+  data: Record<string, unknown>;
   options: ChartOptions;
 }
 
@@ -123,7 +123,7 @@ export interface ChartOptions {
 export interface GameUpdate {
   type: UpdateType;
   gameId: string;
-  data: any;
+  data: Record<string, unknown>;
   timestamp: Date;
 }
 

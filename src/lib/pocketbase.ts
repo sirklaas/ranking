@@ -1,16 +1,5 @@
 import PocketBase from 'pocketbase';
 
-interface RankingSession {
-  id: string;
-  showname: string;
-  city: string;
-  nr_players: number;
-  nr_teams: number;
-  playernames: string;
-  created?: string;
-  updated?: string;
-}
-
 // Client-side only - no build-time PocketBase dependency
 export const getPocketBase = () => {
   if (typeof window === 'undefined') {
@@ -71,7 +60,7 @@ export const rankingService = {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
     return pb.collection('ranking').subscribe('*', callback);
-  },
+ },
 
   // Search sessions by show name or city
   async searchSessions(query: string) {
