@@ -31,11 +31,6 @@ export default function PresenterPage() {
     if (!selectedSession) return null;
 
     const playerNames = teamService.parsePlayerNames(selectedSession.playernames);
-    const [, setStats] = useState({
-      totalGames: 0,
-      totalPlayers: 0,
-      averageScore: 0
-    });
 
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
