@@ -44,11 +44,27 @@ export function calculateRankingScore(correctPosition: number, playerPosition: n
 }
 
 // Aggregate rankings from multiple players
-export function aggregateRankings(rankings: any[]): any[] {
+interface RankingItem {
+  itemId: string;
+  position: number;
+}
+
+interface RankingData {
+  rankings: RankingItem[];
+}
+
+interface AggregatedRanking {
+  itemId: string;
+  averagePosition: number;
+  totalVotes: number;
+  positions: number[];
+}
+
+export function aggregateRankings(rankings: RankingData[]): AggregatedRanking[] {
   const itemScores: { [itemId: string]: { totalScore: number; count: number; positions: number[] } } = {};
   
   rankings.forEach(ranking => {
-    ranking.rankings.forEach((item: any) => {
+    ranking.rankings.forEach((item: RankingItem) => {
       if (!itemScores[item.itemId]) {
         itemScores[item.itemId] = { totalScore: 0, count: 0, positions: [] };
       }
@@ -90,7 +106,7 @@ export function generateChartColors(count: number): string[] {
 }
 
 // Debounce function for search/input
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -120,7 +136,7 @@ export function isMobileDevice(): boolean {
 
 // Local storage helpers
 export const storage = {
-  get: (key: string) => {
+  get: (key: string): unknown | null => {
     if (typeof window === 'undefined') return null;
     try {
       const item = localStorage.getItem(key);
@@ -130,7 +146,7 @@ export const storage = {
     }
   },
   
-  set: (key: string, value: any) => {
+  set: (key: string, value: unknown): void => {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(key, JSON.stringify(value));
@@ -139,7 +155,7 @@ export const storage = {
     }
   },
   
-  remove: (key: string) => {
+  remove: (key: string): void => {
     if (typeof window === 'undefined') return;
     try {
       localStorage.removeItem(key);
