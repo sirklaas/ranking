@@ -147,39 +147,48 @@ export default function DisplayPage() {
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
       
-      {/* Logo - Top Left */}
-      <div className="absolute top-5 left-5 z-10">
-        <img 
-          src="/assets/ranking_logo2.webp" 
-          alt="Ranking Logo" 
-          className="w-auto"
-          style={{ height: '4rem', maxWidth: '300px', objectFit: 'contain' }}
-        />
+      {/* Header Text - Above Band */}
+      <div className="relative z-10 text-center pt-8 pb-4">
+        <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+          Quizmaster Klaas presenteert
+        </p>
+        <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+          {currentSession.showname} - {currentSession.city}
+        </h1>
+        <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+          De teams van vandaag zijn:
+        </p>
       </div>
       
-      {/* QR Code - Top Right */}
-      <div className="absolute top-5 right-5 bg-white p-3 rounded-lg shadow-lg z-10">
-        <img 
-          src={qrCodeUrl} 
-          alt="Join Game QR Code" 
-          className="w-32 h-32"
-        />
-        <p className="text-center text-sm font-semibold text-gray-700 mt-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Code: {gameCode}</p>
-      </div>
-      
-      <div className="relative z-10 w-full px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            Quizmaster Klaas presenteert
-          </p>
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            {currentSession.showname} - {currentSession.city}
-          </h1>
-          <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            De teams van vandaag zijn:
-          </p>
+      {/* Horizontal Band with Logo Background */}
+      <div 
+        className="relative z-10 w-full h-24 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8"
+        style={{ 
+          backgroundImage: 'url(/assets/ranking_logoBG.webp)',
+          marginTop: '50px'
+        }}
+      >
+        {/* Logo - Left side of band */}
+        <div className="flex items-center">
+          <img 
+            src="/assets/ranking_logo2.webp" 
+            alt="Ranking Logo" 
+            className="h-20 w-auto object-contain"
+          />
         </div>
+        
+        {/* QR Code - Right side of band */}
+        <div className="bg-white p-2 rounded-lg shadow-lg">
+          <img 
+            src={qrCodeUrl} 
+            alt="Join Game QR Code" 
+            className="w-16 h-16"
+          />
+          <p className="text-center text-xs font-semibold text-gray-700 mt-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Code: {gameCode}</p>
+        </div>
+      </div>
+      
+      <div className="relative z-10 w-full px-4 py-8">
         
         {/* Teams Display - Single Row Layout */}
         <div className="flex justify-center items-start overflow-hidden w-full px-2">
