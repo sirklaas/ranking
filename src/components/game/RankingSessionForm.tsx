@@ -92,13 +92,14 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         throw new Error('Photocircle link is required');
       }
       
-      // Calculate nr_players from playernames and generate team assignments
+      // Calculate nr_players from playernames and assign team numbers by prefixing names
       const playerNames = formData.playernames.split(',').map(name => name.trim()).filter(name => name);
-      const teamAssignments = teamService.generateTeamAssignments(playerNames, formData.nr_teams);
+      const playersWithTeamNumbers = teamService.assignTeamNumbersToPlayers(playerNames, formData.nr_teams);
       const sessionData = {
         ...formData,
         nr_players: playerNames.length,
-        team_assignments: JSON.stringify(teamAssignments)
+        playernames: playersWithTeamNumbers.join(', '), // Store prefixed names
+        team_assignments: '' // No longer needed with prefixed approach
       };
 
       const session = await rankingService.createSession(sessionData);

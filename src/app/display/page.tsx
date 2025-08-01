@@ -20,13 +20,8 @@ export default function DisplayPage() {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
-  // Use team assignments from PocketBase instead of generating locally
+  // Get team assignments from prefixed player names (rock-solid approach)
   const getTeamAssignments = (session: RankingSession): PlayersByTeam => {
-    if (session.team_assignments) {
-      return teamService.parseTeamAssignments(session.team_assignments);
-    }
-    
-    // Fallback: if no team assignments exist, generate them (for backward compatibility)
     const playerNames = teamService.parsePlayerNames(session.playernames);
     return teamService.generateTeamAssignments(playerNames, session.nr_teams);
   };

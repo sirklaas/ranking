@@ -84,11 +84,36 @@ export const teamService = {
       .filter(name => name.length > 0);
   },
 
-  generateTeamAssignments: (playerNames: string[], numberOfTeams: number): { [key: number]: string[] } => {
-    if (!playerNames.length || numberOfTeams === 0) return {};
+  // Assign team numbers to player names by prefixing (rock-solid approach)
+  assignTeamNumbersToPlayers: (playerNames: string[], numberOfTeams: number): string[] => {
+    if (!playerNames.length || numberOfTeams === 0) return playerNames;
     
     // Shuffle players randomly for initial distribution
     const shuffledPlayers = [...playerNames].sort(() => Math.random() - 0.5);
+    
+    // Assign team numbers by prefixing names
+    return shuffledPlayers.map((player, index) => {
+      const teamNumber = (index % numberOfTeams) + 1;
+      const teamPrefix = teamNumber.toString().padStart(3, '0'); // 001, 002, etc.
+      return `${teamPrefix} ${player}`;
+    });
+  },
+
+  // Extract team number from prefixed player name
+  getPlayerTeamNumber: (prefixedPlayerName: string): number => {
+    const match = prefixedPlayerName.match(/^(\d{3})\s/);
+    return match ? parseInt(match[1], 10) : 0;
+  },
+
+  // Remove team number prefix from player name for display
+  getDisplayPlayerName: (prefixedPlayerName: string): string => {
+    return prefixedPlayerName.replace(/^\d{3}\s/, '');
+  },
+
+  // Generate team assignments from prefixed player names
+  generateTeamAssignments: (playerNames: string[], numberOfTeams: number): { [key: number]: string[] } => {
+    if (!playerNames.length || numberOfTeams === 0) return {};
+    
     const teams: { [key: number]: string[] } = {};
     
     // Initialize teams
@@ -96,10 +121,13 @@ export const teamService = {
       teams[i] = [];
     }
     
-    // Distribute players evenly
-    shuffledPlayers.forEach((player, index) => {
-      const teamNumber = (index % numberOfTeams) + 1;
-      teams[teamNumber].push(player);
+    // Group players by their team number prefix
+    playerNames.forEach(playerName => {
+      const teamNumber = teamService.getPlayerTeamNumber(playerName);
+      if (teamNumber > 0 && teamNumber <= numberOfTeams) {
+        const displayName = teamService.getDisplayPlayerName(playerName);
+        teams[teamNumber].push(displayName);
+      }
     });
     
     return teams;

@@ -35,16 +35,9 @@ export default function PlayerPage() {
     
     setIsLoading(true);
     
-    // Get team assignments from PocketBase (same as display screen)
-    let teamAssignments: { [key: number]: string[] } = {};
-    
-    if (currentSession.team_assignments) {
-      teamAssignments = teamService.parseTeamAssignments(currentSession.team_assignments);
-    } else {
-      // Fallback: generate assignments if not stored (for backward compatibility)
-      const playerNames = teamService.parsePlayerNames(currentSession.playernames);
-      teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams);
-    }
+    // Get team assignments from prefixed player names (rock-solid approach)
+    const playerNames = teamService.parsePlayerNames(currentSession.playernames);
+    const teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams);
     
     const selectedTeamMembers = teamAssignments[parseInt(teamNumber)] || [];
     
