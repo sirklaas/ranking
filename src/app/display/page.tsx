@@ -147,34 +147,34 @@ export default function DisplayPage() {
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
       
-      {/* Header Text - Above Band */}
-      <div className="relative z-10 text-center pt-8 pb-4">
-        <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-          Quizmaster Klaas presenteert
-        </p>
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-          {currentSession.showname} - {currentSession.city}
-        </h1>
-        <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-          De teams van vandaag zijn:
-        </p>
-      </div>
-      
-      {/* Horizontal Band with Logo Background */}
+      {/* Horizontal Band with Background + Overlaid Text and Logo */}
       <div 
-        className="relative z-10 w-full h-24 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8"
+        className="relative z-10 w-full h-48 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8"
         style={{ 
-          backgroundImage: 'url(/assets/ranking_logoBG.webp)',
+          backgroundImage: 'url(/assets/band.webp)',
           marginTop: '50px'
         }}
       >
-        {/* Logo - Left side of band */}
+        {/* Logo - Left side of band - Much Larger */}
         <div className="flex items-center">
           <img 
-            src="/assets/ranking_logo2.webp" 
+            src="/assets/ranking_logo.webp" 
             alt="Ranking Logo" 
-            className="h-20 w-auto object-contain"
+            className="h-40 w-auto object-contain"
           />
+        </div>
+        
+        {/* Centered Text Overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+            Quizmaster Klaas presenteert
+          </p>
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+            {currentSession.showname} - {currentSession.city}
+          </h1>
+          <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+            De teams van vandaag zijn:
+          </p>
         </div>
         
         {/* QR Code - Right side of band */}

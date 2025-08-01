@@ -77,7 +77,7 @@ export default function PlayerPage() {
         <div 
           className="row-span-2 relative bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: 'url(/assets/ranking_logoBG.webp)',
+            backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
@@ -85,7 +85,7 @@ export default function PlayerPage() {
           {/* Logo Overlay - Much Bigger */}
           <div className="absolute inset-0 flex items-center justify-center">
             <img 
-              src="/assets/ranking_logo2.webp" 
+              src="/assets/ranking_logo.webp" 
               alt="Ranking Logo" 
               className="h-32 w-auto object-contain"
             />
