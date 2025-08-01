@@ -86,6 +86,12 @@ export default function DisplayPage() {
   };
 
   useEffect(() => {
+    // Load Google Fonts
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    
     loadSessionData();
     
     // Keyboard controls
@@ -102,6 +108,7 @@ export default function DisplayPage() {
     
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      document.head.removeChild(link);
     };
   }, [loadSessionData]);
 
@@ -136,9 +143,18 @@ export default function DisplayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
+      
+      {/* Logo - Top Left */}
+      <div className="absolute top-5 left-5 z-10">
+        <img 
+          src="/assets/ranking_logo.webp" 
+          alt="Ranking Logo" 
+          className="h-16 w-auto"
+        />
+      </div>
       
       {/* QR Code - Top Right */}
       <div className="absolute top-5 right-5 bg-white p-3 rounded-lg shadow-lg z-10">
@@ -147,10 +163,10 @@ export default function DisplayPage() {
           alt="Join Game QR Code" 
           className="w-32 h-32"
         />
-        <p className="text-center text-sm font-semibold text-gray-700 mt-2">Code: {gameCode}</p>
+        <p className="text-center text-sm font-semibold text-gray-700 mt-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Code: {gameCode}</p>
       </div>
       
-      <div className="relative z-10 container mx-auto px-8 py-12">
+      <div className="relative z-10 w-full px-4 py-12">
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-2">
@@ -162,7 +178,7 @@ export default function DisplayPage() {
         </div>
         
         {/* Teams Display - Single Row Layout */}
-        <div className="flex justify-center items-start overflow-hidden px-4">
+        <div className="flex justify-center items-start overflow-hidden w-full">
           {Array.from({ length: currentSession.nr_teams }, (_, index) => {
             const teamNumber = index + 1;
             const teamPlayers = playersByTeam[teamNumber] || [];
@@ -170,20 +186,19 @@ export default function DisplayPage() {
             return (
               <div 
                 key={teamNumber} 
-                className="flex flex-col items-center flex-shrink-0 mx-2"
+                className="flex flex-col items-center flex-shrink-0 px-1"
                 style={{ 
-                  width: `calc((100vw - 8rem) / ${currentSession.nr_teams})`,
-                  maxWidth: '200px',
-                  minWidth: '140px'
+                  width: `calc(100vw / ${currentSession.nr_teams})`,
+                  maxWidth: 'none'
                 }}
               >
                 {/* Team Circle with 15px outline */}
                 <div 
                   className="bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
                   style={{
-                    width: `min(150px, calc((100vw - 12rem) / ${currentSession.nr_teams}))`,
-                    height: `min(150px, calc((100vw - 12rem) / ${currentSession.nr_teams}))`,
-                    border: '15px solid black',
+                    width: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
+                    height: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
+                    border: '12px solid black',
                     minWidth: '80px',
                     minHeight: '80px'
                   }}
