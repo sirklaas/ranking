@@ -91,7 +91,7 @@ export default function PlayerPage() {
 
         {/* Sections 3-5: Team Number Input Circle and Question Text */}
         <div className="row-span-3 flex flex-col items-center justify-center space-y-4">
-          <h1 className="text-3xl text-white text-center font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 600 }}>
+          <h1 className="text-3xl text-white text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
             In welk Team zit je?
           </h1>
           
@@ -100,12 +100,8 @@ export default function PlayerPage() {
               <input
                 type="number"
                 value={teamNumber}
-                onChange={(e) => {
-                  setTeamNumber(e.target.value);
-                  if (e.target.value) {
-                    handleTeamSubmit();
-                  }
-                }}
+                onChange={(e) => setTeamNumber(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
                 className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
                 style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 placeholder="?"
@@ -120,8 +116,22 @@ export default function PlayerPage() {
           )}
         </div>
 
+        {/* Show button when team number is entered */}
+        {teamNumber && !showTeamInfo && !showPopup && (
+          <div className="row-span-1 flex items-center justify-center">
+            <button
+              onClick={handleTeamSubmit}
+              disabled={isLoading}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors shadow-lg"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              {isLoading ? 'Loading...' : 'Toon Mijn Team'}
+            </button>
+          </div>
+        )}
+
         {/* Sections 6-12: Team Members Display */}
-        <div className="row-span-7 overflow-y-auto px-4">
+        <div className="row-span-6 overflow-y-auto px-4">
           {showTeamInfo && (
             <div className="h-full flex flex-col items-center space-y-2 pt-4">
               {teamMembers.map((member, index) => (
