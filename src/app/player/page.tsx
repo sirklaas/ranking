@@ -100,8 +100,12 @@ export default function PlayerPage() {
               <input
                 type="number"
                 value={teamNumber}
-                onChange={(e) => setTeamNumber(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
+                onChange={(e) => {
+                  setTeamNumber(e.target.value);
+                  if (e.target.value) {
+                    handleTeamSubmit();
+                  }
+                }}
                 className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
                 style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 placeholder="?"
@@ -116,40 +120,28 @@ export default function PlayerPage() {
           )}
         </div>
 
-        {/* Show button when team number is entered */}
-        {teamNumber && !showTeamInfo && !showPopup && (
-          <div className="row-span-1 flex items-center justify-center">
-            <button
-              onClick={handleTeamSubmit}
-              disabled={isLoading}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors shadow-lg"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              {isLoading ? 'Loading...' : 'Toon Mijn Team'}
-            </button>
-          </div>
-        )}
-
         {/* Sections 6-12: Team Members Display */}
-        <div className="row-span-6 overflow-y-auto px-4">
+        <div className="row-span-9 overflow-y-auto px-4">
           {showTeamInfo && (
-            <div className="h-full flex flex-col items-center space-y-2 pt-4">
-              {teamMembers.map((member, index) => (
-                <div 
-                  key={index}
-                  className="bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-full text-center font-semibold text-lg shadow-md animate-fade-in"
-                  style={{ 
-                    fontFamily: 'Barlow Semi Condensed, sans-serif',
-                    fontWeight: 600,
-                    animationDelay: `${index * 200}ms`,
-                    animationFillMode: 'both',
-                    width: '30%',
-                    minWidth: '120px'
-                  }}
-                >
-                  {member}
-                </div>
-              ))}
+            <div className="h-full pt-4">
+              {/* Two column grid for team members */}
+              <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+                {teamMembers.map((member, index) => (
+                  <div 
+                    key={index}
+                    className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in"
+                    style={{ 
+                      fontFamily: 'Barlow Semi Condensed, sans-serif',
+                      fontWeight: 500,
+                      fontSize: '0.9rem',
+                      animationDelay: `${index * 200}ms`,
+                      animationFillMode: 'both'
+                    }}
+                  >
+                    {member}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
