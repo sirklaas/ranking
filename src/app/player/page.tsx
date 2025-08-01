@@ -66,9 +66,12 @@ export default function PlayerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 font-['Barlow_Semi_Condensed'] overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      {/* Animated background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
+      
       {/* 12-Section Grid Container */}
-      <div className="h-screen grid grid-rows-12 gap-0">
+      <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
         
         {/* Sections 1-2: Logo Background + Logo Overlay */}
         <div 
@@ -79,77 +82,80 @@ export default function PlayerPage() {
             backgroundPosition: 'center'
           }}
         >
-          {/* Logo Overlay */}
+          {/* Logo Overlay - Much Bigger */}
           <div className="absolute inset-0 flex items-center justify-center">
             <img 
               src="/assets/ranking_logo2.webp" 
               alt="Ranking Logo" 
-              className="h-20 w-auto object-contain"
+              className="h-32 w-auto object-contain"
             />
           </div>
         </div>
 
         {/* Section 3: Question Text */}
-        <div className="row-span-1 bg-white border-b-2 border-gray-300 flex items-center justify-center px-4">
-          <h1 className="text-xl font-bold text-gray-900 text-center">
+        <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
+          <h1 className="text-xl font-bold text-gray-900 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             In welk Team zit je?
           </h1>
         </div>
 
         {/* Section 4: Team Number Input Circle */}
-        <div className="row-span-1 bg-white border-b-2 border-gray-300 flex items-center justify-center">
+        <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center">
           {!showTeamInfo ? (
-            <div className="w-24 h-24 rounded-full border-4 border-black bg-white flex items-center justify-center">
+            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
               <input
                 type="number"
                 value={teamNumber}
                 onChange={(e) => setTeamNumber(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
-                className="w-16 h-16 text-4xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
+                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 placeholder="?"
                 min="1"
                 max={currentSession?.nr_teams || 10}
               />
             </div>
           ) : (
-            <div className="w-24 h-24 rounded-full border-4 border-black bg-white flex items-center justify-center">
-              <span className="text-4xl font-bold text-pink-500">{teamNumber}</span>
+            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
+              <span className="text-5xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{teamNumber}</span>
             </div>
           )}
         </div>
 
         {/* Section 5: Download App Text */}
-        <div className="row-span-1 bg-white border-b-2 border-gray-300 flex items-center justify-center px-4">
-          <h2 className="text-lg font-semibold text-gray-900 text-center">
+        <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
+          <h2 className="text-lg font-semibold text-gray-900 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Download deze App:
           </h2>
         </div>
 
         {/* Section 6: Photocircle Link */}
-        <div className="row-span-1 bg-white border-b-2 border-gray-300 flex items-center justify-center px-4">
+        <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
           {photocircleLink ? (
             <a 
               href={photocircleLink} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-blue-600 underline text-sm font-medium text-center break-all"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
             >
               {photocircleLink}
             </a>
           ) : (
-            <span className="text-gray-500 text-sm">Loading app link...</span>
+            <span className="text-gray-500 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Loading app link...</span>
           )}
         </div>
 
         {/* Sections 7-12: Team Members Display */}
-        <div className="row-span-6 bg-white overflow-y-auto">
+        <div className="row-span-6 bg-white/90 backdrop-blur-sm overflow-y-auto">
           {showTeamInfo ? (
             <div className="p-4 h-full">
               <div className="space-y-3 h-full flex flex-col justify-start">
                 {teamMembers.map((member, index) => (
                   <div 
                     key={index}
-                    className="bg-pink-400 text-white px-4 py-3 rounded-lg text-center font-semibold text-lg border-2 border-pink-500"
+                    className="bg-blue-100 text-blue-800 px-3 py-2 rounded-full text-center font-semibold text-lg shadow-md"
+                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                   >
                     {member}
                   </div>
@@ -162,7 +168,8 @@ export default function PlayerPage() {
                     setTeamNumber('');
                     setTeamMembers([]);
                   }}
-                  className="mt-4 bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold"
+                  className="mt-4 bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 >
                   Change Team
                 </button>
@@ -174,7 +181,8 @@ export default function PlayerPage() {
                 <button
                   onClick={handleTeamSubmit}
                   disabled={isLoading}
-                  className="bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-700 disabled:bg-blue-400"
+                  className="bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors shadow-lg"
+                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 >
                   {isLoading ? 'Loading...' : 'Show My Team'}
                 </button>
