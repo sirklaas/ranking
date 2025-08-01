@@ -14,7 +14,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
   const [formData, setFormData] = useState({
     showname: '',
     city: '',
-    nr_players: 0,
+    photocircle: '',
     nr_teams: 0,
     playernames: ''
   });
@@ -27,7 +27,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'nr_players' || name === 'nr_teams' ? parseInt(value) || 0 : value
+      [name]: name === 'nr_teams' ? parseInt(value) || 0 : value
     }));
   };
 
@@ -53,8 +53,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         setPlayerList(names);
         setFormData(prev => ({
           ...prev,
-          playernames: names.join(', '),
-          nr_players: names.length
+          playernames: names.join(', ')
         }));
         
         // Clear the file input
@@ -72,8 +71,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
     setPlayerList([]);
     setFormData(prev => ({
       ...prev,
-      playernames: '',
-      nr_players: 0
+      playernames: ''
     }));
   };
 
@@ -90,11 +88,18 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
       if (!formData.city.trim()) {
         throw new Error('City is required');
       }
-      if (formData.nr_players <= 0) {
-        throw new Error('Number of players must be greater than 0');
+      if (!formData.photocircle.trim()) {
+        throw new Error('Photocircle link is required');
       }
+      
+      // Calculate nr_players from playernames
+      const playerNames = formData.playernames.split(',').map(name => name.trim()).filter(name => name);
+      const sessionData = {
+        ...formData,
+        nr_players: playerNames.length
+      };
 
-      const session = await rankingService.createSession(formData);
+      const session = await rankingService.createSession(sessionData);
       onSessionCreated(session as unknown as RankingSession);
     } catch {
       setError('Failed to create session. Please try again.');
@@ -150,18 +155,17 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="nr_players" className="block text-sm font-medium text-gray-700 mb-2">
-              Number of Players *
+            <label htmlFor="photocircle" className="block text-sm font-medium text-gray-700 mb-2">
+              Photocircle Link *
             </label>
             <input
-              type="number"
-              id="nr_players"
-              name="nr_players"
-              value={formData.nr_players}
+              type="url"
+              id="photocircle"
+              name="photocircle"
+              value={formData.photocircle}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
-              placeholder="0"
-              min="1"
+              placeholder="https://join.photocircleapp.com/..."
               required
             />
           </div>
