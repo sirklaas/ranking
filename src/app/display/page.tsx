@@ -150,9 +150,10 @@ export default function DisplayPage() {
       {/* Logo - Top Left */}
       <div className="absolute top-5 left-5 z-10">
         <img 
-          src="/assets/ranking_logo.webp" 
+          src="/assets/ranking_logo2.webp" 
           alt="Ranking Logo" 
           className="h-16 w-auto"
+          style={{ width: 'auto', transform: 'scaleX(4)' }}
         />
       </div>
       
