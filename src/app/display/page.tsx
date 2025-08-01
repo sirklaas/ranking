@@ -88,9 +88,6 @@ export default function DisplayPage() {
   useEffect(() => {
     loadSessionData();
     
-    // Refresh every 10 seconds
-    const interval = setInterval(loadSessionData, 10000);
-    
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' || e.key === 'F') {
@@ -104,7 +101,6 @@ export default function DisplayPage() {
     document.addEventListener('keydown', handleKeyDown);
     
     return () => {
-      clearInterval(interval);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [loadSessionData]);
@@ -165,34 +161,58 @@ export default function DisplayPage() {
           </p>
         </div>
         
-        {/* Teams Display */}
-        <div className="flex justify-center items-start flex-wrap gap-8 md:gap-12">
+        {/* Teams Display - Single Row Layout */}
+        <div className="flex justify-center items-start overflow-hidden px-4">
           {Array.from({ length: currentSession.nr_teams }, (_, index) => {
             const teamNumber = index + 1;
             const teamPlayers = playersByTeam[teamNumber] || [];
             
             return (
-              <div key={teamNumber} className="flex flex-col items-center">
-                {/* Team Circle */}
-                <div className="w-24 h-24 md:w-32 md:h-32 bg-white border-4 border-black rounded-full flex items-center justify-center mb-6 shadow-lg">
-                  <span className="text-3xl md:text-4xl font-bold text-black">{teamNumber}</span>
+              <div 
+                key={teamNumber} 
+                className="flex flex-col items-center flex-shrink-0 mx-2"
+                style={{ 
+                  width: `calc((100vw - 8rem) / ${currentSession.nr_teams})`,
+                  maxWidth: '200px',
+                  minWidth: '140px'
+                }}
+              >
+                {/* Team Circle with 15px outline */}
+                <div 
+                  className="bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
+                  style={{
+                    width: `min(150px, calc((100vw - 12rem) / ${currentSession.nr_teams}))`,
+                    height: `min(150px, calc((100vw - 12rem) / ${currentSession.nr_teams}))`,
+                    border: '15px solid black',
+                    minWidth: '80px',
+                    minHeight: '80px'
+                  }}
+                >
+                  <span 
+                    className="font-bold text-black text-2xl"
+                    style={{ 
+                      fontSize: `min(3rem, calc((100vw - 12rem) / ${currentSession.nr_teams} * 0.35))`
+                    }}
+                  >
+                    {teamNumber}
+                  </span>
                 </div>
                 
                 {/* Player Names */}
-                <div className="flex flex-col gap-2 min-w-[180px]">
+                <div className="flex flex-col gap-1 w-full">
                   {teamPlayers.map((player, playerIndex) => (
                     <div 
                       key={playerIndex}
-                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-4 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md"
+                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-2 py-1 rounded-lg text-center font-semibold border-2 border-white shadow-md text-sm"
                     >
-                      <span className="text-sm text-gray-600 mr-2">{playerIndex + 1}</span>
-                      {player}
+                      <span className="text-xs text-gray-600 mr-1">{playerIndex + 1}</span>
+                      <span className="truncate">{player}</span>
                     </div>
                   ))}
                   
                   {/* Empty slots if team has fewer players */}
                   {teamPlayers.length === 0 && (
-                    <div className="bg-gray-200 text-gray-500 px-4 py-2 rounded-lg text-center italic border-2 border-gray-300">
+                    <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm">
                       No players yet
                     </div>
                   )}
