@@ -89,25 +89,23 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Section 3: Question Text - 20% larger */}
-        <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
-          <h1 className="text-3xl text-gray-900 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+        {/* Sections 3-5: Team Number Input Circle and Question Text */}
+        <div className="row-span-3 flex flex-col items-center justify-center space-y-4">
+          <h1 className="text-3xl text-white text-center font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 600 }}>
             In welk Team zit je?
           </h1>
-        </div>
-
-        {/* Section 4: Empty spacing */}
-        <div className="row-span-1 bg-white/90 backdrop-blur-sm"></div>
-
-        {/* Section 5-6: Team Number Input Circle - Fixed cutoff by using 2 sections */}
-        <div className="row-span-2 bg-white/90 backdrop-blur-sm flex items-center justify-center">
+          
           {!showTeamInfo ? (
             <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
               <input
                 type="number"
                 value={teamNumber}
-                onChange={(e) => setTeamNumber(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
+                onChange={(e) => {
+                  setTeamNumber(e.target.value);
+                  if (e.target.value) {
+                    handleTeamSubmit();
+                  }
+                }}
                 className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
                 style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 placeholder="?"
@@ -122,81 +120,74 @@ export default function PlayerPage() {
           )}
         </div>
 
-        {/* Sections 7-12: Team Members Display or Submit Button */}
-        <div className="row-span-6 bg-white/90 backdrop-blur-sm overflow-y-auto">
-          {showTeamInfo ? (
-            <div className="p-4 h-full">
-              <div className="space-y-2 h-full flex flex-col justify-start">
-                {teamMembers.map((member, index) => (
-                  <div 
-                    key={index}
-                    className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-center font-semibold text-sm shadow-md animate-fade-in"
-                    style={{ 
-                      fontFamily: 'Barlow Semi Condensed, sans-serif',
-                      animationDelay: `${index * 200}ms`,
-                      animationFillMode: 'both'
-                    }}
-                  >
-                    {member}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 h-full flex flex-col items-center justify-center">
-              {teamNumber && (
-                <div className="text-center">
-                  <button
-                    onClick={handleTeamSubmit}
-                    disabled={isLoading}
-                    className="bg-blue-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors shadow-lg"
-                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                  >
-                    {isLoading ? 'Loading...' : 'Toon Mijn Team'}
-                  </button>
+        {/* Sections 6-12: Team Members Display */}
+        <div className="row-span-7 overflow-y-auto px-4">
+          {showTeamInfo && (
+            <div className="h-full flex flex-col items-center space-y-2 pt-4">
+              {teamMembers.map((member, index) => (
+                <div 
+                  key={index}
+                  className="bg-white/90 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-full text-center font-semibold text-lg shadow-md animate-fade-in"
+                  style={{ 
+                    fontFamily: 'Barlow Semi Condensed, sans-serif',
+                    fontWeight: 600,
+                    animationDelay: `${index * 200}ms`,
+                    animationFillMode: 'both',
+                    width: '30%',
+                    minWidth: '120px'
+                  }}
+                >
+                  {member}
                 </div>
-              )}
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Animated Popup */}
+      {/* Animated Popup - Positioned in sections 3-5 */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-          <div 
-            className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-2xl shadow-2xl max-w-sm mx-4 relative animate-scale-in"
-            style={{ border: '3px solid white' }}
-          >
-            {/* Close X button */}
-            <button
-              onClick={closePopup}
-              className="absolute top-2 right-2 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-xl transition-colors"
-            >
-              ×
-            </button>
-            
-            <div className="text-center text-white space-y-4">
-              <h3 className="text-xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                Download nu deze App:
-              </h3>
-              
-              {currentSession?.photocircle && (
-                <a 
-                  href={currentSession.photocircle} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block text-white underline text-sm font-medium break-all hover:text-blue-200 transition-colors"
-                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+        <div className="fixed inset-0 z-50 animate-fade-in">
+          {/* Position popup in sections 3-5 area */}
+          <div className="h-screen grid grid-rows-12">
+            <div className="row-span-2"></div> {/* Sections 1-2 spacer */}
+            <div className="row-span-3 flex items-center justify-center px-4"> {/* Sections 3-5 */}
+              <div 
+                className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full relative animate-scale-in"
+                style={{ border: '3px solid white' }}
+              >
+                {/* Close X button */}
+                <button
+                  onClick={closePopup}
+                  className="absolute top-2 right-2 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-xl transition-colors"
                 >
-                  {currentSession.photocircle}
-                </a>
-              )}
-              
-              <p className="text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                Maak daar een account aan en kom dan hier terug
-              </p>
+                  ×
+                </button>
+                
+                <div className="text-center text-white space-y-4">
+                  <h3 className="text-xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    Download nu deze App:
+                  </h3>
+                  
+                  {currentSession?.photocircle && (
+                    <a 
+                      href={currentSession.photocircle} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block text-white underline text-sm font-medium break-all hover:text-blue-200 transition-colors"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                    >
+                      {currentSession.photocircle}
+                    </a>
+                  )}
+                  
+                  <p className="text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    Maak daar een account aan en kom dan hier terug
+                  </p>
+                </div>
+              </div>
             </div>
+            <div className="row-span-7"></div> {/* Sections 6-12 spacer */}
           </div>
         </div>
       )}
