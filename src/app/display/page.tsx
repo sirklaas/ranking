@@ -169,16 +169,19 @@ export default function DisplayPage() {
       <div className="relative z-10 w-full px-4 py-12">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-2">
-            {currentSession.showname}
+          <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+            Quizmaster Klaas presenteert
+          </p>
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+            {currentSession.showname} - {currentSession.city}
           </h1>
-          <p className="text-2xl md:text-3xl text-white/90">
+          <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
             De teams van vandaag zijn:
           </p>
         </div>
         
         {/* Teams Display - Single Row Layout */}
-        <div className="flex justify-center items-start overflow-hidden w-full">
+        <div className="flex justify-center items-start overflow-hidden w-full px-2">
           {Array.from({ length: currentSession.nr_teams }, (_, index) => {
             const teamNumber = index + 1;
             const teamPlayers = playersByTeam[teamNumber] || [];
@@ -186,10 +189,11 @@ export default function DisplayPage() {
             return (
               <div 
                 key={teamNumber} 
-                className="flex flex-col items-center flex-shrink-0 px-1"
+                className="flex flex-col items-center flex-shrink-0"
                 style={{ 
-                  width: `calc(100vw / ${currentSession.nr_teams})`,
-                  maxWidth: 'none'
+                  width: `calc((100vw - 2rem) / ${currentSession.nr_teams})`,
+                  maxWidth: 'none',
+                  padding: '0 4px'
                 }}
               >
                 {/* Team Circle with 15px outline */}
@@ -214,20 +218,21 @@ export default function DisplayPage() {
                 </div>
                 
                 {/* Player Names */}
-                <div className="flex flex-col gap-1 w-full">
+                <div className="flex flex-col gap-1 w-full px-1">
                   {teamPlayers.map((player, playerIndex) => (
                     <div 
                       key={playerIndex}
-                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-2 py-1 rounded-lg text-center font-semibold border-2 border-white shadow-md text-sm"
+                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-2 py-1 rounded-lg text-center font-semibold border-2 border-white shadow-md text-sm overflow-hidden"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 500 }}
                     >
-                      <span className="text-xs text-gray-600 mr-1">{playerIndex + 1}</span>
-                      <span className="truncate">{player}</span>
+                      <span className="text-xs text-gray-600 mr-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{playerIndex + 1}</span>
+                      <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{player}</span>
                     </div>
                   ))}
                   
                   {/* Empty slots if team has fewer players */}
                   {teamPlayers.length === 0 && (
-                    <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm">
+                    <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                       No players yet
                     </div>
                   )}
