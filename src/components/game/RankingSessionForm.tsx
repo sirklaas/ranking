@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { rankingService } from '@/lib/pocketbase';
+import { rankingService, teamService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
 import * as XLSX from 'xlsx';
 
@@ -92,11 +92,13 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         throw new Error('Photocircle link is required');
       }
       
-      // Calculate nr_players from playernames
+      // Calculate nr_players from playernames and generate team assignments
       const playerNames = formData.playernames.split(',').map(name => name.trim()).filter(name => name);
+      const teamAssignments = teamService.generateTeamAssignments(playerNames, formData.nr_teams);
       const sessionData = {
         ...formData,
-        nr_players: playerNames.length
+        nr_players: playerNames.length,
+        team_assignments: JSON.stringify(teamAssignments)
       };
 
       const session = await rankingService.createSession(sessionData);

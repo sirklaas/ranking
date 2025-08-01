@@ -15,6 +15,7 @@ export interface RankingSession extends PocketBaseRecord {
   teamname: string;
   playernames: string; // comma-separated string
   photocircle: string; // URL for Photocircle app download
+  team_assignments: string; // JSON string of team assignments {"1": ["player1", "player2"], "2": ["player3", "player4"]}
 }
 
 // Parsed types for easier handling

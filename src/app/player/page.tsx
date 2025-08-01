@@ -35,30 +35,18 @@ export default function PlayerPage() {
     
     setIsLoading(true);
     
-    // Parse player names and distribute to teams
-    const playerNames = teamService.parsePlayerNames(currentSession.playernames);
-    const distributePlayersToTeams = (players: string[], numTeams: number) => {
-      const teams: { [key: number]: string[] } = {};
-      
-      // Initialize teams
-      for (let i = 1; i <= numTeams; i++) {
-        teams[i] = [];
-      }
-      
-      // Shuffle players for random distribution
-      const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
-      
-      // Distribute players evenly
-      shuffledPlayers.forEach((player, index) => {
-        const teamNum = (index % numTeams) + 1;
-        teams[teamNum].push(player);
-      });
-      
-      return teams;
-    };
+    // Get team assignments from PocketBase (same as display screen)
+    let teamAssignments: { [key: number]: string[] } = {};
     
-    const distributed = distributePlayersToTeams(playerNames, currentSession.nr_teams);
-    const selectedTeamMembers = distributed[parseInt(teamNumber)] || [];
+    if (currentSession.team_assignments) {
+      teamAssignments = teamService.parseTeamAssignments(currentSession.team_assignments);
+    } else {
+      // Fallback: generate assignments if not stored (for backward compatibility)
+      const playerNames = teamService.parsePlayerNames(currentSession.playernames);
+      teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams);
+    }
+    
+    const selectedTeamMembers = teamAssignments[parseInt(teamNumber)] || [];
     
     setTeamMembers(selectedTeamMembers);
     setShowTeamInfo(true);
@@ -94,21 +82,24 @@ export default function PlayerPage() {
 
         {/* Section 3: Question Text */}
         <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
-          <h1 className="text-xl font-bold text-gray-900 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+          <h1 className="text-2xl text-gray-900 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
             In welk Team zit je?
           </h1>
         </div>
 
-        {/* Section 4: Team Number Input Circle */}
+        {/* Section 4: Empty spacing */}
+        <div className="row-span-1 bg-white/90 backdrop-blur-sm"></div>
+
+        {/* Section 5: Team Number Input Circle - Moved down one section */}
         <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center">
           {!showTeamInfo ? (
-            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
+            <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
               <input
                 type="number"
                 value={teamNumber}
                 onChange={(e) => setTeamNumber(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
-                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
+                className="w-16 h-16 text-4xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
                 style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 placeholder="?"
                 min="1"
@@ -116,35 +107,39 @@ export default function PlayerPage() {
               />
             </div>
           ) : (
-            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
-              <span className="text-5xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{teamNumber}</span>
+            <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
+              <span className="text-4xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{teamNumber}</span>
             </div>
           )}
         </div>
 
-        {/* Section 5: Download App Text */}
-        <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
-          <h2 className="text-lg font-semibold text-gray-900 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            Download deze App:
-          </h2>
-        </div>
+        {/* Section 6: Download App Text - Only show after team number is filled */}
+        {teamNumber && (
+          <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
+            <h2 className="text-lg text-gray-900 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+              Download nu deze App:
+            </h2>
+          </div>
+        )}
 
-        {/* Section 6: Photocircle Link */}
-        <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4">
-          {photocircleLink ? (
-            <a 
-              href={photocircleLink} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 underline text-sm font-medium text-center break-all"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              {photocircleLink}
-            </a>
-          ) : (
-            <span className="text-gray-500 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Loading app link...</span>
-          )}
-        </div>
+        {/* Section 7: Photocircle Link - Closer to text, only show after team number */}
+        {teamNumber && (
+          <div className="row-span-1 bg-white/90 backdrop-blur-sm flex items-center justify-center px-4 pt-2">
+            {photocircleLink ? (
+              <a 
+                href={photocircleLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 underline text-sm font-medium text-center break-all"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}
+              >
+                {photocircleLink}
+              </a>
+            ) : (
+              <span className="text-gray-500 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>Loading app link...</span>
+            )}
+          </div>
+        )}
 
         {/* Sections 7-12: Team Members Display */}
         <div className="row-span-6 bg-white/90 backdrop-blur-sm overflow-y-auto">

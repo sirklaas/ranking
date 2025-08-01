@@ -20,26 +20,15 @@ export default function DisplayPage() {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
-  // Distribute players randomly but equally across teams
-  const distributePlayersToTeams = (playerNames: string[], numberOfTeams: number): PlayersByTeam => {
-    if (!playerNames.length || numberOfTeams === 0) return {};
-    
-    // Shuffle players randomly
-    const shuffledPlayers = [...playerNames].sort(() => Math.random() - 0.5);
-    const teams: PlayersByTeam = {};
-    
-    // Initialize teams
-    for (let i = 1; i <= numberOfTeams; i++) {
-      teams[i] = [];
+  // Use team assignments from PocketBase instead of generating locally
+  const getTeamAssignments = (session: RankingSession): PlayersByTeam => {
+    if (session.team_assignments) {
+      return teamService.parseTeamAssignments(session.team_assignments);
     }
     
-    // Distribute players evenly
-    shuffledPlayers.forEach((player, index) => {
-      const teamNumber = (index % numberOfTeams) + 1;
-      teams[teamNumber].push(player);
-    });
-    
-    return teams;
+    // Fallback: if no team assignments exist, generate them (for backward compatibility)
+    const playerNames = teamService.parsePlayerNames(session.playernames);
+    return teamService.generateTeamAssignments(playerNames, session.nr_teams);
   };
 
   // Load the most recent session and distribute players
@@ -57,10 +46,8 @@ export default function DisplayPage() {
       const latestSession = sessions[0] as unknown as RankingSession;
       setCurrentSession(latestSession);
       
-      // Parse player names and distribute to teams
-      const playerNames = teamService.parsePlayerNames(latestSession.playernames);
-      const distributed = distributePlayersToTeams(playerNames, latestSession.nr_teams);
-      setPlayersByTeam(distributed);
+      const teamAssignments = getTeamAssignments(latestSession);
+      setPlayersByTeam(teamAssignments);
       
       // Generate game code if not exists
       if (!gameCode) {

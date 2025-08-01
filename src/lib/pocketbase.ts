@@ -76,8 +76,42 @@ export const rankingService = {
 // Additional helper functions for team management
 export const teamService = {
   // Parse player names from comma-separated string
-  parsePlayerNames(playernames: string): string[] {
-    return playernames.split(',').map(name => name.trim()).filter(name => name.length > 0);
+  parsePlayerNames: (playerNames: string): string[] => {
+    if (!playerNames) return [];
+    return playerNames
+      .split(',')
+      .map(name => name.trim())
+      .filter(name => name.length > 0);
+  },
+
+  generateTeamAssignments: (playerNames: string[], numberOfTeams: number): { [key: number]: string[] } => {
+    if (!playerNames.length || numberOfTeams === 0) return {};
+    
+    // Shuffle players randomly for initial distribution
+    const shuffledPlayers = [...playerNames].sort(() => Math.random() - 0.5);
+    const teams: { [key: number]: string[] } = {};
+    
+    // Initialize teams
+    for (let i = 1; i <= numberOfTeams; i++) {
+      teams[i] = [];
+    }
+    
+    // Distribute players evenly
+    shuffledPlayers.forEach((player, index) => {
+      const teamNumber = (index % numberOfTeams) + 1;
+      teams[teamNumber].push(player);
+    });
+    
+    return teams;
+  },
+
+  parseTeamAssignments: (teamAssignmentsJson: string): { [key: number]: string[] } => {
+    if (!teamAssignmentsJson) return {};
+    try {
+      return JSON.parse(teamAssignmentsJson);
+    } catch {
+      return {};
+    }
   },
 
   // Format player names to comma-separated string
