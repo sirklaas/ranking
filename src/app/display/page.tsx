@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { rankingService, teamService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
 
@@ -43,7 +43,7 @@ export default function DisplayPage() {
   };
 
   // Load the most recent session and distribute players
-  const loadSessionData = async () => {
+  const loadSessionData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -72,7 +72,7 @@ export default function DisplayPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [gameCode]);
 
   // Fullscreen functionality
   const toggleFullScreen = () => {
@@ -107,7 +107,7 @@ export default function DisplayPage() {
       clearInterval(interval);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [loadSessionData]);
 
   // Generate QR code URL for joining
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://ranking.pinkmilk.eu/player?code=${gameCode}`)}`;
@@ -214,8 +214,8 @@ export default function DisplayPage() {
       
       {/* Keyboard hints */}
       <div className="absolute bottom-4 left-4 text-white/60 text-sm">
-        <p>Press 'F' for fullscreen</p>
-        <p>Press 'R' to refresh</p>
+        <p>Press &apos;F&apos; for fullscreen</p>
+        <p>Press &apos;R&apos; to refresh</p>
       </div>
     </div>
   );
