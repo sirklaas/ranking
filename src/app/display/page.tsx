@@ -152,8 +152,8 @@ export default function DisplayPage() {
         <img 
           src="/assets/ranking_logo2.webp" 
           alt="Ranking Logo" 
-          className="h-16 w-auto"
-          style={{ width: 'auto', transform: 'scaleX(4)' }}
+          className="w-auto"
+          style={{ height: '4rem', maxWidth: '300px', objectFit: 'contain' }}
         />
       </div>
       
