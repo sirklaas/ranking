@@ -222,10 +222,13 @@ export default function DisplayPage() {
                   {teamPlayers.map((player, playerIndex) => (
                     <div 
                       key={playerIndex}
-                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-2 py-1 rounded-lg text-center font-semibold border-2 border-white shadow-md text-sm overflow-hidden"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 500 }}
+                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden"
+                      style={{ 
+                        fontFamily: 'Barlow Semi Condensed, sans-serif', 
+                        fontWeight: 500,
+                        fontSize: '1.125rem' // 1.5x bigger than text-sm (0.875rem * 1.5 ≈ 1.125rem)
+                      }}
                     >
-                      <span className="text-xs text-gray-600 mr-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{playerIndex + 1}</span>
                       <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{player}</span>
                     </div>
                   ))}
