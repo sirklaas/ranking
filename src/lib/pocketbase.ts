@@ -134,9 +134,8 @@ export const teamService = {
   },
 
   parseTeamAssignments: (teamAssignmentsJson: string): { [key: number]: string[] } => {
-    if (!teamAssignmentsJson) return {};
     try {
-      return JSON.parse(teamAssignmentsJson);
+      return JSON.parse(teamAssignmentsJson) || {};
     } catch {
       return {};
     }
@@ -170,5 +169,77 @@ export const teamService = {
       totalTeams,
       uniqueCities: cities.length
     };
+  }
+};
+
+// Fases Management Helper Functions
+export const faseService = {
+  // Parse headings JSON from PocketBase
+  parseHeadings: (headingsJson: string): Record<string, { heading: string; image?: string }> => {
+    try {
+      return JSON.parse(headingsJson) || {};
+    } catch {
+      return {};
+    }
+  },
+
+  // Get heading text for current fase
+  getCurrentHeading: (headingsJson: string, currentFase: string): string => {
+    const headings = faseService.parseHeadings(headingsJson);
+    return headings[currentFase]?.heading || 'In welk team zit je?';
+  },
+
+  // Convert "/n" to line breaks for display
+  formatHeadingText: (headingText: string): string[] => {
+    return headingText.split('/n').map(line => line.trim());
+  },
+
+  // Get image path for current fase
+  getCurrentImage: (headingsJson: string, currentFase: string): string | null => {
+    const headings = faseService.parseHeadings(headingsJson);
+    return headings[currentFase]?.image || null;
+  },
+
+  // Validate fase format (XX/YY)
+  isValidFaseFormat: (fase: string): boolean => {
+    const regex = /^\d{2}\/\d{2}$/;
+    return regex.test(fase);
+  },
+
+  // Navigate to next fase variant (01/00 → 01/01)
+  getNextVariant: (currentFase: string): string => {
+    if (!faseService.isValidFaseFormat(currentFase)) return '01/00';
+    
+    const [phase, variant] = currentFase.split('/').map(Number);
+    const nextVariant = variant + 1;
+    return `${phase.toString().padStart(2, '0')}/${nextVariant.toString().padStart(2, '0')}`;
+  },
+
+  // Navigate to next phase (01/XX → 02/00)
+  getNextPhase: (currentFase: string): string => {
+    if (!faseService.isValidFaseFormat(currentFase)) return '01/00';
+    
+    const [phase] = currentFase.split('/').map(Number);
+    const nextPhase = phase + 1;
+    return `${nextPhase.toString().padStart(2, '0')}/00`;
+  },
+
+  // Create default headings JSON for a new session
+  createDefaultHeadings: (): string => {
+    const defaultHeadings = {
+      '01/00': {
+        heading: 'In welk team zit je?',
+        image: null
+      },
+      '01/01': {
+        heading: 'Klaar voor de/neerste vraag?',
+        image: null
+      },
+      '02/00': {
+        heading: 'Tijd voor/nronde 2!',
+        image: null
+      }
+    };
+    return JSON.stringify(defaultHeadings);
   }
 };

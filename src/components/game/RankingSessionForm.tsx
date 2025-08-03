@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { rankingService, teamService } from '@/lib/pocketbase';
+import { rankingService, teamService, faseService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
 import * as XLSX from 'xlsx';
 
@@ -99,7 +99,9 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         ...formData,
         nr_players: playerNames.length,
         playernames: playersWithTeamNumbers.join(', '), // Store prefixed names
-        team_assignments: '' // No longer needed with prefixed approach
+        team_assignments: '', // No longer needed with prefixed approach
+        headings: faseService.createDefaultHeadings(), // Add default headings for fases
+        current_fase: '01/00' // Start with first fase
       };
 
       const session = await rankingService.createSession(sessionData);

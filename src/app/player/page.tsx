@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { rankingService, teamService } from '@/lib/pocketbase';
+import { rankingService, teamService, faseService } from '@/lib/pocketbase';
 
 interface RankingSession {
   id: string;
@@ -11,6 +11,8 @@ interface RankingSession {
   nr_teams: number;
   nr_players: number;
   photocircle: string;
+  headings: string; // JSON string for fase headings
+  current_fase: string; // Current fase (e.g., "01/00")
 }
 
 export default function PlayerPage() {
@@ -20,6 +22,11 @@ export default function PlayerPage() {
   const [showTeamInfo, setShowTeamInfo] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Dynamic heading states
+  const [currentHeading, setCurrentHeading] = useState<string[]>(['In welk team zit je?']);
+  const [isHeadingAnimating, setIsHeadingAnimating] = useState(false);
+  const [headingVisible, setHeadingVisible] = useState(true);
 
   // Load the latest session data
   useEffect(() => {
@@ -29,6 +36,13 @@ export default function PlayerPage() {
         if (sessions.length > 0) {
           const latestSession = sessions[0] as unknown as RankingSession;
           setCurrentSession(latestSession);
+          
+          // Update heading based on current fase
+          if (latestSession.headings && latestSession.current_fase) {
+            const headingText = faseService.getCurrentHeading(latestSession.headings, latestSession.current_fase);
+            const formattedHeading = faseService.formatHeadingText(headingText);
+            setCurrentHeading(formattedHeading);
+          }
         }
       } catch (error) {
         console.error('Failed to load session data:', error);
@@ -57,6 +71,69 @@ export default function PlayerPage() {
   const closePopup = () => {
     setShowPopup(false);
     setShowTeamInfo(true); // Then show team info
+  };
+
+  // TypewriterHeading Component with animations
+  const TypewriterHeading = ({ lines, visible }: { lines: string[]; visible: boolean }) => {
+    const [displayedLines, setDisplayedLines] = useState<string[]>([]);
+    const [currentLineIndex, setCurrentLineIndex] = useState(0);
+    const [currentCharIndex, setCurrentCharIndex] = useState(0);
+    const [isTyping, setIsTyping] = useState(true);
+
+    useEffect(() => {
+      if (!visible) {
+        setDisplayedLines([]);
+        setCurrentLineIndex(0);
+        setCurrentCharIndex(0);
+        setIsTyping(true);
+        return;
+      }
+
+      if (currentLineIndex >= lines.length) {
+        setIsTyping(false);
+        return;
+      }
+
+      const currentLine = lines[currentLineIndex];
+      if (currentCharIndex <= currentLine.length) {
+        const timer = setTimeout(() => {
+          setDisplayedLines(prev => {
+            const newLines = [...prev];
+            newLines[currentLineIndex] = currentLine.slice(0, currentCharIndex);
+            return newLines;
+          });
+          setCurrentCharIndex(prev => prev + 1);
+        }, 50); // Typewriter speed
+
+        return () => clearTimeout(timer);
+      } else {
+        // Move to next line
+        const timer = setTimeout(() => {
+          setCurrentLineIndex(prev => prev + 1);
+          setCurrentCharIndex(0);
+        }, 300); // Pause between lines
+
+        return () => clearTimeout(timer);
+      }
+    }, [lines, visible, currentLineIndex, currentCharIndex]);
+
+    return (
+      <div 
+        className={`transition-opacity duration-500 ${
+          visible ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
+        {displayedLines.map((line, index) => (
+          <div key={index} className="text-3xl text-white text-center leading-tight" 
+               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+            {line}
+            {index === currentLineIndex && isTyping && (
+              <span className="animate-pulse">|</span>
+            )}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -89,12 +166,13 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Sections 3-5: Team Number Input Circle and Question Text */}
-        <div className="row-span-3 flex flex-col items-center justify-center space-y-4">
-          <h1 className="text-3xl text-white text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            In welk Team zit je?
-          </h1>
-          
+        {/* Sections 3-4: Dynamic Heading with Typewriter Animation */}
+        <div className="row-span-2 flex items-center justify-center px-4">
+          <TypewriterHeading lines={currentHeading} visible={headingVisible} />
+        </div>
+
+        {/* Sections 5-6: Team Number Input Circle - Moved lower for two-line headings */}
+        <div className="row-span-2 flex items-center justify-center">
           {!showTeamInfo ? (
             <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
               <input
@@ -130,8 +208,8 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {/* Sections 6-12: Team Members Display */}
-        <div className="row-span-8 overflow-y-auto px-4">
+        {/* Sections 7-12: Team Members Display */}
+        <div className="row-span-6 overflow-y-auto px-4">
           {showTeamInfo && (
             <div className="h-full pt-4">
               {/* Two column grid for team members */}
@@ -157,13 +235,13 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      {/* Animated Popup - Positioned in sections 3-5 */}
+      {/* Animated Popup - Positioned in sections 3-6 */}
       {showPopup && (
         <div className="fixed inset-0 z-50 animate-fade-in">
-          {/* Position popup in sections 3-5 area */}
+          {/* Position popup in sections 3-6 area */}
           <div className="h-screen grid grid-rows-12">
             <div className="row-span-2"></div> {/* Sections 1-2 spacer */}
-            <div className="row-span-3 flex items-center justify-center px-4"> {/* Sections 3-5 */}
+            <div className="row-span-4 flex items-center justify-center px-4"> {/* Sections 3-6 */}
               <div 
                 className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full relative animate-scale-in"
                 style={{ border: '3px solid white' }}
