@@ -79,6 +79,7 @@ export default function PlayerPage() {
     const [currentLineIndex, setCurrentLineIndex] = useState(0);
     const [currentCharIndex, setCurrentCharIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(true);
+    const [hasAnimated, setHasAnimated] = useState(false);
 
     useEffect(() => {
       if (!visible) {
@@ -86,11 +87,20 @@ export default function PlayerPage() {
         setCurrentLineIndex(0);
         setCurrentCharIndex(0);
         setIsTyping(true);
+        setHasAnimated(false);
+        return;
+      }
+
+      // If already animated, just show the complete text
+      if (hasAnimated) {
+        setDisplayedLines(lines);
+        setIsTyping(false);
         return;
       }
 
       if (currentLineIndex >= lines.length) {
         setIsTyping(false);
+        setHasAnimated(true);
         return;
       }
 
@@ -115,7 +125,7 @@ export default function PlayerPage() {
 
         return () => clearTimeout(timer);
       }
-    }, [lines, visible, currentLineIndex, currentCharIndex]);
+    }, [lines, visible, currentLineIndex, currentCharIndex, hasAnimated]);
 
     return (
       <div 

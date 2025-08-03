@@ -22,8 +22,24 @@ export default function DisplayPage() {
 
   // Get team assignments from prefixed player names (rock-solid approach)
   const getTeamAssignments = (session: RankingSession): PlayersByTeam => {
-    const playerNames = teamService.parsePlayerNames(session.playernames);
-    return teamService.generateTeamAssignments(playerNames, session.nr_teams);
+    // Add fallback for missing or empty playernames
+    if (!session.playernames || session.playernames.trim() === '') {
+      console.log('No player names found in session');
+      return {};
+    }
+    
+    try {
+      const playerNames = teamService.parsePlayerNames(session.playernames);
+      if (playerNames.length === 0) {
+        console.log('No valid player names after parsing');
+        return {};
+      }
+      
+      return teamService.generateTeamAssignments(playerNames, session.nr_teams || 1);
+    } catch (error) {
+      console.error('Error generating team assignments:', error);
+      return {};
+    }
   };
 
   // Load the most recent session and distribute players
