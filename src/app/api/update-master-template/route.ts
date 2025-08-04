@@ -6,22 +6,24 @@ export async function POST(request: NextRequest) {
   try {
     const headings = await request.json();
     
-    // Path to the master template file
+    // Path to the local GitHub assets folder
     const filePath = path.join(process.cwd(), 'assets', 'fases.json');
     
-    // Write the updated headings to the file
+    // Write the updated headings to the local assets file
     await writeFile(filePath, JSON.stringify(headings, null, 2), 'utf8');
+    
+    console.log('Master template updated at:', filePath);
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Master template updated successfully' 
+      message: 'Master template updated in local assets folder - ready for Git commit!' 
     });
   } catch (error) {
     console.error('Error updating master template:', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to update master template' 
+        error: `Failed to update master template: ${error instanceof Error ? error.message : 'Unknown error'}` 
       },
       { status: 500 }
     );
