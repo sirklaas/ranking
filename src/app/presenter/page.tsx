@@ -330,8 +330,8 @@ export default function PresenterPage() {
                 const firstFase = faseGroups[selectedGroup as keyof typeof faseGroups]?.fases[0] || '01/01';
                 setCurrentFase(firstFase);
               }}
-              className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
             >
               {Object.entries(faseGroups).map(([key, group]) => (
                 <option key={key} value={key}>
@@ -353,8 +353,8 @@ export default function PresenterPage() {
                       type="text"
                       value={editingHeadings[fase]?.heading || ''}
                       onChange={(e) => handleHeadingUpdate(fase, e.target.value, editingHeadings[fase]?.image)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
                       placeholder="Enter heading text"
                     />
                   </div>
@@ -366,8 +366,8 @@ export default function PresenterPage() {
                       type="text"
                       value={editingHeadings[fase]?.image || ''}
                       onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
                       placeholder="image.jpg"
                     />
                   </div>
