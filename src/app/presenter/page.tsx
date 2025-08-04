@@ -157,7 +157,56 @@ export default function PresenterPage() {
           </div>
 
           <div className="space-y-4">
-            {['01/00', '01/01', '02/00', '02/01', '03/00'].map((fase) => (
+            {Object.keys({
+              '01/01': 'In welk team zit je?',
+              '01/02': 'Heb je \'n PhotoCircle account?',
+              '01/03': 'Wat is jouw naam?',
+              '01/04': 'Wat wordt jullie Teamnaam?',
+              '01/05': 'Wat wordt jullie Teamyell? /n Kort maar Krachtig',
+              '01/06': 'Maak een Selfie Video /n en upload die naar PhotoCircle',
+              '01/07': 'Wie is jullie Teamleider?',
+              '04/01': 'Iedereen wordt wel een heel erg blij /n van iets dat niet algemeen als top beschouwd /n Wat is jouw Guilty Pleasure',
+              '04/02': 'Vul nu jouw "Guilty Pleasure" in',
+              '07/01': 'Blijf staan als je het met de stelling eens bent',
+              '07/05': 'Superfoods /n Ik zweer erbij',
+              '07/06': 'Ik flirt soms /n Om iets te krijgen',
+              '07/07': 'Houseparty /n Niks leukers dan',
+              '07/08': 'Socials checken /n Het eerste wat ik doe',
+              '07/09': 'Kleding /n Mijn hele salaris gaat op aan',
+              '07/10': 'In een \'all-in\' /n Ik zweer bij een vakantie',
+              '07/11': 'Sauna /n Ik vindt dat zo vies',
+              '07/12': 'Met een collega /n Heb ik weleens wat gehad',
+              '07/13': 'Billen /n Ik val echt op',
+              '07/14': 'Gat in mijn hand /n Ik heb een enorm',
+              '07/15': 'Teveel /n Ik drink nooit',
+              '10/01': 'Kies iemand uit een van de andere teams!',
+              '10/05': 'Wie wordt er echt heel erg snel verliefd',
+              '10/06': 'Wie is de ideale schoon- zoon of zus?',
+              '10/07': 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?',
+              '10/08': 'Wie zou je absoluut niet op je kinderen laten passen?',
+              '10/09': 'Wie heeft de meeste crypto\'s',
+              '10/10': 'Wie is de grootste aansteller op het werk?',
+              '10/11': 'Wie zou er als eerste een account aanmaken /n op OnlyFans?',
+              '10/12': 'Wie vertrouw je diepste geheimen toe?',
+              '10/13': 'Wie zou je meenemen naar een parenclub?',
+              '13/01': 'Krakende Karakters',
+              '13/02': 'Hoe kom je hier doorheen?',
+              '13/03': 'Goede Geinige Eigenschappen',
+              '13/06': 'Misschien iets Minder goede Eigenschappen',
+              '17/01': 'De Top 10',
+              '17/02': 'Kies iemand uit een ander team!',
+              '17/05': 'Een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?',
+              '17/06': 'Wie denkt dat ie altijd gelijk heeft?',
+              '17/07': 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?',
+              '17/08': 'Wie kan er 40 dagen zonder sexs?',
+              '17/09': 'Wie kan absoluut niet tegen zijn/haar verlies?',
+              '17/10': 'Wie laat weleens een wind?',
+              '17/11': 'Wie maakt de allerlelijkste Selfies ?',
+              '17/12': 'Wie is het meest verslaafd aan Social Media?',
+              '17/13': 'Wie krijgt de meeste bekeuringen?',
+              '17/14': 'Jullie doen mee met Temptation Island. /n Wie heeft als eerste iemand tusen de lakens?',
+              '20/01': 'De Finale'
+            }).map((fase) => (
               <div key={fase} className="bg-white rounded-lg p-4 border">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
