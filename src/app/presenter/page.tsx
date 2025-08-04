@@ -86,19 +86,19 @@ export default function PresenterPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 rounded-lg p-4 text-center">
+          <div className="bg-blue-50 rounded-lg p-2 text-center">
             <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_players}</div>
             <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Players</div>
           </div>
-          <div className="bg-blue-50 rounded-lg p-4 text-center">
+          <div className="bg-blue-50 rounded-lg p-2 text-center">
             <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_teams}</div>
             <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Teams</div>
           </div>
-          <div className="bg-purple-50 rounded-lg p-4 text-center">
+          <div className="bg-purple-50 rounded-lg p-2 text-center">
             <div className="text-2xl font-bold text-purple-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{playerNames.length}</div>
             <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Named Players</div>
           </div>
-          <div className="bg-pink-50 rounded-lg p-4 text-center">
+          <div className="bg-pink-50 rounded-lg p-2 text-center">
             <div className="text-2xl font-bold text-pink-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Active</div>
             <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Status</div>
           </div>
@@ -106,29 +106,28 @@ export default function PresenterPage() {
 
         {selectedSession.teamname && (
           <div className="mb-4">
-            <h3 className="font-semibold text-gray-900 mb-2">Team Name</h3>
-            <p className="text-gray-700 bg-gray-50 rounded-lg p-3">{selectedSession.teamname}</p>
+            <h3 className="font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Team Name</h3>
+            <p className="text-gray-700 bg-gray-50 rounded-lg p-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.teamname}</p>
           </div>
         )}
 
-        {playerNames.length > 0 && (
-          <div className="mb-6">
-            <h3 className="font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Player Names</h3>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="flex flex-wrap gap-2">
-                {playerNames.map((name, index) => (
-                  <span
-                    key={index}
-                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                  >
-                    {name}
-                  </span>
-                ))}
-              </div>
-            </div>
+
+
+        {/* Session Controls */}
+        <div className="mb-6">
+          <h3 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Session Controls</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              Start Ranking Game
+            </button>
+            <button className="bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              View Live Results
+            </button>
+            <button className="bg-pink-600 text-white py-3 px-6 rounded-lg hover:bg-pink-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              Export Data
+            </button>
           </div>
-        )}
+        </div>
 
         {/* JSON Heading Editor */}
         <div className="mb-6 bg-gray-50 rounded-lg p-6">
@@ -201,20 +200,7 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        <div className="border-t pt-6">
-          <h3 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Session Controls</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Start Ranking Game
-            </button>
-            <button className="bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              View Live Results
-            </button>
-            <button className="bg-pink-600 text-white py-3 px-6 rounded-lg hover:bg-pink-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Export Data
-            </button>
-          </div>
-        </div>
+
       </div>
     );
   };
