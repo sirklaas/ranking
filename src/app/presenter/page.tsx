@@ -60,10 +60,71 @@ export default function PresenterPage() {
   const handleSessionSelect = (session: RankingSession) => {
     setSelectedSession(session);
     setCurrentView('manage');
-    // Load existing headings
-    const headings = faseService.parseHeadings(session.headings || '{}');
+    // Load existing headings or import default structure if empty
+    let headings = faseService.parseHeadings(session.headings || '{}');
+    
+    // If no headings exist, load the default structure
+    if (Object.keys(headings).length === 0) {
+      headings = {
+        '01/01': { heading: 'In welk team zit je?', image: '' },
+        '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
+        '01/03': { heading: 'Wat is jouw naam?', image: '' },
+        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'teamnaam' },
+        '01/05': { heading: 'Wat wordt jullie Teamyell? Kort maar Krachtig', image: 'teamyell' },
+        '01/06': { heading: 'Maak een Selfie Video en upload die naar PhotoCircle', image: 'selfie' },
+        '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
+        '04/01': { heading: 'Iedereen wordt wel een heel erg blij van iets dat niet algemeen als top beschouwd Wat is jouw Guilty Pleasure', image: 'trailerguilty' },
+        '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
+        '07/01': { heading: 'Blijf staan als je het met de stelling eens bent', image: 'trailerzit' },
+        '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'Super' },
+        '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'Flirt' },
+        '07/07': { heading: 'Houseparty Niks leukers dan', image: 'Houseparty' },
+        '07/08': { heading: 'Socials checken Het eerste wat ik doe', image: 'Socials' },
+        '07/09': { heading: 'Kleding Mijn hele salaris gaat op aan', image: 'Kleding' },
+        '07/10': { heading: 'In een \'all-in\' Ik zweer bij een vakantie', image: 'All-in' },
+        '07/11': { heading: 'Sauna Ik vindt dat zo vies', image: 'Sauna' },
+        '07/12': { heading: 'Met een collega Heb ik weleens wat gehad', image: 'Collega' },
+        '07/13': { heading: 'Billen Ik val echt op', image: 'Billen' },
+        '07/14': { heading: 'Gat in mijn hand Ik heb een enorm', image: 'Gat' },
+        '07/15': { heading: 'Teveel Ik drink nooit', image: 'Teveel' },
+        '10/01': { heading: 'Kies iemand uit een van de andere teams!', image: 'trailertop3' },
+        '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: '' },
+        '10/06': { heading: 'Wie is de ideale schoon- zoon of zus?', image: '' },
+        '10/07': { heading: 'Je vliegtuig stort neer in de Andes. Wie eet je als eerste op ?', image: '' },
+        '10/08': { heading: 'Wie zou je absoluut niet op je kinderen laten passen?', image: '' },
+        '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: '' },
+        '10/10': { heading: 'Wie is de grootste aansteller op het werk?', image: '' },
+        '10/11': { heading: 'Wie zou er als eerste een account aanmaken op OnlyFans?', image: '' },
+        '10/12': { heading: 'Wie vertrouw je diepste geheimen toe?', image: '' },
+        '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: '' },
+        '13/01': { heading: 'Krakende Karakters', image: 'trailerkrakende' },
+        '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
+        '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
+        '13/06': { heading: 'Misschien iets Minder goede Eigenschappen', image: '' },
+        '17/01': { heading: 'De Top 10', image: 'trailertop10' },
+        '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
+        '17/05': { heading: 'Een pijnlijke pukkel op je bil waar je niet bij kan. Wie mag hem voor je uitknijpen?', image: '' },
+        '17/06': { heading: 'Wie denkt dat ie altijd gelijk heeft?', image: '' },
+        '17/07': { heading: 'Wie zou meedoen [tegen betaling uiteraard] aan de naakte fotoshoot van het Perfecte Plaatje?', image: '' },
+        '17/08': { heading: 'Wie kan er 40 dagen zonder sexs?', image: '' },
+        '17/09': { heading: 'Wie kan absoluut niet tegen zijn/haar verlies?', image: '' },
+        '17/10': { heading: 'Wie laat weleens een wind?', image: '' },
+        '17/11': { heading: 'Wie maakt de allerlelijkste Selfies ?', image: '' },
+        '17/12': { heading: 'Wie is het meest verslaafd aan Social Media?', image: '' },
+        '17/13': { heading: 'Wie krijgt de meeste bekeuringen?', image: '' },
+        '17/14': { heading: 'Jullie doen mee met Temptation Island. Wie heeft als eerste iemand tusen de lakens?', image: '' },
+        '20/01': { heading: 'De Finale', image: 'trailerfinale' }
+      };
+      
+      // Auto-save the default structure to PocketBase
+      const headingsJson = JSON.stringify(headings);
+      rankingService.updateSession(session.id, {
+        headings: headingsJson
+      }).catch(error => console.error('Error auto-saving headings:', error));
+    }
+    
     setEditingHeadings(headings);
-    setCurrentFase(session.current_fase || '01/00');
+    setCurrentFase(session.current_fase || '01/01');
   };
 
   const handleHeadingUpdate = (fase: string, heading: string, image?: string) => {
@@ -280,31 +341,13 @@ export default function PresenterPage() {
             </select>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Specific Fase:
-            </label>
-            <select
-              value={currentFase}
-              onChange={(e) => setCurrentFase(e.target.value)}
-              className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              {getFilteredFases().map((fase) => (
-                <option key={fase} value={fase}>
-                  {fase}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="space-y-2">
             {getFilteredFases().map((fase) => (
               <div key={fase} className="bg-white rounded-lg p-3 border">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="md:col-span-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      {fase} - Heading Text (use /n for line breaks):
+                      {fase} - Heading Text:
                     </label>
                     <input
                       type="text"
@@ -315,9 +358,9 @@ export default function PresenterPage() {
                       placeholder="Enter heading text"
                     />
                   </div>
-                  <div>
+                  <div className="md:col-span-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      Picture Link:
+                      Picture:
                     </label>
                     <input
                       type="text"
@@ -325,7 +368,7 @@ export default function PresenterPage() {
                       onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
                       className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                      placeholder="path/to/image.jpg"
+                      placeholder="image.jpg"
                     />
                   </div>
                 </div>
