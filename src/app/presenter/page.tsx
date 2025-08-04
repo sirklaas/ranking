@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RankingSessionForm from '@/components/game/RankingSessionForm';
 import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
@@ -11,7 +11,45 @@ export default function PresenterPage() {
   const [selectedSession, setSelectedSession] = useState<RankingSession | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [editingHeadings, setEditingHeadings] = useState<Record<string, { heading: string; image?: string }>>({});
-  const [currentFase, setCurrentFase] = useState('01/00');
+  const [currentFase, setCurrentFase] = useState('01/01');
+
+  // Load Google Font
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap';
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+
+  // Define fase groups
+  const faseGroups = {
+    '1': { name: 'Intro', fases: ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'] },
+    '4': { name: 'Guilty Pleasures', fases: ['04/01', '04/02'] },
+    '7': { name: 'Zitten en Staan', fases: ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'] },
+    '10': { name: 'De Top 3', fases: ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'] },
+    '13': { name: 'Krakende Karakters', fases: ['13/01', '13/02', '13/03', '13/06'] },
+    '17': { name: 'Top 10', fases: ['17/01', '17/02', '17/05', '17/06', '17/07', '17/08', '17/09', '17/10', '17/11', '17/12', '17/13', '17/14'] },
+    '20': { name: 'De Finale', fases: ['20/01'] }
+  };
+
+  // Get current fase group
+  const getCurrentFaseGroup = () => {
+    for (const [groupKey, group] of Object.entries(faseGroups)) {
+      if (group.fases.includes(currentFase)) {
+        return groupKey;
+      }
+    }
+    return '1';
+  };
+
+  // Get filtered fases based on current selection
+  const getFilteredFases = () => {
+    const currentGroup = getCurrentFaseGroup();
+    return faseGroups[currentGroup as keyof typeof faseGroups]?.fases || [];
+  };
 
   const handleSessionCreated = (session: RankingSession) => {
     setSelectedSession(session);
@@ -211,108 +249,68 @@ export default function PresenterPage() {
         <div className="mb-6 bg-gray-50 rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>JSON Heading Dashboard</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={loadNewStructure}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              >
-                Load New Structure to PB
-              </button>
-              <button
-                onClick={saveHeadings}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              >
-                Save Headings
-              </button>
-            </div>
+            <button
+              onClick={saveHeadings}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Save Headings
+            </button>
           </div>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Current Fase:
+              Current Fase Group:
             </label>
-            <input
-              type="text"
+            <select
+              value={getCurrentFaseGroup()}
+              onChange={(e) => {
+                const selectedGroup = e.target.value;
+                const firstFase = faseGroups[selectedGroup as keyof typeof faseGroups]?.fases[0] || '01/01';
+                setCurrentFase(firstFase);
+              }}
+              className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              {Object.entries(faseGroups).map(([key, group]) => (
+                <option key={key} value={key}>
+                  Fase {key} - {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              Specific Fase:
+            </label>
+            <select
               value={currentFase}
               onChange={(e) => setCurrentFase(e.target.value)}
               className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              placeholder="01/00"
-            />
+            >
+              {getFilteredFases().map((fase) => (
+                <option key={fase} value={fase}>
+                  {fase}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="space-y-4">
-            {Object.keys({
-              '01/01': 'In welk team zit je?',
-              '01/02': 'Heb je \'n PhotoCircle account?',
-              '01/03': 'Wat is jouw naam?',
-              '01/04': 'Wat wordt jullie Teamnaam?',
-              '01/05': 'Wat wordt jullie Teamyell? /n Kort maar Krachtig',
-              '01/06': 'Maak een Selfie Video /n en upload die naar PhotoCircle',
-              '01/07': 'Wie is jullie Teamleider?',
-              '04/01': 'Iedereen wordt wel een heel erg blij /n van iets dat niet algemeen als top beschouwd /n Wat is jouw Guilty Pleasure',
-              '04/02': 'Vul nu jouw "Guilty Pleasure" in',
-              '07/01': 'Blijf staan als je het met de stelling eens bent',
-              '07/05': 'Superfoods /n Ik zweer erbij',
-              '07/06': 'Ik flirt soms /n Om iets te krijgen',
-              '07/07': 'Houseparty /n Niks leukers dan',
-              '07/08': 'Socials checken /n Het eerste wat ik doe',
-              '07/09': 'Kleding /n Mijn hele salaris gaat op aan',
-              '07/10': 'In een \'all-in\' /n Ik zweer bij een vakantie',
-              '07/11': 'Sauna /n Ik vindt dat zo vies',
-              '07/12': 'Met een collega /n Heb ik weleens wat gehad',
-              '07/13': 'Billen /n Ik val echt op',
-              '07/14': 'Gat in mijn hand /n Ik heb een enorm',
-              '07/15': 'Teveel /n Ik drink nooit',
-              '10/01': 'Kies iemand uit een van de andere teams!',
-              '10/05': 'Wie wordt er echt heel erg snel verliefd',
-              '10/06': 'Wie is de ideale schoon- zoon of zus?',
-              '10/07': 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?',
-              '10/08': 'Wie zou je absoluut niet op je kinderen laten passen?',
-              '10/09': 'Wie heeft de meeste crypto\'s',
-              '10/10': 'Wie is de grootste aansteller op het werk?',
-              '10/11': 'Wie zou er als eerste een account aanmaken /n op OnlyFans?',
-              '10/12': 'Wie vertrouw je diepste geheimen toe?',
-              '10/13': 'Wie zou je meenemen naar een parenclub?',
-              '13/01': 'Krakende Karakters',
-              '13/02': 'Hoe kom je hier doorheen?',
-              '13/03': 'Goede Geinige Eigenschappen',
-              '13/06': 'Misschien iets Minder goede Eigenschappen',
-              '17/01': 'De Top 10',
-              '17/02': 'Kies iemand uit een ander team!',
-              '17/05': 'Een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?',
-              '17/06': 'Wie denkt dat ie altijd gelijk heeft?',
-              '17/07': 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?',
-              '17/08': 'Wie kan er 40 dagen zonder sexs?',
-              '17/09': 'Wie kan absoluut niet tegen zijn/haar verlies?',
-              '17/10': 'Wie laat weleens een wind?',
-              '17/11': 'Wie maakt de allerlelijkste Selfies ?',
-              '17/12': 'Wie is het meest verslaafd aan Social Media?',
-              '17/13': 'Wie krijgt de meeste bekeuringen?',
-              '17/14': 'Jullie doen mee met Temptation Island. /n Wie heeft als eerste iemand tusen de lakens?',
-              '20/01': 'De Finale'
-            }).map((fase) => (
-              <div key={fase} className="bg-white rounded-lg p-4 border">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            {getFilteredFases().map((fase) => (
+              <div key={fase} className="bg-white rounded-lg p-3 border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      Fase {fase}
-                    </label>
-                    <div className="text-xs text-gray-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      Heading: {editingHeadings[fase]?.heading || 'Not set'}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      Heading Text (use /n for line breaks):
+                      {fase} - Heading Text (use /n for line breaks):
                     </label>
                     <input
                       type="text"
                       value={editingHeadings[fase]?.heading || ''}
                       onChange={(e) => handleHeadingUpdate(fase, e.target.value, editingHeadings[fase]?.image)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                       placeholder="Enter heading text"
                     />
@@ -325,7 +323,7 @@ export default function PresenterPage() {
                       type="text"
                       value={editingHeadings[fase]?.image || ''}
                       onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                       placeholder="path/to/image.jpg"
                     />
