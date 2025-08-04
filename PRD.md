@@ -4,8 +4,9 @@
 
 **Product Name**: Ranking Gameshow Platform  
 **Domain**: ranking.pinkmilk.eu  
-**Target Users**: Event organizers, educators, corporate trainers, entertainment hosts  
-**Core Value**: Enable interactive ranking games with real-time audience participation
+**Target Users**: Event presenters 
+**Core Value**: Enable interactive ranking games with real-time audience participation and dispaly of ranking in the form of charts an
+
 
 ## User Stories
 
@@ -34,13 +35,13 @@
 
 #### FR-001: Game Creation and Management
 - Presenter can create new ranking games
-- Support for multiple game types (rankings, preferences, predictions)
+
 - Pre-loaded question sets available
 - Custom question creation capability
-- Game session management (start, pause, end)
+- Game session management
 
 #### FR-002: Player Participation
-- Simple join process using game codes (4-6 digits)
+- Simple join process using game codes (4 digits)
 - No registration or app download required
 - Mobile-optimized interface for all screen sizes
 - Support for 100+ concurrent players
@@ -115,10 +116,8 @@
 
 ### Scalability
 - Horizontal scaling capability
-- Database optimization for concurrent access
-- CDN integration for global performance
+- Database [pocketbase] optimization for concurrent access
 - Load balancing for high traffic
-- Monitoring and alerting systems
 
 ## User Interface Requirements
 
@@ -149,44 +148,26 @@
 ## Game Types and Content
 
 ### Ranking Games
-- **Top 10 Lists**: Rank items in order of preference
-- **Priority Rankings**: Order items by importance
-- **Prediction Rankings**: Guess correct order of results
-- **Category Rankings**: Rank within specific categories
-
-### Pre-loaded Content Categories
-- **Entertainment**: Movies, music, celebrities
-- **Sports**: Teams, players, achievements
-- **Business**: Companies, strategies, trends
-- **Education**: Historical events, scientific concepts
-- **General Knowledge**: Geography, culture, current events
+- 1 Intro
+- 4 Guilty pleasures
+- 7 zitten en staan
+- 10 Top 3
+- 13 Krakende Karakters 
+- 17 Top 10 
+- 20 Finale 
 
 ### Customization Options
-- Upload custom images
+- Questions dashboard / Upload custom images
 - Create custom categories
 - Set time limits
 - Configure scoring systems
 - Brand customization
-
-## Success Metrics
-
-### Engagement Metrics
-- Average session duration > 15 minutes
-- Player participation rate > 80%
-- Game completion rate > 90%
-- Presenter satisfaction score > 4.5/5
 
 ### Technical Metrics
 - Page load time < 2 seconds
 - Real-time update latency < 100ms
 - System uptime > 99.9%
 - Error rate < 0.1%
-
-### Business Metrics
-- Monthly active presenters growth
-- Games created per month
-- Player sessions per game
-- User retention rate
 
 ## Constraints and Assumptions
 
@@ -208,36 +189,33 @@
 - Venue has reliable WiFi for all participants
 - Large display screen available for visualization
 
-## Future Enhancements (Post-MVP)
+### Design 
+- use ranking_logo2.webp
+- Use barlow semicondensed as typeface always !!!!
 
-### Advanced Features
-- Multi-round tournaments
-- Team-based competitions
-- Advanced analytics dashboard
-- Custom branding options
-- API for third-party integrations
 
-### Content Expansion
-- User-generated content marketplace
-- AI-powered question generation
-- Multilingual support
-- Industry-specific templates
-- Seasonal content updates
 
-### Technical Improvements
-- Progressive Web App (PWA)
-- Offline mode capabilities
-- Advanced caching strategies
-- Machine learning insights
-- Enhanced security features
 
 ## Session Summary
 
-**Last Updated**: 2025-07-24  
-**Version**: 1.0  
-**Status**: Initial requirements gathering complete  
-**Next Steps**: Create TASKS.md and begin development planning
+**Last Updated**: 2025-08-04  
+**Version**: 1.2  
+**Status**: Presenter Dashboard Enhanced with Comprehensive JSON Structure  
+**Next Steps**: Continue display screen development and real-time updates
+
+### Recent Updates (2025-08-04)
+- ✅ Updated presenter page UI with proper Barlow Semi Condensed fonts
+- ✅ Reduced info block heights by 50% for better visual hierarchy
+- ✅ Removed player names block for cleaner interface
+- ✅ Reordered layout: Session controls above JSON dashboard
+- ✅ Integrated comprehensive CSV data (44 game phases/questions)
+- ✅ Added "Load New Structure to PB" button for PocketBase JSON updates
+- ✅ All game phases now available: Intro, Guilty Pleasures, Zitten en Staan, De Top 3, Krakende Karakters, Top 10, De Finale
+- ✅ Deployed to https://ranking.pinkmilk.eu/presenter
+
+### Current JSON Structure
+The dashboard now supports the complete game flow with 44 different phases and questions, properly structured for PocketBase integration.
 
 ---
 
-*This document serves as the single source of truth for product requirements. All development decisions should align with these specifications.*
+*This document serves as the single source of truth for product requirements. All development decisions should align with these specifications.* 

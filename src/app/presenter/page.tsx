@@ -59,6 +59,84 @@ export default function PresenterPage() {
     }
   };
 
+  const loadNewStructure = async () => {
+    if (!selectedSession) return;
+    
+    try {
+      // Load the new comprehensive JSON structure
+      const newStructure = {
+        '01/01': { heading: 'In welk team zit je?', image: '' },
+        '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
+        '01/03': { heading: 'Wat is jouw naam?', image: '' },
+        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'teamnaam' },
+        '01/05': { heading: 'Wat wordt jullie Teamyell? /n Kort maar Krachtig', image: 'teamyell' },
+        '01/06': { heading: 'Maak een Selfie Video /n en upload die naar PhotoCircle', image: 'selfie' },
+        '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
+        '04/01': { heading: 'Iedereen wordt wel een heel erg blij /n van iets dat niet algemeen als top beschouwd /n Wat is jouw Guilty Pleasure', image: 'trailerguilty' },
+        '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
+        '07/01': { heading: 'Blijf staan als je het met de stelling eens bent', image: 'trailerzit' },
+        '07/05': { heading: 'Superfoods /n Ik zweer erbij', image: 'Super' },
+        '07/06': { heading: 'Ik flirt soms /n Om iets te krijgen', image: 'Flirt' },
+        '07/07': { heading: 'Houseparty /n Niks leukers dan', image: 'Houseparty' },
+        '07/08': { heading: 'Socials checken /n Het eerste wat ik doe', image: 'Socials' },
+        '07/09': { heading: 'Kleding /n Mijn hele salaris gaat op aan', image: 'Kleding' },
+        '07/10': { heading: 'In een \'all-in\' /n Ik zweer bij een vakantie', image: 'All-in' },
+        '07/11': { heading: 'Sauna /n Ik vindt dat zo vies', image: 'Sauna' },
+        '07/12': { heading: 'Met een collega /n Heb ik weleens wat gehad', image: 'Collega' },
+        '07/13': { heading: 'Billen /n Ik val echt op', image: 'Billen' },
+        '07/14': { heading: 'Gat in mijn hand /n Ik heb een enorm', image: 'Gat' },
+        '07/15': { heading: 'Teveel /n Ik drink nooit', image: 'Teveel' },
+        '10/01': { heading: 'Kies iemand uit een van de andere teams!', image: 'trailertop3' },
+        '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: '' },
+        '10/06': { heading: 'Wie is de ideale schoon- zoon of zus?', image: '' },
+        '10/07': { heading: 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?', image: '' },
+        '10/08': { heading: 'Wie zou je absoluut niet op je kinderen laten passen?', image: '' },
+        '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: '' },
+        '10/10': { heading: 'Wie is de grootste aansteller op het werk?', image: '' },
+        '10/11': { heading: 'Wie zou er als eerste een account aanmaken /n op OnlyFans?', image: '' },
+        '10/12': { heading: 'Wie vertrouw je diepste geheimen toe?', image: '' },
+        '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: '' },
+        '13/01': { heading: 'Krakende Karakters', image: 'trailerkrakende' },
+        '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
+        '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
+        '13/06': { heading: 'Misschien iets Minder goede Eigenschappen', image: '' },
+        '17/01': { heading: 'De Top 10', image: 'trailertop10' },
+        '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
+        '17/05': { heading: 'Een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?', image: '' },
+        '17/06': { heading: 'Wie denkt dat ie altijd gelijk heeft?', image: '' },
+        '17/07': { heading: 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?', image: '' },
+        '17/08': { heading: 'Wie kan er 40 dagen zonder sexs?', image: '' },
+        '17/09': { heading: 'Wie kan absoluut niet tegen zijn/haar verlies?', image: '' },
+        '17/10': { heading: 'Wie laat weleens een wind?', image: '' },
+        '17/11': { heading: 'Wie maakt de allerlelijkste Selfies ?', image: '' },
+        '17/12': { heading: 'Wie is het meest verslaafd aan Social Media?', image: '' },
+        '17/13': { heading: 'Wie krijgt de meeste bekeuringen?', image: '' },
+        '17/14': { heading: 'Jullie doen mee met Temptation Island. /n Wie heeft als eerste iemand tusen de lakens?', image: '' },
+        '20/01': { heading: 'De Finale', image: 'trailerfinale' }
+      };
+      
+      const headingsJson = JSON.stringify(newStructure);
+      await rankingService.updateSession(selectedSession.id, {
+        headings: headingsJson,
+        current_fase: '01/01'
+      });
+      
+      // Update local state
+      setEditingHeadings(newStructure);
+      setCurrentFase('01/01');
+      setSelectedSession(prev => prev ? {
+        ...prev,
+        headings: headingsJson,
+        current_fase: '01/01'
+      } : null);
+      
+      alert('New JSON structure loaded and saved to PocketBase successfully!');
+    } catch (error) {
+      console.error('Error loading new structure:', error);
+      alert('Failed to load new structure');
+    }
+  };
+
   const handleBackToList = () => {
     setCurrentView('list');
     setSelectedSession(null);
@@ -133,13 +211,22 @@ export default function PresenterPage() {
         <div className="mb-6 bg-gray-50 rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>JSON Heading Dashboard</h3>
-            <button
-              onClick={saveHeadings}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              Save Headings
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={loadNewStructure}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                Load New Structure to PB
+              </button>
+              <button
+                onClick={saveHeadings}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                Save Headings
+              </button>
+            </div>
           </div>
           
           <div className="mb-4">
