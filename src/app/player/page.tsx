@@ -21,12 +21,13 @@ export default function PlayerPage() {
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
   const [showTeamInfo, setShowTeamInfo] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [selectedPlayerName, setSelectedPlayerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   // Player onboarding flow states
   const [currentPhase, setCurrentPhase] = useState<'team' | 'photocircle' | 'name' | 'complete'>('team');
   const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
-  const [, setSelectedPlayerName] = useState('');
   const [, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
   
   // Dynamic heading states
@@ -206,6 +207,9 @@ export default function PlayerPage() {
     // Store in localStorage for persistence
     localStorage.setItem('rankingPlayerData', JSON.stringify(data));
     
+    // Show welcome popup
+    setShowWelcomePopup(true);
+    
     setCurrentPhase('complete');
     setShowTeamInfo(true);
   };
@@ -310,21 +314,21 @@ export default function PlayerPage() {
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
         
-        {/* Sections 1-2: Logo Background + Logo Overlay */}
+        {/* Sections 1-2: Logo Background + Logo Overlay - STICKY */}
         <div 
-          className="row-span-2 relative bg-cover bg-center bg-no-repeat"
+          className="row-span-2 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50"
           style={{ 
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
-          {/* Logo Overlay - Much Bigger */}
+          {/* Logo Overlay - Sticky and Always Fit Height */}
           <div className="absolute inset-0 flex items-center justify-center">
             <img 
               src="/assets/ranking_logo.webp" 
               alt="Ranking Logo" 
-              className="h-32 w-auto object-contain"
+              className="h-full max-h-32 w-auto object-contain p-2"
             />
           </div>
         </div>
@@ -342,9 +346,19 @@ export default function PlayerPage() {
                 type="number"
                 value={teamNumber}
                 onChange={(e) => setTeamNumber(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleTeamSubmit();
+                  }
+                }}
                 className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
-                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                style={{ 
+                  fontFamily: 'Barlow Semi Condensed, sans-serif',
+                  // Hide up/down arrows
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'textfield'
+                }}
                 placeholder="?"
                 min="1"
                 max={currentSession?.nr_teams || 10}
@@ -358,9 +372,9 @@ export default function PlayerPage() {
         </div>
 
         {/* Show button when team number is entered */}
-        {/* Section 6: Dynamic Action Button */}
+        {/* Section 6: Dynamic Action Button - Added margin above */}
         {currentPhase === 'team' && !showTeamInfo && teamNumber && (
-          <div className="flex items-center justify-center px-4">
+          <div className="flex items-center justify-center px-4 mt-6">
             <button
               onClick={handleTeamSubmit}
               disabled={!teamNumber || isLoading}
@@ -462,15 +476,16 @@ export default function PlayerPage() {
                 className="bg-gradient-to-br from-blue-500 to-blue-700 p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
                 style={{ border: '3px solid white', minHeight: '320px' }}
               >
-                {/* Close X button */}
+                {/* Close X button - Much Larger */}
                 <button
                   onClick={closePopup}
-                  className="absolute top-4 right-4 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-4xl transition-colors z-10"
+                  className="absolute top-4 right-4 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold transition-colors z-10"
+                  style={{ fontSize: '3rem' }}
                 >
                   ×
                 </button>
                 
-                <div className="text-center text-white space-y-6 pt-8">
+                <div className="text-center text-white space-y-6 pt-16 px-2">
                   <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                     Download nu deze App:
                   </h3>
@@ -525,6 +540,32 @@ export default function PlayerPage() {
           animation: scale-in 0.3s ease-out;
         }
       `}</style>
+      
+      {/* Welcome Popup after name selection */}
+      {showWelcomePopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 relative animate-scale-in text-center">
+            <div className="text-white space-y-4">
+              <h2 className="text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                Hi {selectedPlayerName}!
+              </h2>
+              <p className="text-xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                Welkom bij Ranking the Starzzz
+              </p>
+              <p className="text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                Ik wens je veel plezier!
+              </p>
+              <button
+                onClick={() => setShowWelcomePopup(false)}
+                className="mt-6 bg-white text-blue-600 px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                Bedankt!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
