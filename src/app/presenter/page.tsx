@@ -139,23 +139,60 @@ export default function PresenterPage() {
   };
 
   const getNextMedia = () => {
-    // Logic to determine next media based on current fase
-    // This can be expanded to read from session data or a media mapping
-    const mediaMap: Record<string, { type: 'video' | 'image', path: string, name: string }> = {
-      '01/01': { type: 'video', path: '/githublocal/pcs/RankingNaam.mp4', name: 'RankingNaam.mp4' },
-      '01/02': { type: 'image', path: '/assets/images/photocircle.webp', name: 'PhotoCircle.webp' },
-      '01/03': { type: 'image', path: '/assets/images/teamselection.webp', name: 'TeamSelection.webp' },
-      // Add more mappings as needed
-    };
+    if (!selectedSession) return null;
     
-    const nextFase = getNextFase();
-    return mediaMap[nextFase] || { type: 'video', path: '/githublocal/pcs/RankingNaam.mp4', name: 'RankingNaam.mp4' };
+    // Parse headings from PocketBase
+    const headings = faseService.parseHeadings(selectedSession.headings || '{}');
+    
+    // Find the next fase with a non-empty image/Picture field
+    const currentFaseIndex = Object.keys(headings).indexOf(currentFase);
+    const faseKeys = Object.keys(headings).slice(currentFaseIndex + 1);
+    
+    for (const faseKey of faseKeys) {
+      const faseData = headings[faseKey];
+      if (faseData?.image && faseData.image.trim() !== '') {
+        // Determine file type
+        const fileName = faseData.image;
+        const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
+        const path = fileName.startsWith('/') ? fileName : `/githublocal/pcs/${fileName}`;
+        
+        return {
+          type: isVideo ? 'video' as const : 'image' as const,
+          path: path,
+          name: fileName,
+          heading: faseData.heading || `Fase ${faseKey}`,
+          fase: faseKey
+        };
+      }
+    }
+    
+    return null;
   };
 
-  const renderMediaPreview = (media: { type: 'video' | 'image', path: string, name: string }) => {
+  const renderMediaPreview = (media: { type: 'video' | 'image', path: string, name: string, heading?: string, fase?: string } | null) => {
+    if (!media) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center text-white">
+          <div className="text-4xl mb-4">📋</div>
+          <div className="text-lg font-bold mb-2">No Next Media</div>
+          <div className="text-sm opacity-80">No upcoming media found</div>
+        </div>
+      );
+    }
     if (media.type === 'video') {
       return (
         <div className="w-full h-full flex flex-col">
+          {/* Heading above video */}
+          {media.heading && (
+            <div className="text-center py-2 px-4 bg-black/20 rounded-t text-white">
+              <div className="text-sm font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                {media.heading}
+              </div>
+              {media.fase && (
+                <div className="text-xs opacity-70">Fase {media.fase}</div>
+              )}
+            </div>
+          )}
           {/* Video thumbnail/preview */}
           <div className="flex-1 bg-black rounded flex items-center justify-center relative overflow-hidden">
             <video 
@@ -181,6 +218,17 @@ export default function PresenterPage() {
     } else {
       return (
         <div className="w-full h-full flex flex-col">
+          {/* Heading above image */}
+          {media.heading && (
+            <div className="text-center py-2 px-4 bg-black/20 rounded-t text-white">
+              <div className="text-sm font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                {media.heading}
+              </div>
+              {media.fase && (
+                <div className="text-xs opacity-70">Fase {media.fase}</div>
+              )}
+            </div>
+          )}
           {/* Image preview */}
           <div className="flex-1 bg-black rounded flex items-center justify-center relative overflow-hidden">
             <img 
@@ -509,14 +557,14 @@ export default function PresenterPage() {
         </div>
 
         {/* Main content - Full width with phases on far right */}
-        <div className="flex gap-4 h-[calc(100vh-200px)] relative">
+        <div className="flex gap-4 h-[calc(100vh-200px)] relative" style={{ marginLeft: '20px', marginRight: '20px' }}>
           {/* Left side - Two screens side by side and Show Results button */}
           <div className="flex-1 flex flex-col gap-4">
             {/* Two screens side by side - Much larger */}
             <div className="flex gap-4 flex-1">
               {/* Current Display - Left screen */}
               <div className="flex-1 bg-white rounded-lg p-3 shadow-md">
-                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-4 border-gray-200 relative overflow-hidden">
+                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
                   {/* Real display content */}
                   <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col">
                     {/* Header */}
@@ -568,7 +616,7 @@ export default function PresenterPage() {
 
               {/* Next Display - Right screen */}
               <div className="flex-1 bg-white rounded-lg p-3 shadow-md">
-                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-4 border-gray-200 relative overflow-hidden">
+                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
                   {/* Show next media preview */}
                   <div className="w-full h-full bg-black rounded flex items-center justify-center">
                     {renderMediaPreview(getNextMedia())}
