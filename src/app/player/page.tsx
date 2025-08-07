@@ -33,7 +33,7 @@ export default function PlayerPage() {
   const [currentHeading, setCurrentHeading] = useState<string[]>(['In welk team zit je?']);
   const [headingVisible, ] = useState(true);
 
-  // Load the latest session data
+  // Load the latest session data and set up real-time updates
   useEffect(() => {
     const loadSessionData = async () => {
       try {
@@ -42,8 +42,8 @@ export default function PlayerPage() {
           const latestSession = sessions[0] as unknown as RankingSession;
           setCurrentSession(latestSession);
           
-          // Only update heading if not in onboarding flow
-          if (latestSession.headings && latestSession.current_fase && currentPhase === 'complete') {
+          // Update heading from PocketBase for team phase and after completion
+          if (latestSession.headings && latestSession.current_fase && (currentPhase === 'team' || currentPhase === 'complete')) {
             const headingText = faseService.getCurrentHeading(latestSession.headings, latestSession.current_fase);
             const formattedHeading = faseService.formatHeadingText(headingText);
             setCurrentHeading(formattedHeading);
@@ -55,7 +55,12 @@ export default function PlayerPage() {
     };
 
     loadSessionData();
-  }, []);
+    
+    // Set up interval for real-time updates
+    const interval = setInterval(loadSessionData, 2000); // Check every 2 seconds
+    
+    return () => clearInterval(interval);
+  }, [currentPhase]); // Re-run when currentPhase changes
 
   const handleTeamSubmit = () => {
     if (!teamNumber || !currentSession) return;
