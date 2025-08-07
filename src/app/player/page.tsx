@@ -282,7 +282,7 @@ export default function PlayerPage() {
 
         return () => clearTimeout(timer);
       }
-    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]); // Removed 'lines' to prevent re-animation
+    }, [visible, currentLineIndex, currentCharIndex, hasAnimated]); // Only essential dependencies to prevent re-animation
 
     return (
       <div 
@@ -292,7 +292,7 @@ export default function PlayerPage() {
       >
         {displayedLines.map((line, index) => (
           <div key={index} className="text-3xl text-white text-center leading-tight" 
-               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
             {line}
             {index === currentLineIndex && isTyping && (
               <span className="animate-pulse">|</span>
@@ -316,11 +316,12 @@ export default function PlayerPage() {
         
         {/* Sections 1-2: Logo Background + Logo Overlay - STICKY */}
         <div 
-          className="row-span-2 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50"
+          className="row-span-2 relative bg-cover bg-center bg-no-repeat fixed top-0 left-0 right-0 z-50"
           style={{ 
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            backgroundPosition: 'center',
+            height: '16.666667%' // 2/12 of screen height
           }}
         >
           {/* Logo Overlay - Sticky and Always Fit Height */}
@@ -334,7 +335,7 @@ export default function PlayerPage() {
         </div>
 
         {/* Sections 3-4: Dynamic Heading with Typewriter Animation */}
-        <div className="row-span-2 flex items-center justify-center px-4">
+        <div className="row-span-2 flex items-center justify-center px-4" style={{ paddingTop: '16.666667vh' }}>
           <TypewriterHeading lines={currentHeading} visible={headingVisible} />
         </div>
 
@@ -473,14 +474,18 @@ export default function PlayerPage() {
             <div className="row-span-2"></div> {/* Sections 1-2 spacer */}
             <div className="row-span-8 flex items-center justify-center px-4"> {/* Sections 3-10 - doubled height */}
               <div 
-                className="bg-gradient-to-br from-blue-500 to-blue-700 p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
-                style={{ border: '3px solid white', minHeight: '320px' }}
+                className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
+                style={{ 
+                  background: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 25%, #86a8e7 50%, #7f7fd5 75%, #91eae4 100%)',
+                  border: '4px solid white',
+                  minHeight: '320px'
+                }}
               >
-                {/* Close X button - Much Larger */}
+                {/* Close X button - Large but Thinner */}
                 <button
                   onClick={closePopup}
-                  className="absolute top-4 right-4 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold transition-colors z-10"
-                  style={{ fontSize: '3rem' }}
+                  className="absolute top-4 right-4 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10"
+                  style={{ fontSize: '2.5rem', fontWeight: 300 }}
                 >
                   ×
                 </button>
@@ -544,7 +549,10 @@ export default function PlayerPage() {
       {/* Welcome Popup after name selection */}
       {showWelcomePopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-700 p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 relative animate-scale-in text-center">
+          <div className="p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 relative animate-scale-in text-center" style={{
+            background: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 25%, #86a8e7 50%, #7f7fd5 75%, #91eae4 100%)',
+            border: '4px solid white'
+          }}>
             <div className="text-white space-y-4">
               <h2 className="text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                 Hi {selectedPlayerName}!
