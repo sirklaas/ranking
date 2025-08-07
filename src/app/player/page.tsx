@@ -54,11 +54,10 @@ export default function PlayerPage() {
           console.log('latestSession.current_fase:', latestSession.current_fase);
           console.log('currentPhase:', currentPhase);
           
-          if (latestSession.headings && latestSession.current_fase) {
+          if (latestSession.headings) {
             try {
-              let faseToUse = latestSession.current_fase;
-              
               // Map onboarding phases to specific fases
+              let faseToUse = '01/01'; // Default to team selection
               if (currentPhase === 'team') {
                 faseToUse = '01/01'; // Team selection
               } else if (currentPhase === 'photocircle') {
