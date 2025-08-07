@@ -14,8 +14,15 @@ export default function PresenterPage() {
   const [currentFase, setCurrentFase] = useState('01/01');
   const [, setGameStarted] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [gameTime, setGameTime] = useState('00:00');
+  const [isClient, setIsClient] = useState(false);
+
+  // Initialize client-side state to prevent hydration errors
+  useEffect(() => {
+    setIsClient(true);
+    setCurrentTime(new Date());
+  }, []);
 
   // Load Google Font
   useEffect(() => {
@@ -89,11 +96,17 @@ export default function PresenterPage() {
   };
 
   const handleStartRankingGame = () => {
-    if (!selectedSession) return;
+    console.log('Start Ranking Game clicked!', { selectedSession, currentView });
+    if (!selectedSession) {
+      console.log('No selected session - returning');
+      return;
+    }
+    console.log('Setting game started and changing view to game');
     setGameStarted(true);
     setGameStartTime(new Date());
     setCurrentView('game');
     setCurrentFase('01/01');
+    console.log('State updated - should show game interface now');
   };
 
   const handlePhaseNavigation = (fase: string) => {
@@ -346,7 +359,11 @@ export default function PresenterPage() {
   };
 
   const renderGameInterface = () => {
-    if (!selectedSession) return null;
+    console.log('renderGameInterface called', { selectedSession, currentView });
+    if (!selectedSession) {
+      console.log('renderGameInterface: No selected session');
+      return null;
+    }
 
     const phaseButtons = [
       { label: '1', fases: faseGroups['1'].fases },
@@ -366,7 +383,7 @@ export default function PresenterPage() {
             <div>
               <h1 className="text-xl font-bold text-gray-900">{selectedSession.showname || 'Game Session'}</h1>
               <div className="flex gap-8 text-lg font-semibold text-gray-700">
-                <span>{currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })} [time]</span>
+                <span>{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
                 <span>{gameTime} [game time]</span>
               </div>
             </div>
@@ -614,7 +631,7 @@ export default function PresenterPage() {
 
         {currentView === 'manage' && renderSessionDetails()}
         
-        {currentView === 'game' && renderGameInterface()}
+        {currentView === 'game' && isClient && renderGameInterface()}
       </div>
     </div>
   );
