@@ -44,45 +44,38 @@ export default function PlayerPage() {
           
           // Update heading from PocketBase based on current phase
           if (latestSession.headings && latestSession.current_fase) {
-            let faseToUse = latestSession.current_fase;
-            
-            // Map onboarding phases to specific fases
-            if (currentPhase === 'team') {
-              faseToUse = '01/01'; // Team selection
-            } else if (currentPhase === 'photocircle') {
-              faseToUse = '01/02'; // PhotoCircle question
-            } else if (currentPhase === 'name') {
-              faseToUse = '01/03'; // Name selection
+            try {
+              let faseToUse = latestSession.current_fase;
+              
+              // Map onboarding phases to specific fases
+              if (currentPhase === 'team') {
+                faseToUse = '01/01'; // Team selection
+              } else if (currentPhase === 'photocircle') {
+                faseToUse = '01/02'; // PhotoCircle question
+              } else if (currentPhase === 'name') {
+                faseToUse = '01/03'; // Name selection
+              }
+              
+              const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
+              if (headingText && headingText.trim()) {
+                const formattedHeading = faseService.formatHeadingText(headingText);
+                if (formattedHeading && formattedHeading.length > 0 && formattedHeading[0].trim()) {
+                  setCurrentHeading(formattedHeading);
+                  return; // Successfully loaded from PocketBase
+                }
+              }
+            } catch (error) {
+              console.error('Error loading heading from PocketBase:', error);
             }
-            
-            console.log('Loading heading for fase:', faseToUse, 'currentPhase:', currentPhase);
-            const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
-            console.log('Raw heading text:', headingText);
-            const formattedHeading = faseService.formatHeadingText(headingText);
-            console.log('Formatted heading:', formattedHeading);
-            
-            if (formattedHeading && formattedHeading.length > 0) {
-              setCurrentHeading(formattedHeading);
-            } else {
-              // Fallback headings if PocketBase data is empty or invalid
-              const fallbackHeadings = {
-                'team': ['In welk team zit je?'],
-                'photocircle': ['Heb je \'n PhotoCircle account?'],
-                'name': ['Wat is jouw naam?']
-              };
-              console.log('Using fallback heading for phase:', currentPhase);
-              setCurrentHeading(fallbackHeadings[currentPhase as keyof typeof fallbackHeadings] || ['Loading...']);
-            }
-          } else {
-            // Fallback when no session data available
-            const fallbackHeadings = {
-              'team': ['In welk team zit je?'],
-              'photocircle': ['Heb je \'n PhotoCircle account?'],
-              'name': ['Wat is jouw naam?']
-            };
-            console.log('No session data, using fallback for phase:', currentPhase);
-            setCurrentHeading(fallbackHeadings[currentPhase as keyof typeof fallbackHeadings] || ['Loading...']);
           }
+          
+          // Only use fallback if PocketBase loading failed
+          const fallbackHeadings = {
+            'team': ['In welk team zit je?'],
+            'photocircle': ['Heb je \'n PhotoCircle account?'],
+            'name': ['Wat is jouw naam?']
+          };
+          setCurrentHeading(fallbackHeadings[currentPhase as keyof typeof fallbackHeadings] || ['Loading...']);
         }
       } catch (error) {
         console.error('Failed to load session data:', error);
@@ -298,7 +291,7 @@ export default function PlayerPage() {
 
         {/* Show button when team number is entered */}
         {/* Section 6: Dynamic Action Button */}
-        {currentPhase === 'team' && !showTeamInfo && (
+        {currentPhase === 'team' && !showTeamInfo && teamNumber && (
           <div className="flex items-center justify-center px-4">
             <button
               onClick={handleTeamSubmit}
@@ -404,12 +397,12 @@ export default function PlayerPage() {
                 {/* Close X button */}
                 <button
                   onClick={closePopup}
-                  className="absolute top-3 right-3 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-3xl transition-colors"
+                  className="absolute top-4 right-4 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-4xl transition-colors z-10"
                 >
                   ×
                 </button>
                 
-                <div className="text-center text-white space-y-6">
+                <div className="text-center text-white space-y-6 pt-8">
                   <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                     Download nu deze App:
                   </h3>
