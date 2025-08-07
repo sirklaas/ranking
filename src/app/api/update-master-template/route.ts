@@ -6,18 +6,43 @@ export async function POST(request: NextRequest) {
   try {
     const headings = await request.json();
     
-    // Path to the public assets folder (served by Next.js)
+    // Check if we're in a serverless environment (like Vercel)
+    const isServerless = process.env.VERCEL || process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    
+    if (isServerless) {
+      // In serverless environments, we can't write to the file system
+      // Return the JSON data for manual saving or future database integration
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Running in serverless environment - file system writes not supported. Use the JSON data below for manual update.',
+        data: headings,
+        instructions: 'Copy this JSON data and manually update your local public/assets/fases.json file, then commit to Git.'
+      });
+    }
+    
+    // Local development - attempt to write to file
     const filePath = path.join(process.cwd(), 'public', 'assets', 'fases.json');
     
-    // Write the updated headings to the local assets file
-    await writeFile(filePath, JSON.stringify(headings, null, 2), 'utf8');
+    try {
+      await writeFile(filePath, JSON.stringify(headings, null, 2), 'utf8');
+      console.log('Master template updated at:', filePath);
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Master template updated in local assets folder - ready for Git commit!' 
+      });
+    } catch (writeError) {
+      console.error('File write error:', writeError);
+      
+      // Fallback: return data for manual handling
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Could not write to file system. Please manually update the fases.json file with the data below.',
+        data: headings,
+        error: writeError instanceof Error ? writeError.message : 'Unknown write error'
+      });
+    }
     
-    console.log('Master template updated at:', filePath);
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Master template updated in local assets folder - ready for Git commit!' 
-    });
   } catch (error) {
     console.error('Error updating master template:', error);
     return NextResponse.json(

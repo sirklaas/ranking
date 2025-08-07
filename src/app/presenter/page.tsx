@@ -231,14 +231,17 @@ export default function PresenterPage() {
         body: JSON.stringify(headings)
       });
       
+      const result = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to update master template');
+        console.error('API Error:', result);
+        return { success: false, message: result.error || 'Failed to update master template' };
       }
       
-      return true;
+      return { success: true, message: result.message, data: result.data };
     } catch (error) {
       console.error('Error updating master template:', error);
-      return false;
+      return { success: false, message: 'Network error occurred' };
     }
   };
 
@@ -262,12 +265,18 @@ export default function PresenterPage() {
       } : null);
       
       // Also update the master template
-      const masterUpdated = await updateMasterTemplate(editingHeadings);
+      const masterResult = await updateMasterTemplate(editingHeadings);
       
-      if (masterUpdated) {
-        alert('Headings saved successfully! Master template updated - commit and deploy to make these the default for new games.');
+      if (masterResult.success) {
+        if (masterResult.data) {
+          // Serverless environment - provide instructions
+          alert(`Headings saved to session successfully!\n\n${masterResult.message}\n\nFor production updates, manually update the fases.json file and commit to Git.`);
+        } else {
+          // Local development - file updated
+          alert('Headings saved successfully! Master template updated - commit and deploy to make these the default for new games.');
+        }
       } else {
-        alert('Headings saved to session successfully! Warning: Could not update master template automatically.');
+        alert(`Headings saved to session successfully!\n\nWarning: ${masterResult.message}`);
       }
     } catch (error) {
       console.error('Error saving headings:', error);
