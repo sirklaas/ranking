@@ -31,7 +31,6 @@ export default function PlayerPage() {
   
   // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>(['In welk team zit je?']);
-  const [, ] = useState(false);
   const [headingVisible, ] = useState(true);
 
   // Load the latest session data
@@ -43,8 +42,8 @@ export default function PlayerPage() {
           const latestSession = sessions[0] as unknown as RankingSession;
           setCurrentSession(latestSession);
           
-          // Update heading based on current fase
-          if (latestSession.headings && latestSession.current_fase) {
+          // Only update heading if not in onboarding flow
+          if (latestSession.headings && latestSession.current_fase && currentPhase === 'complete') {
             const headingText = faseService.getCurrentHeading(latestSession.headings, latestSession.current_fase);
             const formattedHeading = faseService.formatHeadingText(headingText);
             setCurrentHeading(formattedHeading);
@@ -248,8 +247,10 @@ export default function PlayerPage() {
             <button
               onClick={handleTeamSubmit}
               disabled={!teamNumber || isLoading}
-              className="bg-blue-600 text-white px-8 py-4 rounded-2xl text-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              className="text-white px-8 py-4 rounded-2xl text-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
             >
               {isLoading ? 'Loading...' : 'Dat is mijn team!'}
             </button>
@@ -261,8 +262,10 @@ export default function PlayerPage() {
           <div className="flex items-center justify-center px-4 gap-4">
             <button
               onClick={() => handlePhotoCircleResponse(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-bold hover:bg-blue-700 transition-colors"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              className="text-white px-6 py-3 rounded-xl text-lg font-bold transition-colors"
+              style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
             >
               Ja
             </button>
