@@ -37,9 +37,14 @@ export default function PlayerPage() {
   useEffect(() => {
     const loadSessionData = async () => {
       try {
+        // Load session directly from PocketBase (same as presenter)
+        console.log('Loading sessions from PocketBase...');
         const sessions = await rankingService.getAllSessions();
-        if (sessions.length > 0) {
+        console.log('PocketBase response:', sessions);
+        
+        if (sessions && sessions.length > 0) {
           const latestSession = sessions[0] as unknown as RankingSession;
+          console.log('Latest session loaded:', latestSession);
           setCurrentSession(latestSession);
           
           // Update heading from PocketBase based on current phase
@@ -92,7 +97,9 @@ export default function PlayerPage() {
           setCurrentHeading(fallbackHeadings[currentPhase as keyof typeof fallbackHeadings] || ['Loading...']);
         }
       } catch (error) {
-        console.error('Failed to load session data:', error);
+        console.error('Failed to load session data (likely CORS issue):', error);
+        console.log('CORS ERROR: PocketBase server needs to allow https://ranking.pinkmilk.eu');
+        console.log('Fix: Add https://ranking.pinkmilk.eu to PocketBase CORS settings');
       }
     };
 
@@ -224,7 +231,7 @@ export default function PlayerPage() {
 
         return () => clearTimeout(timer);
       }
-    }, [lines, visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]);
+    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]); // Removed 'lines' to prevent re-animation
 
     return (
       <div 

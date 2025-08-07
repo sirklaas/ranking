@@ -101,6 +101,8 @@ export default function PresenterPage() {
       console.log('No selected session - returning');
       return;
     }
+    
+
     console.log('Setting game started and changing view to game');
     setGameStarted(true);
     setGameStartTime(new Date());
