@@ -139,10 +139,45 @@ export default function PresenterPage() {
   };
 
   const getNextMedia = () => {
-    if (!selectedSession) return null;
+    if (!selectedSession) {
+      console.log('No selected session');
+      return null;
+    }
     
     // Parse headings from PocketBase
     const headings = faseService.parseHeadings(selectedSession.headings || '{}');
+    
+    // If headings are empty, use fallback data for testing
+    if (Object.keys(headings).length === 0) {
+      const fallbackHeadings = {
+        '01/01': { heading: 'Welkom', image: '' },
+        '01/02': { heading: 'In welk team zit je?', image: '' },
+        '01/03': { heading: 'Wat is jouw naam?', image: '' },
+        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' }
+      };
+      
+      // Find the next fase with a non-empty image/Picture field
+      const currentFaseIndex = Object.keys(fallbackHeadings).indexOf(currentFase);
+      const faseKeys = Object.keys(fallbackHeadings).slice(currentFaseIndex + 1);
+      
+      for (const faseKey of faseKeys) {
+        const faseData = fallbackHeadings[faseKey as keyof typeof fallbackHeadings];
+        if (faseData?.image && faseData.image.trim() !== '') {
+          // Determine file type
+          const fileName = faseData.image;
+          const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
+          const path = fileName.startsWith('/') ? fileName : `/githublocal/pcs/${fileName}`;
+          
+          return {
+            type: isVideo ? 'video' as const : 'image' as const,
+            path: path,
+            name: fileName,
+            heading: faseData.heading || `Fase ${faseKey}`,
+            fase: faseKey
+          };
+        }
+      }
+    }
     
     // Find the next fase with a non-empty image/Picture field
     const currentFaseIndex = Object.keys(headings).indexOf(currentFase);
@@ -165,7 +200,6 @@ export default function PresenterPage() {
         };
       }
     }
-    
     return null;
   };
 
@@ -200,6 +234,12 @@ export default function PresenterPage() {
               className="w-full h-full object-cover"
               muted
               preload="metadata"
+              poster=""
+              onLoadedMetadata={(e) => {
+                // Seek to first frame to show thumbnail
+                const video = e.currentTarget;
+                video.currentTime = 0.1;
+              }}
               onError={() => {
                 // Fallback if video can't load
                 console.log('Video preview failed to load:', media.path);
@@ -557,14 +597,14 @@ export default function PresenterPage() {
         </div>
 
         {/* Main content - Full width with phases on far right */}
-        <div className="flex gap-4 h-[calc(100vh-200px)] relative" style={{ marginLeft: '20px', marginRight: '20px' }}>
+        <div className="flex gap-6 h-[calc(100vh-200px)] relative px-2">
           {/* Left side - Two screens side by side and Show Results button */}
           <div className="flex-1 flex flex-col gap-4">
             {/* Two screens side by side - Much larger */}
-            <div className="flex gap-4 flex-1">
+            <div className="flex gap-6 flex-1">
               {/* Current Display - Left screen */}
-              <div className="flex-1 bg-white rounded-lg p-3 shadow-md">
-                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
+              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
+                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[500px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
                   {/* Real display content */}
                   <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col">
                     {/* Header */}
@@ -615,8 +655,8 @@ export default function PresenterPage() {
               </div>
 
               {/* Next Display - Right screen */}
-              <div className="flex-1 bg-white rounded-lg p-3 shadow-md">
-                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
+              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
+                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[500px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
                   {/* Show next media preview */}
                   <div className="w-full h-full bg-black rounded flex items-center justify-center">
                     {renderMediaPreview(getNextMedia())}
