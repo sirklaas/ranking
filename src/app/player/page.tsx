@@ -43,6 +43,12 @@ export default function PlayerPage() {
           setCurrentSession(latestSession);
           
           // Update heading from PocketBase based on current phase
+          console.log('=== DEBUGGING HEADING LOADING ===');
+          console.log('latestSession:', latestSession);
+          console.log('latestSession.headings:', latestSession.headings);
+          console.log('latestSession.current_fase:', latestSession.current_fase);
+          console.log('currentPhase:', currentPhase);
+          
           if (latestSession.headings && latestSession.current_fase) {
             try {
               let faseToUse = latestSession.current_fase;
@@ -56,17 +62,25 @@ export default function PlayerPage() {
                 faseToUse = '01/03'; // Name selection
               }
               
+              console.log('faseToUse:', faseToUse);
               const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
+              console.log('headingText from PocketBase:', headingText);
+              
               if (headingText && headingText.trim()) {
                 const formattedHeading = faseService.formatHeadingText(headingText);
+                console.log('formattedHeading:', formattedHeading);
                 if (formattedHeading && formattedHeading.length > 0 && formattedHeading[0].trim()) {
+                  console.log('SUCCESS: Using PocketBase heading:', formattedHeading);
                   setCurrentHeading(formattedHeading);
                   return; // Successfully loaded from PocketBase
                 }
               }
+              console.log('FAILED: PocketBase heading validation failed');
             } catch (error) {
               console.error('Error loading heading from PocketBase:', error);
             }
+          } else {
+            console.log('FAILED: No session data or headings available');
           }
           
           // Only use fallback if PocketBase loading failed
