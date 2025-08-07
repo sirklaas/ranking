@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import RankingSessionForm from '@/components/game/RankingSessionForm';
 import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
@@ -155,20 +155,59 @@ export default function PresenterPage() {
   const renderMediaPreview = (media: { type: 'video' | 'image', path: string, name: string }) => {
     if (media.type === 'video') {
       return (
-        <div className="text-center">
-          <div className="text-6xl mb-4">🎬</div>
-          <div className="text-lg font-bold mb-2">{media.name}</div>
-          <div className="text-sm opacity-80">Video Preview</div>
-          <div className="text-xs opacity-60 mt-2">{media.path}</div>
+        <div className="w-full h-full flex flex-col">
+          {/* Video thumbnail/preview */}
+          <div className="flex-1 bg-black rounded flex items-center justify-center relative overflow-hidden">
+            <video 
+              src={media.path} 
+              className="w-full h-full object-cover"
+              muted
+              preload="metadata"
+              onError={() => {
+                // Fallback if video can't load
+                console.log('Video preview failed to load:', media.path);
+              }}
+            />
+            <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+              🎬 VIDEO
+            </div>
+          </div>
+          <div className="p-2 text-center">
+            <div className="text-sm font-bold">{media.name}</div>
+            <div className="text-xs opacity-60">{media.path}</div>
+          </div>
         </div>
       );
     } else {
       return (
-        <div className="text-center">
-          <div className="text-6xl mb-4">🖼️</div>
-          <div className="text-lg font-bold mb-2">{media.name}</div>
-          <div className="text-sm opacity-80">Image Preview</div>
-          <div className="text-xs opacity-60 mt-2">{media.path}</div>
+        <div className="w-full h-full flex flex-col">
+          {/* Image preview */}
+          <div className="flex-1 bg-black rounded flex items-center justify-center relative overflow-hidden">
+            <img 
+              src={media.path} 
+              alt={media.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback if image can't load
+                e.currentTarget.style.display = 'none';
+                (e.currentTarget.nextElementSibling as HTMLElement)!.style.display = 'flex';
+              }}
+            />
+            <div className="hidden w-full h-full flex items-center justify-center text-white">
+              <div className="text-center">
+                <div className="text-4xl mb-2">🖼️</div>
+                <div className="text-sm">Image Preview</div>
+                <div className="text-xs opacity-60">{media.name}</div>
+              </div>
+            </div>
+            <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+              🖼️ IMAGE
+            </div>
+          </div>
+          <div className="p-2 text-center">
+            <div className="text-sm font-bold">{media.name}</div>
+            <div className="text-xs opacity-60">{media.path}</div>
+          </div>
         </div>
       );
     }
@@ -405,6 +444,33 @@ export default function PresenterPage() {
     setSelectedSession(null);
   };
 
+  // State for real display data
+  const [displayData, setDisplayData] = useState<{playersByTeam: Record<number, string[]>, gameCode: string} | null>(null);
+  
+  // Load real display data
+  const loadDisplayData = useCallback(async () => {
+    if (!selectedSession) return;
+    
+    try {
+      // Get the same team assignments as the Display page
+      const playerNames = teamService.parsePlayerNames(selectedSession.playernames || '');
+      const teamAssignments = teamService.generateTeamAssignments(playerNames, selectedSession.nr_teams || 1);
+      const gameCode = Math.floor(1000 + Math.random() * 9000).toString();
+      
+      setDisplayData({
+        playersByTeam: teamAssignments,
+        gameCode: gameCode
+      });
+    } catch (error) {
+      console.error('Error loading display data:', error);
+    }
+  }, [selectedSession]);
+  
+  // Load display data when session changes
+  useEffect(() => {
+    loadDisplayData();
+  }, [loadDisplayData]);
+
   const renderGameInterface = () => {
     console.log('renderGameInterface called', { selectedSession, currentView });
     if (!selectedSession) {
@@ -451,44 +517,48 @@ export default function PresenterPage() {
               {/* Current Display - Left screen */}
               <div className="flex-1 bg-white rounded-lg p-3 shadow-md">
                 <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-4 border-gray-200 relative overflow-hidden">
-                  {/* Simulate actual display content */}
+                  {/* Real display content */}
                   <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col">
-                    {/* Header like in screenshot */}
+                    {/* Header */}
                     <div className="bg-blue-900 text-white p-2 text-xs flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className="text-yellow-300">★★★</div>
                         <span>Quizmaster Klaas presenteert</span>
                       </div>
-                      <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: 8075</div>
+                      <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: {displayData?.gameCode || '8075'}</div>
                     </div>
                     
-                    {/* Main content area */}
+                    {/* Main content */}
                     <div className="flex-1 p-2">
                       <div className="text-center text-white mb-2">
                         <div className="text-lg font-bold">{getCurrentDisplay()}</div>
                         <div className="text-sm opacity-90">De teams van vandaag zijn:</div>
                       </div>
                       
-                      {/* Team circles simulation */}
-                      <div className="flex justify-center gap-4 mb-2">
-                        {[1, 2, 3, 4].map(num => (
-                          <div key={num} className="flex flex-col items-center">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black font-bold border-4 border-black">
-                              {num}
+                      {/* Real team data */}
+                      <div className="flex justify-center gap-2 mb-2">
+                        {Array.from({ length: selectedSession?.nr_teams || 4 }, (_, index) => {
+                          const teamNumber = index + 1;
+                          const teamPlayers = displayData?.playersByTeam[teamNumber] || [];
+                          return (
+                            <div key={teamNumber} className="flex flex-col items-center">
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black font-bold border-2 border-black">
+                                {teamNumber}
+                              </div>
+                              <div className="mt-1 space-y-1">
+                                {teamPlayers.slice(0, 2).map((player, idx) => (
+                                  <div key={idx} className="bg-pink-200 text-black text-xs px-1 py-1 rounded">
+                                    {player.length > 8 ? player.substring(0, 8) + '...' : player}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <div className="mt-1 space-y-1">
-                              {['Player 1', 'Player 2'].map((player, idx) => (
-                                <div key={idx} className="bg-pink-200 text-black text-xs px-2 py-1 rounded">
-                                  {player}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                       
                       <div className="text-center text-white text-xs mt-2">
-                        Total Players: 20 | Teams: 4 | Location: jb
+                        Total Players: {displayData ? Object.values(displayData.playersByTeam).flat().length : 0} | Teams: {selectedSession?.nr_teams || 4} | Location: {selectedSession?.city || 'jb'}
                       </div>
                     </div>
                   </div>
