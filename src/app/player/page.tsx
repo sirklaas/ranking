@@ -42,14 +42,22 @@ export default function PlayerPage() {
           const latestSession = sessions[0] as unknown as RankingSession;
           setCurrentSession(latestSession);
           
-          // Update heading from PocketBase for team phase and after completion
-          if (latestSession.headings && latestSession.current_fase && (currentPhase === 'team' || currentPhase === 'complete')) {
-            const headingText = faseService.getCurrentHeading(latestSession.headings, latestSession.current_fase);
+          // Update heading from PocketBase based on current phase
+          if (latestSession.headings && latestSession.current_fase) {
+            let faseToUse = latestSession.current_fase;
+            
+            // Map onboarding phases to specific fases
+            if (currentPhase === 'team') {
+              faseToUse = '01/01'; // Team selection
+            } else if (currentPhase === 'photocircle') {
+              faseToUse = '01/02'; // PhotoCircle question
+            } else if (currentPhase === 'name') {
+              faseToUse = '01/03'; // Name selection
+            }
+            
+            const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
             const formattedHeading = faseService.formatHeadingText(headingText);
             setCurrentHeading(formattedHeading);
-          } else if (currentPhase === 'team' && currentHeading.length === 0) {
-            // Fallback heading if no PocketBase data available
-            setCurrentHeading(['In welk team zit je?']);
           }
         }
       } catch (error) {
@@ -85,7 +93,7 @@ export default function PlayerPage() {
     setShowPopup(false);
     // Move to PhotoCircle account check phase
     setCurrentPhase('photocircle');
-    setCurrentHeading(['Heb je \'n PhotoCircle account?']);
+    // Heading will be loaded from PocketBase based on current_fase
   };
 
   const handlePhotoCircleResponse = (hasAccount: boolean) => {
@@ -96,7 +104,7 @@ export default function PlayerPage() {
     } else {
       // Move to name selection phase
       setCurrentPhase('name');
-      setCurrentHeading(['Wat is jouw naam?']);
+      // Heading will be loaded from PocketBase based on current_fase
     }
   };
 
@@ -372,7 +380,7 @@ export default function PlayerPage() {
                 {/* Close X button */}
                 <button
                   onClick={closePopup}
-                  className="absolute top-2 right-2 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-xl transition-colors"
+                  className="absolute top-3 right-3 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-3xl transition-colors"
                 >
                   ×
                 </button>
