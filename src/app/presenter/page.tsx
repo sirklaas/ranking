@@ -270,7 +270,7 @@ export default function PresenterPage() {
       if (masterResult.success) {
         if (masterResult.data) {
           // Serverless environment - provide instructions
-          alert(`Headings saved to session successfully!\n\n${masterResult.message}\n\nFor production updates, manually update the fases.json file and commit to Git.`);
+          alert(`Headings saved to session successfully! ✅\n\nNote: You're on the live server (ranking.pinkmilk.eu) where file updates aren't allowed.\n\n✅ Your headings ARE saved in PocketBase (you'll see them work)\n❌ The master template (fases.json) can't be auto-updated on live server\n\n💡 To update defaults for new games: Run locally and save, then commit to Git.`);
         } else {
           // Local development - file updated
           alert('Headings saved successfully! Master template updated - commit and deploy to make these the default for new games.');

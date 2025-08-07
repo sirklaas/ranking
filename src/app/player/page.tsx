@@ -340,10 +340,10 @@ export default function PlayerPage() {
           {/* Position popup in sections 3-6 area */}
           <div className="h-screen grid grid-rows-12">
             <div className="row-span-2"></div> {/* Sections 1-2 spacer */}
-            <div className="row-span-4 flex items-center justify-center px-4"> {/* Sections 3-6 */}
+            <div className="row-span-8 flex items-center justify-center px-4"> {/* Sections 3-10 - doubled height */}
               <div 
-                className="bg-gradient-to-br from-blue-500 to-blue-700 p-6 rounded-2xl shadow-2xl max-w-sm w-full relative animate-scale-in"
-                style={{ border: '3px solid white' }}
+                className="bg-gradient-to-br from-blue-500 to-blue-700 p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
+                style={{ border: '3px solid white', minHeight: '320px' }}
               >
                 {/* Close X button */}
                 <button
@@ -353,8 +353,8 @@ export default function PlayerPage() {
                   ×
                 </button>
                 
-                <div className="text-center text-white space-y-4">
-                  <h3 className="text-xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                <div className="text-center text-white space-y-6">
+                  <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                     Download nu deze App:
                   </h3>
                   
@@ -370,13 +370,14 @@ export default function PlayerPage() {
                     </a>
                   )}
                   
-                  <p className="text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                    Maak daar een account aan en kom dan hier terug
-                  </p>
+                  <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    <p>Maak daar een account aan</p>
+                    <p>en kom dan hier terug</p>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="row-span-7"></div> {/* Sections 6-12 spacer */}
+            <div className="row-span-3"></div> {/* Sections 11-12 spacer */}
           </div>
         </div>
       )}
