@@ -23,6 +23,12 @@ export default function PlayerPage() {
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Player onboarding flow states
+  const [currentPhase, setCurrentPhase] = useState<'team' | 'photocircle' | 'name' | 'complete'>('team');
+  const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
+  const [selectedPlayerName, setSelectedPlayerName] = useState('');
+  const [playerData, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
+  
   // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>(['In welk team zit je?']);
   const [isHeadingAnimating, setIsHeadingAnimating] = useState(false);
@@ -70,7 +76,38 @@ export default function PlayerPage() {
 
   const closePopup = () => {
     setShowPopup(false);
-    setShowTeamInfo(true); // Then show team info
+    // Move to PhotoCircle account check phase
+    setCurrentPhase('photocircle');
+    setCurrentHeading(['Heb je \'n PhotoCircle account?']);
+  };
+
+  const handlePhotoCircleResponse = (hasAccount: boolean) => {
+    setHasPhotoCircleAccount(hasAccount);
+    if (!hasAccount) {
+      // Show popup again if no account
+      setShowPopup(true);
+    } else {
+      // Move to name selection phase
+      setCurrentPhase('name');
+      setCurrentHeading(['Wat is jouw naam?']);
+    }
+  };
+
+  const handleNameSelection = (name: string) => {
+    setSelectedPlayerName(name);
+    // Store player data in memory for later use
+    const data = {
+      teamNumber,
+      playerName: name,
+      hasPhotoCircle: hasPhotoCircleAccount || false
+    };
+    setPlayerData(data);
+    
+    // Store in localStorage for persistence
+    localStorage.setItem('rankingPlayerData', JSON.stringify(data));
+    
+    setCurrentPhase('complete');
+    setShowTeamInfo(true);
   };
 
   // TypewriterHeading Component with animations
@@ -205,39 +242,88 @@ export default function PlayerPage() {
         </div>
 
         {/* Show button when team number is entered */}
-        {teamNumber && !showTeamInfo && !showPopup && (
-          <div className="row-span-1 flex items-center justify-center">
+        {/* Section 6: Dynamic Action Button */}
+        {currentPhase === 'team' && !showTeamInfo && (
+          <div className="flex items-center justify-center px-4">
             <button
               onClick={handleTeamSubmit}
-              disabled={isLoading}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors shadow-lg"
+              disabled={!teamNumber || isLoading}
+              className="bg-blue-600 text-white px-8 py-4 rounded-2xl text-xl font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
             >
               {isLoading ? 'Loading...' : 'Dat is mijn team!'}
             </button>
           </div>
         )}
+        
+        {/* PhotoCircle Account Check Phase */}
+        {currentPhase === 'photocircle' && (
+          <div className="flex items-center justify-center px-4 gap-4">
+            <button
+              onClick={() => handlePhotoCircleResponse(true)}
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-bold hover:bg-blue-700 transition-colors"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Ja
+            </button>
+            <button
+              onClick={() => handlePhotoCircleResponse(false)}
+              className="bg-red-600 text-white px-6 py-3 rounded-xl text-lg font-bold hover:bg-red-700 transition-colors"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Nee
+            </button>
+          </div>
+        )}
+        
+        {/* Name Selection Phase */}
+        {currentPhase === 'name' && (
+          <div className="flex items-center justify-center px-4">
+            <div className="text-center text-white">
+              <p className="mb-4 text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                Kies je naam uit de lijst hieronder:
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Sections 7-12: Team Members Display */}
         <div className="row-span-6 overflow-y-auto px-4">
-          {showTeamInfo && (
+          {(showTeamInfo || currentPhase === 'name') && teamMembers.length > 0 && (
             <div className="h-full pt-4">
               {/* Two column grid for team members */}
               <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
                 {teamMembers.map((member, index) => (
-                  <div 
-                    key={index}
-                    className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in"
-                    style={{ 
-                      fontFamily: 'Barlow Semi Condensed, sans-serif',
-                      fontWeight: 400,
-                      fontSize: '0.9rem',
-                      animationDelay: `${index * 200}ms`,
-                      animationFillMode: 'both'
-                    }}
-                  >
-                    {member}
-                  </div>
+                  currentPhase === 'name' ? (
+                    <button
+                      key={index}
+                      onClick={() => handleNameSelection(member)}
+                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-300 hover:to-purple-400 transition-all transform hover:scale-105"
+                      style={{ 
+                        fontFamily: 'Barlow Semi Condensed, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '0.9rem',
+                        animationDelay: `${index * 200}ms`,
+                        animationFillMode: 'both'
+                      }}
+                    >
+                      {member}
+                    </button>
+                  ) : (
+                    <div 
+                      key={index}
+                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in"
+                      style={{ 
+                        fontFamily: 'Barlow Semi Condensed, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '0.9rem',
+                        animationDelay: `${index * 200}ms`,
+                        animationFillMode: 'both'
+                      }}
+                    >
+                      {member}
+                    </div>
+                  )
                 ))}
               </div>
             </div>

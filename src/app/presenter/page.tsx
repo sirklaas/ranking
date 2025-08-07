@@ -7,11 +7,15 @@ import { RankingSession } from '@/types';
 import { teamService, faseService, rankingService } from '@/lib/pocketbase';
 
 export default function PresenterPage() {
-  const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
   const [selectedSession, setSelectedSession] = useState<RankingSession | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [editingHeadings, setEditingHeadings] = useState<Record<string, { heading: string; image?: string }>>({});
   const [currentFase, setCurrentFase] = useState('01/01');
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [gameTime, setGameTime] = useState('00:00');
 
   // Load Google Font
   useEffect(() => {
@@ -23,6 +27,20 @@ export default function PresenterPage() {
       document.head.removeChild(link);
     };
   }, []);
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+      if (gameStartTime) {
+        const elapsed = Math.floor((Date.now() - gameStartTime.getTime()) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        setGameTime(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [gameStartTime]);
 
   // Define fase groups
   const faseGroups = {
@@ -68,6 +86,41 @@ export default function PresenterPage() {
       console.log('Could not load master template, using defaults');
     }
     return null;
+  };
+
+  const handleStartRankingGame = () => {
+    if (!selectedSession) return;
+    setGameStarted(true);
+    setGameStartTime(new Date());
+    setCurrentView('game');
+    setCurrentFase('01/01');
+  };
+
+  const handlePhaseNavigation = (fase: string) => {
+    setCurrentFase(fase);
+    // Update the session's current fase in the database
+    if (selectedSession) {
+      rankingService.updateSession(selectedSession.id, { current_fase: fase });
+    }
+  };
+
+  const getNextFase = () => {
+    const allFases = Object.values(faseGroups).flatMap(group => group.fases);
+    const currentIndex = allFases.indexOf(currentFase);
+    return currentIndex < allFases.length - 1 ? allFases[currentIndex + 1] : currentFase;
+  };
+
+  const getCurrentDisplay = () => {
+    if (!selectedSession) return 'No session selected';
+    const headings = faseService.parseHeadings(selectedSession.headings || '{}');
+    return headings[currentFase]?.heading || `Fase ${currentFase}`;
+  };
+
+  const getNextDisplay = () => {
+    if (!selectedSession) return 'No session selected';
+    const nextFase = getNextFase();
+    const headings = faseService.parseHeadings(selectedSession.headings || '{}');
+    return headings[nextFase]?.heading || `Fase ${nextFase}`;
   };
 
   const handleSessionSelect = async (session: RankingSession) => {
@@ -292,6 +345,93 @@ export default function PresenterPage() {
     setSelectedSession(null);
   };
 
+  const renderGameInterface = () => {
+    if (!selectedSession) return null;
+
+    const allFases = Object.values(faseGroups).flatMap(group => group.fases);
+    const phaseButtons = [
+      { label: '1', fases: faseGroups['1'].fases },
+      { label: '2', fases: faseGroups['4'].fases },
+      { label: '3', fases: faseGroups['7'].fases },
+      { label: '4', fases: faseGroups['10'].fases },
+      { label: '5', fases: faseGroups['13'].fases },
+      { label: '6', fases: faseGroups['17'].fases },
+      { label: '7', fases: faseGroups['20'].fases }
+    ];
+
+    return (
+      <div className="h-screen bg-gray-100 p-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        {/* Header with game info */}
+        <div className="bg-white rounded-lg p-4 mb-4 shadow-md">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{selectedSession.gamename}</h1>
+              <div className="flex gap-8 text-lg font-semibold text-gray-700">
+                <span>{currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })} [time]</span>
+                <span>{gameTime} [game time]</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setCurrentView('manage')}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              ← Back to Setup
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-4 h-full">
+          {/* Left side - Current and Next Display */}
+          <div className="flex-1 space-y-4">
+            {/* Current Display */}
+            <div className="bg-white rounded-lg p-4 shadow-md">
+              <h3 className="text-lg font-semibold mb-2">Current Display</h3>
+              <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-6 text-white min-h-[200px] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-sm opacity-80 mb-2">Fase {currentFase}</div>
+                  <div className="text-xl font-bold">{getCurrentDisplay()}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Display */}
+            <div className="bg-white rounded-lg p-4 shadow-md">
+              <h3 className="text-lg font-semibold mb-2">Next Display</h3>
+              <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-6 text-white min-h-[200px] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-sm opacity-80 mb-2">Fase {getNextFase()}</div>
+                  <div className="text-xl font-bold">{getNextDisplay()}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Show Results Button */}
+            <button className="w-full bg-purple-600 text-white py-4 rounded-lg text-xl font-bold hover:bg-purple-700 transition-colors">
+              Show results
+            </button>
+          </div>
+
+          {/* Right side - Phase Navigation */}
+          <div className="w-32 space-y-2">
+            {phaseButtons.map((phase) => (
+              <button
+                key={phase.label}
+                onClick={() => handlePhaseNavigation(phase.fases[0])}
+                className={`w-full h-16 rounded-lg text-2xl font-bold text-white transition-colors ${
+                  phase.fases.includes(currentFase)
+                    ? 'bg-orange-600 shadow-lg'
+                    : 'bg-orange-400 hover:bg-orange-500'
+                }`}
+              >
+                {phase.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderSessionDetails = () => {
     if (!selectedSession) return null;
 
@@ -301,16 +441,24 @@ export default function PresenterPage() {
       <div className="bg-white rounded-lg shadow-md p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.showname}</h2>
-            <p className="text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.city}</p>
+            <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.gamename} - {selectedSession.city}</h2>
           </div>
-          <button
-            onClick={handleBackToList}
-            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-          >
-            ← Back to List
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={handleStartRankingGame}
+              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-bold text-lg"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Start Ranking game
+            </button>
+            <button
+              onClick={handleBackToList}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              ← Back to List
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -466,6 +614,8 @@ export default function PresenterPage() {
         )}
 
         {currentView === 'manage' && renderSessionDetails()}
+        
+        {currentView === 'game' && renderGameInterface()}
       </div>
     </div>
   );
