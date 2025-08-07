@@ -12,7 +12,7 @@ export default function PresenterPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [editingHeadings, setEditingHeadings] = useState<Record<string, { heading: string; image?: string }>>({});
   const [currentFase, setCurrentFase] = useState('01/01');
-  const [gameStarted, setGameStarted] = useState(false);
+  const [, setGameStarted] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [gameTime, setGameTime] = useState('00:00');
@@ -348,7 +348,6 @@ export default function PresenterPage() {
   const renderGameInterface = () => {
     if (!selectedSession) return null;
 
-    const allFases = Object.values(faseGroups).flatMap(group => group.fases);
     const phaseButtons = [
       { label: '1', fases: faseGroups['1'].fases },
       { label: '2', fases: faseGroups['4'].fases },
@@ -365,7 +364,7 @@ export default function PresenterPage() {
         <div className="bg-white rounded-lg p-4 mb-4 shadow-md">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{selectedSession.gamename}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{selectedSession.showname || 'Game Session'}</h1>
               <div className="flex gap-8 text-lg font-semibold text-gray-700">
                 <span>{currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })} [time]</span>
                 <span>{gameTime} [game time]</span>
@@ -441,7 +440,7 @@ export default function PresenterPage() {
       <div className="bg-white rounded-lg shadow-md p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.gamename} - {selectedSession.city}</h2>
+            <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.showname || 'Game Session'} - {selectedSession.city || 'City'}</h2>
           </div>
           <div className="flex gap-4">
             <button

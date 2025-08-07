@@ -26,13 +26,13 @@ export default function PlayerPage() {
   // Player onboarding flow states
   const [currentPhase, setCurrentPhase] = useState<'team' | 'photocircle' | 'name' | 'complete'>('team');
   const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
-  const [selectedPlayerName, setSelectedPlayerName] = useState('');
-  const [playerData, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
+  const [, setSelectedPlayerName] = useState('');
+  const [, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
   
   // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>(['In welk team zit je?']);
-  const [isHeadingAnimating, setIsHeadingAnimating] = useState(false);
-  const [headingVisible, setHeadingVisible] = useState(true);
+  const [, ] = useState(false);
+  const [headingVisible, ] = useState(true);
 
   // Load the latest session data
   useEffect(() => {
