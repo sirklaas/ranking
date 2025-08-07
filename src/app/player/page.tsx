@@ -75,7 +75,7 @@ export default function PlayerPage() {
                 headingsObj = JSON.parse(latestSession.headings);
               } else {
                 // Already an object
-                headingsObj = latestSession.headings as any;
+                headingsObj = latestSession.headings as Record<string, { heading: string; image?: string }>;
               }
               
               const headingText = headingsObj[faseToUse]?.heading || 'In welk team zit je?';
@@ -142,7 +142,7 @@ export default function PlayerPage() {
           headingsObj = JSON.parse(currentSession.headings);
         } else {
           // Already an object
-          headingsObj = currentSession.headings as any;
+          headingsObj = currentSession.headings as Record<string, { heading: string; image?: string }>;
         }
         
         const headingText = headingsObj[faseToUse]?.heading || 'In welk team zit je?';
