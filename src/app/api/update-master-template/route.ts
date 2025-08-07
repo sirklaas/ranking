@@ -6,8 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     const headings = await request.json();
     
-    // Path to the local GitHub assets folder
-    const filePath = path.join(process.cwd(), 'assets', 'fases.json');
+    // Path to the public assets folder (served by Next.js)
+    const filePath = path.join(process.cwd(), 'public', 'assets', 'fases.json');
     
     // Write the updated headings to the local assets file
     await writeFile(filePath, JSON.stringify(headings, null, 2), 'utf8');

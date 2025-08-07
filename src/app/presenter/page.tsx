@@ -457,12 +457,12 @@ export default function PresenterPage() {
       <div className="bg-white rounded-lg shadow-md p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.showname || 'Game Session'} - {selectedSession.city || 'City'}</h2>
+            <h2 className="text-2xl font-medium text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{selectedSession.showname || 'Game Session'} - {selectedSession.city || 'City'}</h2>
           </div>
           <div className="flex gap-4">
             <button
               onClick={handleStartRankingGame}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-bold text-lg"
+              className="bg-[#0A1752] text-white px-6 py-3 rounded-lg hover:bg-[#0A1752]/90 transition-colors font-bold text-lg"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
             >
               Start Ranking game
@@ -478,12 +478,12 @@ export default function PresenterPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 rounded-lg p-2 text-center">
-            <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_players}</div>
+          <div className="bg-[#0A1752]/10 rounded-lg p-2 text-center">
+            <div className="text-2xl font-bold text-[#0A1752]" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_players}</div>
             <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Players</div>
           </div>
-          <div className="bg-blue-50 rounded-lg p-2 text-center">
-            <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_teams}</div>
+          <div className="bg-[#0A1752]/10 rounded-lg p-2 text-center">
+            <div className="text-2xl font-bold text-[#0A1752]" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_teams}</div>
             <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Teams</div>
           </div>
           <div className="bg-purple-50 rounded-lg p-2 text-center">
@@ -505,21 +505,7 @@ export default function PresenterPage() {
 
 
 
-        {/* Session Controls */}
-        <div className="mb-6">
-          <h3 className="font-semibold text-gray-900 mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Session Controls</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Start Ranking Game
-            </button>
-            <button className="bg-purple-600 text-white py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              View Live Results
-            </button>
-            <button className="bg-pink-600 text-white py-3 px-6 rounded-lg hover:bg-pink-700 transition-colors font-semibold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Export Data
-            </button>
-          </div>
-        </div>
+
 
         {/* JSON Heading Editor */}
         <div className="mb-6 bg-gray-50 rounded-lg p-6">
@@ -527,7 +513,7 @@ export default function PresenterPage() {
             <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>JSON Heading Dashboard</h3>
             <button
               onClick={saveHeadings}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-[#0A1752] text-white px-4 py-2 rounded-lg hover:bg-[#0A1752]/90 transition-colors"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
             >
               Save Headings
@@ -545,7 +531,7 @@ export default function PresenterPage() {
                 const firstFase = faseGroups[selectedGroup as keyof typeof faseGroups]?.fases[0] || '01/01';
                 setCurrentFase(firstFase);
               }}
-              className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-gray-900"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
             >
               {Object.entries(faseGroups).map(([key, group]) => (
@@ -568,7 +554,7 @@ export default function PresenterPage() {
                       type="text"
                       value={editingHeadings[fase]?.heading || ''}
                       onChange={(e) => handleHeadingUpdate(fase, e.target.value, editingHeadings[fase]?.image)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
                       style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
                       placeholder="Enter heading text"
                     />
@@ -581,7 +567,7 @@ export default function PresenterPage() {
                       type="text"
                       value={editingHeadings[fase]?.image || ''}
                       onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900"
+                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
                       style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
                       placeholder="image.jpg"
                     />
@@ -600,20 +586,17 @@ export default function PresenterPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            Ranking Gameshow - Presenter Dashboard
-          </h1>
-          {currentView === 'list' && (
+        {currentView === 'list' && (
+          <div className="flex justify-end mb-8">
             <button
               onClick={() => setCurrentView('create')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              className="bg-[#0A1752] text-white px-6 py-3 rounded-lg hover:bg-[#0A1752]/90 transition-colors font-semibold"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
             >
               + Create New Session
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {currentView === 'list' && (
           <RankingSessionList

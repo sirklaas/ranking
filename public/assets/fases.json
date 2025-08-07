@@ -1,0 +1,302 @@
+{
+  "01/01": {
+    "heading": "In welk team zit je?",
+    "image": "",
+    "fase": "1",
+    "faseNaam": "Intro"
+  },
+  "01/02": {
+    "heading": "Heb je 'n PhotoCircle account?",
+    "image": "",
+    "fase": "1",
+    "faseNaam": "Intro"
+  },
+  "01/03": {
+    "heading": "Wat is jouw naam?",
+    "image": "",
+    "fase": "1",
+    "faseNaam": "Intro"
+  },
+  "01/04": {
+    "heading": "Wat wordt jullie Teamnaam?",
+    "image": "teamnaam",
+    "fase": "1",
+    "faseNaam": "Intro"
+  },
+  "01/05": {
+    "heading": "Wat wordt jullie Teamyell? /n Kort maar Krachtig",
+    "image": "teamyell",
+    "fase": "1",
+    "faseNaam": "Intro"
+  },
+  "01/06": {
+    "heading": "Maak een Selfie Video /n en upload die naar PhotoCircle",
+    "image": "selfie",
+    "fase": "1",
+    "faseNaam": "Intro"
+  },
+  "01/07": {
+    "heading": "Wie is jullie Teamleider?",
+    "image": "",
+    "fase": "1",
+    "faseNaam": "Intro"
+  },
+  "04/01": {
+    "heading": "Iedereen wordt wel een heel erg blij /n van iets dat niet algemeen als top beschouwd /n Wat is jouw Guilty Pleasure",
+    "image": "trailerguilty",
+    "fase": "4",
+    "faseNaam": "Guilty Pleasures"
+  },
+  "04/02": {
+    "heading": "Vul nu jouw \"Guilty Pleasure\" in",
+    "image": "",
+    "fase": "4",
+    "faseNaam": "Guilty Pleasures"
+  },
+  "07/01": {
+    "heading": "Blijf staan als je het met de stelling eens bent",
+    "image": "trailerzit",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/05": {
+    "heading": "Superfoods /n Ik zweer erbij",
+    "image": "Super",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/06": {
+    "heading": "Ik flirt soms /n Om iets te krijgen",
+    "image": "Flirt",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/07": {
+    "heading": "Houseparty /n Niks leukers dan",
+    "image": "Houseparty",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/08": {
+    "heading": "Socials checken /n Het eerste wat ik doe",
+    "image": "Socials",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/09": {
+    "heading": "Kleding /n Mijn hele salaris gaat op aan",
+    "image": "Kleding",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/10": {
+    "heading": "In een 'all-in' /n Ik zweer bij een vakantie",
+    "image": "All-in",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/11": {
+    "heading": "Sauna /n Ik vindt dat zo vies",
+    "image": "Sauna",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/12": {
+    "heading": "Met een collega /n Heb ik weleens wat gehad",
+    "image": "Collega",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/13": {
+    "heading": "Billen /n Ik val echt op",
+    "image": "Billen",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/14": {
+    "heading": "Gat in mijn hand /n Ik heb een enorm",
+    "image": "Gat",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "07/15": {
+    "heading": "Teveel /n Ik drink nooit",
+    "image": "Teveel",
+    "fase": "7",
+    "faseNaam": "Zitten en Staan"
+  },
+  "10/01": {
+    "heading": "Kies iemand uit een van de andere teams!",
+    "image": "trailertop3",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/05": {
+    "heading": "Wie wordt er echt heel erg snel verliefd",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/06": {
+    "heading": "Wie is de ideale schoon- zoon of zus?",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/07": {
+    "heading": "Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/08": {
+    "heading": "Wie zou je absoluut niet op je kinderen laten passen?",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/09": {
+    "heading": "Wie heeft de meeste crypto's",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/10": {
+    "heading": "Wie is de grootste aansteller op het werk?",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/11": {
+    "heading": "Wie zou er als eerste een account aanmaken /n op OnlyFans?",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/12": {
+    "heading": "Wie vertrouw je diepste geheimen toe?",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "10/13": {
+    "heading": "Wie zou je meenemen naar een parenclub?",
+    "image": "",
+    "fase": "10",
+    "faseNaam": "De Top 3"
+  },
+  "13/01": {
+    "heading": "Krakende Karakters",
+    "image": "trailerkrakende",
+    "fase": "13",
+    "faseNaam": "Krakende Karakters"
+  },
+  "13/02": {
+    "heading": "Hoe kom je hier doorheen?",
+    "image": "",
+    "fase": "13",
+    "faseNaam": "Krakende Karakters"
+  },
+  "13/03": {
+    "heading": "Goede Geinige Eigenschappen",
+    "image": "",
+    "fase": "13",
+    "faseNaam": "Krakende Karakters"
+  },
+  "13/05": {
+    "heading": "Geinige\\ngrappenmaker, fantastisch\\nfeestbeest, charmante\\nchatterbox, vrolijke\\nvlinder, mysterieuze\\nmuurbloem, lieve\\nluisteraar, perfecte\\nplannenmaker, sexy\\nstille kracht, gezellige\\ngastvrouw, daadkrachtige\\ndiva, energieke\\nenergiebom, gek\\ngenie, social\\nsuperman, intro\\nintellectueel, zachte\\nzorgzame ziel, lekkere\\nlevensgenieter, stoute\\nstoeipoes, vrolijke\\nvriend, warme\\nwondervrouw, spreadsheet\\nwizzard, brainstorm\\nboss, tech-support\\nheld, kantoor-\\ntherapheut, netwerk-\\nninja, presentatie-\\nster, klant\\nfluisteraar, innovatie-\\nmotor, mentale\\nsteunpilaar, detail\\ndetective, motivatie\\ncoach, data\\ndiehard, feedback\\nfriend, resultaat-\\nleverancier, deadline\\nout-sorcerer, succes\\ncatalysator, sex\\nverslaafd",
+    "image": "",
+    "fase": "13",
+    "faseNaam": "Krakende Karakters"
+  },
+  "13/06": {
+    "heading": "Misschien iets Minder goede Eigenschappen",
+    "image": "",
+    "fase": "13",
+    "faseNaam": "Krakende Karakters"
+  },
+  "13/09": {
+    "heading": "Dramatische\\ndoom-denker, irritante\\nijdeltuit, saaie\\nzeurpiet, luie\\nlounger, roddel-\\nratje, perfectie\\npessimist, krankzinnige\\ncontrol-freak, kritisch\\nkreng, humeurige\\nheld, pedante\\nperfectionist, wispelturige\\nweirdo, neurotische\\nnachtmerrie, koppige\\nkleuter, defensieve\\ndictator, passief\\nagressieve prins, Meeting\\nmonopolist, deadline-\\ndodger, vage\\nverantwoordelijkheids schuiver, micromanagement\\nmonster, excuus\\nfabricant, complain\\nkampioen, know it all\\nirritant, energie\\nvampier, drama\\nmagneet, blame\\ngamer, werkplek\\nchaoot, digital\\nstalker, pessimisme\\nprins, motivatie\\nmoordenaar, burnout\\nbron, drama\\nqueen, sex\\nverslaafd",
+    "image": "",
+    "fase": "13",
+    "faseNaam": "Krakende Karakters"
+  },
+  "17/01": {
+    "heading": "De Top 10",
+    "image": "trailertop10",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/02": {
+    "heading": "Kies iemand uit een ander team!",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/05": {
+    "heading": "Een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/06": {
+    "heading": "Wie denkt dat ie altijd gelijk heeft?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/07": {
+    "heading": "Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/08": {
+    "heading": "Wie kan er 40 dagen zonder sexs?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/09": {
+    "heading": "Wie kan absoluut niet tegen zijn/haar verlies?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/10": {
+    "heading": "Wie laat weleens een wind?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/11": {
+    "heading": "Wie maakt de allerlelijkste Selfies ?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/12": {
+    "heading": "Wie is het meest verslaafd aan Social Media?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/13": {
+    "heading": "Wie krijgt de meeste bekeuringen?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "17/14": {
+    "heading": "Jullie doen mee met Temptation Island. /n Wie heeft als eerste iemand tusen de lakens?",
+    "image": "",
+    "fase": "17",
+    "faseNaam": "Top 10"
+  },
+  "20/01": {
+    "heading": "De Finale",
+    "image": "trailerfinale",
+    "fase": "20",
+    "faseNaam": "De Finale"
+  }
+}
