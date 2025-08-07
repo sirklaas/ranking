@@ -138,6 +138,42 @@ export default function PresenterPage() {
     return headings[nextFase]?.heading || `Fase ${nextFase}`;
   };
 
+  const getNextMedia = () => {
+    // Logic to determine next media based on current fase
+    // This can be expanded to read from session data or a media mapping
+    const mediaMap: Record<string, { type: 'video' | 'image', path: string, name: string }> = {
+      '01/01': { type: 'video', path: '/githublocal/pcs/RankingNaam.mp4', name: 'RankingNaam.mp4' },
+      '01/02': { type: 'image', path: '/assets/images/photocircle.webp', name: 'PhotoCircle.webp' },
+      '01/03': { type: 'image', path: '/assets/images/teamselection.webp', name: 'TeamSelection.webp' },
+      // Add more mappings as needed
+    };
+    
+    const nextFase = getNextFase();
+    return mediaMap[nextFase] || { type: 'video', path: '/githublocal/pcs/RankingNaam.mp4', name: 'RankingNaam.mp4' };
+  };
+
+  const renderMediaPreview = (media: { type: 'video' | 'image', path: string, name: string }) => {
+    if (media.type === 'video') {
+      return (
+        <div className="text-center">
+          <div className="text-6xl mb-4">🎬</div>
+          <div className="text-lg font-bold mb-2">{media.name}</div>
+          <div className="text-sm opacity-80">Video Preview</div>
+          <div className="text-xs opacity-60 mt-2">{media.path}</div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="text-center">
+          <div className="text-6xl mb-4">🖼️</div>
+          <div className="text-lg font-bold mb-2">{media.name}</div>
+          <div className="text-sm opacity-80">Image Preview</div>
+          <div className="text-xs opacity-60 mt-2">{media.path}</div>
+        </div>
+      );
+    }
+  };
+
   const handleSessionSelect = async (session: RankingSession) => {
     setSelectedSession(session);
     setCurrentView('manage');
@@ -407,31 +443,68 @@ export default function PresenterPage() {
         </div>
 
         {/* Main content - Full width with phases on far right */}
-        <div className="flex gap-6 h-[calc(100vh-200px)] relative">
+        <div className="flex gap-4 h-[calc(100vh-200px)] relative">
           {/* Left side - Two screens side by side and Show Results button */}
-          <div className="flex-1 flex flex-col gap-6">
-            {/* Two screens side by side */}
-            <div className="flex gap-6 flex-1">
+          <div className="flex-1 flex flex-col gap-4">
+            {/* Two screens side by side - Much larger */}
+            <div className="flex gap-4 flex-1">
               {/* Current Display - Left screen */}
-              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
-                <h3 className="text-xl font-bold mb-4 text-gray-800">Current Display</h3>
-                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-8 text-white h-[300px] flex items-center justify-center border-4 border-gray-200">
-                  <div className="text-center">
-                    <div className="text-lg opacity-90 mb-3">Fase {currentFase}</div>
-                    <div className="text-2xl font-bold">{getCurrentDisplay()}</div>
+              <div className="flex-1 bg-white rounded-lg p-3 shadow-md">
+                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-4 border-gray-200 relative overflow-hidden">
+                  {/* Simulate actual display content */}
+                  <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col">
+                    {/* Header like in screenshot */}
+                    <div className="bg-blue-900 text-white p-2 text-xs flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="text-yellow-300">★★★</div>
+                        <span>Quizmaster Klaas presenteert</span>
+                      </div>
+                      <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: 8075</div>
+                    </div>
+                    
+                    {/* Main content area */}
+                    <div className="flex-1 p-2">
+                      <div className="text-center text-white mb-2">
+                        <div className="text-lg font-bold">{getCurrentDisplay()}</div>
+                        <div className="text-sm opacity-90">De teams van vandaag zijn:</div>
+                      </div>
+                      
+                      {/* Team circles simulation */}
+                      <div className="flex justify-center gap-4 mb-2">
+                        {[1, 2, 3, 4].map(num => (
+                          <div key={num} className="flex flex-col items-center">
+                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black font-bold border-4 border-black">
+                              {num}
+                            </div>
+                            <div className="mt-1 space-y-1">
+                              {['Player 1', 'Player 2'].map((player, idx) => (
+                                <div key={idx} className="bg-pink-200 text-black text-xs px-2 py-1 rounded">
+                                  {player}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="text-center text-white text-xs mt-2">
+                        Total Players: 20 | Teams: 4 | Location: jb
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <h3 className="text-xl font-bold mt-3 text-gray-800 text-center">Current</h3>
               </div>
 
               {/* Next Display - Right screen */}
-              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
-                <h3 className="text-xl font-bold mb-4 text-gray-800">Next Display</h3>
-                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-8 text-white h-[300px] flex items-center justify-center border-4 border-gray-200">
-                  <div className="text-center">
-                    <div className="text-lg opacity-90 mb-3">Fase {getNextFase()}</div>
-                    <div className="text-2xl font-bold">{getNextDisplay()}</div>
+              <div className="flex-1 bg-white rounded-lg p-3 shadow-md">
+                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[400px] flex items-center justify-center border-4 border-gray-200 relative overflow-hidden">
+                  {/* Show next media preview */}
+                  <div className="w-full h-full bg-black rounded flex items-center justify-center">
+                    {renderMediaPreview(getNextMedia())}
                   </div>
                 </div>
+                <h3 className="text-xl font-bold mt-3 text-gray-800 text-center">Next</h3>
               </div>
             </div>
 
@@ -444,19 +517,19 @@ export default function PresenterPage() {
           </div>
 
           {/* Right side - Phase Navigation - All the way to the right */}
-          <div className="w-40 space-y-3 flex flex-col">
+          <div className="w-48 space-y-3 flex flex-col">
             {phaseButtons.map((phase) => (
               <button
                 key={phase.label}
                 onClick={() => handlePhaseNavigation(phase.fases[0])}
-                className={`w-full h-20 rounded-lg text-2xl font-bold text-white transition-colors flex flex-col items-center justify-center ${
+                className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${
                   phase.fases.includes(currentFase)
                     ? 'bg-orange-600 shadow-lg'
                     : 'bg-orange-400 hover:bg-orange-500'
                 }`}
               >
                 <div>{phase.label}</div>
-                <div className="text-xs font-normal opacity-90">[{phase.name}]</div>
+                <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
               </button>
             ))}
           </div>
