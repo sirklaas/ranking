@@ -67,7 +67,18 @@ export default function PlayerPage() {
               }
               
               console.log('faseToUse:', faseToUse);
-              const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
+              
+              // Handle headings - could be string (JSON) or object from PocketBase
+              let headingsObj: Record<string, { heading: string; image?: string }>;
+              if (typeof latestSession.headings === 'string') {
+                // Parse JSON string
+                headingsObj = JSON.parse(latestSession.headings);
+              } else {
+                // Already an object
+                headingsObj = latestSession.headings as any;
+              }
+              
+              const headingText = headingsObj[faseToUse]?.heading || 'In welk team zit je?';
               console.log('headingText from PocketBase:', headingText);
               
               if (headingText && headingText.trim()) {
@@ -102,13 +113,50 @@ export default function PlayerPage() {
       }
     };
 
-    loadSessionData();
-    
-    // Set up interval for real-time updates
-    const interval = setInterval(loadSessionData, 2000); // Check every 2 seconds
-    
-    return () => clearInterval(interval);
-  }, [currentPhase]); // Re-run when currentPhase changes
+    // Only load data once on mount
+    if (!currentSession) {
+      loadSessionData();
+    }
+  }, []); // Empty dependency array - load only once on mount
+  
+  // Separate effect for updating heading when phase changes (using existing session data)
+  useEffect(() => {
+    if (currentSession && currentSession.headings) {
+      try {
+        // Map onboarding phases to specific fases
+        let faseToUse = '01/01'; // Default to team selection
+        if (currentPhase === 'team') {
+          faseToUse = '01/01'; // Team selection
+        } else if (currentPhase === 'photocircle') {
+          faseToUse = '01/02'; // PhotoCircle question
+        } else if (currentPhase === 'name') {
+          faseToUse = '01/03'; // Name selection
+        }
+        
+        console.log('Phase changed - updating heading for faseToUse:', faseToUse);
+        
+        // Handle headings - could be string (JSON) or object from PocketBase
+        let headingsObj: Record<string, { heading: string; image?: string }>;
+        if (typeof currentSession.headings === 'string') {
+          // Parse JSON string
+          headingsObj = JSON.parse(currentSession.headings);
+        } else {
+          // Already an object
+          headingsObj = currentSession.headings as any;
+        }
+        
+        const headingText = headingsObj[faseToUse]?.heading || 'In welk team zit je?';
+        console.log('Updated headingText for phase:', headingText);
+        
+        if (headingText && headingText.trim()) {
+          const formattedHeading = faseService.formatHeadingText(headingText);
+          setCurrentHeading(formattedHeading);
+        }
+      } catch (error) {
+        console.error('Error updating heading for phase change:', error);
+      }
+    }
+  }, [currentPhase, currentSession]); // Update heading when phase or session changes
 
   const handleTeamSubmit = () => {
     if (!teamNumber || !currentSession) return;
