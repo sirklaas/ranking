@@ -30,7 +30,7 @@ export default function PlayerPage() {
   const [, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
   
   // Dynamic heading states
-  const [currentHeading, setCurrentHeading] = useState<string[]>(['In welk team zit je?']);
+  const [currentHeading, setCurrentHeading] = useState<string[]>([]);
   const [headingVisible, ] = useState(true);
 
   // Load the latest session data and set up real-time updates
@@ -47,6 +47,9 @@ export default function PlayerPage() {
             const headingText = faseService.getCurrentHeading(latestSession.headings, latestSession.current_fase);
             const formattedHeading = faseService.formatHeadingText(headingText);
             setCurrentHeading(formattedHeading);
+          } else if (currentPhase === 'team' && currentHeading.length === 0) {
+            // Fallback heading if no PocketBase data available
+            setCurrentHeading(['In welk team zit je?']);
           }
         }
       } catch (error) {
@@ -121,6 +124,7 @@ export default function PlayerPage() {
     const [currentCharIndex, setCurrentCharIndex] = useState(0);
     const [isTyping, setIsTyping] = useState(true);
     const [hasAnimated, setHasAnimated] = useState(false);
+    const [lastLines, setLastLines] = useState<string[]>([]);
 
     useEffect(() => {
       if (!visible) {
@@ -129,10 +133,25 @@ export default function PlayerPage() {
         setCurrentCharIndex(0);
         setIsTyping(true);
         setHasAnimated(false);
+        setLastLines([]);
         return;
       }
 
-      // If already animated, just show the complete text
+      // Check if lines have actually changed
+      const linesChanged = JSON.stringify(lines) !== JSON.stringify(lastLines);
+      
+      // If lines changed, reset animation
+      if (linesChanged) {
+        setLastLines(lines);
+        setDisplayedLines([]);
+        setCurrentLineIndex(0);
+        setCurrentCharIndex(0);
+        setIsTyping(true);
+        setHasAnimated(false);
+        return;
+      }
+
+      // If already animated and lines haven't changed, just show the complete text
       if (hasAnimated) {
         setDisplayedLines(lines);
         setIsTyping(false);
@@ -166,7 +185,7 @@ export default function PlayerPage() {
 
         return () => clearTimeout(timer);
       }
-    }, [lines, visible, currentLineIndex, currentCharIndex, hasAnimated]);
+    }, [lines, visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]);
 
     return (
       <div 
