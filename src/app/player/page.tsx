@@ -55,9 +55,33 @@ export default function PlayerPage() {
               faseToUse = '01/03'; // Name selection
             }
             
+            console.log('Loading heading for fase:', faseToUse, 'currentPhase:', currentPhase);
             const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
+            console.log('Raw heading text:', headingText);
             const formattedHeading = faseService.formatHeadingText(headingText);
-            setCurrentHeading(formattedHeading);
+            console.log('Formatted heading:', formattedHeading);
+            
+            if (formattedHeading && formattedHeading.length > 0) {
+              setCurrentHeading(formattedHeading);
+            } else {
+              // Fallback headings if PocketBase data is empty or invalid
+              const fallbackHeadings = {
+                'team': ['In welk team zit je?'],
+                'photocircle': ['Heb je \'n PhotoCircle account?'],
+                'name': ['Wat is jouw naam?']
+              };
+              console.log('Using fallback heading for phase:', currentPhase);
+              setCurrentHeading(fallbackHeadings[currentPhase as keyof typeof fallbackHeadings] || ['Loading...']);
+            }
+          } else {
+            // Fallback when no session data available
+            const fallbackHeadings = {
+              'team': ['In welk team zit je?'],
+              'photocircle': ['Heb je \'n PhotoCircle account?'],
+              'name': ['Wat is jouw naam?']
+            };
+            console.log('No session data, using fallback for phase:', currentPhase);
+            setCurrentHeading(fallbackHeadings[currentPhase as keyof typeof fallbackHeadings] || ['Loading...']);
           }
         }
       } catch (error) {
