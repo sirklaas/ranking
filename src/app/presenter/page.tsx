@@ -377,80 +377,86 @@ export default function PresenterPage() {
     }
 
     const phaseButtons = [
-      { label: '1', fases: faseGroups['1'].fases },
-      { label: '2', fases: faseGroups['4'].fases },
-      { label: '3', fases: faseGroups['7'].fases },
-      { label: '4', fases: faseGroups['10'].fases },
-      { label: '5', fases: faseGroups['13'].fases },
-      { label: '6', fases: faseGroups['17'].fases },
-      { label: '7', fases: faseGroups['20'].fases }
+      { label: '1', name: 'Intro', fases: faseGroups['1'].fases },
+      { label: '2', name: 'Guilty Pleasures', fases: faseGroups['4'].fases },
+      { label: '3', name: 'Zitten en Staan', fases: faseGroups['7'].fases },
+      { label: '4', name: 'De Top 3', fases: faseGroups['10'].fases },
+      { label: '5', name: 'Krakende Karakters', fases: faseGroups['13'].fases },
+      { label: '6', name: 'Top 10', fases: faseGroups['17'].fases },
+      { label: '7', name: 'De Finale', fases: faseGroups['20'].fases }
     ];
 
     return (
-      <div className="h-screen bg-gray-100 p-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-        {/* Header with game info */}
-        <div className="bg-white rounded-lg p-4 mb-4 shadow-md">
+      <div className="h-screen bg-gray-100 p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        {/* Header with game info - Full width layout */}
+        <div className="bg-white rounded-lg p-6 mb-6 shadow-md">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{selectedSession.showname || 'Game Session'}</h1>
-              <div className="flex gap-8 text-lg font-semibold text-gray-700">
-                <span>{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
-                <span>{gameTime} [game time]</span>
-              </div>
+            {/* Left side - Game info in one line */}
+            <div className="flex items-center gap-8">
+              <h1 className="text-3xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
+              <span className="text-xl font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
+              <span className="text-xl font-semibold text-gray-700">{gameTime} [game time]</span>
             </div>
             <button
               onClick={() => setCurrentView('manage')}
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
             >
               ← Back to Setup
             </button>
           </div>
         </div>
 
-        <div className="flex gap-4 h-full">
-          {/* Left side - Current and Next Display */}
-          <div className="flex-1 space-y-4">
-            {/* Current Display */}
-            <div className="bg-white rounded-lg p-4 shadow-md">
-              <h3 className="text-lg font-semibold mb-2">Current Display</h3>
-              <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-6 text-white min-h-[200px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-sm opacity-80 mb-2">Fase {currentFase}</div>
-                  <div className="text-xl font-bold">{getCurrentDisplay()}</div>
+        {/* Main content - Full width with phases on far right */}
+        <div className="flex gap-6 h-[calc(100vh-200px)] relative">
+          {/* Left side - Two screens side by side and Show Results button */}
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Two screens side by side */}
+            <div className="flex gap-6 flex-1">
+              {/* Current Display - Left screen */}
+              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
+                <h3 className="text-xl font-bold mb-4 text-gray-800">Current Display</h3>
+                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-8 text-white h-[300px] flex items-center justify-center border-4 border-gray-200">
+                  <div className="text-center">
+                    <div className="text-lg opacity-90 mb-3">Fase {currentFase}</div>
+                    <div className="text-2xl font-bold">{getCurrentDisplay()}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Next Display - Right screen */}
+              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
+                <h3 className="text-xl font-bold mb-4 text-gray-800">Next Display</h3>
+                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-8 text-white h-[300px] flex items-center justify-center border-4 border-gray-200">
+                  <div className="text-center">
+                    <div className="text-lg opacity-90 mb-3">Fase {getNextFase()}</div>
+                    <div className="text-2xl font-bold">{getNextDisplay()}</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Next Display */}
-            <div className="bg-white rounded-lg p-4 shadow-md">
-              <h3 className="text-lg font-semibold mb-2">Next Display</h3>
-              <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-6 text-white min-h-[200px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-sm opacity-80 mb-2">Fase {getNextFase()}</div>
-                  <div className="text-xl font-bold">{getNextDisplay()}</div>
-                </div>
-              </div>
+            {/* Show Results Button - Below screens */}
+            <div className="w-full">
+              <button className="w-full bg-purple-600 text-white py-6 rounded-lg text-2xl font-bold hover:bg-purple-700 transition-colors shadow-lg">
+                Show results
+              </button>
             </div>
-
-            {/* Show Results Button */}
-            <button className="w-full bg-purple-600 text-white py-4 rounded-lg text-xl font-bold hover:bg-purple-700 transition-colors">
-              Show results
-            </button>
           </div>
 
-          {/* Right side - Phase Navigation */}
-          <div className="w-32 space-y-2">
+          {/* Right side - Phase Navigation - All the way to the right */}
+          <div className="w-40 space-y-3 flex flex-col">
             {phaseButtons.map((phase) => (
               <button
                 key={phase.label}
                 onClick={() => handlePhaseNavigation(phase.fases[0])}
-                className={`w-full h-16 rounded-lg text-2xl font-bold text-white transition-colors ${
+                className={`w-full h-20 rounded-lg text-2xl font-bold text-white transition-colors flex flex-col items-center justify-center ${
                   phase.fases.includes(currentFase)
                     ? 'bg-orange-600 shadow-lg'
                     : 'bg-orange-400 hover:bg-orange-500'
                 }`}
               >
-                {phase.label}
+                <div>{phase.label}</div>
+                <div className="text-xs font-normal opacity-90">[{phase.name}]</div>
               </button>
             ))}
           </div>
