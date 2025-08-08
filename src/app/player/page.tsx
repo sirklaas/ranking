@@ -410,26 +410,28 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      {/* Animated Popup - Positioned in sections 3-6 */}
+      {/* PhotoCircle Popup - Improved styling */}
       {showPopup && (
-        <div className="fixed inset-0 z-50 animate-fade-in">
-          {/* Position popup in sections 3-6 area */}
-          <div className="h-screen grid grid-rows-12">
-            <div className="row-span-2"></div> {/* Sections 1-2 spacer */}
-            <div className="row-span-8 flex items-center justify-center px-4"> {/* Sections 3-10 - doubled height */}
-              <div 
-                className="bg-gradient-to-br from-blue-500 to-blue-700 p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
-                style={{ border: '3px solid white', minHeight: '320px' }}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="flex items-center justify-center px-4">
+            <div 
+              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
+              style={{ 
+                background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
+                border: '4px solid white',
+                minHeight: '320px'
+              }}
+            >
+              {/* Close X button - Twice as big */}
+              <button
+                onClick={closePopup}
+                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10"
+                style={{ fontSize: '5rem', fontWeight: 300 }}
               >
-                {/* Close X button */}
-                <button
-                  onClick={closePopup}
-                  className="absolute top-4 right-4 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-4xl transition-colors z-10"
-                >
-                  ×
-                </button>
+                ×
+              </button>
                 
-                <div className="text-center text-white space-y-6 pt-8">
+                <div className="text-center text-white space-y-6 pt-16 px-2">
                   <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                     Download nu deze App:
                   </h3>
@@ -439,24 +441,25 @@ export default function PlayerPage() {
                       href={currentSession.photocircle} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="block text-white underline text-sm font-medium break-all hover:text-blue-200 transition-colors"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', backgroundColor: '#0A1752' }}
                     >
-                      {currentSession.photocircle}
+                      PhotoCircle App
                     </a>
                   )}
                   
                   <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                     <p>Maak daar een account aan</p>
-                    <p>en kom dan hier terug</p>
+                    <p>en kom dan hier terug.</p>
+                    <p></p>
+                    <p>Als je hulp nodig hebt laat het me weten</p>
+                    <p>en dan kom ik je graag helpen.</p>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="row-span-3"></div> {/* Sections 11-12 spacer */}
           </div>
-        </div>
-      )}
+        )}
       
       {/* Welcome Popup - Shows after name selection */}
       {showWelcomePopup && (
