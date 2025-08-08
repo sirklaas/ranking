@@ -295,8 +295,12 @@ export default function PlayerPage() {
                 value={teamNumber}
                 onChange={(e) => setTeamNumber(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
-                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
-                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
+                style={{ 
+                  fontFamily: 'Barlow Semi Condensed, sans-serif',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'textfield'
+                }}
                 placeholder="?"
                 min="1"
                 max={currentSession?.nr_teams || 10}
@@ -475,6 +479,17 @@ export default function PlayerPage() {
         
         .animate-scale-in {
           animation: scale-in 0.3s ease-out;
+        }
+        
+        /* Remove number input spinners */
+        .no-spinner::-webkit-outer-spin-button,
+        .no-spinner::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        
+        .no-spinner[type=number] {
+          -moz-appearance: textfield;
         }
       `}</style>
     </div>
