@@ -578,7 +578,8 @@ export default function PresenterPage() {
 
     return (
       <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-        {/* Header with game info - TRUE FULL WIDTH */}
+        <div style={{ margin: '0 2%' }}>
+        {/* Header with game info - with 2% side margins */}
         <div className="bg-white shadow-md p-6">
           <div className="flex justify-between items-center">
             {/* Left side - Game info in one line */}
@@ -596,10 +597,10 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content - TRUE FULL WIDTH - NO MARGINS */}
-        <div className="flex h-[calc(100vh-200px)] relative" style={{ gap: '1%' }}>
+        {/* Main content - with 2% side margins and 2% gaps */}
+        <div className="flex h-[calc(100vh-200px)] relative" style={{ gap: '2%' }}>
           {/* Left side - Two screens side by side and Show Results button */}
-          <div className="flex flex-col gap-4" style={{ width: '88%' }}>
+          <div className="flex flex-col gap-4" style={{ width: '90%' }}>
             {/* Two screens side by side - Much larger */}
             <div className="flex flex-1" style={{ gap: '2%' }}>
               {/* Current Display - Left screen */}
@@ -691,6 +692,7 @@ export default function PresenterPage() {
               </button>
             ))}
           </div>
+        </div>
         </div>
       </div>
     );
@@ -832,8 +834,8 @@ export default function PresenterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      <div className="w-full">
         {currentView === 'list' && (
           <div className="flex justify-end mb-8">
             <button

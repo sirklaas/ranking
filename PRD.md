@@ -198,10 +198,21 @@
 
 ## Session Summary
 
-**Last Updated**: 2025-08-07  
-**Version**: 1.3  
-**Status**: Enhanced Presenter Game Interface & Player Onboarding Flow Implemented  
+**Last Updated**: 2025-08-08  
+**Version**: 1.4  
+**Status**: Presenter layout full-width with precise proportions; Player onboarding stable  
 **Next Steps**: Test complete flow and implement real-time synchronization
+
+### Recent Updates (2025-08-08)
+- ✅ Presenter now truly uses 100% screen width on MacBook Pro displays
+- ✅ Applied layout proportions and spacing:
+  - 2% left/right outer margins
+  - 2% gaps between main columns and screens
+  - 6% width for fases column (right)
+  - 44% width for Current and Next displays (left), side-by-side
+  - Left/main section set to 90% to accommodate 44/2/44 split
+- ✅ Ensured Barlow Semi Condensed 300 for “Current” and “Next” labels
+- ℹ️ File updated: `src/app/presenter/page.tsx` (`renderGameInterface()` and outer container)
 
 ### Recent Updates (2025-08-07)
 - ✅ **Enhanced Presenter Screen**: Added game control interface with current/next display preview
