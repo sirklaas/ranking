@@ -21,28 +21,17 @@ export default function PlayerPage() {
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
   const [showTeamInfo, setShowTeamInfo] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  const [selectedPlayerName, setSelectedPlayerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   // Player onboarding flow states
   const [currentPhase, setCurrentPhase] = useState<'team' | 'photocircle' | 'name' | 'complete'>('team');
   const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
+  const [, setSelectedPlayerName] = useState('');
   const [, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
   
-  // Dynamic heading states - Start empty to prevent hydration mismatch
+  // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>([]);
   const [headingVisible, ] = useState(true);
-  const [isClient, setIsClient] = useState(false);
-
-  // Client-side initialization to prevent hydration mismatch
-  useEffect(() => {
-    setIsClient(true);
-    // Set default heading only on client side
-    if (currentHeading.length === 0) {
-      setCurrentHeading(['In welk team zit je?']);
-    }
-  }, []);
 
   // Load the latest session data and set up real-time updates
   useEffect(() => {
@@ -78,18 +67,7 @@ export default function PlayerPage() {
               }
               
               console.log('faseToUse:', faseToUse);
-              
-              // Handle headings - could be string (JSON) or object from PocketBase
-              let headingsObj: Record<string, { heading: string; image?: string }>;
-              if (typeof latestSession.headings === 'string') {
-                // Parse JSON string
-                headingsObj = JSON.parse(latestSession.headings);
-              } else {
-                // Already an object
-                headingsObj = latestSession.headings as Record<string, { heading: string; image?: string }>;
-              }
-              
-              const headingText = headingsObj[faseToUse]?.heading || 'In welk team zit je?';
+              const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
               console.log('headingText from PocketBase:', headingText);
               
               if (headingText && headingText.trim()) {
@@ -124,50 +102,13 @@ export default function PlayerPage() {
       }
     };
 
-    // Only load data once on mount
-    if (!currentSession) {
-      loadSessionData();
-    }
-  }, []); // Empty dependency array - load only once on mount
-  
-  // Separate effect for updating heading when phase changes (using existing session data)
-  useEffect(() => {
-    if (currentSession && currentSession.headings) {
-      try {
-        // Map onboarding phases to specific fases
-        let faseToUse = '01/01'; // Default to team selection
-        if (currentPhase === 'team') {
-          faseToUse = '01/01'; // Team selection
-        } else if (currentPhase === 'photocircle') {
-          faseToUse = '01/02'; // PhotoCircle question
-        } else if (currentPhase === 'name') {
-          faseToUse = '01/03'; // Name selection
-        }
-        
-        console.log('Phase changed - updating heading for faseToUse:', faseToUse);
-        
-        // Handle headings - could be string (JSON) or object from PocketBase
-        let headingsObj: Record<string, { heading: string; image?: string }>;
-        if (typeof currentSession.headings === 'string') {
-          // Parse JSON string
-          headingsObj = JSON.parse(currentSession.headings);
-        } else {
-          // Already an object
-          headingsObj = currentSession.headings as Record<string, { heading: string; image?: string }>;
-        }
-        
-        const headingText = headingsObj[faseToUse]?.heading || 'In welk team zit je?';
-        console.log('Updated headingText for phase:', headingText);
-        
-        if (headingText && headingText.trim()) {
-          const formattedHeading = faseService.formatHeadingText(headingText);
-          setCurrentHeading(formattedHeading);
-        }
-      } catch (error) {
-        console.error('Error updating heading for phase change:', error);
-      }
-    }
-  }, [currentPhase, currentSession]); // Update heading when phase or session changes
+    loadSessionData();
+    
+    // Set up interval for real-time updates
+    const interval = setInterval(loadSessionData, 2000); // Check every 2 seconds
+    
+    return () => clearInterval(interval);
+  }, [currentPhase]); // Re-run when currentPhase changes
 
   const handleTeamSubmit = () => {
     if (!teamNumber || !currentSession) return;
@@ -216,9 +157,6 @@ export default function PlayerPage() {
     
     // Store in localStorage for persistence
     localStorage.setItem('rankingPlayerData', JSON.stringify(data));
-    
-    // Show welcome popup
-    setShowWelcomePopup(true);
     
     setCurrentPhase('complete');
     setShowTeamInfo(true);
@@ -292,7 +230,7 @@ export default function PlayerPage() {
 
         return () => clearTimeout(timer);
       }
-    }, [visible, currentLineIndex, currentCharIndex, hasAnimated]); // Only essential dependencies to prevent re-animation
+    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]); // Removed 'lines' to prevent re-animation
 
     return (
       <div 
@@ -302,7 +240,7 @@ export default function PlayerPage() {
       >
         {displayedLines.map((line, index) => (
           <div key={index} className="text-3xl text-white text-center leading-tight" 
-               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
             {line}
             {index === currentLineIndex && isTyping && (
               <span className="animate-pulse">|</span>
@@ -324,29 +262,27 @@ export default function PlayerPage() {
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
         
-        {/* Sections 1-2: Logo Background + Logo Overlay - STICKY */}
+        {/* Sections 1-2: Logo Background + Logo Overlay */}
         <div 
-          className="row-span-2 relative bg-cover bg-center bg-no-repeat fixed top-0 left-0 right-0 z-50"
+          className="row-span-2 relative bg-cover bg-center bg-no-repeat"
           style={{ 
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            height: '16.666667vh', // Use vh instead of % for proper height
-            minHeight: '120px' // Ensure minimum height
+            backgroundPosition: 'center'
           }}
         >
-          {/* Logo Overlay - Sticky and Always Fit Height */}
+          {/* Logo Overlay - Much Bigger */}
           <div className="absolute inset-0 flex items-center justify-center">
             <img 
               src="/assets/ranking_logo.webp" 
               alt="Ranking Logo" 
-              className="h-full max-h-32 w-auto object-contain p-2"
+              className="h-32 w-auto object-contain"
             />
           </div>
         </div>
 
         {/* Sections 3-4: Dynamic Heading with Typewriter Animation */}
-        <div className="row-span-2 flex items-center justify-center px-4" style={{ paddingTop: '16.666667vh' }}>
+        <div className="row-span-2 flex items-center justify-center px-4">
           <TypewriterHeading lines={currentHeading} visible={headingVisible} />
         </div>
 
@@ -358,26 +294,9 @@ export default function PlayerPage() {
                 type="number"
                 value={teamNumber}
                 onChange={(e) => setTeamNumber(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleTeamSubmit();
-                  }
-                }}
-                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
-                style={{ 
-                  fontFamily: 'Barlow Semi Condensed, sans-serif',
-                  // Hide up/down arrows completely
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'textfield',
-                  // Additional arrow removal for all browsers
-                  appearance: 'none',
-                  // Center the text properly
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center'
-                }}
+                onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
+                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                 placeholder="?"
                 min="1"
                 max={currentSession?.nr_teams || 10}
@@ -391,9 +310,9 @@ export default function PlayerPage() {
         </div>
 
         {/* Show button when team number is entered */}
-        {/* Section 6: Dynamic Action Button - Added margin above */}
+        {/* Section 6: Dynamic Action Button */}
         {currentPhase === 'team' && !showTeamInfo && teamNumber && (
-          <div className="flex items-center justify-center px-4 mt-6">
+          <div className="flex items-center justify-center px-4">
             <button
               onClick={handleTeamSubmit}
               disabled={!teamNumber || isLoading}
@@ -486,26 +405,24 @@ export default function PlayerPage() {
 
       {/* Animated Popup - Positioned in sections 3-6 */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="flex items-center justify-center px-4">
-            <div 
-              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
-              style={{ 
-                background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
-                border: '4px solid white',
-                minHeight: '320px'
-              }}
-            >
-              {/* Close X button - Twice as big */}
-              <button
-                onClick={closePopup}
-                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10"
-                style={{ fontSize: '5rem', fontWeight: 300 }}
+        <div className="fixed inset-0 z-50 animate-fade-in">
+          {/* Position popup in sections 3-6 area */}
+          <div className="h-screen grid grid-rows-12">
+            <div className="row-span-2"></div> {/* Sections 1-2 spacer */}
+            <div className="row-span-8 flex items-center justify-center px-4"> {/* Sections 3-10 - doubled height */}
+              <div 
+                className="bg-gradient-to-br from-blue-500 to-blue-700 p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
+                style={{ border: '3px solid white', minHeight: '320px' }}
               >
-                ×
-              </button>
+                {/* Close X button */}
+                <button
+                  onClick={closePopup}
+                  className="absolute top-4 right-4 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-4xl transition-colors z-10"
+                >
+                  ×
+                </button>
                 
-                <div className="text-center text-white space-y-6 pt-16 px-2">
+                <div className="text-center text-white space-y-6 pt-8">
                   <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                     Download nu deze App:
                   </h3>
@@ -515,25 +432,24 @@ export default function PlayerPage() {
                       href={currentSession.photocircle} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', backgroundColor: '#0A1752' }}
+                      className="block text-white underline text-sm font-medium break-all hover:text-blue-200 transition-colors"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                     >
-                      PhotoCircle App
+                      {currentSession.photocircle}
                     </a>
                   )}
                   
                   <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                     <p>Maak daar een account aan</p>
-                    <p>en kom dan hier terug.</p>
-                    <p></p>
-                    <p>Als je hulp nodig hebt laat het me weten</p>
-                    <p>en dan kom ik je graag helpen.</p>
+                    <p>en kom dan hier terug</p>
                   </div>
                 </div>
               </div>
             </div>
+            <div className="row-span-3"></div> {/* Sections 11-12 spacer */}
           </div>
-        )}
+        </div>
+      )}
       
       {/* Custom CSS for animations */}
       <style jsx>{`
@@ -560,48 +476,7 @@ export default function PlayerPage() {
         .animate-scale-in {
           animation: scale-in 0.3s ease-out;
         }
-        
-        /* Remove number input spinners completely */
-        .no-spinner::-webkit-outer-spin-button,
-        .no-spinner::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        
-        .no-spinner[type=number] {
-          -moz-appearance: textfield;
-          appearance: textfield;
-        }
       `}</style>
-      
-      {/* Welcome Popup after name selection */}
-      {showWelcomePopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 relative animate-scale-in text-center" style={{
-            background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
-            border: '4px solid white'
-          }}>
-            <div className="text-white space-y-4">
-              <h2 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                Hi {selectedPlayerName}!
-              </h2>
-              <p className="text-xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                Welkom bij Ranking the Starzzz
-              </p>
-              <p className="text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                Ik wens je veel plezier!
-              </p>
-              <button
-                onClick={() => setShowWelcomePopup(false)}
-                className="mt-6 bg-white text-blue-600 px-8 py-3 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors"
-                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              >
-                Bedankt!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
