@@ -321,7 +321,8 @@ export default function PlayerPage() {
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            height: '16.666667%' // 2/12 of screen height
+            height: '16.666667vh', // Use vh instead of % for proper height
+            minHeight: '120px' // Ensure minimum height
           }}
         >
           {/* Logo Overlay - Sticky and Always Fit Height */}
@@ -353,12 +354,19 @@ export default function PlayerPage() {
                     handleTeamSubmit();
                   }
                 }}
-                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500"
+                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
                 style={{ 
                   fontFamily: 'Barlow Semi Condensed, sans-serif',
-                  // Hide up/down arrows
+                  // Hide up/down arrows completely
                   WebkitAppearance: 'none',
-                  MozAppearance: 'textfield'
+                  MozAppearance: 'textfield',
+                  // Additional arrow removal for all browsers
+                  appearance: 'none',
+                  // Center the text properly
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center'
                 }}
                 placeholder="?"
                 min="1"
@@ -476,7 +484,7 @@ export default function PlayerPage() {
               <div 
                 className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
                 style={{ 
-                  background: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 25%, #86a8e7 50%, #7f7fd5 75%, #91eae4 100%)',
+                  background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
                   border: '4px solid white',
                   minHeight: '320px'
                 }}
@@ -509,7 +517,9 @@ export default function PlayerPage() {
                   
                   <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                     <p>Maak daar een account aan</p>
-                    <p>en kom dan hier terug</p>
+                    <p>en kom dan hier terug.</p>
+                    <p>Als je hulp nodig hebt</p>
+                    <p>kom ik je graag helpen.</p>
                   </div>
                 </div>
               </div>
@@ -544,13 +554,25 @@ export default function PlayerPage() {
         .animate-scale-in {
           animation: scale-in 0.3s ease-out;
         }
+        
+        /* Remove number input spinners completely */
+        .no-spinner::-webkit-outer-spin-button,
+        .no-spinner::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        
+        .no-spinner[type=number] {
+          -moz-appearance: textfield;
+          appearance: textfield;
+        }
       `}</style>
       
       {/* Welcome Popup after name selection */}
       {showWelcomePopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 relative animate-scale-in text-center" style={{
-            background: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 25%, #86a8e7 50%, #7f7fd5 75%, #91eae4 100%)',
+            background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
             border: '4px solid white'
           }}>
             <div className="text-white space-y-4">
