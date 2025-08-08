@@ -576,13 +576,13 @@ export default function PlayerPage() {
             border: '4px solid white'
           }}>
             <div className="text-white space-y-4">
-              <h2 className="text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              <h2 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                 Hi {selectedPlayerName}!
               </h2>
-              <p className="text-xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              <p className="text-xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                 Welkom bij Ranking the Starzzz
               </p>
-              <p className="text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              <p className="text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                 Ik wens je veel plezier!
               </p>
               <button

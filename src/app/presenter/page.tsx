@@ -597,13 +597,13 @@ export default function PresenterPage() {
         </div>
 
         {/* Main content - Full width with phases on far right */}
-        <div className="flex gap-6 h-[calc(100vh-200px)] relative px-2">
+        <div className="flex h-[calc(100vh-200px)] relative" style={{ paddingLeft: '2%', paddingRight: '2%', gap: '2%' }}>
           {/* Left side - Two screens side by side and Show Results button */}
-          <div className="flex-1 flex flex-col gap-4">
+          <div className="flex flex-col gap-4" style={{ width: '88%' }}>
             {/* Two screens side by side - Much larger */}
-            <div className="flex gap-6 flex-1">
+            <div className="flex flex-1" style={{ gap: '2%' }}>
               {/* Current Display - Left screen */}
-              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
+              <div className="bg-white rounded-lg p-4 shadow-md" style={{ width: '44%' }}>
                 <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[500px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
                   {/* Real display content */}
                   <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col">
@@ -651,18 +651,18 @@ export default function PresenterPage() {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold mt-3 text-gray-800 text-center">Current</h3>
+                <h3 className="text-xl mt-3 text-gray-800 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
               </div>
 
               {/* Next Display - Right screen */}
-              <div className="flex-1 bg-white rounded-lg p-4 shadow-md">
+              <div className="bg-white rounded-lg p-4 shadow-md" style={{ width: '44%' }}>
                 <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[500px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
                   {/* Show next media preview */}
                   <div className="w-full h-full bg-black rounded flex items-center justify-center">
                     {renderMediaPreview(getNextMedia())}
                   </div>
                 </div>
-                <h3 className="text-xl font-bold mt-3 text-gray-800 text-center">Next</h3>
+                <h3 className="text-xl mt-3 text-gray-800 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
               </div>
             </div>
 
@@ -675,7 +675,7 @@ export default function PresenterPage() {
           </div>
 
           {/* Right side - Phase Navigation - All the way to the right */}
-          <div className="w-48 space-y-3 flex flex-col">
+          <div className="space-y-3 flex flex-col" style={{ width: '6%' }}>
             {phaseButtons.map((phase) => (
               <button
                 key={phase.label}
