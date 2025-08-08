@@ -576,6 +576,9 @@ export default function PresenterPage() {
       { label: '7', name: 'De Finale', fases: faseGroups['20'].fases }
     ];
 
+    const nextMedia = getNextMedia();
+    const currentHeadingLabel = getCurrentDisplay();
+
     return (
       <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         <div style={{ margin: '0 2%' }}>
@@ -604,10 +607,16 @@ export default function PresenterPage() {
             {/* Two screens side by side - Much larger */}
             <div className="flex flex-1" style={{ gap: '2%' }}>
               {/* Current Display - Left screen */}
-              <div className="bg-white rounded-lg p-4 shadow-md" style={{ width: '44%' }}>
+              <div className="bg-white rounded-lg p-4 shadow-md border border-gray-700" style={{ width: '44%', borderWidth: '3px' }}>
+                {/* Heading bar above current display */}
+                <div className="mb-2">
+                  <div className="text-center py-2 px-4 bg-gray-100 text-gray-900 rounded" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, borderWidth: '3px', borderColor: '#374151', borderStyle: 'solid' }}>
+                    {currentHeadingLabel}
+                  </div>
+                </div>
                 <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[500px] flex items-center justify-center relative overflow-hidden">
                   {/* Real display content */}
-                  <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col">
+                  <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col border border-gray-700" style={{ borderWidth: '3px' }}>
                     {/* Header */}
                     <div className="bg-blue-900 text-white p-2 text-xs flex justify-between items-center">
                       <div className="flex items-center gap-2">
@@ -652,18 +661,24 @@ export default function PresenterPage() {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl mt-3 text-gray-800 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
+                <h3 className="text-xl mt-3 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
               </div>
 
               {/* Next Display - Right screen */}
-              <div className="bg-white rounded-lg p-4 shadow-md" style={{ width: '44%' }}>
-                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[500px] flex items-center justify-center relative overflow-hidden">
-                  {/* Show next media preview */}
-                  <div className="w-full h-full bg-black rounded flex items-center justify-center">
-                    {renderMediaPreview(getNextMedia())}
+              <div className="bg-white rounded-lg p-4 shadow-md border border-gray-700" style={{ width: '44%', borderWidth: '3px' }}>
+                {/* Heading bar above next media preview */}
+                <div className="mb-2">
+                  <div className="text-center py-2 px-4 bg-gray-100 text-gray-900 rounded" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, borderWidth: '3px', borderColor: '#374151', borderStyle: 'solid' }}>
+                    {nextMedia?.heading || 'Next media'} {nextMedia?.fase ? `(Fase ${nextMedia.fase})` : ''}
                   </div>
                 </div>
-                <h3 className="text-xl mt-3 text-gray-800 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
+                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[500px] flex items-center justify-center relative overflow-hidden">
+                  {/* Show next media preview */}
+                  <div className="w-full h-full bg-black rounded flex items-center justify-center border border-gray-700" style={{ borderWidth: '3px' }}>
+                    {renderMediaPreview(nextMedia)}
+                  </div>
+                </div>
+                <h3 className="text-xl mt-3 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
               </div>
             </div>
 

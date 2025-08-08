@@ -213,6 +213,9 @@
   - Left/main section set to 90% to accommodate 44/2/44 split
 - ✅ Ensured Barlow Semi Condensed 300 for “Current” and “Next” labels
 - ℹ️ File updated: `src/app/presenter/page.tsx` (`renderGameInterface()` and outer container)
+ - ✅ Visual polish: added 3px dark grey borders to screens and previews
+ - ✅ Visual polish: added heading bars above Current and Next media previews
+ - ✅ Visual polish: label styling finalized (uppercase, tracking-wide, Barlow 300)
 
 ### Recent Updates (2025-08-07)
 - ✅ **Enhanced Presenter Screen**: Added game control interface with current/next display preview
