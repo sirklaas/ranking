@@ -30,9 +30,19 @@ export default function PlayerPage() {
   const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
   const [, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
   
-  // Dynamic heading states
-  const [currentHeading, setCurrentHeading] = useState<string[]>(['In welk team zit je?']);
+  // Dynamic heading states - Start empty to prevent hydration mismatch
+  const [currentHeading, setCurrentHeading] = useState<string[]>([]);
   const [headingVisible, ] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  // Client-side initialization to prevent hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+    // Set default heading only on client side
+    if (currentHeading.length === 0) {
+      setCurrentHeading(['In welk team zit je?']);
+    }
+  }, []);
 
   // Load the latest session data and set up real-time updates
   useEffect(() => {

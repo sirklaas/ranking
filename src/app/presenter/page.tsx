@@ -578,8 +578,8 @@ export default function PresenterPage() {
 
     return (
       <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-        {/* Header with game info - Full width layout */}
-        <div className="bg-white rounded-lg shadow-md mx-4 my-4 p-6">
+        {/* Header with game info - TRUE FULL WIDTH */}
+        <div className="bg-white shadow-md p-6">
           <div className="flex justify-between items-center">
             {/* Left side - Game info in one line */}
             <div className="flex items-center gap-8">
@@ -596,8 +596,8 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content - Full width with phases on far right */}
-        <div className="flex h-[calc(100vh-200px)] relative" style={{ paddingLeft: '2%', paddingRight: '2%', gap: '2%' }}>
+        {/* Main content - TRUE FULL WIDTH - NO MARGINS */}
+        <div className="flex h-[calc(100vh-200px)] relative" style={{ gap: '1%' }}>
           {/* Left side - Two screens side by side and Show Results button */}
           <div className="flex flex-col gap-4" style={{ width: '88%' }}>
             {/* Two screens side by side - Much larger */}
