@@ -21,12 +21,13 @@ export default function PlayerPage() {
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
   const [showTeamInfo, setShowTeamInfo] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [selectedPlayerName, setSelectedPlayerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   // Player onboarding flow states
   const [currentPhase, setCurrentPhase] = useState<'team' | 'photocircle' | 'name' | 'complete'>('team');
   const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
-  const [, setSelectedPlayerName] = useState('');
   const [, setPlayerData] = useState<{teamNumber: string, playerName: string, hasPhotoCircle: boolean} | null>(null);
   
   // Dynamic heading states
@@ -158,6 +159,8 @@ export default function PlayerPage() {
     // Store in localStorage for persistence
     localStorage.setItem('rankingPlayerData', JSON.stringify(data));
     
+    // Show welcome popup first, then complete the phase
+    setShowWelcomePopup(true);
     setCurrentPhase('complete');
     setShowTeamInfo(true);
   };
@@ -451,6 +454,43 @@ export default function PlayerPage() {
               </div>
             </div>
             <div className="row-span-3"></div> {/* Sections 11-12 spacer */}
+          </div>
+        </div>
+      )}
+      
+      {/* Welcome Popup - Shows after name selection */}
+      {showWelcomePopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="flex items-center justify-center px-4">
+            <div 
+              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
+              style={{ 
+                background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
+                border: '4px solid white',
+                minHeight: '320px'
+              }}
+            >
+              {/* Close X button - Twice as big */}
+              <button
+                onClick={() => setShowWelcomePopup(false)}
+                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10"
+                style={{ fontSize: '5rem', fontWeight: 300 }}
+              >
+                ×
+              </button>
+                
+              <div className="text-center text-white space-y-6 pt-16 px-2">
+                <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                  Welkom {selectedPlayerName}!
+                </h3>
+                
+                <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  <p>Je bent nu ingelogd in team {teamNumber}.</p>
+                  <p></p>
+                  <p>Veel plezier met de game!</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
