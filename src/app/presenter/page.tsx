@@ -577,9 +577,9 @@ export default function PresenterPage() {
     ];
 
     return (
-      <div className="h-screen bg-gray-100 p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         {/* Header with game info - Full width layout */}
-        <div className="bg-white rounded-lg p-6 mb-6 shadow-md">
+        <div className="bg-white rounded-lg shadow-md mx-4 my-4 p-6">
           <div className="flex justify-between items-center">
             {/* Left side - Game info in one line */}
             <div className="flex items-center gap-8">
@@ -604,7 +604,7 @@ export default function PresenterPage() {
             <div className="flex flex-1" style={{ gap: '2%' }}>
               {/* Current Display - Left screen */}
               <div className="bg-white rounded-lg p-4 shadow-md" style={{ width: '44%' }}>
-                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[500px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
+                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[500px] flex items-center justify-center relative overflow-hidden">
                   {/* Real display content */}
                   <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col">
                     {/* Header */}
@@ -656,7 +656,7 @@ export default function PresenterPage() {
 
               {/* Next Display - Right screen */}
               <div className="bg-white rounded-lg p-4 shadow-md" style={{ width: '44%' }}>
-                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[500px] flex items-center justify-center border-3 border-gray-600 relative overflow-hidden" style={{ borderWidth: '3px' }}>
+                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[500px] flex items-center justify-center relative overflow-hidden">
                   {/* Show next media preview */}
                   <div className="w-full h-full bg-black rounded flex items-center justify-center">
                     {renderMediaPreview(getNextMedia())}
