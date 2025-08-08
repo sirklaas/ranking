@@ -319,7 +319,7 @@ export default function PlayerPage() {
         {/* Show button when team number is entered */}
         {/* Section 6: Dynamic Action Button */}
         {currentPhase === 'team' && !showTeamInfo && teamNumber && (
-          <div className="flex items-center justify-center px-4">
+          <div className="flex items-center justify-center px-4 mt-6">
             <button
               onClick={handleTeamSubmit}
               disabled={!teamNumber || isLoading}
