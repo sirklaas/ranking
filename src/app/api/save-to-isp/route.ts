@@ -1,5 +1,9 @@
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { Client as FtpClient, AccessOptions } from 'basic-ftp';
+import { Readable } from 'stream';
 
 // POST /api/save-to-isp
 // Body: { data: Record<string, any>, filename?: string }
@@ -7,9 +11,10 @@ import { Client as FtpClient, AccessOptions } from 'basic-ftp';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const jsonData = body?.data ?? body;
-    const filename = (body?.filename || 'fases.json') as string;
+    const body = (await request.json()) as unknown;
+    const dataObj = (body && typeof body === 'object' ? (body as Record<string, unknown>) : {}) as Record<string, unknown>;
+    const jsonData = (dataObj?.data ?? body) as unknown;
+    const filename = (dataObj?.filename as string) || 'fases.json';
 
     if (!jsonData || typeof jsonData !== 'object') {
       return NextResponse.json({ success: false, message: 'Invalid JSON payload' }, { status: 400 });
@@ -29,33 +34,28 @@ export async function POST(request: NextRequest) {
     }
 
     const client = new FtpClient();
-    const access: AccessOptions = { host, port, user, password, secure: false }; // plain FTP per user request
+    const access: AccessOptions = { host, port, user, password, secure: false };
 
     try {
       await client.access(access);
       await client.ensureDir(remoteDir);
       await client.cd(remoteDir);
 
-      const jsonString = JSON.stringify(jsonData, null, 2);
-      const readable = new ReadableStream<Uint8Array>({
-        start(controller) {
-          const encoder = new TextEncoder();
-          controller.enqueue(encoder.encode(jsonString));
-          controller.close();
-        }
-      });
-
-      // basic-ftp accepts a WHATWG ReadableStream via uploadFrom if wrapped; use a temporary buffer instead for compatibility
+      const jsonString = JSON.stringify(jsonData as Record<string, unknown>, null, 2);
+      // Upload using a Node Readable stream for compatibility with basic-ftp
       const buffer = Buffer.from(jsonString, 'utf8');
-      await client.uploadFrom(buffer, filename);
+      const stream = Readable.from(buffer);
+      await client.uploadFrom(stream, filename);
 
       await client.close();
       return NextResponse.json({ success: true, message: `Uploaded ${filename} to ${remoteDir}` });
-    } catch (e: any) {
+    } catch (e: unknown) {
       try { await client.close(); } catch {}
-      return NextResponse.json({ success: false, message: e?.message || 'FTP upload failed' }, { status: 500 });
+      const message = e instanceof Error ? e.message : 'FTP upload failed';
+      return NextResponse.json({ success: false, message }, { status: 500 });
     }
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || 'Unexpected error' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unexpected error';
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
