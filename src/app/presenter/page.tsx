@@ -17,6 +17,7 @@ export default function PresenterPage() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [gameTime, setGameTime] = useState('00:00');
   const [isClient, setIsClient] = useState(false);
+  const [saveBanner, setSaveBanner] = useState<string | null>(null);
 
   // Initialize client-side state to prevent hydration errors
   useEffect(() => {
@@ -410,7 +411,7 @@ export default function PresenterPage() {
     }
   };
 
-  const saveHeadings = async () => {
+  const saveHeadings = async (options?: { updateMotherfile?: boolean }) => {
     if (!selectedSession) return;
     
     try {
@@ -429,23 +430,23 @@ export default function PresenterPage() {
         current_fase: currentFase
       } : null);
       
-      // Also update the master template
-      const masterResult = await updateMasterTemplate(editingHeadings);
-      
-      if (masterResult.success) {
-        if (masterResult.data) {
-          // Serverless environment - provide instructions
-          alert(`Headings saved to session successfully! ✅\n\nNote: You're on the live server (ranking.pinkmilk.eu) where file updates aren't allowed.\n\n✅ Your headings ARE saved in PocketBase (you'll see them work)\n❌ The master template (fases.json) can't be auto-updated on live server\n\n💡 To update defaults for new games: Run locally and save, then commit to Git.`);
-        } else {
-          // Local development - file updated
-          alert('Headings saved successfully! Master template updated - commit and deploy to make these the default for new games.');
+      // Optionally update the motherfile (global defaults)
+      if (options?.updateMotherfile) {
+        const masterResult = await updateMasterTemplate(editingHeadings);
+        if (!masterResult.success) {
+          console.warn('Motherfile update warning:', masterResult.message);
         }
-      } else {
-        alert(`Headings saved to session successfully!\n\nWarning: ${masterResult.message}`);
       }
+
+      // Show subtle inline banner instead of alerts
+      setSaveBanner(options?.updateMotherfile
+        ? 'Saved. Global defaults updated.'
+        : 'Saved. This show only.');
+      setTimeout(() => setSaveBanner(null), 3500);
     } catch (error) {
       console.error('Error saving headings:', error);
-      alert('Failed to save headings');
+      setSaveBanner('Failed to save. See console for details.');
+      setTimeout(() => setSaveBanner(null), 5000);
     }
   };
 
@@ -776,14 +777,31 @@ export default function PresenterPage() {
         <div className="mb-6 bg-gray-50 rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>JSON Heading Dashboard</h3>
-            <button
-              onClick={saveHeadings}
-              className="bg-[#0A1752] text-white px-4 py-2 rounded-lg hover:bg-[#0A1752]/90 transition-colors"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              Save Headings
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => saveHeadings({ updateMotherfile: false })}
+                className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                title="Save only to this show (PocketBase)"
+              >
+                Save This Show Only
+              </button>
+              <button
+                onClick={() => saveHeadings({ updateMotherfile: true })}
+                className="bg-[#0A1752] text-white px-4 py-2 rounded-lg hover:bg-[#0A1752]/90 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                title="Save to this show and update global motherfile"
+              >
+                Save Global (Motherfile)
+              </button>
+            </div>
           </div>
+
+          {saveBanner && (
+            <div className="mb-3 rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              {saveBanner}
+            </div>
+          )}
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
