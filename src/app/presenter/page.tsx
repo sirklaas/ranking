@@ -36,6 +36,27 @@ export default function PresenterPage() {
     };
   }, []);
 
+  const saveToISP = async () => {
+    try {
+      const payload = editingHeadings; // object form
+      const res = await fetch('/api/save-to-isp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: payload, filename: 'fases.json' })
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.message || 'Upload failed');
+      }
+      setSaveBanner('Saved. ISP motherfile updated.');
+      setTimeout(() => setSaveBanner(null), 3500);
+    } catch (e) {
+      console.error('ISP save failed', e);
+      setSaveBanner('Failed to save to ISP. See console.');
+      setTimeout(() => setSaveBanner(null), 5000);
+    }
+  };
+
   // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
@@ -793,6 +814,14 @@ export default function PresenterPage() {
                 title="Save to this show and update global motherfile"
               >
                 Save Global (Motherfile)
+              </button>
+              <button
+                onClick={saveToISP}
+                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                title="Upload motherfile to ISP via FTP"
+              >
+                Save Global (ISP)
               </button>
             </div>
           </div>
