@@ -265,13 +265,14 @@ export default function PlayerPage() {
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
         
-        {/* Sections 1-2: Logo Background + Logo Overlay */}
+        {/* Sections 1-2: Logo Background + Logo Overlay - Sticky Header */}
         <div 
-          className="row-span-2 relative bg-cover bg-center bg-no-repeat"
+          className="row-span-2 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50"
           style={{ 
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            backgroundPosition: 'center',
+            minHeight: '16.666667vh' // Ensure proper height
           }}
         >
           {/* Logo Overlay - Much Bigger */}
@@ -279,7 +280,7 @@ export default function PlayerPage() {
             <img 
               src="/assets/ranking_logo.webp" 
               alt="Ranking Logo" 
-              className="h-32 w-auto object-contain"
+              className="h-full max-h-32 w-auto object-contain p-2"
             />
           </div>
         </div>
