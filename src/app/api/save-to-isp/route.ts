@@ -27,10 +27,13 @@ export async function POST(request: NextRequest) {
     const remoteDir = process.env.FTP_REMOTE_DIR;
 
     if (!host || !user || !password || !remoteDir) {
-      return NextResponse.json({
-        success: false,
-        message: 'Missing FTP configuration. Please set FTP_HOST, FTP_USER, FTP_PASS, FTP_REMOTE_DIR (and optional FTP_PORT).'
-      }, { status: 500 });
+      const missing: string[] = [];
+      if (!host) missing.push('FTP_HOST');
+      if (!user) missing.push('FTP_USER');
+      if (!password) missing.push('FTP_PASS');
+      if (!remoteDir) missing.push('FTP_REMOTE_DIR');
+      console.error('[save-to-isp] Missing env vars:', missing.join(', '));
+      return NextResponse.json({ success: false, message: 'Missing FTP configuration', missing }, { status: 500 });
     }
 
     const client = new FtpClient();
