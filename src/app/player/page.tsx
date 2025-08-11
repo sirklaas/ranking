@@ -77,6 +77,11 @@ export default function PlayerPage() {
       });
   }, []);
 
+  // Track which heading keys have animated, so we never animate the same content twice
+  const animatedKeysRef = useRef<Set<string>>(new Set());
+  const startedKeysRef = useRef<Set<string>>(new Set());
+  const [currentHeadingKey, setCurrentHeadingKey] = useState<string>('');
+
   // Update heading when phase or motherfile changes – guard to avoid redundant updates
   const lastHeadingRef = useRef<string>('');
   useEffect(() => {
@@ -90,6 +95,7 @@ export default function PlayerPage() {
       if (hash !== lastHeadingRef.current) {
         lastHeadingRef.current = hash;
         setCurrentHeading(formatted && formatted.length ? formatted : ['']);
+        setCurrentHeadingKey(`${faseKey}:${hash}`);
       }
     } catch (e) {
       console.error('Failed to parse heading from motherfile', e);
@@ -162,7 +168,7 @@ export default function PlayerPage() {
   };
 
   // TypewriterHeading Component with animations
-  const TypewriterHeading = ({ lines, visible }: { lines: string[]; visible: boolean }) => {
+  const TypewriterHeading = ({ lines, visible, animate, onStart, onDone }: { lines: string[]; visible: boolean; animate: boolean; onStart?: () => void; onDone?: () => void }) => {
     const [displayedLines, setDisplayedLines] = useState<string[]>([]);
     const [currentLineIndex, setCurrentLineIndex] = useState(0);
     const [currentCharIndex, setCurrentCharIndex] = useState(0);
@@ -182,16 +188,23 @@ export default function PlayerPage() {
       // If lines changed, reset animation
       if (linesChanged) {
         setLastLines(lines);
-        setDisplayedLines([]);
-        setCurrentLineIndex(0);
-        setCurrentCharIndex(0);
-        setIsTyping(true);
-        setHasAnimated(false);
+        if (animate) {
+          onStart && onStart();
+          setDisplayedLines([]);
+          setCurrentLineIndex(0);
+          setCurrentCharIndex(0);
+          setIsTyping(true);
+          setHasAnimated(false);
+        } else {
+          setDisplayedLines(lines);
+          setIsTyping(false);
+          setHasAnimated(true);
+        }
         return;
       }
 
-      // If already animated and lines haven't changed, just show the complete text
-      if (hasAnimated) {
+      // If already animated or animation disabled, just show the complete text
+      if (hasAnimated || !animate) {
         setDisplayedLines(lines);
         setIsTyping(false);
         return;
@@ -200,6 +213,7 @@ export default function PlayerPage() {
       if (currentLineIndex >= lines.length) {
         setIsTyping(false);
         setHasAnimated(true);
+        onDone && onDone();
         return;
       }
 
@@ -249,7 +263,7 @@ export default function PlayerPage() {
   const MemoTypewriterHeading = React.memo(
     TypewriterHeading,
     (prevProps, nextProps) => (
-      JSON.stringify(prevProps.lines) === JSON.stringify(nextProps.lines) && prevProps.visible === nextProps.visible
+      JSON.stringify(prevProps.lines) === JSON.stringify(nextProps.lines) && prevProps.visible === nextProps.visible && prevProps.animate === nextProps.animate
     )
   );
 
@@ -286,7 +300,13 @@ export default function PlayerPage() {
 
         {/* Sections 3-4: Dynamic Heading with Typewriter Animation */}
         <div className="row-span-2 flex items-center justify-center px-4">
-          <MemoTypewriterHeading lines={currentHeading} visible={headingVisible} />
+          <MemoTypewriterHeading 
+            lines={currentHeading} 
+            visible={headingVisible} 
+            animate={!animatedKeysRef.current.has(currentHeadingKey) && !startedKeysRef.current.has(currentHeadingKey)}
+            onStart={() => startedKeysRef.current.add(currentHeadingKey)}
+            onDone={() => animatedKeysRef.current.add(currentHeadingKey)}
+          />
         </div>
 
         {/* Sections 5-6: Team Number Input Circle - Moved lower for two-line headings */}
@@ -296,7 +316,10 @@ export default function PlayerPage() {
               <input
                 type="number"
                 value={teamNumber}
-                onChange={(e) => setTeamNumber(e.target.value)}
+                onChange={(e) => { 
+                  setTeamNumber(e.target.value);
+                  if (headingVisible) setHeadingVisible(false); // fade out heading while typing
+                }}
                 onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
                 className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
                 style={{ 
