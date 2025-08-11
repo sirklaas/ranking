@@ -200,11 +200,18 @@
 ## Session Summary
 
 **Last Updated**: 2025-08-11  
-**Version**: 1.5  
+**Version**: 1.6  
 **Status**: Presenter layout full-width with precise proportions; Player onboarding stable  
 **Next Steps**: Test complete flow and implement real-time synchronization
 
 ### Recent Updates (2025-08-11)
+- ✅ Image delivery: configured `next.config.ts` to allow `next/image` from `pinkmilk.pockethost.io` (PocketBase).
+- ✅ Motherfile media upload hardening in Presenter (`src/app/presenter/page.tsx`):
+  - Robust JSON parsing/guard for `POST /api/pb-motherfile` responses.
+  - After successful upload, immediate `GET /api/pb-motherfile` to retrieve and cache `meta.recordId` via `motherfileService.setRecordId()`.
+  - Also caches `recordId` during media list refreshes.
+  - Headings store only the filename; render logic builds URLs via `motherfileService.fileUrl(fileName)`.
+  - Inline success/failure banner remains; previews refresh automatically.
 - ✅ Presenter JSON Dashboard: per-fase Upload button next to each `Picture` field.
   - Uploads directly to PocketBase Motherfile via secure server route `api/pb-motherfile`.
   - Auto-fills the uploaded filename into the fase’s `image` value.
