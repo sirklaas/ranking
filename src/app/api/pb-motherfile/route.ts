@@ -7,9 +7,20 @@ import { getServerPocketBase } from '@/lib/pbServer';
 async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocketBase>>) {
   const envName = (process.env.PB_MOTHERFILE_COLLECTION || '').trim();
   const candidates = Array.from(new Set([envName, 'motherfile', 'Motherfile'].filter(Boolean)));
+  const explicitId = (process.env.PB_MOTHERFILE_RECORD_ID || '').trim();
 
   let lastError: unknown = null;
   for (const collection of candidates) {
+    // 0) If explicit record id is provided, try it directly
+    if (explicitId) {
+      try {
+        const rec = await pb.collection(collection).getOne(explicitId, { $autoCancel: false });
+        if (rec?.id) return { collection, recordId: rec.id };
+      } catch (e) {
+        lastError = e;
+        // continue to other strategies
+      }
+    }
     // 1) Try to read the well-known id directly to avoid admin-only list permissions
     try {
       const rec = await pb.collection(collection).getOne('motherfile', { $autoCancel: false });
