@@ -59,7 +59,7 @@ export const motherfileService = {
       ? 'https://pinkmilk.pockethost.io'
       : 'http://127.0.0.1:8090';
     const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
-    const collection = (process.env.NEXT_PUBLIC_PB_MOTHERFILE_COLLECTION || 'Motherfile').trim();
+    const collection = (process.env.NEXT_PUBLIC_PB_MOTHERFILE_COLLECTION || 'motherfile').trim();
     return `${baseUrl}/api/files/${collection}/motherfile/${encodeURIComponent(fileName)}`;
   }
 };
