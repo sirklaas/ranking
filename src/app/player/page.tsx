@@ -32,84 +32,75 @@ export default function PlayerPage() {
   
   // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>([]);
-  const [headingVisible, ] = useState(true);
+  const [headingVisible, setHeadingVisible] = useState(true);
+  const [motherfile, setMotherfile] = useState<any | null>(null);
+  const fadeDurationMs = 500;
 
-  // Load the latest session data and set up real-time updates
+  // Load PocketBase session ONCE (for team members and links) - no polling
   useEffect(() => {
     const loadSessionData = async () => {
       try {
-        // Load session directly from PocketBase (same as presenter)
-        console.log('Loading sessions from PocketBase...');
         const sessions = await rankingService.getAllSessions();
-        console.log('PocketBase response:', sessions);
-        
         if (sessions && sessions.length > 0) {
           const latestSession = sessions[0] as unknown as RankingSession;
-          console.log('Latest session loaded:', latestSession);
           setCurrentSession(latestSession);
-          
-          // Update heading from PocketBase based on current phase
-          console.log('=== DEBUGGING HEADING LOADING ===');
-          console.log('latestSession:', latestSession);
-          console.log('latestSession.headings:', latestSession.headings);
-          console.log('latestSession.current_fase:', latestSession.current_fase);
-          console.log('currentPhase:', currentPhase);
-          
-          if (latestSession.headings) {
-            try {
-              // Map onboarding phases to specific fases
-              let faseToUse = '01/01'; // Default to team selection
-              if (currentPhase === 'team') {
-                faseToUse = '01/01'; // Team selection
-              } else if (currentPhase === 'photocircle') {
-                faseToUse = '01/02'; // PhotoCircle question
-              } else if (currentPhase === 'name') {
-                faseToUse = '01/03'; // Name selection
-              }
-              
-              console.log('faseToUse:', faseToUse);
-              const headingText = faseService.getCurrentHeading(latestSession.headings, faseToUse);
-              console.log('headingText from PocketBase:', headingText);
-              
-              if (headingText && headingText.trim()) {
-                const formattedHeading = faseService.formatHeadingText(headingText);
-                console.log('formattedHeading:', formattedHeading);
-                if (formattedHeading && formattedHeading.length > 0 && formattedHeading[0].trim()) {
-                  console.log('SUCCESS: Using PocketBase heading:', formattedHeading);
-                  setCurrentHeading(formattedHeading);
-                  return; // Successfully loaded from PocketBase
-                }
-              }
-              console.log('FAILED: PocketBase heading validation failed');
-            } catch (error) {
-              console.error('Error loading heading from PocketBase:', error);
-            }
-          } else {
-            console.log('FAILED: No session data or headings available');
-          }
-          
-          // Only use fallback if PocketBase loading failed
-          const fallbackHeadings = {
-            'team': ['In welk team zit je?'],
-            'photocircle': ['Heb je \'n PhotoCircle account?'],
-            'name': ['Wat is jouw naam?']
-          };
-          setCurrentHeading(fallbackHeadings[currentPhase as keyof typeof fallbackHeadings] || ['Loading...']);
         }
       } catch (error) {
-        console.error('Failed to load session data (likely CORS issue):', error);
-        console.log('CORS ERROR: PocketBase server needs to allow https://ranking.pinkmilk.eu');
-        console.log('Fix: Add https://ranking.pinkmilk.eu to PocketBase CORS settings');
+        console.error('Failed to load session data (PocketBase):', error);
       }
     };
-
     loadSessionData();
-    
-    // Set up interval for real-time updates
-    const interval = setInterval(loadSessionData, 2000); // Check every 2 seconds
-    
-    return () => clearInterval(interval);
-  }, [currentPhase]); // Re-run when currentPhase changes
+  }, []);
+
+  // Load headings motherfile ONCE
+  useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_MOTHERFILE_URL || '/assets/fases.json';
+    fetch(url as string)
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to load motherfile');
+        return res.json();
+      })
+      .then((json) => {
+        setMotherfile(json);
+      })
+      .catch((err) => {
+        console.error('Error loading motherfile:', err);
+        // Minimal fallback
+        setMotherfile({
+          fases: {
+            '01/01': 'In welk team zit je?',
+            '01/02': "Heb je 'n PhotoCircle account?",
+            '01/03': 'Wat is jouw naam?'
+          }
+        });
+      });
+  }, []);
+
+  // Update heading when phase or motherfile changes
+  useEffect(() => {
+    if (!motherfile) return;
+    const faseKey = currentPhase === 'team' ? '01/01' : currentPhase === 'photocircle' ? '01/02' : currentPhase === 'name' ? '01/03' : '';
+    if (!faseKey) return;
+    try {
+      const headingText = faseService.getCurrentHeading(JSON.stringify(motherfile), faseKey);
+      const formatted = faseService.formatHeadingText(headingText || '');
+      setCurrentHeading(formatted && formatted.length ? formatted : ['']);
+    } catch (e) {
+      console.error('Failed to parse heading from motherfile', e);
+    }
+  }, [currentPhase, motherfile]);
+
+  // Helper to advance phases with fade-out/in of heading
+  const advancePhase = (next: 'photocircle' | 'name' | 'complete') => {
+    setHeadingVisible(false);
+    setTimeout(() => {
+      setCurrentPhase(next);
+      // Allow Typewriter to mount new text, then fade in
+      requestAnimationFrame(() => {
+        setHeadingVisible(true);
+      });
+    }, fadeDurationMs);
+  };
 
   const handleTeamSubmit = () => {
     if (!teamNumber || !currentSession) return;
@@ -123,15 +114,21 @@ export default function PlayerPage() {
     const selectedTeamMembers = teamAssignments[parseInt(teamNumber)] || [];
     
     setTeamMembers(selectedTeamMembers);
-    setShowPopup(true); // Show popup first
+    // Fade out 01/01 and show popup
+    setShowPopup(true);
+    setHeadingVisible(false);
+    // Move to 01/02 after fade
+    setTimeout(() => {
+      setCurrentPhase('photocircle');
+      setHeadingVisible(true);
+    }, fadeDurationMs);
     setIsLoading(false);
   };
 
   const closePopup = () => {
     setShowPopup(false);
-    // Move to PhotoCircle account check phase
-    setCurrentPhase('photocircle');
-    // Heading will be loaded from PocketBase based on current_fase
+    // Ensure heading for 01/02 is visible
+    setHeadingVisible(true);
   };
 
   const handlePhotoCircleResponse = (hasAccount: boolean) => {
@@ -140,9 +137,8 @@ export default function PlayerPage() {
       // Show popup again if no account
       setShowPopup(true);
     } else {
-      // Move to name selection phase
-      setCurrentPhase('name');
-      // Heading will be loaded from PocketBase based on current_fase
+      // Move to name selection phase with fade
+      advancePhase('name');
     }
   };
 
@@ -426,8 +422,8 @@ export default function PlayerPage() {
               {/* Close X button - Twice as big */}
               <button
                 onClick={closePopup}
-                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10"
-                style={{ fontSize: '5rem', fontWeight: 300 }}
+                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none"
+                style={{ fontSize: '3.75rem', fontWeight: 300, lineHeight: 1 }}
               >
                 ×
               </button>
@@ -477,8 +473,8 @@ export default function PlayerPage() {
               {/* Close X button - Twice as big */}
               <button
                 onClick={() => setShowWelcomePopup(false)}
-                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10"
-                style={{ fontSize: '5rem', fontWeight: 300 }}
+                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none"
+                style={{ fontSize: '3.75rem', fontWeight: 300, lineHeight: 1 }}
               >
                 ×
               </button>
