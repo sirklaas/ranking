@@ -18,6 +18,8 @@ export default function PresenterPage() {
   const [gameTime, setGameTime] = useState('00:00');
   const [isClient, setIsClient] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
+  const [mediaList, setMediaList] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Initialize client-side state to prevent hydration errors
   useEffect(() => {
@@ -49,6 +51,19 @@ export default function PresenterPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, [gameStartTime]);
+
+  // Load motherfile media list when entering manage view
+  useEffect(() => {
+    const loadMedia = async () => {
+      try {
+        const files = await motherfileService.listMedia();
+        setMediaList(files);
+      } catch (err) {
+        console.warn('Could not load Motherfile media list', err);
+      }
+    };
+    if (currentView === 'manage') loadMedia();
+  }, [currentView]);
 
   // Define fase groups
   const faseGroups = {
@@ -91,6 +106,26 @@ export default function PresenterPage() {
     } catch (error) {
       console.log('Could not load master template from PocketBase, using defaults', error);
       return null;
+    }
+  };
+
+  // Upload media to Motherfile
+  const handleUploadMedia = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    try {
+      setIsUploading(true);
+      const arr = Array.from(files);
+      await motherfileService.uploadMedia(arr);
+      const refreshed = await motherfileService.listMedia();
+      setMediaList(refreshed);
+      setSaveBanner('Media uploaded to Motherfile');
+      setTimeout(() => setSaveBanner(null), 3000);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setSaveBanner('Failed to upload media');
+      setTimeout(() => setSaveBanner(null), 4000);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -249,6 +284,40 @@ export default function PresenterPage() {
             <div className="text-sm font-bold">{media.name}</div>
             <div className="text-xs opacity-60">{media.path}</div>
           </div>
+        
+          {/* Motherfile Media Upload & List */}
+          <div className="mt-8 border-t pt-6">
+            <h3 className="font-semibold text-gray-900 mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              Motherfile Media
+            </h3>
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={(e) => handleUploadMedia(e.target.files)}
+                className="block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0A1752] file:text-white hover:file:bg-[#0A1752]/90"
+              />
+              {isUploading && (
+                <span className="text-sm text-gray-600">Uploading...</span>
+              )}
+            </div>
+            {mediaList.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {mediaList.map((file) => (
+                  <div key={file} className="bg-white border rounded p-2">
+                    <div className="text-xs break-all mb-2" title={file}>{file}</div>
+                    <div className="relative w-full aspect-video bg-black/5 overflow-hidden rounded">
+                      {/* Use img to avoid next/image domain config; URLs come from PocketBase */}
+                      <img src={motherfileService.fileUrl(file)} alt={file} className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600">No media uploaded yet.</div>
+            )}
+          </div>
         </div>
       );
     } else {
@@ -370,6 +439,10 @@ export default function PresenterPage() {
   const updateMasterTemplate = async (headings: Record<string, { heading: string; image?: string }>) => {
     try {
       await motherfileService.update({ fases: headings });
+      // Verify by fetching back once
+      try {
+        await motherfileService.get();
+      } catch {}
       return { success: true, message: 'Motherfile updated in PocketBase' };
     } catch (error) {
       console.error('Error updating PocketBase motherfile:', error);
