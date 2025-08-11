@@ -115,21 +115,15 @@ export default function PlayerPage() {
     const selectedTeamMembers = teamAssignments[parseInt(teamNumber)] || [];
     
     setTeamMembers(selectedTeamMembers);
-    // Fade out 01/01 and show popup
+    // Show popup only; do NOT change phase yet to avoid re-animating 01/01.
     setShowPopup(true);
-    setHeadingVisible(false);
-    // Move to 01/02 after fade
-    setTimeout(() => {
-      setCurrentPhase('photocircle');
-      setHeadingVisible(true);
-    }, fadeDurationMs);
     setIsLoading(false);
   };
 
   const closePopup = () => {
+    // Close popup and start fase 01/02 now (only once, on X press)
     setShowPopup(false);
-    // Ensure heading for 01/02 is visible
-    setHeadingVisible(true);
+    advancePhase('photocircle');
   };
 
   const handlePhotoCircleResponse = (hasAccount: boolean) => {
@@ -172,13 +166,8 @@ export default function PlayerPage() {
     const [lastLines, setLastLines] = useState<string[]>([]);
 
     useEffect(() => {
+      // Do not reset on visibility changes; only re-run when lines actually change.
       if (!visible) {
-        setDisplayedLines([]);
-        setCurrentLineIndex(0);
-        setCurrentCharIndex(0);
-        setIsTyping(true);
-        setHasAnimated(false);
-        setLastLines([]);
         return;
       }
 
@@ -230,7 +219,7 @@ export default function PlayerPage() {
 
         return () => clearTimeout(timer);
       }
-    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]); // Removed 'lines' to prevent re-animation
+    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]); // 'lines' intentionally omitted to avoid re-animating unless changed
 
     return (
       <div 

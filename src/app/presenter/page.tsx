@@ -605,9 +605,9 @@ export default function PresenterPage() {
         </div>
 
         {/* Main content - 2% gap, no hardcoded paddings; widths in % only */}
-        <div className="flex" style={{ gap: '2%', height: 'calc(100vh - 200px)' }}>
+        <div className="flex mt-4" style={{ gap: '2%', height: 'calc(100vh - 200px)' }}>
           {/* Left side - Two screens side by side */}
-          <div className="flex flex-col" style={{ width: '92%' }}>
+          <div className="flex flex-col" style={{ width: '90%' }}>
             {/* Two screens side by side */}
             <div className="flex flex-1" style={{ gap: '2%' }}>
               {/* Current Display - Left screen (16:9) */}
@@ -677,7 +677,7 @@ export default function PresenterPage() {
           </div>
 
           {/* Right side - Phase Navigation - All the way to the right */}
-          <div className="space-y-3 flex flex-col" style={{ width: '6%' }}>
+          <div className="space-y-3 flex flex-col" style={{ width: '8%' }}>
             {phaseButtons.map((phase) => (
               <button
                 key={phase.label}
