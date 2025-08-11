@@ -10,6 +10,27 @@ export const getPocketBase = () => {
   return pb;
 };
 
+// Motherfile (singleton) service
+export const motherfileService = {
+  async get() {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    return await pb.collection('Motherfile').getOne('motherfile');
+  },
+  async update(data: Record<string, unknown>) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    return await pb.collection('Motherfile').update('motherfile', data);
+  },
+  fileUrl(fileName: string) {
+    const pb = getPocketBase();
+    if (!pb) return fileName; // SSR fallback
+    if (!fileName) return '';
+    if (/^https?:\/\//i.test(fileName)) return fileName;
+    return `${pb.baseUrl}/api/files/Motherfile/motherfile/${encodeURIComponent(fileName)}`;
+  }
+};
+
 // Helper functions for ranking management
 export const rankingService = {
   // Create a new ranking game session

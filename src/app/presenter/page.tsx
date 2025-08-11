@@ -1,10 +1,9 @@
-'use client';
-
+  'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import RankingSessionForm from '@/components/game/RankingSessionForm';
 import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
-import { teamService, faseService, rankingService } from '@/lib/pocketbase';
+import { teamService, faseService, rankingService, motherfileService } from '@/lib/pocketbase';
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -35,8 +34,6 @@ export default function PresenterPage() {
       document.head.removeChild(link);
     };
   }, []);
-
-  
 
   // Update current time every second
   useEffect(() => {
@@ -87,16 +84,14 @@ export default function PresenterPage() {
 
   const loadMasterTemplate = async () => {
     try {
-      const url = process.env.NEXT_PUBLIC_MOTHERFILE_URL || '/assets/fases.json';
-      const response = await fetch(url);
-      if (response.ok) {
-        const masterTemplate = await response.json();
-        return masterTemplate;
-      }
+      const record = await motherfileService.get();
+      // Prefer explicit fases field; otherwise assume record is already key map
+      const masterTemplate = (record as any)?.fases || record;
+      return masterTemplate as Record<string, { heading: string; image?: string }>;
     } catch (error) {
-      console.log('Could not load master template, using defaults');
+      console.log('Could not load master template from PocketBase, using defaults');
+      return null;
     }
-    return null;
   };
 
   const handleStartRankingGame = () => {
@@ -148,8 +143,10 @@ export default function PresenterPage() {
       return null;
     }
     
-    // Parse headings from PocketBase
-    const headings = faseService.parseHeadings(selectedSession.headings || '{}');
+    // Use currently edited headings as source of truth (falls back to session JSON)
+    const headings = Object.keys(editingHeadings).length
+      ? editingHeadings
+      : faseService.parseHeadings(selectedSession.headings || '{}');
     
     // If headings are empty, use fallback data for testing
     if (Object.keys(headings).length === 0) {
@@ -193,7 +190,7 @@ export default function PresenterPage() {
         // Determine file type
         const fileName = faseData.image;
         const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
-        const path = fileName.startsWith('/') ? fileName : `/githublocal/pcs/${fileName}`;
+        const path = motherfileService.fileUrl(fileName);
         
         return {
           type: isVideo ? 'video' as const : 'image' as const,
@@ -391,26 +388,11 @@ export default function PresenterPage() {
 
   const updateMasterTemplate = async (headings: Record<string, { heading: string; image?: string }>) => {
     try {
-      // Send request to API endpoint to update the master template file
-      const response = await fetch('/api/update-master-template', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(headings)
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        console.error('API Error:', result);
-        return { success: false, message: result.error || 'Failed to update master template' };
-      }
-      
-      return { success: true, message: result.message, data: result.data };
+      await motherfileService.update({ fases: headings });
+      return { success: true, message: 'Motherfile updated in PocketBase' };
     } catch (error) {
-      console.error('Error updating master template:', error);
-      return { success: false, message: 'Network error occurred' };
+      console.error('Error updating PocketBase motherfile:', error);
+      return { success: false, message: 'Failed to update PocketBase motherfile' };
     }
   };
 
@@ -604,14 +586,18 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content - remove outer gap so Next touches fases; widths in % only */}
-        <div className="flex mt-4" style={{ gap: '0%', height: 'calc(100vh - 200px)' }}>
-          {/* Left side - Two screens side by side */}
-          <div className="flex flex-col" style={{ width: '92%' }}>
-            {/* Two screens side by side */}
-            <div className="flex flex-1" style={{ gap: '2%' }}>
-              {/* Current Display - Left screen (16:9) */}
-              <div style={{ width: '44%' }}>
+        {/* Main content grid: 2% | 43% | 2% | 43% | 2% | 8% | 2% */}
+        <div
+          className="grid mt-4"
+          style={{ gridTemplateColumns: '2% 43% 2% 43% 2% 8% 2%', height: 'calc(100vh - 200px)' }}
+        >
+          {/* Left spacer (2%) */}
+          <div></div>
+
+          {/* Current Display (43%) */}
+          <div className="flex flex-col">
+            {/* Current Display - Left screen (16:9) */}
+            <div>
                 <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
                   {/* Real display content */}
                   <div className="absolute inset-0 w-full h-full flex flex-col">
@@ -661,9 +647,13 @@ export default function PresenterPage() {
                 </div>
                 <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
               </div>
+            </div>
 
-              {/* Next Display - Right screen (16:9) */}
-              <div style={{ width: '44%' }}>
+          {/* Middle gap (2%) */}
+          <div></div>
+
+          {/* Next Display (43%) */}
+          <div className="flex flex-col">
                 <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
                   {/* Show next media preview */}
                   <div className="absolute inset-0 w-full h-full flex items-center justify-center">
@@ -671,13 +661,13 @@ export default function PresenterPage() {
                   </div>
                 </div>
                 <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
-              </div>
-            </div>
-            {/* Optional space for future controls */}
           </div>
 
-          {/* Right side - Phase Navigation - All the way to the right */}
-          <div className="space-y-3 flex flex-col" style={{ width: '8%' }}>
+          {/* Gap before fases (2%) */}
+          <div></div>
+
+          {/* Fases (8%) */}
+          <div className="space-y-3 flex flex-col">
             {phaseButtons.map((phase) => (
               <button
                 key={phase.label}
@@ -693,6 +683,8 @@ export default function PresenterPage() {
               </button>
             ))}
           </div>
+          {/* Right spacer (2%) */}
+          <div></div>
         </div>
         </div>
       </div>

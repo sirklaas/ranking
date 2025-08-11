@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { rankingService, teamService, faseService } from '@/lib/pocketbase';
+import { rankingService, teamService, faseService, motherfileService } from '@/lib/pocketbase';
 
 interface RankingSession {
   id: string;
@@ -33,7 +33,7 @@ export default function PlayerPage() {
   // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>([]);
   const [headingVisible, setHeadingVisible] = useState(true);
-  type Motherfile = Record<string, { heading: string; image?: string }> | { fases: Record<string, string> };
+  type Motherfile = Record<string, { heading: string; image?: string }> | { fases: Record<string, { heading: string; image?: string }> };
   const [motherfile, setMotherfile] = useState<Motherfile | null>(null);
   const fadeDurationMs = 1000; // 1s fade for heading transitions
 
@@ -53,28 +53,26 @@ export default function PlayerPage() {
     loadSessionData();
   }, []);
 
-  // Load headings motherfile ONCE
+  // Load headings motherfile ONCE from PocketBase singleton
   useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_MOTHERFILE_URL || '/assets/fases.json';
-    fetch(url as string)
-      .then(async (res) => {
-        if (!res.ok) throw new Error('Failed to load motherfile');
-        return res.json();
-      })
-      .then((json) => {
-        setMotherfile(json);
-      })
-      .catch((err) => {
-        console.error('Error loading motherfile:', err);
+    const loadMotherfile = async () => {
+      try {
+        const record = await motherfileService.get();
+        const mf = (record as any)?.fases || record;
+        setMotherfile(mf as Motherfile);
+      } catch (err) {
+        console.error('Error loading motherfile from PocketBase:', err);
         // Minimal fallback
         setMotherfile({
           fases: {
-            '01/01': 'In welk team zit je?',
-            '01/02': "Heb je 'n PhotoCircle account?",
-            '01/03': 'Wat is jouw naam?'
+            '01/01': { heading: 'In welk team zit je?' },
+            '01/02': { heading: "Heb je 'n PhotoCircle account?" },
+            '01/03': { heading: 'Wat is jouw naam?' }
           }
-        });
-      });
+        } as Motherfile);
+      }
+    };
+    loadMotherfile();
   }, []);
 
   // Track which heading keys have animated, so we never animate the same content twice
