@@ -84,16 +84,18 @@ async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocke
 }
 
 export async function GET(req: NextRequest) {
+  let meta: { collection?: string; recordId?: string } = {};
   try {
     const pb = await getServerPocketBase();
-    const { collection, recordId, trace } = await getMotherfileContext(pb);
-    const rec = await pb.collection(collection).getOne(recordId, { $autoCancel: false });
+    const ctx = await getMotherfileContext(pb);
+    meta = { collection: ctx.collection, recordId: ctx.recordId };
+    const rec = await pb.collection(ctx.collection).getOne(ctx.recordId, { $autoCancel: false });
     const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io';
     const debug = req.nextUrl.searchParams.get('debug');
-    return NextResponse.json({ success: true, data: rec, meta: { collection, recordId, baseUrl, trace: debug ? trace : undefined } });
+    return NextResponse.json({ success: true, data: rec, meta: { ...meta, baseUrl, trace: debug ? ctx.trace : undefined } });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to read Motherfile';
-    return NextResponse.json({ success: false, error: msg, details: String(error) }, { status: 500 });
+    return NextResponse.json({ success: false, error: msg, details: String(error), meta }, { status: 500 });
   }
 }
 
