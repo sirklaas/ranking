@@ -30,10 +30,29 @@ export default function PresenterPage() {
       const form = new FormData();
       form.append('media', file);
       const res = await fetch('/api/pb-motherfile', { method: 'POST', body: form });
-      const json = await res.json();
-      if (!json?.success) throw new Error(json?.error || 'Upload failed');
+      let json: unknown = null;
+      try {
+        json = await res.json();
+      } catch (e) {
+        throw new Error('Upload response was not JSON');
+      }
+      const isOk = typeof json === 'object' && json !== null && (json as { success?: boolean }).success === true;
+    if (!isOk) {
+      const errMsg = (typeof json === 'object' && json && (json as { error?: string }).error) || `Upload failed (${res.status})`;
+      throw new Error(errMsg as string);
+    }
 
-      // Set the fase image to the uploaded file name
+      // After upload, refresh motherfile to cache recordId and media list
+      try {
+        const resAfter = await fetch('/api/pb-motherfile', { cache: 'no-store' });
+        const jsonAfter = await resAfter.json();
+        const rid = jsonAfter?.meta?.recordId as string | undefined;
+        if (rid) motherfileService.setRecordId(rid);
+        const media = jsonAfter?.data?.media || [];
+        setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
+      } catch {}
+
+      // Set the fase image to the uploaded file name (URL built via motherfileService.fileUrl at render time)
       setEditingHeadings(prev => ({
         ...prev,
         [fase]: { heading: prev[fase]?.heading || '', image: file.name }
@@ -43,6 +62,8 @@ export default function PresenterPage() {
       try {
         const resList = await fetch('/api/pb-motherfile', { cache: 'no-store' });
         const jsonList = await resList.json();
+        const rid = jsonList?.meta?.recordId as string | undefined;
+        if (rid) motherfileService.setRecordId(rid);
         const media = jsonList?.data?.media || [];
         setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
       } catch {}
