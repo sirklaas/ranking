@@ -6,25 +6,32 @@ import { getServerPocketBase } from '@/lib/pbServer';
 
 async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocketBase>>) {
   const envName = (process.env.PB_MOTHERFILE_COLLECTION || '').trim();
-  const candidates = Array.from(new Set([envName, 'motherfile', 'Motherfile'].filter(Boolean)));
+  const candidates = Array.from(new Set([envName, 'Motherfile', 'motherfile'].filter(Boolean)));
 
   let lastError: unknown = null;
   for (const collection of candidates) {
+    // 1) Try to read the well-known id directly to avoid admin-only list permissions
     try {
-      const list = await pb.collection(collection).getList(1, 1, { $autoCancel: false });
-      if (list?.items?.length) {
-        return { collection, recordId: list.items[0].id };
-      }
-      // Existing collection but empty: create singleton record
-      const created = await pb.collection(collection).create({ fases: {} });
-      return { collection, recordId: created.id };
+      const rec = await pb.collection(collection).getOne('motherfile', { $autoCancel: false });
+      if (rec?.id) return { collection, recordId: rec.id };
     } catch (e) {
       lastError = e;
-      // try next candidate
+      // If it's a 404, the collection may exist but record not created yet
+      const msg = e instanceof Error ? e.message : String(e);
+      const notFound = /not found|404/i.test(msg);
+      if (notFound) {
+        try {
+          const created = await pb.collection(collection).create({ fases: {} });
+          return { collection, recordId: created.id };
+        } catch (createErr) {
+          lastError = createErr;
+          // fallthrough to next candidate
+        }
+      }
     }
   }
   throw new Error(
-    `PocketBase Motherfile collection not found. Set PB_MOTHERFILE_COLLECTION env to the exact collection name. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+    `PocketBase Motherfile collection not found or inaccessible. Set PB_MOTHERFILE_COLLECTION to the exact collection name and ensure server has admin credentials. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
   );
 }
 

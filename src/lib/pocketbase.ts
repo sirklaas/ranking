@@ -24,22 +24,28 @@ export interface MotherfileRecord {
 // Motherfile (singleton) service
 export const motherfileService = {
   async get(): Promise<MotherfileRecord> {
-    const pb = getPocketBase();
-    if (!pb) throw new Error('PocketBase not available');
-    return await pb.collection('Motherfile').getOne('motherfile');
+    const res = await fetch('/api/pb-motherfile', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Motherfile GET failed: ${res.status}`);
+    const json = await res.json();
+    return (json?.data as MotherfileRecord) || {};
   },
   async update(data: Partial<MotherfileRecord>) {
-    const pb = getPocketBase();
-    if (!pb) throw new Error('PocketBase not available');
-    return await pb.collection('Motherfile').update('motherfile', data);
+    // Server route expects { fases }
+    const res = await fetch('/api/pb-motherfile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(`Motherfile PUT failed: ${res.status}`);
+    return await res.json();
   },
   async uploadMedia(files: File | File[]) {
-    const pb = getPocketBase();
-    if (!pb) throw new Error('PocketBase not available');
     const formData = new FormData();
     const arr = Array.isArray(files) ? files : [files];
     for (const f of arr) formData.append('media', f);
-    return await pb.collection('Motherfile').update('motherfile', formData);
+    const res = await fetch('/api/pb-motherfile', { method: 'POST', body: formData });
+    if (!res.ok) throw new Error(`Motherfile media upload failed: ${res.status}`);
+    return await res.json();
   },
   async listMedia(): Promise<string[]> {
     const rec = await this.get();
@@ -47,11 +53,14 @@ export const motherfileService = {
     return Array.isArray(media) ? media : (media ? [media] : []);
   },
   fileUrl(fileName: string) {
-    const pb = getPocketBase();
-    if (!pb) return fileName; // SSR fallback
     if (!fileName) return '';
     if (/^https?:\/\//i.test(fileName)) return fileName;
-    return `${pb.baseUrl}/api/files/Motherfile/motherfile/${encodeURIComponent(fileName)}`;
+    const fallback = (typeof window !== 'undefined' && window.location?.protocol === 'https:')
+      ? 'https://pinkmilk.pockethost.io'
+      : 'http://127.0.0.1:8090';
+    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
+    const collection = (process.env.NEXT_PUBLIC_PB_MOTHERFILE_COLLECTION || 'Motherfile').trim();
+    return `${baseUrl}/api/files/${collection}/motherfile/${encodeURIComponent(fileName)}`;
   }
 };
 
