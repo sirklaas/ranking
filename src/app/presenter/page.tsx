@@ -624,7 +624,7 @@ export default function PresenterPage() {
       type: isVideo ? 'video' as const : 'image' as const,
       path: motherfileService.fileUrl(fileName),
       name: fileName,
-      heading: item.heading || `Fase ${faseKey}`,
+      heading: (item.heading || `Fase ${faseKey}`),
       fase: faseKey,
     };
   };
@@ -639,6 +639,12 @@ export default function PresenterPage() {
   const currentVideoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying07, setIsPlaying07] = useState(false);
 
+  const formatHeading = (text?: string) => {
+    if (!text) return '';
+    // Replace '/n' tokens with new lines
+    return text.replaceAll('/n', '\n');
+  };
+
   // ArrowRight behavior for fase 07
   useEffect(() => {
     if (!isGroup07 || currentView !== 'game') return;
@@ -649,6 +655,8 @@ export default function PresenterPage() {
         if (!isPlaying07) {
           const v = currentVideoRef.current;
           if (v) {
+            // Ensure muted for autoplay policies
+            v.muted = true;
             v.currentTime = 0;
             void v.play();
             setIsPlaying07(true);
@@ -731,15 +739,37 @@ export default function PresenterPage() {
             <div>
                 <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
                   {isGroup07 ? (
-                    <video
-                      ref={currentVideoRef}
-                      src={getMediaForFase(currentFase)?.path || ''}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      preload="auto"
-                      muted
-                      playsInline
-                      onEnded={() => setIsPlaying07(false)}
-                    />
+                    (() => {
+                      const media = getMediaForFase(currentFase);
+                      const isTrailer = /\/01$/.test(currentFase);
+                      const bg = isTrailer ? '#e5e5e5' : '#F5B800';
+                      return (
+                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bg }}>
+                          {media?.type === 'video' && media.path ? (
+                            <video
+                              ref={currentVideoRef}
+                              src={media.path}
+                              className="absolute inset-0 w-full h-full object-contain"
+                              preload="auto"
+                              muted
+                              playsInline
+                              onLoadedMetadata={(e) => {
+                                // ready to play quickly
+                                const v = e.currentTarget;
+                                v.currentTime = 0.01;
+                              }}
+                              onEnded={() => setIsPlaying07(false)}
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center px-6 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                              <div className="text-black text-3xl whitespace-pre-line">
+                                {formatHeading(getHeadingsSource()[currentFase]?.heading || `Fase ${currentFase}`)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
                   ) : (
                     // Fallback to existing simulated current display
                     <div className="absolute inset-0 w-full h-full flex flex-col">
@@ -796,13 +826,20 @@ export default function PresenterPage() {
                     (() => {
                       const nextKey = getNextFaseInGroup(currentFase, '07');
                       const headings = getHeadingsSource();
-                      const h = headings[nextKey]?.heading || `Fase ${nextKey}`;
+                      const h = formatHeading(headings[nextKey]?.heading || `Fase ${nextKey}`);
+                      const nextMedia = getMediaForFase(nextKey);
                       return (
                         <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#F5B800' }}>
-                          <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {nextKey}</div>
-                          <div className="absolute bottom-3 left-3 right-3 text-black text-3xl text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                            {h}
+                          {/* Vertically centered heading */}
+                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                            <div className="text-black text-3xl whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{h}</div>
                           </div>
+                          {/* Fase label */}
+                          <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {nextKey}</div>
+                          {/* Preload next video invisibly */}
+                          {nextMedia?.type === 'video' && nextMedia.path && (
+                            <video src={nextMedia.path} preload="auto" muted playsInline className="hidden" />
+                          )}
                         </div>
                       );
                     })()
