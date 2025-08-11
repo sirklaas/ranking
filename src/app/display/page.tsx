@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { rankingService, teamService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
+import '@/modules/fases/auto-register';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
