@@ -56,8 +56,14 @@ export default function PresenterPage() {
   useEffect(() => {
     const loadMedia = async () => {
       try {
-        const files = await motherfileService.listMedia();
-        setMediaList(files);
+        const res = await fetch('/api/pb-motherfile', { cache: 'no-store' });
+        const json = await res.json();
+        if (json?.success) {
+          const media = json.data?.media || [];
+          setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
+        } else {
+          console.warn('Could not load Motherfile media list', json?.error);
+        }
       } catch (err) {
         console.warn('Could not load Motherfile media list', err);
       }
@@ -115,9 +121,18 @@ export default function PresenterPage() {
     try {
       setIsUploading(true);
       const arr = Array.from(files);
-      await motherfileService.uploadMedia(arr);
-      const refreshed = await motherfileService.listMedia();
-      setMediaList(refreshed);
+      const form = new FormData();
+      for (const f of arr) form.append('media', f);
+      const res = await fetch('/api/pb-motherfile', { method: 'POST', body: form });
+      const json = await res.json();
+      if (!json?.success) throw new Error(json?.error || 'Upload failed');
+      // Reload list
+      try {
+        const resList = await fetch('/api/pb-motherfile', { cache: 'no-store' });
+        const jsonList = await resList.json();
+        const media = jsonList?.data?.media || [];
+        setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
+      } catch {}
       setSaveBanner('Media uploaded to Motherfile');
       setTimeout(() => setSaveBanner(null), 3000);
     } catch (err) {
@@ -438,11 +453,13 @@ export default function PresenterPage() {
 
   const updateMasterTemplate = async (headings: Record<string, { heading: string; image?: string }>) => {
     try {
-      await motherfileService.update({ fases: headings });
-      // Verify by fetching back once
-      try {
-        await motherfileService.get();
-      } catch {}
+      const res = await fetch('/api/pb-motherfile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fases: headings })
+      });
+      const json = await res.json();
+      if (!json?.success) throw new Error(json?.error || 'Unknown error');
       return { success: true, message: 'Motherfile updated in PocketBase' };
     } catch (error) {
       console.error('Error updating PocketBase motherfile:', error);
