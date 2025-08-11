@@ -35,7 +35,7 @@ export default function PlayerPage() {
   const [headingVisible, setHeadingVisible] = useState(true);
   type Motherfile = Record<string, { heading: string; image?: string }> | { fases: Record<string, string> };
   const [motherfile, setMotherfile] = useState<Motherfile | null>(null);
-  const fadeDurationMs = 500;
+  const fadeDurationMs = 1000; // 1s fade for heading transitions
 
   // Load PocketBase session ONCE (for team members and links) - no polling
   useEffect(() => {
@@ -131,10 +131,16 @@ export default function PlayerPage() {
     setIsLoading(false);
   };
 
+  const [popupFadingOut, setPopupFadingOut] = useState(false);
+  const [welcomePopupFadingOut, setWelcomePopupFadingOut] = useState(false);
   const closePopup = () => {
-    // Close popup and start fase 01/02 now (only once, on X press)
-    setShowPopup(false);
-    advancePhase('photocircle');
+    // Fade out popup, then start fase 01/02
+    setPopupFadingOut(true);
+    setTimeout(() => {
+      setShowPopup(false);
+      setPopupFadingOut(false);
+      advancePhase('photocircle');
+    }, 1000);
   };
 
   const handlePhotoCircleResponse = (hasAccount: boolean) => {
@@ -242,7 +248,7 @@ export default function PlayerPage() {
 
     return (
       <div 
-        className={`transition-opacity duration-500 ${
+        className={`transition-opacity duration-1000 ${
           visible ? 'opacity-100' : 'opacity-0'
         }`}
       >
@@ -435,7 +441,7 @@ export default function PlayerPage() {
 
       {/* PhotoCircle Popup */}
       {showPopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-1000 ${popupFadingOut ? 'opacity-0' : 'opacity-100'}`}>
           <div className="flex items-center justify-center px-4">
             <div 
               className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
@@ -487,7 +493,7 @@ export default function PlayerPage() {
       
       {/* Welcome Popup - Shows after name selection */}
       {showWelcomePopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-1000 ${welcomePopupFadingOut ? 'opacity-0' : 'opacity-100'}`}>
           <div className="flex items-center justify-center px-4">
             <div 
               className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
@@ -499,7 +505,7 @@ export default function PlayerPage() {
             >
               {/* Close X button - Twice as big */}
               <button
-                onClick={() => setShowWelcomePopup(false)}
+                onClick={closeWelcomePopup}
                 className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none"
                 style={{ fontSize: '3.75rem', fontWeight: 300, lineHeight: 1 }}
               >
