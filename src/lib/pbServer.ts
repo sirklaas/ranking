@@ -4,7 +4,7 @@ let serverPb: PocketBase | null = null;
 
 export async function getServerPocketBase(): Promise<PocketBase> {
   if (!serverPb) {
-    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://127.0.0.1:8090';
+    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io';
     serverPb = new PocketBase(baseUrl);
 
     const adminEmail = process.env.PB_ADMIN_EMAIL;

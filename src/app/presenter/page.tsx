@@ -21,6 +21,43 @@ export default function PresenterPage() {
   const [mediaList, setMediaList] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Upload a single media file and assign it to a specific fase's Picture field
+  const handleUploadPictureForFase = async (fase: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    try {
+      setIsUploading(true);
+      const file = files[0];
+      const form = new FormData();
+      form.append('media', file);
+      const res = await fetch('/api/pb-motherfile', { method: 'POST', body: form });
+      const json = await res.json();
+      if (!json?.success) throw new Error(json?.error || 'Upload failed');
+
+      // Set the fase image to the uploaded file name
+      setEditingHeadings(prev => ({
+        ...prev,
+        [fase]: { heading: prev[fase]?.heading || '', image: file.name }
+      }));
+
+      // Refresh media list quietly
+      try {
+        const resList = await fetch('/api/pb-motherfile', { cache: 'no-store' });
+        const jsonList = await resList.json();
+        const media = jsonList?.data?.media || [];
+        setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
+      } catch {}
+
+      setSaveBanner('Picture uploaded and linked to this fase');
+      setTimeout(() => setSaveBanner(null), 3000);
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setSaveBanner('Failed to upload picture');
+      setTimeout(() => setSaveBanner(null), 4000);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Initialize client-side state to prevent hydration errors
   useEffect(() => {
     setIsClient(true);
@@ -817,14 +854,25 @@ export default function PresenterPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                       Picture:
                     </label>
-                    <input
-                      type="text"
-                      value={editingHeadings[fase]?.image || ''}
-                      onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
-                      placeholder="image.jpg"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingHeadings[fase]?.image || ''}
+                        onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
+                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
+                        placeholder="image.jpg"
+                      />
+                      <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-[#0A1752] text-white text-sm cursor-pointer hover:bg-[#0A1752]/90" title="Upload and set picture">
+                        Upload
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          className="hidden"
+                          onChange={(e) => handleUploadPictureForFase(fase, e.target.files)}
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
