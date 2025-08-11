@@ -1,5 +1,5 @@
   'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import RankingSessionForm from '@/components/game/RankingSessionForm';
 import RankingSessionList from '@/components/game/RankingSessionList';
@@ -593,11 +593,89 @@ export default function PresenterPage() {
       console.error('Error loading display data:', error);
     }
   }, [selectedSession]);
-  
-  // Load display data when session changes
+
+  // ---------- Fase 07 (Zitten en Staan) helpers ----------
+  const isGroup07 = currentFase.startsWith('07/');
+
+  const getHeadingsSource = () => {
+    if (!selectedSession) return {} as Record<string, { heading: string; image?: string }>;
+    const parsed = faseService.parseHeadings(selectedSession.headings || '{}');
+    return Object.keys(editingHeadings).length ? editingHeadings : parsed;
+  };
+
+  const getOrderedFasesForGroup = (prefix: string) => {
+    const headings = getHeadingsSource();
+    return Object.keys(headings)
+      .filter(k => k.startsWith(prefix + '/'))
+      .sort((a, b) => {
+        const pa = parseInt(a.split('/')[1] || '0', 10);
+        const pb = parseInt(b.split('/')[1] || '0', 10);
+        return pa - pb;
+      });
+  };
+
+  const getMediaForFase = (faseKey: string) => {
+    const headings = getHeadingsSource();
+    const item = headings[faseKey];
+    if (!item?.image || item.image.trim() === '') return null;
+    const fileName = item.image;
+    const isVideo = /\.(mp4|mov|avi)$/i.test(fileName);
+    return {
+      type: isVideo ? 'video' as const : 'image' as const,
+      path: motherfileService.fileUrl(fileName),
+      name: fileName,
+      heading: item.heading || `Fase ${faseKey}`,
+      fase: faseKey,
+    };
+  };
+
+  const getNextFaseInGroup = (faseKey: string, prefix: string) => {
+    const ordered = getOrderedFasesForGroup(prefix);
+    const idx = ordered.indexOf(faseKey);
+    if (idx === -1) return ordered[0] || faseKey;
+    return ordered[idx + 1] || ordered[idx] || faseKey;
+  };
+
+  const currentVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying07, setIsPlaying07] = useState(false);
+
+  // ArrowRight behavior for fase 07
   useEffect(() => {
-    loadDisplayData();
-  }, [loadDisplayData]);
+    if (!isGroup07 || currentView !== 'game') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        // First press -> start video
+        if (!isPlaying07) {
+          const v = currentVideoRef.current;
+          if (v) {
+            v.currentTime = 0;
+            void v.play();
+            setIsPlaying07(true);
+          }
+          return;
+        }
+        // Second press -> advance to next fase (auto play)
+        const next07 = getNextFaseInGroup(currentFase, '07');
+        setCurrentFase(next07);
+        // Persist selection
+        if (selectedSession) {
+          rankingService.updateSession(selectedSession.id, { current_fase: next07 }).catch(() => {});
+        }
+        setTimeout(() => {
+          const v = currentVideoRef.current;
+          if (v) void v.play();
+        }, 0);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isGroup07, currentView, isPlaying07, currentFase, selectedSession]);
+
+  // Reset playing flag when fase changes
+  useEffect(() => {
+    setIsPlaying07(false);
+  }, [currentFase]);
 
   const renderGameInterface = () => {
     console.log('renderGameInterface called', { selectedSession, currentView });
@@ -652,51 +730,57 @@ export default function PresenterPage() {
             {/* Current Display - Left screen (16:9) */}
             <div>
                 <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
-                  {/* Real display content */}
-                  <div className="absolute inset-0 w-full h-full flex flex-col">
-                    {/* Header */}
-                    <div className="bg-blue-900 text-white px-2 py-1 text-xs flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="text-yellow-300">★★★</div>
-                        <span>Quizmaster Klaas presenteert</span>
+                  {isGroup07 ? (
+                    <video
+                      ref={currentVideoRef}
+                      src={getMediaForFase(currentFase)?.path || ''}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      preload="auto"
+                      muted
+                      playsInline
+                      onEnded={() => setIsPlaying07(false)}
+                    />
+                  ) : (
+                    // Fallback to existing simulated current display
+                    <div className="absolute inset-0 w-full h-full flex flex-col">
+                      <div className="bg-blue-900 text-white px-2 py-1 text-xs flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="text-yellow-300">★★★</div>
+                          <span>Quizmaster Klaas presenteert</span>
+                        </div>
+                        <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: {displayData?.gameCode || '8075'}</div>
                       </div>
-                      <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: {displayData?.gameCode || '8075'}</div>
-                    </div>
-                    
-                    {/* Main content */}
-                    <div className="flex-1 p-2">
-                      <div className="text-center text-white mb-2">
-                        <div className="text-lg font-bold">{getCurrentDisplay()}</div>
-                        <div className="text-sm opacity-90">De teams van vandaag zijn:</div>
-                      </div>
-                      
-                      {/* Real team data */}
-                      <div className="flex justify-center gap-2 mb-2">
-                        {Array.from({ length: selectedSession?.nr_teams || 4 }, (_, index) => {
-                          const teamNumber = index + 1;
-                          const teamPlayers = displayData?.playersByTeam[teamNumber] || [];
-                          return (
-                            <div key={teamNumber} className="flex flex-col items-center">
-                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black font-bold border-2 border-black">
-                                {teamNumber}
+                      <div className="flex-1 p-2">
+                        <div className="text-center text-white mb-2">
+                          <div className="text-lg font-bold">{getCurrentDisplay()}</div>
+                          <div className="text-sm opacity-90">De teams van vandaag zijn:</div>
+                        </div>
+                        <div className="flex justify-center gap-2 mb-2">
+                          {Array.from({ length: selectedSession?.nr_teams || 4 }, (_, index) => {
+                            const teamNumber = index + 1;
+                            const teamPlayers = displayData?.playersByTeam[teamNumber] || [];
+                            return (
+                              <div key={teamNumber} className="flex flex-col items-center">
+                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black font-bold border-2 border-black">
+                                  {teamNumber}
+                                </div>
+                                <div className="mt-1 space-y-1">
+                                  {teamPlayers.slice(0, 2).map((player, idx) => (
+                                    <div key={idx} className="bg-pink-200 text-black text-xs px-1 py-1 rounded">
+                                      {player.length > 8 ? player.substring(0, 8) + '...' : player}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                              <div className="mt-1 space-y-1">
-                                {teamPlayers.slice(0, 2).map((player, idx) => (
-                                  <div key={idx} className="bg-pink-200 text-black text-xs px-1 py-1 rounded">
-                                    {player.length > 8 ? player.substring(0, 8) + '...' : player}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      
-                      <div className="text-center text-white text-xs mt-2">
-                        Total Players: {displayData ? Object.values(displayData.playersByTeam).flat().length : 0} | Teams: {selectedSession?.nr_teams || 4} | Location: {selectedSession?.city || 'jb'}
+                            );
+                          })}
+                        </div>
+                        <div className="text-center text-white text-xs mt-2">
+                          Total Players: {displayData ? Object.values(displayData.playersByTeam).flat().length : 0} | Teams: {selectedSession?.nr_teams || 4} | Location: {selectedSession?.city || 'jb'}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
               </div>
@@ -708,10 +792,25 @@ export default function PresenterPage() {
           {/* Next Display (43%) */}
           <div className="flex flex-col">
                 <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
-                  {/* Show next media preview */}
-                  <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-                    {renderMediaPreview(nextMedia)}
-                  </div>
+                  {isGroup07 ? (
+                    (() => {
+                      const nextKey = getNextFaseInGroup(currentFase, '07');
+                      const headings = getHeadingsSource();
+                      const h = headings[nextKey]?.heading || `Fase ${nextKey}`;
+                      return (
+                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#F5B800' }}>
+                          <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {nextKey}</div>
+                          <div className="absolute bottom-3 left-3 right-3 text-black text-3xl text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                            {h}
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+                      {renderMediaPreview(nextMedia)}
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
           </div>
