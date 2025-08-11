@@ -1,6 +1,7 @@
 import PocketBase from 'pocketbase';
 
 let pbClient: PocketBase | null = null;
+let motherfileRecordId: string | null = null;
 // Client-side only - no build-time PocketBase dependency
 export function getPocketBase(): PocketBase | null {
   if (typeof window === 'undefined') return null;
@@ -27,7 +28,11 @@ export const motherfileService = {
     const res = await fetch('/api/pb-motherfile', { cache: 'no-store' });
     if (!res.ok) throw new Error(`Motherfile GET failed: ${res.status}`);
     const json = await res.json();
+    if (json?.meta?.recordId) motherfileRecordId = json.meta.recordId as string;
     return (json?.data as MotherfileRecord) || {};
+  },
+  setRecordId(id: string | null) {
+    motherfileRecordId = id || null;
   },
   async update(data: Partial<MotherfileRecord>) {
     // Server route expects { fases }
@@ -60,7 +65,11 @@ export const motherfileService = {
       : 'http://127.0.0.1:8090';
     const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
     const collection = (process.env.NEXT_PUBLIC_PB_MOTHERFILE_COLLECTION || 'motherfile').trim();
-    return `${baseUrl}/api/files/${collection}/motherfile/${encodeURIComponent(fileName)}`;
+    if (motherfileRecordId) {
+      return `${baseUrl}/api/files/${collection}/${motherfileRecordId}/${encodeURIComponent(fileName)}`;
+    }
+    // If record id unknown, return the bare filename to avoid broken URL; UI can still render name/placeholder
+    return fileName;
   }
 };
 
