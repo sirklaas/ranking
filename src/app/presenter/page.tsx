@@ -604,25 +604,19 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content - with 2% side margins and 2% gaps */}
-        <div className="flex h-[calc(100vh-200px)] relative" style={{ gap: '2%' }}>
-          {/* Left side - Two screens side by side and Show Results button */}
-          <div className="flex flex-col gap-4" style={{ width: '90%' }}>
-            {/* Two screens side by side - Much larger */}
+        {/* Main content - 2% gap, no hardcoded paddings; widths in % only */}
+        <div className="flex" style={{ gap: '2%', height: 'calc(100vh - 200px)' }}>
+          {/* Left side - Two screens side by side */}
+          <div className="flex flex-col" style={{ width: '92%' }}>
+            {/* Two screens side by side */}
             <div className="flex flex-1" style={{ gap: '2%' }}>
-              {/* Current Display - Left screen */}
-              <div className="bg-white rounded-lg p-4 shadow-md border border-gray-700" style={{ width: '44%', borderWidth: '3px' }}>
-                {/* Heading bar above current display */}
-                <div className="mb-2">
-                  <div className="text-center py-2 px-4 bg-gray-100 text-gray-900 rounded" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, borderWidth: '3px', borderColor: '#374151', borderStyle: 'solid' }}>
-                    {currentHeadingLabel}
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-orange-400 to-pink-600 rounded-lg p-4 text-white h-[500px] flex items-center justify-center relative overflow-hidden">
+              {/* Current Display - Left screen (16:9) */}
+              <div style={{ width: '44%' }}>
+                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
                   {/* Real display content */}
-                  <div className="w-full h-full bg-gradient-to-br from-orange-300 via-pink-400 to-purple-500 rounded flex flex-col border border-gray-700" style={{ borderWidth: '3px' }}>
+                  <div className="absolute inset-0 w-full h-full flex flex-col">
                     {/* Header */}
-                    <div className="bg-blue-900 text-white p-2 text-xs flex justify-between items-center">
+                    <div className="bg-blue-900 text-white px-2 py-1 text-xs flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className="text-yellow-300">★★★</div>
                         <span>Quizmaster Klaas presenteert</span>
@@ -665,33 +659,21 @@ export default function PresenterPage() {
                     </div>
                   </div>
                 </div>
-                <h3 className="text-xl mt-3 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
+                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
               </div>
 
-              {/* Next Display - Right screen */}
-              <div className="bg-white rounded-lg p-4 shadow-md border border-gray-700" style={{ width: '44%', borderWidth: '3px' }}>
-                {/* Heading bar above next media preview */}
-                <div className="mb-2">
-                  <div className="text-center py-2 px-4 bg-gray-100 text-gray-900 rounded" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, borderWidth: '3px', borderColor: '#374151', borderStyle: 'solid' }}>
-                    {nextMedia?.heading || 'Next media'} {nextMedia?.fase ? `(Fase ${nextMedia.fase})` : ''}
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg p-4 text-white h-[500px] flex items-center justify-center relative overflow-hidden">
+              {/* Next Display - Right screen (16:9) */}
+              <div style={{ width: '44%' }}>
+                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
                   {/* Show next media preview */}
-                  <div className="w-full h-full bg-black rounded flex items-center justify-center border border-gray-700" style={{ borderWidth: '3px' }}>
+                  <div className="absolute inset-0 w-full h-full flex items-center justify-center">
                     {renderMediaPreview(nextMedia)}
                   </div>
                 </div>
-                <h3 className="text-xl mt-3 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
+                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
               </div>
             </div>
-
-            {/* Show Results Button - Below screens */}
-            <div className="w-full">
-              <button className="w-full bg-purple-600 text-white py-6 rounded-lg text-2xl font-bold hover:bg-purple-700 transition-colors shadow-lg">
-                Show results
-              </button>
-            </div>
+            {/* Optional space for future controls */}
           </div>
 
           {/* Right side - Phase Navigation - All the way to the right */}
