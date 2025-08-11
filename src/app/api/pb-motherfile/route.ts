@@ -6,7 +6,7 @@ import { getServerPocketBase } from '@/lib/pbServer';
 
 async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocketBase>>) {
   const envName = (process.env.PB_MOTHERFILE_COLLECTION || '').trim();
-  const candidates = Array.from(new Set([envName, 'Motherfile', 'motherfile'].filter(Boolean)));
+  const candidates = Array.from(new Set([envName, 'motherfile', 'Motherfile'].filter(Boolean)));
 
   let lastError: unknown = null;
   for (const collection of candidates) {
@@ -41,7 +41,7 @@ async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocke
     }
   }
   throw new Error(
-    `PocketBase Motherfile collection not found or inaccessible. Set PB_MOTHERFILE_COLLECTION to the exact collection name and ensure server has admin credentials. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+    `PocketBase Motherfile collection not found or inaccessible. Tried collections: [${candidates.join(', ')}]. Ensure PB_MOTHERFILE_COLLECTION matches the API id and server has admin credentials. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
   );
 }
 
@@ -53,7 +53,7 @@ export async function GET() {
     return NextResponse.json({ success: true, data: rec, meta: { collection, recordId } });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to read Motherfile';
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    return NextResponse.json({ success: false, error: msg, details: String(error) }, { status: 500 });
   }
 }
 
@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true, data: updated, meta: { collection, recordId } });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to update Motherfile';
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    return NextResponse.json({ success: false, error: msg, details: String(error) }, { status: 500 });
   }
 }
 
@@ -83,6 +83,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: updated, meta: { collection, recordId } });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to upload media to Motherfile';
-    return NextResponse.json({ success: false, error: msg }, { status: 500 });
+    return NextResponse.json({ success: false, error: msg, details: String(error) }, { status: 500 });
   }
 }
