@@ -5,19 +5,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerPocketBase } from '@/lib/pbServer';
 
 async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocketBase>>) {
-  const collection = (process.env.PB_MOTHERFILE_COLLECTION || 'motherfile').trim();
-  // Try to find existing singleton record
-  try {
-    const list = await pb.collection(collection).getList(1, 1, { $autoCancel: false });
-    if (list?.items?.length) {
-      return { collection, recordId: list.items[0].id };
+  const envName = (process.env.PB_MOTHERFILE_COLLECTION || '').trim();
+  const candidates = Array.from(new Set([envName, 'motherfile', 'Motherfile'].filter(Boolean)));
+
+  let lastError: unknown = null;
+  for (const collection of candidates) {
+    try {
+      const list = await pb.collection(collection).getList(1, 1, { $autoCancel: false });
+      if (list?.items?.length) {
+        return { collection, recordId: list.items[0].id };
+      }
+      // Existing collection but empty: create singleton record
+      const created = await pb.collection(collection).create({ fases: {} });
+      return { collection, recordId: created.id };
+    } catch (e) {
+      lastError = e;
+      // try next candidate
     }
-  } catch (e) {
-    // fallthrough to creation; if collection name is wrong, following ops will surface error
   }
-  // Create an empty record if none exists
-  const created = await pb.collection(collection).create({ fases: {} });
-  return { collection, recordId: created.id };
+  throw new Error(
+    `PocketBase Motherfile collection not found. Set PB_MOTHERFILE_COLLECTION env to the exact collection name. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+  );
 }
 
 export async function GET() {
