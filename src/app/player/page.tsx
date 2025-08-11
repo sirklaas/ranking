@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { rankingService, teamService, faseService } from '@/lib/pocketbase';
 
 interface RankingSession {
@@ -77,7 +77,8 @@ export default function PlayerPage() {
       });
   }, []);
 
-  // Update heading when phase or motherfile changes
+  // Update heading when phase or motherfile changes – guard to avoid redundant updates
+  const lastHeadingRef = useRef<string>('');
   useEffect(() => {
     if (!motherfile) return;
     const faseKey = currentPhase === 'team' ? '01/01' : currentPhase === 'photocircle' ? '01/02' : currentPhase === 'name' ? '01/03' : '';
@@ -85,7 +86,11 @@ export default function PlayerPage() {
     try {
       const headingText = faseService.getCurrentHeading(JSON.stringify(motherfile), faseKey);
       const formatted = faseService.formatHeadingText(headingText || '');
-      setCurrentHeading(formatted && formatted.length ? formatted : ['']);
+      const hash = JSON.stringify(formatted || []);
+      if (hash !== lastHeadingRef.current) {
+        lastHeadingRef.current = hash;
+        setCurrentHeading(formatted && formatted.length ? formatted : ['']);
+      }
     } catch (e) {
       console.error('Failed to parse heading from motherfile', e);
     }
@@ -240,6 +245,14 @@ export default function PlayerPage() {
     );
   };
 
+  // Memoized version to avoid rerenders if lines/visible are unchanged
+  const MemoTypewriterHeading = React.memo(
+    TypewriterHeading,
+    (prevProps, nextProps) => (
+      JSON.stringify(prevProps.lines) === JSON.stringify(nextProps.lines) && prevProps.visible === nextProps.visible
+    )
+  );
+
   return (
     <div 
       className="min-h-screen relative overflow-hidden" 
@@ -253,7 +266,7 @@ export default function PlayerPage() {
         
         {/* Sections 1-2: Logo Background + Logo Overlay - Sticky Header */}
         <div 
-          className="row-span-2 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50"
+          className="row-span-2 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50 sticky-header"
           style={{ 
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
@@ -273,7 +286,7 @@ export default function PlayerPage() {
 
         {/* Sections 3-4: Dynamic Heading with Typewriter Animation */}
         <div className="row-span-2 flex items-center justify-center px-4">
-          <TypewriterHeading lines={currentHeading} visible={headingVisible} />
+          <MemoTypewriterHeading lines={currentHeading} visible={headingVisible} />
         </div>
 
         {/* Sections 5-6: Team Number Input Circle - Moved lower for two-line headings */}
@@ -397,7 +410,7 @@ export default function PlayerPage() {
         </div>
       </div>
 
-      {/* PhotoCircle Popup - Improved styling */}
+      {/* PhotoCircle Popup */}
       {showPopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="flex items-center justify-center px-4">
@@ -409,44 +422,45 @@ export default function PlayerPage() {
                 minHeight: '320px'
               }}
             >
-              {/* Close X button - Twice as big */}
+              {/* Close X button - centered and thinner */}
               <button
                 onClick={closePopup}
-                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none"
-                style={{ fontSize: '3.75rem', fontWeight: 300, lineHeight: 1 }}
+                className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none border border-white/60"
+                style={{ fontSize: '2.5rem', fontWeight: 300, lineHeight: 1 }}
+                aria-label="Close"
               >
                 ×
               </button>
+              
+              <div className="text-center text-white space-y-6 pt-16 px-2">
+                <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                  Download nu deze App:
+                </h3>
                 
-                <div className="text-center text-white space-y-6 pt-16 px-2">
-                  <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                    Download nu deze App:
-                  </h3>
-                  
-                  {currentSession?.photocircle && (
-                    <a 
-                      href={currentSession.photocircle} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', backgroundColor: '#0A1752' }}
-                    >
-                      PhotoCircle App
-                    </a>
-                  )}
-                  
-                  <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                    <p>Maak daar een account aan</p>
-                    <p>en kom dan hier terug.</p>
-                    <p></p>
-                    <p>Als je hulp nodig hebt laat het me weten</p>
-                    <p>en dan kom ik je graag helpen.</p>
-                  </div>
+                {currentSession?.photocircle && (
+                  <a 
+                    href={currentSession.photocircle} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', backgroundColor: '#0A1752' }}
+                  >
+                    PhotoCircle App
+                  </a>
+                )}
+                
+                <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  <p>Maak daar een account aan</p>
+                  <p>en kom dan hier terug.</p>
+                  <p></p>
+                  <p>Als je hulp nodig hebt laat het me weten</p>
+                  <p>en dan kom ik je graag helpen.</p>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
       
       {/* Welcome Popup - Shows after name selection */}
       {showWelcomePopup && (
@@ -521,6 +535,11 @@ export default function PlayerPage() {
         .no-spinner[type=number] {
           -moz-appearance: textfield;
         }
+      `}</style>
+
+      {/* Global styles to handle keyboard-open sticky behavior */}
+      <style jsx global>{`
+        body.keyboard-open .sticky-header { position: fixed !important; top: 0; left: 0; right: 0; }
       `}</style>
     </div>
   );
