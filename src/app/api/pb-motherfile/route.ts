@@ -20,6 +20,16 @@ async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocke
       const msg = e instanceof Error ? e.message : String(e);
       const notFound = /not found|404/i.test(msg);
       if (notFound) {
+        // Try to find the first existing record (supports singleton with random id)
+        try {
+          const list = await pb.collection(collection).getList(1, 1, { $autoCancel: false });
+          if (list?.items?.length) {
+            return { collection, recordId: list.items[0].id };
+          }
+        } catch (listErr) {
+          lastError = listErr;
+        }
+        // If none exist, create singleton
         try {
           const created = await pb.collection(collection).create({ fases: {} });
           return { collection, recordId: created.id };
