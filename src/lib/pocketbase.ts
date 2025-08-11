@@ -5,7 +5,10 @@ let pbClient: PocketBase | null = null;
 export function getPocketBase(): PocketBase | null {
   if (typeof window === 'undefined') return null;
   if (!pbClient) {
-    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://127.0.0.1:8090';
+    const fallback = (typeof window !== 'undefined' && window.location?.protocol === 'https:')
+      ? 'https://pinkmilk.pockethost.io'
+      : 'http://127.0.0.1:8090';
+    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
     pbClient = new PocketBase(baseUrl);
   }
   return pbClient;
