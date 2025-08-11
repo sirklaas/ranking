@@ -5,7 +5,7 @@
 **Product Name**: Ranking Gameshow Platform  
 **Domain**: ranking.pinkmilk.eu  
 **Target Users**: Event presenters 
-**Core Value**: Enable interactive ranking games with real-time audience participation and dispaly of ranking in the form of charts an
+**Core Value**: Enable interactive ranking games with real-time audience participation and display of ranking in the form of charts an
 
 
 ## User Stories
@@ -151,6 +151,7 @@
 - 1 Intro
 - 4 Guilty pleasures
 - 7 zitten en staan
+
 - 10 Top 3
 - 13 Krakende Karakters 
 - 17 Top 10 
@@ -198,10 +199,20 @@
 
 ## Session Summary
 
-**Last Updated**: 2025-08-08  
-**Version**: 1.4  
+**Last Updated**: 2025-08-11  
+**Version**: 1.5  
 **Status**: Presenter layout full-width with precise proportions; Player onboarding stable  
 **Next Steps**: Test complete flow and implement real-time synchronization
+
+### Recent Updates (2025-08-11)
+- ✅ Presenter JSON Dashboard: per-fase Upload button next to each `Picture` field.
+  - Uploads directly to PocketBase Motherfile via secure server route `api/pb-motherfile`.
+  - Auto-fills the uploaded filename into the fase’s `image` value.
+  - Shows success/failure banner; refreshes the global media list (previews).
+- ✅ PocketBase as single source of truth confirmed: Presenter, Player, and Display read/write directly to Motherfile singleton. No local `/assets/fases.json`.
+- ✅ Production safety: PocketBase base URL defaults to HTTPS `https://pinkmilk.pockethost.io` to prevent mixed content on `ranking.pinkmilk.eu`.
+- ✅ Presenter Save Global verifies PB update and shows inline feedback.
+- ℹ️ Make sure Vercel envs are set: `NEXT_PUBLIC_POCKETBASE_URL`, and PB admin creds/token for server routes.
 
 ### Recent Updates (2025-08-08)
 - ✅ Presenter now truly uses 100% screen width on MacBook Pro displays
