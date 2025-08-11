@@ -4,6 +4,9 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerPocketBase } from '@/lib/pbServer';
 
+const HARDCODED_COLLECTION = 'motherfile';
+const HARDCODED_RECORD_ID = 'vb0waum2c1yevsg';
+
 async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocketBase>>) {
   const envName = (process.env.PB_MOTHERFILE_COLLECTION || '').trim();
   const candidates = Array.from(new Set([envName, 'motherfile', 'Motherfile'].filter(Boolean)));
@@ -11,6 +14,15 @@ async function getMotherfileContext(pb: Awaited<ReturnType<typeof getServerPocke
 
   let lastError: unknown = null;
   for (const collection of candidates) {
+    // -1) Try hardcoded fallback first
+    if (HARDCODED_COLLECTION && HARDCODED_RECORD_ID && collection === HARDCODED_COLLECTION) {
+      try {
+        const rec = await pb.collection(HARDCODED_COLLECTION).getOne(HARDCODED_RECORD_ID, { $autoCancel: false });
+        if (rec?.id) return { collection: HARDCODED_COLLECTION, recordId: rec.id };
+      } catch (e) {
+        lastError = e;
+      }
+    }
     // 0) If explicit record id is provided, try it directly
     if (explicitId) {
       try {
