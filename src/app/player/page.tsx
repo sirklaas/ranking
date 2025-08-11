@@ -33,7 +33,8 @@ export default function PlayerPage() {
   // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>([]);
   const [headingVisible, setHeadingVisible] = useState(true);
-  const [motherfile, setMotherfile] = useState<any | null>(null);
+  type Motherfile = Record<string, { heading: string; image?: string }> | { fases: Record<string, string> };
+  const [motherfile, setMotherfile] = useState<Motherfile | null>(null);
   const fadeDurationMs = 500;
 
   // Load PocketBase session ONCE (for team members and links) - no polling

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { rankingService, teamService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
 
@@ -155,10 +156,13 @@ export default function DisplayPage() {
       >
         {/* Logo - Left side of band - Much Larger */}
         <div className="flex items-center">
-          <img 
-            src="/assets/ranking_logo.webp" 
-            alt="Ranking Logo" 
+          <Image
+            src="/assets/ranking_logo.webp"
+            alt="Ranking Logo"
+            width={320}
+            height={160}
             className="h-40 w-auto object-contain"
+            priority
           />
         </div>
         
@@ -177,10 +181,13 @@ export default function DisplayPage() {
         
         {/* QR Code - Right side of band */}
         <div className="bg-white p-2 rounded-lg shadow-lg">
-          <img 
-            src={qrCodeUrl} 
-            alt="Join Game QR Code" 
+          <Image
+            src={qrCodeUrl}
+            alt="Join Game QR Code"
+            width={64}
+            height={64}
             className="w-16 h-16"
+            unoptimized
           />
           <p className="text-center text-xs font-semibold text-gray-700 mt-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Code: {gameCode}</p>
         </div>
