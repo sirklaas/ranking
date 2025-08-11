@@ -143,6 +143,15 @@ export default function PlayerPage() {
     }, 1000);
   };
 
+  // Fade out and close the welcome popup (1s)
+  const closeWelcomePopup = () => {
+    setWelcomePopupFadingOut(true);
+    setTimeout(() => {
+      setShowWelcomePopup(false);
+      setWelcomePopupFadingOut(false);
+    }, 1000);
+  };
+
   const handlePhotoCircleResponse = (hasAccount: boolean) => {
     setHasPhotoCircleAccount(hasAccount);
     if (!hasAccount) {
