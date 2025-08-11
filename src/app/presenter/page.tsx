@@ -223,7 +223,7 @@ export default function PresenterPage() {
           {/* Heading above video */}
           {media.heading && (
             <div className="text-center py-2 px-4 bg-black/20 rounded-t text-white">
-              <div className="text-sm font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+              <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '24px', lineHeight: 1.2 }}>
                 {media.heading}
               </div>
               {media.fase && (
@@ -265,7 +265,7 @@ export default function PresenterPage() {
           {/* Heading above image */}
           {media.heading && (
             <div className="text-center py-2 px-4 bg-black/20 rounded-t text-white">
-              <div className="text-sm font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+              <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '24px', lineHeight: 1.2 }}>
                 {media.heading}
               </div>
               {media.fase && (
@@ -604,10 +604,10 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content - 2% gap, no hardcoded paddings; widths in % only */}
-        <div className="flex mt-4" style={{ gap: '2%', height: 'calc(100vh - 200px)' }}>
+        {/* Main content - remove outer gap so Next touches fases; widths in % only */}
+        <div className="flex mt-4" style={{ gap: '0%', height: 'calc(100vh - 200px)' }}>
           {/* Left side - Two screens side by side */}
-          <div className="flex flex-col" style={{ width: '90%' }}>
+          <div className="flex flex-col" style={{ width: '92%' }}>
             {/* Two screens side by side */}
             <div className="flex flex-1" style={{ gap: '2%' }}>
               {/* Current Display - Left screen (16:9) */}
