@@ -60,7 +60,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-      } catch (err) {
+      } catch (_err) {
         setError('Failed to parse Excel file. Please make sure it\'s a valid Excel file with player names.');
       }
     };

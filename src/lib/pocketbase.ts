@@ -1,26 +1,47 @@
 import PocketBase from 'pocketbase';
 
+let pbClient: PocketBase | null = null;
 // Client-side only - no build-time PocketBase dependency
-export const getPocketBase = () => {
-  if (typeof window === 'undefined') {
-    return null; // Return null for SSR/build time
+export function getPocketBase(): PocketBase | null {
+  if (typeof window === 'undefined') return null;
+  if (!pbClient) {
+    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://127.0.0.1:8090';
+    pbClient = new PocketBase(baseUrl);
   }
-  const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io');
-  pb.autoCancellation(false);
-  return pb;
-};
+  return pbClient;
+}
+
+// Motherfile types
+export type MotherfileFases = Record<string, { heading: string; image?: string }>;
+export interface MotherfileRecord {
+  fases?: MotherfileFases;
+  media?: string[];
+}
 
 // Motherfile (singleton) service
 export const motherfileService = {
-  async get() {
+  async get(): Promise<MotherfileRecord> {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('Motherfile').getOne('motherfile');
   },
-  async update(data: Record<string, unknown>) {
+  async update(data: Partial<MotherfileRecord>) {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('Motherfile').update('motherfile', data);
+  },
+  async uploadMedia(files: File | File[]) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    const formData = new FormData();
+    const arr = Array.isArray(files) ? files : [files];
+    for (const f of arr) formData.append('media', f);
+    return await pb.collection('Motherfile').update('motherfile', formData);
+  },
+  async listMedia(): Promise<string[]> {
+    const rec = await this.get();
+    const media = rec.media || [];
+    return Array.isArray(media) ? media : (media ? [media] : []);
   },
   fileUrl(fileName: string) {
     const pb = getPocketBase();

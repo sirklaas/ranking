@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { rankingService, teamService, faseService, motherfileService } from '@/lib/pocketbase';
+import Image from 'next/image';
+import { rankingService, teamService, faseService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
 
 interface RankingSession {
   id: string;
@@ -33,8 +34,7 @@ export default function PlayerPage() {
   // Dynamic heading states
   const [currentHeading, setCurrentHeading] = useState<string[]>([]);
   const [headingVisible, setHeadingVisible] = useState(true);
-  type Motherfile = Record<string, { heading: string; image?: string }> | { fases: Record<string, { heading: string; image?: string }> };
-  const [motherfile, setMotherfile] = useState<Motherfile | null>(null);
+  const [motherfile, setMotherfile] = useState<MotherfileFases | null>(null);
   const fadeDurationMs = 1000; // 1s fade for heading transitions
 
   // Load PocketBase session ONCE (for team members and links) - no polling
@@ -58,18 +58,16 @@ export default function PlayerPage() {
     const loadMotherfile = async () => {
       try {
         const record = await motherfileService.get();
-        const mf = (record as any)?.fases || record;
-        setMotherfile(mf as Motherfile);
+        const mf = record.fases || {};
+        setMotherfile(mf);
       } catch (err) {
         console.error('Error loading motherfile from PocketBase:', err);
         // Minimal fallback
         setMotherfile({
-          fases: {
-            '01/01': { heading: 'In welk team zit je?' },
-            '01/02': { heading: "Heb je 'n PhotoCircle account?" },
-            '01/03': { heading: 'Wat is jouw naam?' }
-          }
-        } as Motherfile);
+          '01/01': { heading: 'In welk team zit je?' },
+          '01/02': { heading: "Heb je 'n PhotoCircle account?" },
+          '01/03': { heading: 'Wat is jouw naam?' }
+        });
       }
     };
     loadMotherfile();
@@ -202,7 +200,7 @@ export default function PlayerPage() {
       if (linesChanged) {
         setLastLines(lines);
         if (animate) {
-          onStart && onStart();
+          if (onStart) onStart();
           setDisplayedLines([]);
           setCurrentLineIndex(0);
           setCurrentCharIndex(0);
@@ -226,7 +224,7 @@ export default function PlayerPage() {
       if (currentLineIndex >= lines.length) {
         setIsTyping(false);
         setHasAnimated(true);
-        onDone && onDone();
+        if (onDone) onDone();
         return;
       }
 
@@ -251,7 +249,7 @@ export default function PlayerPage() {
 
         return () => clearTimeout(timer);
       }
-    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines]); // 'lines' intentionally omitted to avoid re-animating unless changed
+    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines, lines, animate, onStart, onDone]);
 
     return (
       <div 
@@ -285,7 +283,7 @@ export default function PlayerPage() {
       className="min-h-screen relative overflow-hidden" 
       style={{ 
         fontFamily: 'Barlow Semi Condensed, sans-serif',
-        background: 'linear-gradient(135deg, #ff7e5f 0%, #feb47b 25%, #86a8e7 50%, #7f7fd5 75%, #91eae4 100%)'
+        background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
       }}
     >
       {/* 12-Section Grid Container */}
@@ -303,10 +301,13 @@ export default function PlayerPage() {
         >
           {/* Logo Overlay - Much Bigger */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <img 
+            <Image 
               src="/assets/ranking_logo.webp" 
               alt="Ranking Logo" 
+              width={256}
+              height={128}
               className="h-full max-h-32 w-auto object-contain p-2"
+              priority
             />
           </div>
         </div>
@@ -413,7 +414,7 @@ export default function PlayerPage() {
                     <button
                       key={index}
                       onClick={() => handleNameSelection(member)}
-                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-300 hover:to-purple-400 transition-all transform hover:scale-105"
+                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all transform hover:scale-105"
                       style={{ 
                         fontFamily: 'Barlow Semi Condensed, sans-serif',
                         fontWeight: 400,
@@ -427,7 +428,7 @@ export default function PlayerPage() {
                   ) : (
                     <div 
                       key={index}
-                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in"
+                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in"
                       style={{ 
                         fontFamily: 'Barlow Semi Condensed, sans-serif',
                         fontWeight: 400,
@@ -453,7 +454,7 @@ export default function PlayerPage() {
             <div 
               className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
               style={{ 
-                background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
+                background: 'linear-gradient(135deg, #cc6344 0%, #cc8f5d 25%, #6782bb 50%, #6262ab 75%, #6fb7b3 100%)',
                 border: '4px solid white',
                 minHeight: '320px'
               }}
@@ -505,7 +506,7 @@ export default function PlayerPage() {
             <div 
               className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
               style={{ 
-                background: 'linear-gradient(135deg, #e6714d 0%, #e5a269 25%, #7a96d1 50%, #7272c1 75%, #82d1cd 100%)',
+                background: 'linear-gradient(135deg, #cc6344 0%, #cc8f5d 25%, #6782bb 50%, #6262ab 75%, #6fb7b3 100%)',
                 border: '4px solid white',
                 minHeight: '320px'
               }}
