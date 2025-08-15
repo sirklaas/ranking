@@ -106,19 +106,36 @@ export const weekplannerService = {
   async createWeek(payload: WeekplannerRecordData): Promise<WeekplannerRecord> {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
-    const rec = await pb
-      .collection(this.collection)
-      .create(payload as unknown as Record<string, unknown>);
-    return rec as unknown as WeekplannerRecord;
+    try {
+      const rec = await pb
+        .collection(this.collection)
+        .create(payload as unknown as Record<string, unknown>);
+      return rec as unknown as WeekplannerRecord;
+    } catch (err) {
+      if (typeof window !== 'undefined') {
+        // Surface error in browser console
+        // eslint-disable-next-line no-console
+        console.warn('[weekplannerService.createWeek] failed', err);
+      }
+      throw err;
+    }
   },
 
   async updateWeek(id: string, data: Partial<WeekplannerRecordData>): Promise<WeekplannerRecord> {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
-    const rec = await pb
-      .collection(this.collection)
-      .update(id, data as unknown as Record<string, unknown>);
-    return rec as unknown as WeekplannerRecord;
+    try {
+      const rec = await pb
+        .collection(this.collection)
+        .update(id, data as unknown as Record<string, unknown>);
+      return rec as unknown as WeekplannerRecord;
+    } catch (err) {
+      if (typeof window !== 'undefined') {
+        // eslint-disable-next-line no-console
+        console.warn('[weekplannerService.updateWeek] failed', err);
+      }
+      throw err;
+    }
   },
 
   async upsertWeek(ownerId: string, weekStartISO: string, data: unknown): Promise<WeekplannerRecord> {
