@@ -97,7 +97,7 @@ export const weekplannerService = {
         `ownerId = "${ownerId}" && weekStart = "${weekStartISO}"`
       );
       return rec as unknown as WeekplannerRecord;
-    } catch (e: any) {
+    } catch {
       // 404 when not found
       return null;
     }
@@ -106,14 +106,18 @@ export const weekplannerService = {
   async createWeek(payload: WeekplannerRecordData): Promise<WeekplannerRecord> {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
-    const rec = await pb.collection(this.collection).create(payload as any);
+    const rec = await pb
+      .collection(this.collection)
+      .create(payload as unknown as Record<string, unknown>);
     return rec as unknown as WeekplannerRecord;
   },
 
   async updateWeek(id: string, data: Partial<WeekplannerRecordData>): Promise<WeekplannerRecord> {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
-    const rec = await pb.collection(this.collection).update(id, data as any);
+    const rec = await pb
+      .collection(this.collection)
+      .update(id, data as unknown as Record<string, unknown>);
     return rec as unknown as WeekplannerRecord;
   },
 

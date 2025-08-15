@@ -92,15 +92,23 @@ export default function PlannerPage() {
       setOwnerId(resolved);
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = (JSON.parse(raw) as any[]).map((t) => ({
-          id: t.id,
-          title: typeof t.title === "string" ? t.title : (t.text ?? ""),
-          body: typeof t.body === "string" ? t.body : "",
-          day: t.day ?? null,
-          slot: t.slot ?? null,
-          completed: t.completed ?? false,
-        })) as Task[];
-        setTasks(parsed);
+        const parsedRaw = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsedRaw)) {
+          const parsed: Task[] = parsedRaw.map((t) => {
+            const obj = t as Partial<Task> & Record<string, unknown>;
+            return {
+              id: typeof obj.id === "string" ? obj.id : crypto.randomUUID(),
+              title: typeof obj.title === "string" ? obj.title : (typeof obj.text === "string" ? obj.text : ""),
+              body: typeof obj.body === "string" ? obj.body : "",
+              day: (typeof obj.day === "number" ? (obj.day as number) : null) as DayIndex | null,
+              slot: (typeof obj.slot === "number" ? (obj.slot as number) : null),
+              completed: Boolean(obj.completed),
+            } as Task;
+          });
+          setTasks(parsed);
+        } else {
+          setTasks([{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
+        }
       } else {
         // Start with a single empty block in tray
         setTasks([{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
@@ -112,23 +120,26 @@ export default function PlannerPage() {
 
   // Load from PocketBase (overrides localStorage if found)
   useEffect(() => {
-    const abort = { canceled: false };
+    const abort: { canceled: boolean } = { canceled: false };
     (async () => {
       try {
         const wsISO = weekStartISO();
         const rec = await weekplannerService.findWeek(ownerId, wsISO);
         if (abort.canceled) return;
         if (rec && rec.data && typeof rec.data === "object") {
-          const payload: any = rec.data;
+          const payload = rec.data as unknown as { tasks?: unknown };
           if (Array.isArray(payload.tasks)) {
-            const parsed: Task[] = payload.tasks.map((t: any) => ({
-              id: t.id ?? crypto.randomUUID(),
-              title: typeof t.title === "string" ? t.title : "",
-              body: typeof t.body === "string" ? t.body : "",
-              day: (t.day ?? null) as DayIndex | null,
-              slot: (t.slot ?? null) as number | null,
-              completed: !!t.completed,
-            }));
+            const parsed: Task[] = (payload.tasks as unknown[]).map((t) => {
+              const obj = t as Partial<Task> & Record<string, unknown>;
+              return {
+                id: typeof obj.id === "string" ? obj.id : crypto.randomUUID(),
+                title: typeof obj.title === "string" ? obj.title : "",
+                body: typeof obj.body === "string" ? obj.body : "",
+                day: (typeof obj.day === "number" ? (obj.day as number) : null) as DayIndex | null,
+                slot: (typeof obj.slot === "number" ? (obj.slot as number) : null),
+                completed: Boolean(obj.completed),
+              } as Task;
+            });
             setTasks(parsed.length ? parsed : [{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
           }
         } else {
@@ -139,7 +150,7 @@ export default function PlannerPage() {
         // ignore; stay on local cache
       }
     })();
-    return () => { (abort as any).canceled = true; };
+    return () => { abort.canceled = true; };
   }, [ownerId]);
 
   // Weekly rollover
@@ -187,7 +198,7 @@ export default function PlannerPage() {
         // ignore network errors
       }
     })();
-  }, [tasks]);
+  }, [tasks, ownerId]);
 
   // Red line positioning (represents current time 09:00-17:00)
   useEffect(() => {
@@ -375,8 +386,8 @@ export default function PlannerPage() {
       <footer
         className="tray"
         onDragOver={(e) => e.preventDefault()}
-        onDrop={() => onTrayDrop()}
-        onPointerUp={() => onTrayDrop()}
+        onDrop={onTrayDrop}
+        onPointerUp={onTrayDrop}
      >
         {(() => {
           const trayTask = tasks.find(
