@@ -31,6 +31,7 @@ export const motherfileService = {
     if (json?.meta?.recordId) motherfileRecordId = json.meta.recordId as string;
     return (json?.data as MotherfileRecord) || {};
   },
+
   setRecordId(id: string | null) {
     motherfileRecordId = id || null;
   },
@@ -144,6 +145,17 @@ export const weekplannerService = {
       return await this.updateWeek(existing.id, { data });
     }
     return await this.createWeek({ ownerId, weekStart: weekStartISO, data });
+  },
+
+  async getWeekById(id: string): Promise<WeekplannerRecord | null> {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    try {
+      const rec = await pb.collection(this.collection).getOne(id);
+      return rec as unknown as WeekplannerRecord;
+    } catch {
+      return null;
+    }
   }
 };
 

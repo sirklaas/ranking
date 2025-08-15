@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import "./planner.css";
-import { weekplannerService } from "@/lib/pocketbase";
+// Using server routes for PocketBase access to avoid client-side rule issues
 
 // Types
 type DayIndex = 0 | 1 | 2 | 3 | 4 | 5; // 6 days
@@ -42,6 +42,7 @@ const weekStartISO = (d = new Date()) => {
 const STORAGE_KEY = "planner.tasks.v1";
 const WEEK_KEY = "planner.weekStart";
 const OWNER_KEY = "planner.ownerId";
+const WEEK_ID_KEY_PREFIX = "planner.weekId:"; // key = `${WEEK_ID_KEY_PREFIX}${ownerId}:${weekISO}`
 
 function resolveOwnerId(): string {
   try {
@@ -84,6 +85,9 @@ export default function PlannerPage() {
   const [redLineTop, setRedLineTop] = useState<number>(0);
   const [timeLabel, setTimeLabel] = useState<string>("");
   const firstSlotRef = useRef<HTMLDivElement | null>(null);
+  const saveTimerRef = useRef<number | null>(null);
+  const lastSavedHashRef = useRef<string | null>(null);
+  const savingRef = useRef<boolean>(false);
 
   // Resolve owner and load from localStorage immediately
   useEffect(() => {
@@ -118,13 +122,25 @@ export default function PlannerPage() {
     }
   }, []);
 
-  // Load from PocketBase (overrides localStorage if found)
+  // Helpers for cached week id
+  const getWeekIdKey = (owner: string, iso: string) => `${WEEK_ID_KEY_PREFIX}${owner}:${iso}`;
+  const readCachedWeekId = (owner: string, iso: string) => {
+    try { return localStorage.getItem(getWeekIdKey(owner, iso)); } catch { return null; }
+  };
+  const writeCachedWeekId = (owner: string, iso: string, id: string) => {
+    try { localStorage.setItem(getWeekIdKey(owner, iso), id); } catch {}
+  };
+
+  // Load via server API (overrides localStorage if found)
   useEffect(() => {
     const abort: { canceled: boolean } = { canceled: false };
     (async () => {
       try {
         const wsISO = weekStartISO();
-        const rec = await weekplannerService.findWeek(ownerId, wsISO);
+        const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}&weekStart=${encodeURIComponent(wsISO)}`, { cache: 'no-store' });
+        const json = await res.json();
+        const rec = json && typeof json === 'object' ? json as { id?: string | null; data?: unknown } : null;
+        if (rec && rec.id) writeCachedWeekId(ownerId, wsISO, rec.id);
         if (abort.canceled) return;
         if (rec && rec.data && typeof rec.data === "object") {
           const payload = rec.data as unknown as { tasks?: unknown };
@@ -142,9 +158,6 @@ export default function PlannerPage() {
             });
             setTasks(parsed.length ? parsed : [{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
           }
-        } else {
-          // Ensure a record exists for this week (empty)
-          await weekplannerService.upsertWeek(ownerId, wsISO, { meta: { weekStart: wsISO }, tasks: [] });
         }
       } catch {
         // ignore; stay on local cache
@@ -177,27 +190,60 @@ export default function PlannerPage() {
     }
   }, []);
 
-  // Persist locally and upsert to PocketBase
+  // Persist locally and upsert via server API (debounced, skip if unchanged)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     } catch {}
-    // Upsert to PB (fire-and-forget)
-    (async () => {
+
+    const wsISO = weekStartISO();
+    const payload = {
+      meta: {
+        weekStart: wsISO,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      tasks,
+    };
+    const hash = JSON.stringify({ ownerId, wsISO, tasks });
+
+    // Cancel previous pending save
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+
+    // If nothing changed since last successful save, skip scheduling
+    if (lastSavedHashRef.current === hash) {
+      return;
+    }
+
+    // Debounce actual save
+    saveTimerRef.current = window.setTimeout(async () => {
+      if (savingRef.current) return; // avoid overlapping
+      savingRef.current = true;
       try {
-        const wsISO = weekStartISO();
-        const payload = {
-          meta: {
-            weekStart: wsISO,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          },
-          tasks,
-        };
-        await weekplannerService.upsertWeek(ownerId, wsISO, payload);
+        const res = await fetch('/api/weekplanner', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ownerId, weekStart: wsISO, data: payload })
+        });
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        const json = await res.json();
+        if (json?.id) writeCachedWeekId(ownerId, wsISO, json.id as string);
+        lastSavedHashRef.current = hash;
       } catch {
-        // ignore network errors
+        // ignore; will retry on next change
+      } finally {
+        savingRef.current = false;
       }
-    })();
+    }, 1200);
+
+    return () => {
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+    };
   }, [tasks, ownerId]);
 
   // Red line positioning (represents current time 09:00-17:00)
