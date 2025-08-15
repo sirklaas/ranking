@@ -9,7 +9,7 @@ export function getPocketBase(): PocketBase | null {
     const fallback = (typeof window !== 'undefined' && window.location?.protocol === 'https:')
       ? 'https://pinkmilk.pockethost.io'
       : 'http://127.0.0.1:8090';
-    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
+    const baseUrl = process.env.NEXT_PUBLIC_PB_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
     pbClient = new PocketBase(baseUrl);
   }
   return pbClient;
@@ -63,13 +63,66 @@ export const motherfileService = {
     const fallback = (typeof window !== 'undefined' && window.location?.protocol === 'https:')
       ? 'https://pinkmilk.pockethost.io'
       : 'http://127.0.0.1:8090';
-    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
+    const baseUrl = process.env.NEXT_PUBLIC_PB_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
     const collection = (process.env.NEXT_PUBLIC_PB_MOTHERFILE_COLLECTION || 'motherfile').trim();
     if (motherfileRecordId) {
       return `${baseUrl}/api/files/${collection}/${motherfileRecordId}/${encodeURIComponent(fileName)}`;
     }
     // If record id unknown, return the bare filename to avoid broken URL; UI can still render name/placeholder
     return fileName;
+  }
+};
+
+// Weekplanner service (TEXT ownerId, Date weekStart, JSON data)
+export interface WeekplannerRecordData {
+  ownerId: string; // e.g. "klaas" | "liza"
+  weekStart: string; // ISO string at Monday 00:00:00.000Z
+  data: unknown; // entire planner JSON
+}
+
+export interface WeekplannerRecord extends WeekplannerRecordData {
+  id: string;
+  created?: string;
+  updated?: string;
+}
+
+export const weekplannerService = {
+  collection: 'weekplanner',
+
+  async findWeek(ownerId: string, weekStartISO: string): Promise<WeekplannerRecord | null> {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    try {
+      const rec = await pb.collection(this.collection).getFirstListItem(
+        `ownerId = "${ownerId}" && weekStart = "${weekStartISO}"`
+      );
+      return rec as unknown as WeekplannerRecord;
+    } catch (e: any) {
+      // 404 when not found
+      return null;
+    }
+  },
+
+  async createWeek(payload: WeekplannerRecordData): Promise<WeekplannerRecord> {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    const rec = await pb.collection(this.collection).create(payload as any);
+    return rec as unknown as WeekplannerRecord;
+  },
+
+  async updateWeek(id: string, data: Partial<WeekplannerRecordData>): Promise<WeekplannerRecord> {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    const rec = await pb.collection(this.collection).update(id, data as any);
+    return rec as unknown as WeekplannerRecord;
+  },
+
+  async upsertWeek(ownerId: string, weekStartISO: string, data: unknown): Promise<WeekplannerRecord> {
+    const existing = await this.findWeek(ownerId, weekStartISO);
+    if (existing) {
+      return await this.updateWeek(existing.id, { data });
+    }
+    return await this.createWeek({ ownerId, weekStart: weekStartISO, data });
   }
 };
 
