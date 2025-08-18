@@ -118,12 +118,15 @@ export default function DisplayPage() {
 
   // Subscribe to PocketBase session updates (current_fase changes)
   useEffect(() => {
-    const unsub = rankingService.subscribeToRankings((e: any) => {
+    type PBEvent = { record?: Partial<RankingSession> } | Partial<RankingSession>;
+    const unsub = rankingService.subscribeToRankings((e: unknown) => {
       try {
-        const rec = (e && (e.record || e)) as RankingSession;
+        const evt = e as PBEvent;
+        const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
         if (!rec || !currentSession) return;
-        if ((rec as any).id === currentSession.id) {
-          setCurrentSession(rec);
+        if (rec.id === currentSession.id) {
+          // Merge to keep other fields stable
+          setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
         }
       } catch {
         // ignore
@@ -142,8 +145,8 @@ export default function DisplayPage() {
   // Compute current media whenever session/current_fase changes
   useEffect(() => {
     if (!currentSession) return;
-    const headings = faseService.parseHeadings((currentSession as any).headings || '{}');
-    const faseKey = (currentSession as any).current_fase as string | undefined;
+    const headings = faseService.parseHeadings(currentSession.headings || '{}');
+    const faseKey = currentSession.current_fase as string | undefined;
     if (!faseKey) {
       setCurrentMedia(null);
       return;
@@ -204,7 +207,7 @@ export default function DisplayPage() {
             onEnded={() => setCurrentMedia(null)}
           />
           <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            Fase {(currentSession as any)?.current_fase} — {currentMedia.name}
+            Fase {currentSession?.current_fase} — {currentMedia.name}
           </div>
         </div>
       )}

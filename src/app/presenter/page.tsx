@@ -34,7 +34,7 @@ export default function PresenterPage() {
       let json: unknown = null;
       try {
         json = await res.json();
-      } catch (e) {
+      } catch {
         throw new Error('Upload response was not JSON');
       }
       const isOk = typeof json === 'object' && json !== null && (json as { success?: boolean }).success === true;
@@ -227,11 +227,6 @@ export default function PresenterPage() {
     }
   };
 
-  const getNextFase = () => {
-    const allFases = Object.values(faseGroups).flatMap(group => group.fases);
-    const currentIndex = allFases.indexOf(currentFase);
-    return currentIndex < allFases.length - 1 ? allFases[currentIndex + 1] : currentFase;
-  };
 
   const getCurrentDisplay = () => {
     if (!selectedSession) return 'No session selected';
@@ -383,6 +378,7 @@ export default function PresenterPage() {
                     <div className="text-xs break-all mb-2" title={file}>{file}</div>
                     <div className="relative w-full aspect-video bg-black/5 overflow-hidden rounded">
                       {/* Use img to avoid next/image domain config; URLs come from PocketBase */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={motherfileService.fileUrl(file)} alt={file} className="w-full h-full object-cover" />
                     </div>
                   </div>
@@ -573,38 +569,36 @@ export default function PresenterPage() {
   };
 
   // State for real display data
-  const [displayData, setDisplayData] = useState<{playersByTeam: Record<number, string[]>, gameCode: string} | null>(null);
-  
-  // Load real display data
-  const loadDisplayData = useCallback(async () => {
-    if (!selectedSession) return;
-    
-    try {
-      // Get the same team assignments as the Display page
-      const playerNames = teamService.parsePlayerNames(selectedSession.playernames || '');
-      const teamAssignments = teamService.generateTeamAssignments(playerNames, selectedSession.nr_teams || 1);
-      const gameCode = Math.floor(1000 + Math.random() * 9000).toString();
-      
-      setDisplayData({
-        playersByTeam: teamAssignments,
-        gameCode: gameCode
-      });
-    } catch (error) {
-      console.error('Error loading display data:', error);
-    }
-  }, [selectedSession]);
+  // (Removed unused displayData and loadDisplayData to satisfy lint)
+  // const [displayData, setDisplayData] = useState<{playersByTeam: Record<number, string[]>, gameCode: string} | null>(null);
+  // const loadDisplayData = useCallback(async () => {
+  //   if (!selectedSession) return;
+  //   try {
+  //     // Get the same team assignments as the Display page
+  //     const playerNames = teamService.parsePlayerNames(selectedSession.playernames || '');
+  //     const teamAssignments = teamService.generateTeamAssignments(playerNames, selectedSession.nr_teams || 1);
+  //     const gameCode = Math.floor(1000 + Math.random() * 9000).toString();
+  //     
+  //     setDisplayData({
+  //       playersByTeam: teamAssignments,
+  //       gameCode: gameCode
+  //     });
+  //   } catch (error) {
+  //     console.error('Error loading display data:', error);
+  //   }
+  // }, [selectedSession]);
 
   // ---------- Group flags ----------
   const isGroup07 = currentFase.startsWith('07/');
   const isGroup01 = currentFase.startsWith('01/');
 
-  const getHeadingsSource = () => {
+  const getHeadingsSource = useCallback(() => {
     if (!selectedSession) return {} as Record<string, { heading: string; image?: string }>;
     const parsed = faseService.parseHeadings(selectedSession.headings || '{}');
     return Object.keys(editingHeadings).length ? editingHeadings : parsed;
-  };
+  }, [selectedSession, editingHeadings]);
 
-  const getOrderedFasesForGroup = (prefix: string) => {
+  const getOrderedFasesForGroup = useCallback((prefix: string) => {
     const headings = getHeadingsSource();
     return Object.keys(headings)
       .filter(k => k.startsWith(prefix + '/'))
@@ -613,9 +607,9 @@ export default function PresenterPage() {
         const pb = parseInt(b.split('/')[1] || '0', 10);
         return pa - pb;
       });
-  };
+  }, [getHeadingsSource]);
 
-  const getMediaForFase = (faseKey: string) => {
+  const getMediaForFase = useCallback((faseKey: string) => {
     const headings = getHeadingsSource();
     const item = headings[faseKey];
     if (!item?.image || item.image.trim() === '') return null;
@@ -628,21 +622,21 @@ export default function PresenterPage() {
       heading: (item.heading || `Fase ${faseKey}`),
       fase: faseKey,
     };
-  };
+  }, [getHeadingsSource]);
 
-  const getNextFaseInGroup = (faseKey: string, prefix: string) => {
+  const getNextFaseInGroup = useCallback((faseKey: string, prefix: string) => {
     const ordered = getOrderedFasesForGroup(prefix);
     const idx = ordered.indexOf(faseKey);
     if (idx === -1) return ordered[0] || faseKey;
     return ordered[idx + 1] || ordered[idx] || faseKey;
-  };
+  }, [getOrderedFasesForGroup]);
 
-  const getPrevFaseInGroup = (faseKey: string, prefix: string) => {
+  const getPrevFaseInGroup = useCallback((faseKey: string, prefix: string) => {
     const ordered = getOrderedFasesForGroup(prefix);
     const idx = ordered.indexOf(faseKey);
     if (idx === -1) return ordered[0] || faseKey;
     return ordered[idx - 1] || ordered[idx] || faseKey;
-  };
+  }, [getOrderedFasesForGroup]);
 
   const currentVideoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying07, setIsPlaying07] = useState(false);
@@ -836,7 +830,7 @@ export default function PresenterPage() {
                           <div className="text-yellow-300">★★★</div>
                           <span>Quizmaster Klaas presenteert</span>
                         </div>
-                        <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: {displayData?.gameCode || '8075'}</div>
+                        <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: {'8075'}</div>
                       </div>
                       <div className="flex-1 p-2">
                         <div className="text-center text-white mb-2">
@@ -846,14 +840,14 @@ export default function PresenterPage() {
                         <div className="flex justify-center gap-2 mb-2">
                           {Array.from({ length: selectedSession?.nr_teams || 4 }, (_, index) => {
                             const teamNumber = index + 1;
-                            const teamPlayers = displayData?.playersByTeam[teamNumber] || [];
+                            const teamPlayers: string[] = [];
                             return (
                               <div key={teamNumber} className="flex flex-col items-center">
                                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black font-bold border-2 border-black">
                                   {teamNumber}
                                 </div>
                                 <div className="mt-1 space-y-1">
-                                  {teamPlayers.slice(0, 2).map((player, idx) => (
+                                  {teamPlayers.slice(0, 2).map((player: string, idx: number) => (
                                     <div key={idx} className="bg-pink-200 text-black text-xs px-1 py-1 rounded">
                                       {player.length > 8 ? player.substring(0, 8) + '...' : player}
                                     </div>
@@ -864,7 +858,7 @@ export default function PresenterPage() {
                           })}
                         </div>
                         <div className="text-center text-white text-xs mt-2">
-                          Total Players: {displayData ? Object.values(displayData.playersByTeam).flat().length : 0} | Teams: {selectedSession?.nr_teams || 4} | Location: {selectedSession?.city || 'jb'}
+                          Total Players: {0} | Teams: {selectedSession?.nr_teams || 4} | Location: {selectedSession?.city || 'jb'}
                         </div>
                       </div>
                     </div>

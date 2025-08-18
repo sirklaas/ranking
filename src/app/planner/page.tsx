@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import "./planner.css";
 // Using server routes for PocketBase access to avoid client-side rule issues
 
@@ -46,23 +45,23 @@ const isoWeekKey = (d = new Date()) => {
 const STORAGE_KEY = "planner.tasks.v1";
 const WEEK_KEY = "planner.weekStart";
 const OWNER_KEY = "planner.ownerId";
-const WEEK_ID_KEY_PREFIX = "planner.weekId:"; // key = `${WEEK_ID_KEY_PREFIX}${ownerId}:${weekISO}`
+// const WEEK_ID_KEY_PREFIX = "planner.weekId:"; // key = `${WEEK_ID_KEY_PREFIX}${ownerId}:${weekISO}`
 
-function resolveOwnerId(): string {
-  try {
-    const url = new URL(window.location.href);
-    const q = url.searchParams.get("owner");
-    if (q) {
-      localStorage.setItem(OWNER_KEY, q);
-      return q;
-    }
-  } catch {}
-  try {
-    return localStorage.getItem(OWNER_KEY) || "klaas";
-  } catch {
-    return "klaas";
-  }
-}
+// function resolveOwnerId(): string {
+//   try {
+//     const url = new URL(window.location.href);
+//     const q = url.searchParams.get("owner");
+//     if (q) {
+//       localStorage.setItem(OWNER_KEY, q);
+//       return q;
+//     }
+//   } catch {}
+//   try {
+//     return localStorage.getItem(OWNER_KEY) || "klaas";
+//   } catch {
+//     return "klaas";
+//   }
+// }
 
 function useGoogleFont(fontHref: string) {
   useEffect(() => {
@@ -239,7 +238,7 @@ export default function PlannerPage() {
           body: JSON.stringify({ ownerId, weekKey, weekData: payload })
         });
         if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-        const json = await res.json();
+        await res.json();
         lastSavedHashRef.current = hash;
       } catch {
         // ignore; will retry on next change
@@ -254,7 +253,7 @@ export default function PlannerPage() {
         saveTimerRef.current = null;
       }
     };
-  }, [tasks, ownerId]);
+  }, [tasks, ownerId, loadingOwner]);
 
   // Red line positioning (represents current time 09:00-17:00)
   useEffect(() => {
