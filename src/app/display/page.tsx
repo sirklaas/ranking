@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { rankingService, teamService, motherfileService, faseService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
@@ -17,6 +17,8 @@ export default function DisplayPage() {
   const [error, setError] = useState<string | null>(null);
   const [gameCode, setGameCode] = useState<string>('');
   const [currentMedia, setCurrentMedia] = useState<null | { url: string; name: string; type: 'video' | 'image' }>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isMuted, setIsMuted] = useState(true);
 
   // Generate a random 4-digit game code
   const generateGameCode = () => {
@@ -106,6 +108,9 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
+      if (e.key === 'm' || e.key === 'M') {
+        setIsMuted((prev) => !prev);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -162,6 +167,16 @@ export default function DisplayPage() {
     setCurrentMedia({ url, name: fileName, type: isVideo ? 'video' : 'image' });
   }, [currentSession]);
 
+  // Keep video element in sync with mute state and current media
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    try {
+      v.muted = isMuted;
+      v.volume = isMuted ? 0 : 1;
+    } catch {}
+  }, [currentMedia, isMuted]);
+
   // Generate QR code URL for joining
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://ranking.pinkmilk.eu/player?code=${gameCode}`)}`;
 
@@ -199,15 +214,26 @@ export default function DisplayPage() {
         <div className="fixed inset-0 z-50 bg-black">
           <video
             key={currentMedia.url}
+            ref={videoRef}
             src={currentMedia.url}
             className="w-full h-full object-contain"
             autoPlay
-            muted
+            muted={isMuted}
             playsInline
             onEnded={() => setCurrentMedia(null)}
           />
           <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Fase {currentSession?.current_fase} — {currentMedia.name}
+          </div>
+          {/* Sound toggle */}
+          <div className="absolute bottom-3 right-3">
+            <button
+              onClick={() => setIsMuted((m) => !m)}
+              className="bg-white/80 text-black px-3 py-1 rounded shadow text-sm hover:bg-white"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              {isMuted ? 'Unmute (M)' : 'Mute (M)'}
+            </button>
           </div>
         </div>
       )}

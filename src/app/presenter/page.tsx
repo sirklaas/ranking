@@ -706,37 +706,21 @@ export default function PresenterPage() {
     return text.replaceAll('/n', '\n');
   };
 
-  // Arrow navigation for group 07 (advance only; display handles playback)
+  // Generic Arrow navigation for the current group (derived from currentFase prefix)
   useEffect(() => {
-    if (!isGroup07 || currentView !== 'game') return;
+    if (currentView !== 'game') return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const prefix = (currentFase.split('/')[0] || '').padStart(2, '0');
       if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        const next07 = getNextFaseInGroup(currentFase, '07');
-        setCurrentFase(next07);
-        if (selectedSession) {
-          rankingService.updateSession(selectedSession.id, { current_fase: next07 }).catch(() => {});
-        }
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isGroup07, currentView, currentFase, selectedSession, getNextFaseInGroup]);
-
-  // Arrow navigation for group 01 (advance only; display handles playback)
-  useEffect(() => {
-    if (!isGroup01 || currentView !== 'game') return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        const next = getNextFaseInGroup(currentFase, '01');
+        const next = getNextFaseInGroup(currentFase, prefix);
         setCurrentFase(next);
         if (selectedSession) {
           rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => {});
         }
       } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        const prev = getPrevFaseInGroup(currentFase, '01');
+        const prev = getPrevFaseInGroup(currentFase, prefix);
         setCurrentFase(prev);
         if (selectedSession) {
           rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => {});
@@ -745,7 +729,7 @@ export default function PresenterPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isGroup01, currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
+  }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
 
   // Reset playing flag when fase changes
   useEffect(() => {
