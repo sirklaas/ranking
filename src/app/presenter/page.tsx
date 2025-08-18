@@ -80,6 +80,65 @@ export default function PresenterPage() {
     }
   };
 
+  // Simplified preview for the Next panel (no upload UI, no file path)
+  const renderNextPreview = (media: { type: 'video' | 'image', path: string, name: string, heading?: string, fase?: string } | null) => {
+    if (!media) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center text-white">
+          <div className="text-4xl mb-2">⏭️</div>
+          <div className="text-sm opacity-80">No upcoming media</div>
+        </div>
+      );
+    }
+    if (media.type === 'video') {
+      return (
+        <div className="w-full h-full flex flex-col">
+          {media.heading && (
+            <div className="text-center py-2 px-4 bg-black/30 rounded-t text-white">
+              <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '22px', lineHeight: 1.2 }}>
+                {media.heading}
+              </div>
+              {media.fase && (
+                <div className="text-xs opacity-70">Fase {media.fase}</div>
+              )}
+            </div>
+          )}
+          <div className="flex-1 bg-black rounded-b flex items-center justify-center relative overflow-hidden">
+            <video
+              src={media.path}
+              className="w-full h-full object-cover"
+              muted
+              preload="metadata"
+              playsInline
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget; v.currentTime = 0.1;
+              }}
+              onError={() => { /* silent */ }}
+            />
+            <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-0.5 rounded text-[10px] tracking-wide">VIDEO</div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="w-full h-full flex flex-col">
+        {media.heading && (
+          <div className="text-center py-2 px-4 bg-black/30 rounded-t text-white">
+            <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '22px', lineHeight: 1.2 }}>
+              {media.heading}
+            </div>
+            {media.fase && (
+              <div className="text-xs opacity-70">Fase {media.fase}</div>
+            )}
+          </div>
+        )}
+        <div className="flex-1 bg-black rounded-b flex items-center justify-center relative overflow-hidden">
+          <Image src={media.path} alt={media.name} fill className="object-cover" />
+        </div>
+      </div>
+    );
+  };
+
   // Initialize client-side state to prevent hydration errors
   useEffect(() => {
     setIsClient(true);
@@ -872,7 +931,7 @@ export default function PresenterPage() {
           <div className="flex flex-col">
             <div>
               <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
-                {renderMediaPreview(nextMedia)}
+                {renderNextPreview(nextMedia)}
               </div>
               <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
             </div>
