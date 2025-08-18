@@ -34,7 +34,7 @@
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-rows: 4dvh 80dvh 10dvh; /* header 4%, canvas 80%, footer 10% */
+  grid-template-rows: 5dvh 85dvh 10dvh; /* header 5%, canvas 85% (contains 5% weekdays + 80% holes), footer 10% */
   background:
     linear-gradient(0deg, rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
     url("/weekplanner/Black.png");
@@ -53,7 +53,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px; /* tighter to save space */
-  min-height: 4dvh;
+  min-height: 5dvh;
   box-sizing: border-box;
   backdrop-filter: blur(4px);
   background: linear-gradient(0deg, rgba(0,0,0,0.35), rgba(0,0,0,0.25));
@@ -76,6 +76,7 @@
   padding: 0 16px; /* no vertical padding so holes truly get 80% height */
   overflow: auto;
   height: 100%; /* fills remaining ~80% */
+  scrollbar-gutter: stable both-edges;
 }
 
 /* Red reference lines */
@@ -113,20 +114,37 @@
 .grid {
   position: relative;
   display: grid;
-  grid-template-rows: 6dvh repeat(8, 1fr); /* day names 6% to make header+days = 10% */
+  grid-template-rows: 5dvh repeat(8, 1fr); /* day names 5% to make header+days = 10% */
   height: 100%;
   gap: var(--gap);
   padding-left: var(--gutter-w);
 }
 
 /* Mobile: allow horizontal scroll so holes are not squeezed */
-@media (max-width: 430px) {
+@media (max-width: 480px) {
   .planner-canvas {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
   }
   .grid {
-    min-width: 980px; /* forces horizontal scroll on small screens */
+    min-width: 980px; /* base width for 6 columns */
   }
+  .day-row,
+  .slot-row {
+    grid-template-columns: repeat(6, 160px); /* fixed column width so holes don’t squeeze */
+  }
+  .task-title { font-size: 18px; }
+  .task-body { font-size: 14px; }
+}
+
+/* Ensure small phones definitely get horizontal scroll and non-squeezed columns */
+@media (max-width: 480px) {
+  .planner-canvas { overflow-x: auto; }
+  .grid { width: max-content; min-width: 1120px; }
+  .day-row, .slot-row { grid-template-columns: repeat(6, 160px); }
+  .tray .task { padding: 8px 12px; }
 }
 
 /* iOS safe area support for header and tray */
@@ -147,9 +165,12 @@
   text-align: center;
   font-weight: 300;
   color: rgba(255,255,255,0.9);
-  padding: 8px 0;
+  padding: 0; /* keep row strictly 5dvh */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 10px;
-  background: rgba(160,160,160,0.3); /* 70% transparent grey */
+  background: rgba(160,160,160,0.3);
   border: 1px solid rgba(255,255,255,0.12);
   box-shadow: none;
 }
@@ -281,12 +302,12 @@
   display: grid;
   grid-template-columns: repeat(6, var(--day-w));
   gap: var(--gap);
-  padding: 10px 16px;
+  padding: 0 16px; /* no vertical padding so visual height is exactly 10dvh */
   height: 10dvh; /* fixed to 10% of viewport */
   box-sizing: border-box;
   align-items: stretch;
   background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.35));
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: none; /* avoid adding visual height */
 }
 
 /* Tray cell mimics a grid hole */
