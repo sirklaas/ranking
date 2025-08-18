@@ -199,10 +199,10 @@
 
 ## Session Summary
 
-**Last Updated**: 2025-08-11  
-**Version**: 1.6  
+**Last Updated**: 2025-08-18  
+**Version**: 1.7  
 **Status**: Presenter layout full-width with precise proportions; Player onboarding stable  
-**Next Steps**: Test complete flow and implement real-time synchronization
+**Next Steps**: Implement Presenter "Current/Next" flow for Phase 01 with filename-only headings, keyboard navigation, and Display auto-play
 
 ### Recent Updates (2025-08-11)
 - ✅ Image delivery: configured `next.config.ts` to allow `next/image` from `pinkmilk.pockethost.io` (PocketBase).
@@ -266,3 +266,59 @@ The dashboard now supports the complete game flow with 44 different phases and q
 ---
 
 *This document serves as the single source of truth for product requirements. All development decisions should align with these specifications.* 
+
+## Phase 01: Presenter/Display Flow Plan (Current/Next)
+
+### Overview
+Implement a deterministic "Current/Next" control loop for Phase 01 where the Presenter advances through a list of media items and the Display plays the corresponding video/image. The Player app is unaffected in this phase.
+
+### Terminology
+- **Item**: a single media entry in Phase 01 (video or picture) with an optional heading text.
+- **Index label**: `NN/TT` where `NN` is the 1-based item index and `TT` is total items.
+- **Filename-only heading**: render only the filename (strip any PocketBase file path).
+
+### Presenter Screen
+- **Current panel**
+  - Shows: a representation of the start screen (unchanged from today).
+  - Heading: reflects the item currently playing on the Display.
+  - For Phase 01 start, heading may be empty until first advance.
+- **Next panel**
+  - Shows: the upcoming item.
+  - Heading format: `NN/TT / <filename.ext>` e.g., `01/04 / RankingNaam.mp4`.
+  - Preview: thumbnail if easily available; otherwise just the text heading.
+- **Keyboard control**
+  - Right Arrow: advance to next item.
+  - Left Arrow: go back to previous item (if > 1).
+  - On advance: `Current <- Next`, `Next <- upcoming`, and Display updates to play the new Current.
+  - At end of list: no-op on Right Arrow (or show subtle edge cue).
+
+### Display Screen
+- Reflects the item indicated by Presenter "Current".
+- If video: autoplay with sound muted by default (toggle allowed later), loop off.
+- If image: show full-bleed fit.
+- Heading displayed top-left in presenter style; only filename is shown.
+
+### Heading rules
+- Input may be a full PocketBase URL like:
+  `https://pinkmilk.pockethost.io/api/files/motherfile/<recId>/<fileName>`
+- Display/presenter should strip and show only `<fileName>`.
+- Combined heading pattern everywhere: `NN/TT / <filename>`.
+
+### Data and sync
+- Source of items: PocketBase Motherfile JSON for Phase 01.
+- State: a single record field stores `currentIndex` (0-based) and `fase`.
+- Presenter writes `currentIndex` on navigation; Display subscribes and updates instantly.
+- Debounced writes and optimistic UI on presenter.
+
+### Error/fallbacks
+- If media fails to load: show filename-only heading and a neutral placeholder.
+- If list empty: Presenter shows message and disables navigation.
+
+### Acceptance criteria
+- Pressing Right Arrow updates:
+  - Presenter: Current heading becomes `NN/TT / filename`, Next updates to `NN+1/TT / filename`.
+  - Display: plays the new Current media immediately.
+- Pressing Left Arrow reverses to the previous item.
+- Full path never shown; only filename appears in all headings.
+- At end of Phase 01 list, Right Arrow does not advance beyond last item.
+

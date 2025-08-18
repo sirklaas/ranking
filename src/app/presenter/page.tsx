@@ -594,8 +594,9 @@ export default function PresenterPage() {
     }
   }, [selectedSession]);
 
-  // ---------- Fase 07 (Zitten en Staan) helpers ----------
+  // ---------- Group flags ----------
   const isGroup07 = currentFase.startsWith('07/');
+  const isGroup01 = currentFase.startsWith('01/');
 
   const getHeadingsSource = () => {
     if (!selectedSession) return {} as Record<string, { heading: string; image?: string }>;
@@ -634,6 +635,13 @@ export default function PresenterPage() {
     const idx = ordered.indexOf(faseKey);
     if (idx === -1) return ordered[0] || faseKey;
     return ordered[idx + 1] || ordered[idx] || faseKey;
+  };
+
+  const getPrevFaseInGroup = (faseKey: string, prefix: string) => {
+    const ordered = getOrderedFasesForGroup(prefix);
+    const idx = ordered.indexOf(faseKey);
+    if (idx === -1) return ordered[0] || faseKey;
+    return ordered[idx - 1] || ordered[idx] || faseKey;
   };
 
   const currentVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -679,6 +687,30 @@ export default function PresenterPage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isGroup07, currentView, isPlaying07, currentFase, selectedSession, getNextFaseInGroup]);
+
+  // Arrow navigation for group 01 (Phase 01 current/next flow)
+  useEffect(() => {
+    if (!isGroup01 || currentView !== 'game') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const next = getNextFaseInGroup(currentFase, '01');
+        setCurrentFase(next);
+        if (selectedSession) {
+          rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => {});
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const prev = getPrevFaseInGroup(currentFase, '01');
+        setCurrentFase(prev);
+        if (selectedSession) {
+          rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isGroup01, currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
 
   // Reset playing flag when fase changes
   useEffect(() => {
@@ -770,6 +802,26 @@ export default function PresenterPage() {
                         </div>
                       );
                     })()
+                  ) : isGroup01 ? (
+                    (() => {
+                      const media = getMediaForFase(currentFase);
+                      const bg = '#F5B800';
+                      return (
+                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bg }}>
+                          {/* Centered filename (heading should be filename-only for Phase 01) */}
+                          <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {currentFase}</div>
+                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                            <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                              {media?.name || '—'}
+                            </div>
+                          </div>
+                          {/* Preview media without autoplay */}
+                          {media?.type === 'video' && media.path ? (
+                            <video src={media.path} preload="metadata" muted playsInline className="hidden" />
+                          ) : null}
+                        </div>
+                      );
+                    })()
                   ) : (
                     // Fallback to existing simulated current display
                     <div className="absolute inset-0 w-full h-full flex flex-col">
@@ -840,6 +892,27 @@ export default function PresenterPage() {
                           {nextMedia?.type === 'video' && nextMedia.path && (
                             <video src={nextMedia.path} preload="auto" muted playsInline className="hidden" />
                           )}
+                        </div>
+                      );
+                    })()
+                  ) : isGroup01 ? (
+                    (() => {
+                      const nextKey = getNextFaseInGroup(currentFase, '01');
+                      const nextMedia = getMediaForFase(nextKey);
+                      return (
+                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#F5B800' }}>
+                          {/* Centered filename-only heading for next media */}
+                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                            <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                              {nextMedia?.name || '—'}
+                            </div>
+                          </div>
+                          {/* Fase label */}
+                          <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {nextKey}</div>
+                          {/* Thumbnail/preview for videos/images */}
+                          {nextMedia?.type === 'video' && nextMedia.path ? (
+                            <video src={nextMedia.path} preload="metadata" muted playsInline className="hidden" />
+                          ) : null}
                         </div>
                       );
                     })()
