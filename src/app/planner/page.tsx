@@ -271,26 +271,30 @@ export default function PlannerPage() {
 
       const slotEl = firstSlotRef.current;
       if (!slotEl) return;
-      const slotRect = slotEl.getBoundingClientRect();
-      // Find computed gap from parent row by reading CSS variable or measuring offset between two stacked slots
-      // Simplify: read computed style for --slot-h and --gap
-      const root = document.documentElement;
-      const slotHVar = getComputedStyle(root).getPropertyValue("--slot-h").trim();
-      const gapVar = getComputedStyle(root).getPropertyValue("--gap").trim();
-      const parsePx = (v: string) => (v.endsWith("px") ? parseFloat(v) : parseFloat(v));
-      const slotH = parsePx(slotHVar || `${slotRect.height}px`);
-      const gap = parsePx(gapVar || "10px");
-
-      // Baseline: top of first slot row relative to its container
       const grid = slotEl.closest('.grid') as HTMLElement | null;
       if (!grid) return;
-      const gridRect = grid.getBoundingClientRect();
-      const baseline = slotRect.top - gridRect.top; // px from grid top to first slot top
 
-      // We want the line BETWEEN hours so it never goes through a task.
-      // Boundary index is between hour k and k+1. For 13:34, between 13 and 14.
+      // Measure actual vertical step between consecutive slot rows (top-to-top)
+      const rows = Array.from(grid.querySelectorAll('.slot-row')) as HTMLElement[];
+      if (rows.length < 2) return;
+      const r0Top = rows[0].getBoundingClientRect().top;
+      const r1Top = rows[1].getBoundingClientRect().top;
+      const step = Math.max(0, r1Top - r0Top); // includes row height + gap
+
+      // Measure actual hole height (without the inter-row gap)
+      const firstHole = rows[0].querySelector('.slot-hole') as HTMLElement | null;
+      const holeH = firstHole ? firstHole.getBoundingClientRect().height : step;
+
+      // Update CSS var for tray to match holes responsively (exact hole height)
+      document.documentElement.style.setProperty('--measured-slot-h', `${holeH}px`);
+
+      const gridRect = grid.getBoundingClientRect();
+      const baseline = r0Top - gridRect.top; // first row top relative to grid
+
+      // Place the line between hours (never through a task)
+      // 09:00 -> boundary 1 (between slot0 and slot1), 11:xx -> boundary 3
       const boundary = Math.min(8, Math.max(0, Math.floor(hourIndex) + 1));
-      const top = baseline + boundary * (slotH + gap) - gap / 2; // halfway inside the gap
+      const top = baseline + boundary * step - (step * 0.12); // slight adjust towards gap center
       setRedLineTop(top);
     };
     compute();
@@ -401,14 +405,15 @@ export default function PlannerPage() {
               aria-pressed={ownerId === 'klaas'}
               disabled={loadingOwner}
               style={{
-                padding: '6px 12px',
-                borderRadius: 8,
+                padding: '3px 10px',
+                borderRadius: 6,
                 border: ownerId === 'klaas' ? '2px solid #0A1752' : '1px solid #666',
-                background: ownerId === 'klaas' ? '#0A1752' : (loadingOwner ? '#222' : 'transparent'),
-                color: ownerId === 'klaas' ? '#fff' : (loadingOwner ? '#777' : '#ddd'),
+                background: ownerId === 'klaas' ? '#0A1752' : (loadingOwner ? 'rgba(240,240,240,0.7)' : 'rgba(240,240,240,0.9)'),
+                backdropFilter: ownerId === 'klaas' ? 'none' : 'blur(2px)',
+                color: ownerId === 'klaas' ? '#fff' : '#222',
                 fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
-                boxShadow: ownerId === 'klaas' ? '0 0 0 3px rgba(10,23,82,0.25)' : 'none',
+                boxShadow: ownerId === 'klaas' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
               }}
             >Klaas</button>
             <button
@@ -417,14 +422,15 @@ export default function PlannerPage() {
               aria-pressed={ownerId === 'liza'}
               disabled={loadingOwner}
               style={{
-                padding: '6px 12px',
-                borderRadius: 8,
+                padding: '3px 10px',
+                borderRadius: 6,
                 border: ownerId === 'liza' ? '2px solid #0A1752' : '1px solid #666',
-                background: ownerId === 'liza' ? '#0A1752' : (loadingOwner ? '#222' : 'transparent'),
-                color: ownerId === 'liza' ? '#fff' : (loadingOwner ? '#777' : '#ddd'),
+                background: ownerId === 'liza' ? '#0A1752' : (loadingOwner ? 'rgba(240,240,240,0.7)' : 'rgba(240,240,240,0.9)'),
+                backdropFilter: ownerId === 'liza' ? 'none' : 'blur(2px)',
+                color: ownerId === 'liza' ? '#fff' : '#222',
                 fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
-                boxShadow: ownerId === 'liza' ? '0 0 0 3px rgba(10,23,82,0.25)' : 'none',
+                boxShadow: ownerId === 'liza' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
               }}
             >Liza</button>
           </div>

@@ -10,6 +10,7 @@
   --hole-shadow: rgba(0, 0, 0, 0.6);
   --hole-highlight: rgba(255, 255, 255, 0.06);
   --slot-h: 90px; /* base slot height desktop */
+  --measured-slot-h: var(--slot-h); /* runtime measured row step */
   --day-w: 1fr;
   --gap: 10px;
   --gutter-w: 64px; /* space for time label */
@@ -265,7 +266,7 @@
 
 /* Tray cell mimics a grid hole */
 .tray .slot-hole {
-  min-height: var(--slot-h);
+  min-height: var(--measured-slot-h);
 }
 
 /* Hide visual presence of other columns; we only render one .slot-hole element */
