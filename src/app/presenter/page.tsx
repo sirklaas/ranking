@@ -706,42 +706,24 @@ export default function PresenterPage() {
     return text.replaceAll('/n', '\n');
   };
 
-  // ArrowRight behavior for fase 07
+  // Arrow navigation for group 07 (advance only; display handles playback)
   useEffect(() => {
     if (!isGroup07 || currentView !== 'game') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        // First press -> start video
-        if (!isPlaying07) {
-          const v = currentVideoRef.current;
-          if (v) {
-            // Ensure muted for autoplay policies
-            v.muted = true;
-            v.currentTime = 0;
-            void v.play();
-            setIsPlaying07(true);
-          }
-          return;
-        }
-        // Second press -> advance to next fase (auto play)
         const next07 = getNextFaseInGroup(currentFase, '07');
         setCurrentFase(next07);
-        // Persist selection
         if (selectedSession) {
           rankingService.updateSession(selectedSession.id, { current_fase: next07 }).catch(() => {});
         }
-        setTimeout(() => {
-          const v = currentVideoRef.current;
-          if (v) void v.play();
-        }, 0);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isGroup07, currentView, isPlaying07, currentFase, selectedSession, getNextFaseInGroup]);
+  }, [isGroup07, currentView, currentFase, selectedSession, getNextFaseInGroup]);
 
-  // Arrow navigation for group 01 (Phase 01 current/next flow)
+  // Arrow navigation for group 01 (advance only; display handles playback)
   useEffect(() => {
     if (!isGroup01 || currentView !== 'game') return;
     const onKey = (e: KeyboardEvent) => {
@@ -770,24 +752,9 @@ export default function PresenterPage() {
     setIsPlaying07(false);
   }, [currentFase]);
 
-  // Space key: push Next to Current (applies in game view)
-  useEffect(() => {
-    if (currentView !== 'game') return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        const nm = getNextMedia();
-        if (nm?.fase) {
-          setCurrentFase(nm.fase);
-          if (selectedSession) {
-            rankingService.updateSession(selectedSession.id, { current_fase: nm.fase }).catch(() => {});
-          }
-        }
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [currentView, selectedSession, getNextMedia]);
+  // No presenter-side autoplay; Display page handles playback
+
+  // No Space shortcut in presentation mode
 
   const renderGameInterface = () => {
     console.log('renderGameInterface called', { selectedSession, currentView });
@@ -829,14 +796,11 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content grid: 2% | 43% | 43% | 8% | 2% */}
+        {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
         <div
           className="grid mt-4 gap-4"
-          style={{ gridTemplateColumns: '2% 43% 43% 8% 2%', height: 'calc(100vh - 200px)' }}
+          style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
         >
-          {/* Left spacer (2%) */}
-          <div></div>
-
           {/* Current Display (43%) */}
           <div className="flex flex-col">
             {/* Current Display - Left screen (16:9) */}
@@ -888,15 +852,25 @@ export default function PresenterPage() {
                           <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {currentFase}</div>
                           {/* NN/TT indicator */}
                           <div className="absolute top-2 right-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{nn}/{tt}</div>
-                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                            <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                              {media?.name || '—'}
-                            </div>
-                          </div>
-                          {/* Preview media without autoplay */}
                           {media?.type === 'video' && media.path ? (
-                            <video src={media.path} preload="metadata" muted playsInline className="hidden" />
-                          ) : null}
+                            <video
+                              ref={currentVideoRef}
+                              src={media.path}
+                              className="absolute inset-0 w-full h-full object-contain"
+                              preload="auto"
+                              muted
+                              playsInline
+                              onLoadedMetadata={(e) => {
+                                const v = e.currentTarget; v.currentTime = 0.01;
+                              }}
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                              <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+                                {media?.name || '—'}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })()
@@ -953,22 +927,6 @@ export default function PresenterPage() {
                 {renderNextPreview(nextMedia)}
               </div>
               <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
-              <div className="flex justify-center mt-2">
-                <button
-                  onClick={() => {
-                    if (nextMedia?.fase) {
-                      setCurrentFase(nextMedia.fase);
-                      if (selectedSession) {
-                        rankingService.updateSession(selectedSession.id, { current_fase: nextMedia.fase }).catch(() => {});
-                      }
-                    }
-                  }}
-                  className="px-4 py-2 rounded bg-[#0A1752] text-white text-sm hover:bg-[#0A1752]/90"
-                  title="Show the next item on the Display (Space)"
-                >
-                  Send Next to Display
-                </button>
-              </div>
             </div>
           </div>
 
@@ -989,8 +947,6 @@ export default function PresenterPage() {
               </button>
             ))}
           </div>
-          {/* Right spacer (2%) */}
-          <div></div>
         </div>
         </div>
       </div>
