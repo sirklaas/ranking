@@ -203,14 +203,41 @@ export default function DisplayPage() {
       setCurrentMedia(null);
       return;
     }
-    const item = headings[faseKey];
-    const fileName = item?.image?.trim();
+    let item = headings[faseKey];
+    let fileName = item?.image?.trim();
+
     if (!fileName) {
-      console.log('[Display] No media for fase', faseKey, 'item:', item);
-      setCurrentMedia(null);
+      // Better diagnostics and fallback to Motherfile fases
+      const keys = Object.keys(headings);
+      console.log('[Display] No media for fase', faseKey, 'item:', item, 'Available keys:', keys);
+      // Attempt fallback: read motherfile fases
+      void (async () => {
+        try {
+          const mother = await motherfileService.get();
+          const mfItem = mother?.fases?.[faseKey];
+          const mfFileName = mfItem?.image?.trim();
+          if (!mfFileName) {
+            console.log('[Display] Motherfile also missing media for', faseKey, 'mfItem:', mfItem);
+            setCurrentMedia(null);
+            return;
+          }
+          if (!motherMeta) {
+            console.log('[Display] motherMeta not ready even though Motherfile has media; waiting for meta');
+            setCurrentMedia(null);
+            return;
+          }
+          const isVideoMf = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(mfFileName);
+          const urlMf = `${motherMeta.baseUrl}/api/files/${motherMeta.collection}/${motherMeta.recordId}/${encodeURIComponent(mfFileName)}`;
+          console.log('[Display] Resolved media via Motherfile fallback', { faseKey, mfFileName, isVideoMf, urlMf });
+          setCurrentMedia({ url: urlMf, name: mfFileName, type: isVideoMf ? 'video' : 'image' });
+        } catch (e) {
+          console.log('[Display] Motherfile fallback failed', e);
+          setCurrentMedia(null);
+        }
+      })();
       return;
     }
-    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(fileName);
+    const isVideo = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(fileName);
     // Ensure we have motherMeta before creating a PB file URL; otherwise we risk a bare filename path
     if (!motherMeta) {
       console.log('[Display] motherMeta not ready; delaying media set for', faseKey, fileName);
