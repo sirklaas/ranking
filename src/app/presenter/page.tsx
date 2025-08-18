@@ -253,7 +253,7 @@ export default function PresenterPage() {
         '01/01': { heading: 'Welkom', image: '' },
         '01/02': { heading: 'In welk team zit je?', image: '' },
         '01/03': { heading: 'Wat is jouw naam?', image: '' },
-        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' }
+        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingKreet.mp4' }
       };
       
       // Find the next fase with a non-empty image/Picture field
@@ -440,7 +440,7 @@ export default function PresenterPage() {
           '01/01': { heading: 'In welk team zit je?', image: '' },
           '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
           '01/03': { heading: 'Wat is jouw naam?', image: '' },
-          '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'teamnaam' },
+          '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingKreet.mp4' },
           '01/05': { heading: 'Wat wordt jullie Teamyell? Kort maar Krachtig', image: 'teamyell' },
           '01/06': { heading: 'Maak een Selfie Video en upload die naar PhotoCircle', image: 'selfie' },
           '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
@@ -751,10 +751,10 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content grid: 2% | 43% | 2% | 43% | 2% | 8% | 2% */}
+        {/* Main content grid: 2% | 88% | 8% | 2% */}
         <div
           className="grid mt-4"
-          style={{ gridTemplateColumns: '2% 43% 2% 43% 2% 8% 2%', height: 'calc(100vh - 200px)' }}
+          style={{ gridTemplateColumns: '2% 88% 8% 2%', height: 'calc(100vh - 200px)' }}
         >
           {/* Left spacer (2%) */}
           <div></div>
@@ -800,16 +800,10 @@ export default function PresenterPage() {
                     (() => {
                       const media = getMediaForFase(currentFase);
                       const bg = '#F5B800';
-                      const ordered01 = getOrderedFasesForGroup('01');
-                      const idx01 = Math.max(0, ordered01.indexOf(currentFase));
-                      const nn = (idx01 + 1).toString().padStart(2, '0');
-                      const tt = ordered01.length.toString().padStart(2, '0');
                       return (
                         <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bg }}>
                           {/* Centered filename (heading should be filename-only for Phase 01) */}
                           <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {currentFase}</div>
-                          {/* NN/TT indicator */}
-                          <div className="absolute top-2 right-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{nn}/{tt}</div>
                           <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                             <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                               {media?.name || '—'}
@@ -868,84 +862,7 @@ export default function PresenterPage() {
               </div>
             </div>
 
-          {/* Middle gap (2%) */}
-          <div></div>
-
-          {/* Next Display (43%) */}
-          <div className="flex flex-col">
-                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
-                  {isGroup07 ? (
-                    (() => {
-                      const nextKey = getNextFaseInGroup(currentFase, '07');
-                      const headings = getHeadingsSource();
-                      const h = formatHeading(headings[nextKey]?.heading || `Fase ${nextKey}`);
-                      const nextMedia = getMediaForFase(nextKey);
-                      return (
-                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#F5B800' }}>
-                          {/* Vertically centered heading */}
-                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                            <div className="text-black text-3xl whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{h}</div>
-                          </div>
-                          {/* Fase label */}
-                          <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {nextKey}</div>
-                          {/* Preload next video invisibly */}
-                          {nextMedia?.type === 'video' && nextMedia.path && (
-                            <video src={nextMedia.path} preload="auto" muted playsInline className="hidden" />
-                          )}
-                        </div>
-                      );
-                    })()
-                  ) : isGroup01 ? (
-                    (() => {
-                      const nextKey = getNextFaseInGroup(currentFase, '01');
-                      const nextMedia = getMediaForFase(nextKey);
-                      const ordered01 = getOrderedFasesForGroup('01');
-                      const idx01 = Math.max(0, ordered01.indexOf(nextKey));
-                      const nn = (idx01 + 1).toString().padStart(2, '0');
-                      const tt = ordered01.length.toString().padStart(2, '0');
-                      return (
-                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#F5B800' }}>
-                          {/* Centered filename-only heading for next media */}
-                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                            <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                              {nextMedia?.name || '—'}
-                            </div>
-                          </div>
-                          {/* Fase label */}
-                          <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {nextKey}</div>
-                          {/* NN/TT indicator */}
-                          <div className="absolute top-2 right-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{nn}/{tt}</div>
-                          {/* Thumbnail/preview for videos/images */}
-                          {nextMedia?.type === 'video' && nextMedia.path ? (
-                            <video src={nextMedia.path} preload="metadata" muted playsInline className="hidden" />
-                          ) : null}
-                          {/* Small thumbnail overlay bottom-right */}
-                          <div className="absolute bottom-3 right-3 w-40 h-24 bg-black/30 rounded overflow-hidden border border-black/40 flex items-center justify-center">
-                            {nextMedia ? (
-                              nextMedia.type === 'image' ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={nextMedia.path} alt={nextMedia.name} className="w-full h-full object-contain" />
-                              ) : (
-                                <video src={nextMedia.path} preload="metadata" muted playsInline className="w-full h-full object-contain" />
-                              )
-                            ) : (
-                              <span className="text-white/80 text-xs" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>No preview</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-                      {renderMediaPreview(nextMedia)}
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
-          </div>
-
-          {/* Gap before fases (2%) */}
-          <div></div>
+          {/* Fases (8%) will follow directly without Next preview */}
 
           {/* Fases (8%) */}
           <div className="space-y-3 flex flex-col">

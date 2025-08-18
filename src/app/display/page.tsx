@@ -152,7 +152,11 @@ export default function DisplayPage() {
       return;
     }
     const item = headings[faseKey];
-    const fileName = item?.image?.trim();
+    let fileName = item?.image?.trim();
+    // Fallbacks for known fases when no image is configured in session
+    if (!fileName && faseKey === '01/04') {
+      fileName = 'RankingKreet.mp4';
+    }
     if (!fileName) {
       setCurrentMedia(null);
       return;
