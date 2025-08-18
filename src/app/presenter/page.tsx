@@ -103,7 +103,7 @@ export default function PresenterPage() {
               )}
             </div>
           )}
-          <div className="flex-1 bg-black rounded-b flex items-center justify-center relative overflow-hidden">
+          <div className="flex-1 rounded-b flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#F5B800' }}>
             <video
               src={media.path}
               className="w-full h-full object-cover"
@@ -132,7 +132,7 @@ export default function PresenterPage() {
             )}
           </div>
         )}
-        <div className="flex-1 bg-black rounded-b flex items-center justify-center relative overflow-hidden">
+        <div className="flex-1 rounded-b flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#F5B800' }}>
           <Image src={media.path} alt={media.name} fill className="object-cover" />
         </div>
       </div>
@@ -770,6 +770,25 @@ export default function PresenterPage() {
     setIsPlaying07(false);
   }, [currentFase]);
 
+  // Space key: push Next to Current (applies in game view)
+  useEffect(() => {
+    if (currentView !== 'game') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        const nm = getNextMedia();
+        if (nm?.fase) {
+          setCurrentFase(nm.fase);
+          if (selectedSession) {
+            rankingService.updateSession(selectedSession.id, { current_fase: nm.fase }).catch(() => {});
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [currentView, selectedSession, getNextMedia]);
+
   const renderGameInterface = () => {
     console.log('renderGameInterface called', { selectedSession, currentView });
     if (!selectedSession) {
@@ -812,7 +831,7 @@ export default function PresenterPage() {
 
         {/* Main content grid: 2% | 43% | 43% | 8% | 2% */}
         <div
-          className="grid mt-4"
+          className="grid mt-4 gap-4"
           style={{ gridTemplateColumns: '2% 43% 43% 8% 2%', height: 'calc(100vh - 200px)' }}
         >
           {/* Left spacer (2%) */}
@@ -934,6 +953,22 @@ export default function PresenterPage() {
                 {renderNextPreview(nextMedia)}
               </div>
               <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
+              <div className="flex justify-center mt-2">
+                <button
+                  onClick={() => {
+                    if (nextMedia?.fase) {
+                      setCurrentFase(nextMedia.fase);
+                      if (selectedSession) {
+                        rankingService.updateSession(selectedSession.id, { current_fase: nextMedia.fase }).catch(() => {});
+                      }
+                    }
+                  }}
+                  className="px-4 py-2 rounded bg-[#0A1752] text-white text-sm hover:bg-[#0A1752]/90"
+                  title="Show the next item on the Display (Space)"
+                >
+                  Send Next to Display
+                </button>
+              </div>
             </div>
           </div>
 
