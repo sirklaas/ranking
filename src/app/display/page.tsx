@@ -146,18 +146,31 @@ export default function DisplayPage() {
   // Subscribe to PocketBase session updates (current_fase changes)
   useEffect(() => {
     type PBEvent = { record?: Partial<RankingSession> } | Partial<RankingSession>;
-    const unsub = rankingService.subscribeToRankings((e: unknown) => {
+    const unsub = rankingService.subscribeToRankings(async (e: unknown) => {
       try {
         const evt = e as PBEvent;
         const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
         if (!rec || !currentSession) return;
+        const same = rec.id === currentSession.id;
+        // Better debug output to avoid confusion when PB omits unchanged fields
         console.log('[Display] PB event:', {
           incomingId: rec.id,
           currentId: currentSession?.id,
-          current_fase: rec.current_fase,
+          current_fase_incoming: rec.current_fase,
+          current_fase_prev: currentSession?.current_fase,
         });
-        if (rec.id === currentSession.id) {
-          // Merge to keep other fields stable
+        if (!same) return;
+        // If PocketBase event doesn't include current_fase, fetch the full record to get the latest value
+        if (typeof rec.current_fase === 'undefined') {
+          try {
+            const fresh = await rankingService.getSessionById(rec.id as string);
+            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(fresh as unknown as RankingSession) }));
+          } catch (fetchErr) {
+            // Fallback: merge what we have
+            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
+          }
+        } else {
+          // Merge to keep other fields stable when we do have current_fase
           setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
         }
       } catch {
