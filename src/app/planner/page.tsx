@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import "./planner.css";
 // Using server routes for PocketBase access to avoid client-side rule issues
@@ -31,12 +31,16 @@ const weekStartKey = (d = new Date()) => {
   return date.toISOString().slice(0, 10);
 };
 
-const weekStartISO = (d = new Date()) => {
-  const date = new Date(d);
-  const day = (date.getDay() + 6) % 7; // 0=Mon
-  date.setDate(date.getDate() - day);
-  date.setHours(0, 0, 0, 0);
-  return date.toISOString();
+// Compute ISO week key like 2025-W34 (timezone-agnostic)
+const isoWeekKey = (d = new Date()) => {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  // Thursday in current week decides the year.
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  const year = date.getUTCFullYear();
+  return `${year}-W${String(weekNo).padStart(2, '0')}`;
 };
 
 const STORAGE_KEY = "planner.tasks.v1";
@@ -81,6 +85,7 @@ export default function PlannerPage() {
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [ownerId, setOwnerId] = useState<string>("klaas");
+  const [showOwnerPopup, setShowOwnerPopup] = useState<boolean>(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [redLineTop, setRedLineTop] = useState<number>(0);
   const [timeLabel, setTimeLabel] = useState<string>("");
@@ -92,8 +97,12 @@ export default function PlannerPage() {
   // Resolve owner and load from localStorage immediately
   useEffect(() => {
     try {
-      const resolved = resolveOwnerId();
-      setOwnerId(resolved);
+      const storedOwner = localStorage.getItem(OWNER_KEY);
+      if (storedOwner) {
+        setOwnerId(storedOwner);
+      } else {
+        setShowOwnerPopup(true);
+      }
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsedRaw = JSON.parse(raw) as unknown;
@@ -122,25 +131,21 @@ export default function PlannerPage() {
     }
   }, []);
 
-  // Helpers for cached week id
-  const getWeekIdKey = (owner: string, iso: string) => `${WEEK_ID_KEY_PREFIX}${owner}:${iso}`;
-  const writeCachedWeekId = useCallback((owner: string, iso: string, id: string) => {
-    try { localStorage.setItem(getWeekIdKey(owner, iso), id); } catch {}
-  }, []);
+  // No cached week id needed with single-record-per-owner
 
   // Load via server API (overrides localStorage if found)
   useEffect(() => {
     const abort: { canceled: boolean } = { canceled: false };
     (async () => {
       try {
-        const wsISO = weekStartISO();
-        const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}&weekStart=${encodeURIComponent(wsISO)}`, { cache: 'no-store' });
+        if (!ownerId) return;
+        const wk = isoWeekKey();
+        const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}&weekKey=${encodeURIComponent(wk)}`, { cache: 'no-store' });
         const json = await res.json();
-        const rec = json && typeof json === 'object' ? json as { id?: string | null; data?: unknown } : null;
-        if (rec && rec.id) writeCachedWeekId(ownerId, wsISO, rec.id);
+        const rec = json && typeof json === 'object' ? json as { id?: string | null; week?: unknown } : null;
         if (abort.canceled) return;
-        if (rec && rec.data && typeof rec.data === "object") {
-          const payload = rec.data as unknown as { tasks?: unknown };
+        if (rec && rec.week && typeof rec.week === "object") {
+          const payload = rec.week as unknown as { tasks?: unknown };
           if (Array.isArray(payload.tasks)) {
             const parsed: Task[] = (payload.tasks as unknown[]).map((t) => {
               const obj = t as Partial<Task> & Record<string, unknown>;
@@ -161,7 +166,7 @@ export default function PlannerPage() {
       }
     })();
     return () => { abort.canceled = true; };
-  }, [ownerId, writeCachedWeekId]);
+  }, [ownerId]);
 
   // Weekly rollover
   useEffect(() => {
@@ -193,15 +198,15 @@ export default function PlannerPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     } catch {}
 
-    const wsISO = weekStartISO();
+    const weekKey = isoWeekKey();
     const payload = {
       meta: {
-        weekStart: wsISO,
+        weekKey,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
       tasks,
     };
-    const hash = JSON.stringify({ ownerId, wsISO, tasks });
+    const hash = JSON.stringify({ ownerId, weekKey, tasks });
 
     // Cancel previous pending save
     if (saveTimerRef.current) {
@@ -222,11 +227,10 @@ export default function PlannerPage() {
         const res = await fetch('/api/weekplanner', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ownerId, weekStart: wsISO, data: payload })
+          body: JSON.stringify({ ownerId, weekKey, weekData: payload })
         });
         if (!res.ok) throw new Error(`Save failed: ${res.status}`);
         const json = await res.json();
-        if (json?.id) writeCachedWeekId(ownerId, wsISO, json.id as string);
         lastSavedHashRef.current = hash;
       } catch {
         // ignore; will retry on next change
@@ -358,10 +362,22 @@ export default function PlannerPage() {
 
   return (
     <div className="planner-root">
+      {showOwnerPopup && (
+        <div className="owner-popup-overlay" role="dialog" aria-modal>
+          <div className="owner-popup">
+            <div className="owner-title">Choose user</div>
+            <div className="owner-actions">
+              <button className="owner-btn" onClick={() => { localStorage.setItem(OWNER_KEY, 'klaas'); setOwnerId('klaas'); setShowOwnerPopup(false); }}>Klaas</button>
+              <button className="owner-btn" onClick={() => { localStorage.setItem(OWNER_KEY, 'liza'); setOwnerId('liza'); setShowOwnerPopup(false); }}>Liza</button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="planner-header">
         <div className="title">Weekly Planner</div>
         <div className="meta">
-          <Link href="/">Home</Link>
+          <button className="owner-switch" onClick={() => setShowOwnerPopup(true)} title="Switch user">{ownerId}</button>
+          <Link href="/" style={{ marginLeft: 12 }}>Home</Link>
         </div>
       </header>
 
