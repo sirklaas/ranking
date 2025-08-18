@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import "./planner.css";
 // Using server routes for PocketBase access to avoid client-side rule issues
@@ -124,12 +124,9 @@ export default function PlannerPage() {
 
   // Helpers for cached week id
   const getWeekIdKey = (owner: string, iso: string) => `${WEEK_ID_KEY_PREFIX}${owner}:${iso}`;
-  const readCachedWeekId = (owner: string, iso: string) => {
-    try { return localStorage.getItem(getWeekIdKey(owner, iso)); } catch { return null; }
-  };
-  const writeCachedWeekId = (owner: string, iso: string, id: string) => {
+  const writeCachedWeekId = useCallback((owner: string, iso: string, id: string) => {
     try { localStorage.setItem(getWeekIdKey(owner, iso), id); } catch {}
-  };
+  }, []);
 
   // Load via server API (overrides localStorage if found)
   useEffect(() => {
@@ -164,7 +161,7 @@ export default function PlannerPage() {
       }
     })();
     return () => { abort.canceled = true; };
-  }, [ownerId]);
+  }, [ownerId, writeCachedWeekId]);
 
   // Weekly rollover
   useEffect(() => {
@@ -402,7 +399,7 @@ export default function PlannerPage() {
                       e.preventDefault();
                       onDropTo(day, slotIdx);
                     }}
-                    onPointerUp={(e) => {
+                    onPointerUp={() => {
                       // If pointer ends inside, drop current dragging
                       if (draggingId) onDropTo(day, slotIdx);
                     }}

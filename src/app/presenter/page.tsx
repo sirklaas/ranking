@@ -678,7 +678,7 @@ export default function PresenterPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isGroup07, currentView, isPlaying07, currentFase, selectedSession]);
+  }, [isGroup07, currentView, isPlaying07, currentFase, selectedSession, getNextFaseInGroup]);
 
   // Reset playing flag when fase changes
   useEffect(() => {

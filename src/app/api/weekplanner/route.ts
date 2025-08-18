@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     const pb = await getServerPocketBase();
 
     // Try find existing
-    let rec: any | null = null;
+    let rec: { id: string } | null = null;
     try {
       rec = await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}" && weekStart = "${weekStart}"`

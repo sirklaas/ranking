@@ -115,7 +115,6 @@ export const weekplannerService = {
     } catch (err) {
       if (typeof window !== 'undefined') {
         // Surface error in browser console
-        // eslint-disable-next-line no-console
         console.warn('[weekplannerService.createWeek] failed', err);
       }
       throw err;
@@ -132,7 +131,6 @@ export const weekplannerService = {
       return rec as unknown as WeekplannerRecord;
     } catch (err) {
       if (typeof window !== 'undefined') {
-        // eslint-disable-next-line no-console
         console.warn('[weekplannerService.updateWeek] failed', err);
       }
       throw err;
