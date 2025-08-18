@@ -275,6 +275,10 @@ export default function PresenterPage() {
     setGameStartTime(new Date());
     setCurrentView('game');
     setCurrentFase('01/01');
+    // Persist initial fase so Display receives a defined value immediately
+    try {
+      rankingService.updateSession(selectedSession.id, { current_fase: '01/01' }).catch(() => {});
+    } catch {}
     console.log('State updated - should show game interface now');
   };
 

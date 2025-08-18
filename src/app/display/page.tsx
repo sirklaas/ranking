@@ -60,10 +60,17 @@ export default function DisplayPage() {
         return;
       }
       
-      const latestSession = sessions[0] as unknown as RankingSession;
-      setCurrentSession(latestSession);
+      const latestShallow = sessions[0] as unknown as RankingSession;
+      // Fetch full record to ensure fields like current_fase are present
+      try {
+        const full = await rankingService.getSessionById(latestShallow.id);
+        setCurrentSession(full as unknown as RankingSession);
+      } catch {
+        // Fallback to shallow if detail fetch fails
+        setCurrentSession(latestShallow);
+      }
       
-      const teamAssignments = getTeamAssignments(latestSession);
+      const teamAssignments = getTeamAssignments(latestShallow);
       setPlayersByTeam(teamAssignments);
       
       // Generate game code if not exists
