@@ -360,6 +360,12 @@ export default function PlannerPage() {
   // Visual helpers
   const isDragging = (id: string) => draggingId === id;
 
+  // Owner switch helper
+  const switchOwner = (owner: 'klaas' | 'liza') => {
+    try { localStorage.setItem(OWNER_KEY, owner); } catch {}
+    setOwnerId(owner);
+  };
+
   return (
     <div className="planner-root">
       {showOwnerPopup && (
@@ -376,7 +382,32 @@ export default function PlannerPage() {
       <header className="planner-header">
         <div className="title">Weekly Planner</div>
         <div className="meta">
-          <button className="owner-switch" onClick={() => setShowOwnerPopup(true)} title="Switch user">{ownerId}</button>
+          <div className="owner-buttons" style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="owner-btn"
+              onClick={() => switchOwner('klaas')}
+              aria-pressed={ownerId === 'klaas'}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 6,
+                border: ownerId === 'klaas' ? '2px solid #0A1752' : '1px solid #ccc',
+                background: ownerId === 'klaas' ? '#eef2ff' : '#fff',
+                fontFamily: 'Barlow Semi Condensed, sans-serif',
+              }}
+            >Klaas</button>
+            <button
+              className="owner-btn"
+              onClick={() => switchOwner('liza')}
+              aria-pressed={ownerId === 'liza'}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 6,
+                border: ownerId === 'liza' ? '2px solid #0A1752' : '1px solid #ccc',
+                background: ownerId === 'liza' ? '#eef2ff' : '#fff',
+                fontFamily: 'Barlow Semi Condensed, sans-serif',
+              }}
+            >Liza</button>
+          </div>
           <Link href="/" style={{ marginLeft: 12 }}>Home</Link>
         </div>
       </header>
