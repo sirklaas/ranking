@@ -706,6 +706,19 @@ export default function PresenterPage() {
     return text.replaceAll('/n', '\n');
   };
 
+  // Check if a fase has an associated media file in headings JSON
+  const hasMediaForFase = useCallback((faseKey: string): boolean => {
+    try {
+      const headings = Object.keys(editingHeadings).length
+        ? editingHeadings
+        : faseService.parseHeadings(selectedSession?.headings || '{}');
+      const img = headings[faseKey]?.image;
+      return !!(img && String(img).trim().length > 0);
+    } catch {
+      return false;
+    }
+  }, [editingHeadings, selectedSession]);
+
   // Generic Arrow navigation for the current group (derived from currentFase prefix)
   useEffect(() => {
     if (currentView !== 'game') return;
@@ -714,6 +727,10 @@ export default function PresenterPage() {
       e.preventDefault();
       const prefix = (currentFase.split('/')[0] || '').padStart(2, '0');
       if (e.key === 'ArrowRight') {
+        // If current fase has media, do not advance on ArrowRight
+        if (hasMediaForFase(currentFase)) {
+          return;
+        }
         const next = getNextFaseInGroup(currentFase, prefix);
         setCurrentFase(next);
         if (selectedSession) {
@@ -729,7 +746,7 @@ export default function PresenterPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
+  }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup, hasMediaForFase]);
 
   // Reset playing flag when fase changes
   useEffect(() => {
