@@ -751,10 +751,10 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* Main content grid (Next preview removed): 2% | 88% | 8% | 2% */}
+        {/* Main content grid: 2% | 43% | 43% | 8% | 2% */}
         <div
           className="grid mt-4"
-          style={{ gridTemplateColumns: '2% 88% 8% 2%', height: 'calc(100vh - 200px)' }}
+          style={{ gridTemplateColumns: '2% 43% 43% 8% 2%', height: 'calc(100vh - 200px)' }}
         >
           {/* Left spacer (2%) */}
           <div></div>
@@ -868,7 +868,15 @@ export default function PresenterPage() {
               </div>
             </div>
 
-          {/* Next preview removed */}
+          {/* Next Display (43%) */}
+          <div className="flex flex-col">
+            <div>
+              <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
+                {renderMediaPreview(nextMedia)}
+              </div>
+              <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
+            </div>
+          </div>
 
           {/* Fases (8%) */}
           <div className="space-y-3 flex flex-col">
