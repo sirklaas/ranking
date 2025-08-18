@@ -19,6 +19,7 @@ export default function DisplayPage() {
   const [currentMedia, setCurrentMedia] = useState<null | { url: string; name: string; type: 'video' | 'image' }>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
 
   // Generate a random 4-digit game code
   const generateGameCode = () => {
@@ -97,8 +98,29 @@ export default function DisplayPage() {
 
     loadSessionData();
 
-    // Preload motherfile to set record id for media URLs
-    void motherfileService.get().catch(() => {});
+    // Preload motherfile and capture meta for reliable media URLs
+    void (async () => {
+      try {
+        const res = await fetch('/api/pb-motherfile', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          const collection = json?.meta?.collection || 'motherfile';
+          const recordId = json?.meta?.recordId;
+          const baseUrl = json?.meta?.baseUrl || (window.location?.protocol === 'https:' ? 'https://pinkmilk.pockethost.io' : 'http://127.0.0.1:8090');
+          if (collection && recordId && baseUrl) {
+            setMotherMeta({ collection, recordId, baseUrl });
+            // also set in service for other callers
+            motherfileService.setRecordId(recordId);
+          } else {
+            console.warn('[Display] motherfile meta missing', json?.meta);
+          }
+        } else {
+          console.warn('[Display] motherfile GET failed', res.status);
+        }
+      } catch (e) {
+        console.warn('[Display] motherfile GET error', e);
+      }
+    })();
 
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -129,6 +151,11 @@ export default function DisplayPage() {
         const evt = e as PBEvent;
         const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
         if (!rec || !currentSession) return;
+        console.log('[Display] PB event:', {
+          incomingId: rec.id,
+          currentId: currentSession?.id,
+          current_fase: rec.current_fase,
+        });
         if (rec.id === currentSession.id) {
           // Merge to keep other fields stable
           setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
@@ -147,7 +174,7 @@ export default function DisplayPage() {
     };
   }, [currentSession]);
 
-  // Compute current media whenever session/current_fase changes
+  // Compute current media whenever session/current_fase or motherMeta changes
   useEffect(() => {
     if (!currentSession) return;
     const headings = faseService.parseHeadings(currentSession.headings || '{}');
@@ -159,13 +186,21 @@ export default function DisplayPage() {
     const item = headings[faseKey];
     const fileName = item?.image?.trim();
     if (!fileName) {
+      console.log('[Display] No media for fase', faseKey, 'item:', item);
       setCurrentMedia(null);
       return;
     }
     const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(fileName);
-    const url = motherfileService.fileUrl(fileName);
+    // Ensure we have motherMeta before creating a PB file URL; otherwise we risk a bare filename path
+    if (!motherMeta) {
+      console.log('[Display] motherMeta not ready; delaying media set for', faseKey, fileName);
+      setCurrentMedia(null);
+      return;
+    }
+    const url = `${motherMeta.baseUrl}/api/files/${motherMeta.collection}/${motherMeta.recordId}/${encodeURIComponent(fileName)}`;
+    console.log('[Display] Resolved media', { faseKey, fileName, isVideo, url, motherMeta });
     setCurrentMedia({ url, name: fileName, type: isVideo ? 'video' : 'image' });
-  }, [currentSession]);
+  }, [currentSession, motherMeta]);
 
   // Keep video element in sync with mute state and current media
   useEffect(() => {
@@ -220,7 +255,10 @@ export default function DisplayPage() {
             autoPlay
             muted={isMuted}
             playsInline
-            onEnded={() => setCurrentMedia(null)}
+            onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
+            onPlay={() => console.log('[Display] video play', currentMedia)}
+            onError={(e) => console.log('[Display] video error', e)}
+            onEnded={() => { console.log('[Display] video ended'); setCurrentMedia(null); }}
           />
           <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Fase {currentSession?.current_fase} — {currentMedia.name}
