@@ -86,6 +86,7 @@ export default function PlannerPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [ownerId, setOwnerId] = useState<string>("klaas");
   const [showOwnerPopup, setShowOwnerPopup] = useState<boolean>(false);
+  const [loadingOwner, setLoadingOwner] = useState<boolean>(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [redLineTop, setRedLineTop] = useState<number>(0);
   const [timeLabel, setTimeLabel] = useState<string>("");
@@ -139,6 +140,7 @@ export default function PlannerPage() {
     (async () => {
       try {
         if (!ownerId) return;
+        setLoadingOwner(true);
         const wk = isoWeekKey();
         const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}&weekKey=${encodeURIComponent(wk)}`, { cache: 'no-store' });
         const json = await res.json();
@@ -160,9 +162,14 @@ export default function PlannerPage() {
             });
             setTasks(parsed.length ? parsed : [{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
           }
+        } else {
+          // No server data yet; reset to a clean slate for this owner/week
+          setTasks([{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
         }
       } catch {
         // ignore; stay on local cache
+      } finally {
+        if (!abort.canceled) setLoadingOwner(false);
       }
     })();
     return () => { abort.canceled = true; };
@@ -194,6 +201,8 @@ export default function PlannerPage() {
 
   // Persist locally and upsert via server API (debounced, skip if unchanged)
   useEffect(() => {
+    if (!ownerId) return;
+    if (loadingOwner) return; // avoid saving while switching/loading another owner's data
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     } catch {}
@@ -363,6 +372,9 @@ export default function PlannerPage() {
   // Owner switch helper
   const switchOwner = (owner: 'klaas' | 'liza') => {
     try { localStorage.setItem(OWNER_KEY, owner); } catch {}
+    // Reset last saved hash to ensure proper change detection after switch
+    lastSavedHashRef.current = null;
+    setLoadingOwner(true);
     setOwnerId(owner);
   };
 
@@ -387,28 +399,36 @@ export default function PlannerPage() {
               className="owner-btn"
               onClick={() => switchOwner('klaas')}
               aria-pressed={ownerId === 'klaas'}
+              disabled={loadingOwner}
               style={{
-                padding: '4px 10px',
-                borderRadius: 6,
-                border: ownerId === 'klaas' ? '2px solid #0A1752' : '1px solid #ccc',
-                background: ownerId === 'klaas' ? '#eef2ff' : '#fff',
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: ownerId === 'klaas' ? '2px solid #0A1752' : '1px solid #666',
+                background: ownerId === 'klaas' ? '#0A1752' : (loadingOwner ? '#222' : 'transparent'),
+                color: ownerId === 'klaas' ? '#fff' : (loadingOwner ? '#777' : '#ddd'),
+                fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
+                boxShadow: ownerId === 'klaas' ? '0 0 0 3px rgba(10,23,82,0.25)' : 'none',
               }}
             >Klaas</button>
             <button
               className="owner-btn"
               onClick={() => switchOwner('liza')}
               aria-pressed={ownerId === 'liza'}
+              disabled={loadingOwner}
               style={{
-                padding: '4px 10px',
-                borderRadius: 6,
-                border: ownerId === 'liza' ? '2px solid #0A1752' : '1px solid #ccc',
-                background: ownerId === 'liza' ? '#eef2ff' : '#fff',
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: ownerId === 'liza' ? '2px solid #0A1752' : '1px solid #666',
+                background: ownerId === 'liza' ? '#0A1752' : (loadingOwner ? '#222' : 'transparent'),
+                color: ownerId === 'liza' ? '#fff' : (loadingOwner ? '#777' : '#ddd'),
+                fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
+                boxShadow: ownerId === 'liza' ? '0 0 0 3px rgba(10,23,82,0.25)' : 'none',
               }}
             >Liza</button>
           </div>
-          <Link href="/" style={{ marginLeft: 12 }}>Home</Link>
+          {/* Home link removed as requested */}
         </div>
       </header>
 

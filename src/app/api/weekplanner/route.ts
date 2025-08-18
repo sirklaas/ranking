@@ -7,8 +7,8 @@ function badRequest(msg: string) {
   return NextResponse.json({ error: msg }, { status: 400 });
 }
 
-// Shape stored in PB for a single owner record
-// { ownerId: string, weeks: { [weekKey: string]: unknown } }
+// Shape stored in PB for a single owner record (compatible with existing schema)
+// { ownerId: string, data?: { weeks?: { [weekKey: string]: unknown } } }
 
 export async function GET(req: Request) {
   try {
@@ -22,8 +22,9 @@ export async function GET(req: Request) {
       const rec = await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}"`
       );
-      const weeks = (rec as unknown as { weeks?: Record<string, unknown> }).weeks || {};
-      const weekData = (weeks as Record<string, unknown>)[weekKey] ?? null;
+      const container = (rec as unknown as { data?: { weeks?: Record<string, unknown> } }).data || {};
+      const weeks = (container.weeks || {}) as Record<string, unknown>;
+      const weekData = weeks[weekKey] ?? null;
       return NextResponse.json(
         { id: rec.id, week: weekData },
         { headers: { 'Cache-Control': 'no-store' } }
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
     const pb = await getServerPocketBase();
 
     // Try find existing owner record
-    let rec: { id: string; weeks?: Record<string, unknown> } | null = null;
+    let rec: { id: string; data?: { weeks?: Record<string, unknown> } } | null = null;
     try {
       rec = await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}"`
@@ -60,13 +61,14 @@ export async function POST(req: Request) {
     } catch {}
 
     if (rec) {
-      const existingWeeks = (rec.weeks || {}) as Record<string, unknown>;
+      const existingData = (rec.data || {}) as { weeks?: Record<string, unknown> };
+      const existingWeeks = (existingData.weeks || {}) as Record<string, unknown>;
       const nextWeeks = { ...existingWeeks, [weekKey]: weekData } as Record<string, unknown>;
-      const updated = await pb.collection(COLLECTION).update(rec.id, { weeks: nextWeeks });
-      return NextResponse.json({ id: updated.id, week: (nextWeeks as Record<string, unknown>)[weekKey] });
+      const updated = await pb.collection(COLLECTION).update(rec.id, { data: { ...existingData, weeks: nextWeeks } });
+      return NextResponse.json({ id: updated.id, week: nextWeeks[weekKey] });
     }
 
-    const created = await pb.collection(COLLECTION).create({ ownerId, weeks: { [weekKey]: weekData } });
+    const created = await pb.collection(COLLECTION).create({ ownerId, data: { weeks: { [weekKey]: weekData } } });
     return NextResponse.json({ id: created.id, week: weekData });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
