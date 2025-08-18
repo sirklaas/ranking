@@ -806,10 +806,16 @@ export default function PresenterPage() {
                     (() => {
                       const media = getMediaForFase(currentFase);
                       const bg = '#F5B800';
+                      const ordered01 = getOrderedFasesForGroup('01');
+                      const idx01 = Math.max(0, ordered01.indexOf(currentFase));
+                      const nn = (idx01 + 1).toString().padStart(2, '0');
+                      const tt = ordered01.length.toString().padStart(2, '0');
                       return (
                         <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bg }}>
                           {/* Centered filename (heading should be filename-only for Phase 01) */}
                           <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {currentFase}</div>
+                          {/* NN/TT indicator */}
+                          <div className="absolute top-2 right-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{nn}/{tt}</div>
                           <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                             <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
                               {media?.name || '—'}
@@ -899,6 +905,10 @@ export default function PresenterPage() {
                     (() => {
                       const nextKey = getNextFaseInGroup(currentFase, '01');
                       const nextMedia = getMediaForFase(nextKey);
+                      const ordered01 = getOrderedFasesForGroup('01');
+                      const idx01 = Math.max(0, ordered01.indexOf(nextKey));
+                      const nn = (idx01 + 1).toString().padStart(2, '0');
+                      const tt = ordered01.length.toString().padStart(2, '0');
                       return (
                         <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#F5B800' }}>
                           {/* Centered filename-only heading for next media */}
@@ -909,10 +919,25 @@ export default function PresenterPage() {
                           </div>
                           {/* Fase label */}
                           <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {nextKey}</div>
+                          {/* NN/TT indicator */}
+                          <div className="absolute top-2 right-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{nn}/{tt}</div>
                           {/* Thumbnail/preview for videos/images */}
                           {nextMedia?.type === 'video' && nextMedia.path ? (
                             <video src={nextMedia.path} preload="metadata" muted playsInline className="hidden" />
                           ) : null}
+                          {/* Small thumbnail overlay bottom-right */}
+                          <div className="absolute bottom-3 right-3 w-40 h-24 bg-black/30 rounded overflow-hidden border border-black/40 flex items-center justify-center">
+                            {nextMedia ? (
+                              nextMedia.type === 'image' ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={nextMedia.path} alt={nextMedia.name} className="w-full h-full object-contain" />
+                              ) : (
+                                <video src={nextMedia.path} preload="metadata" muted playsInline className="w-full h-full object-contain" />
+                              )
+                            ) : (
+                              <span className="text-white/80 text-xs" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>No preview</span>
+                            )}
+                          </div>
                         </div>
                       );
                     })()

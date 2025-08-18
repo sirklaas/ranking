@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { rankingService, teamService } from '@/lib/pocketbase';
+import { rankingService, teamService, motherfileService, faseService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
 import '@/modules/fases/auto-register';
 
@@ -16,6 +16,7 @@ export default function DisplayPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameCode, setGameCode] = useState<string>('');
+  const [currentMedia, setCurrentMedia] = useState<null | { url: string; name: string; type: 'video' | 'image' }>(null);
 
   // Generate a random 4-digit game code
   const generateGameCode = () => {
@@ -91,9 +92,12 @@ export default function DisplayPage() {
     link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
-    
+
     loadSessionData();
-    
+
+    // Preload motherfile to set record id for media URLs
+    void motherfileService.get().catch(() => {});
+
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' || e.key === 'F') {
@@ -103,14 +107,57 @@ export default function DisplayPage() {
         loadSessionData();
       }
     };
-    
+
     document.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.head.removeChild(link);
     };
   }, [loadSessionData]);
+
+  // Subscribe to PocketBase session updates (current_fase changes)
+  useEffect(() => {
+    const unsub = rankingService.subscribeToRankings((e: any) => {
+      try {
+        const rec = (e && (e.record || e)) as RankingSession;
+        if (!rec || !currentSession) return;
+        if ((rec as any).id === currentSession.id) {
+          setCurrentSession(rec);
+        }
+      } catch {
+        // ignore
+      }
+    });
+    // Best-effort cleanup if supported
+    return () => {
+      try {
+        if (typeof unsub === 'function') (unsub as unknown as () => void)();
+      } catch {
+        // ignore
+      }
+    };
+  }, [currentSession]);
+
+  // Compute current media whenever session/current_fase changes
+  useEffect(() => {
+    if (!currentSession) return;
+    const headings = faseService.parseHeadings((currentSession as any).headings || '{}');
+    const faseKey = (currentSession as any).current_fase as string | undefined;
+    if (!faseKey) {
+      setCurrentMedia(null);
+      return;
+    }
+    const item = headings[faseKey];
+    const fileName = item?.image?.trim();
+    if (!fileName) {
+      setCurrentMedia(null);
+      return;
+    }
+    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(fileName);
+    const url = motherfileService.fileUrl(fileName);
+    setCurrentMedia({ url, name: fileName, type: isVideo ? 'video' : 'image' });
+  }, [currentSession]);
 
   // Generate QR code URL for joining
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://ranking.pinkmilk.eu/player?code=${gameCode}`)}`;
@@ -144,6 +191,23 @@ export default function DisplayPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      {/* Media overlay: plays current fase video when available */}
+      {currentMedia?.type === 'video' && currentMedia.url && (
+        <div className="fixed inset-0 z-50 bg-black">
+          <video
+            key={currentMedia.url}
+            src={currentMedia.url}
+            className="w-full h-full object-contain"
+            autoPlay
+            muted
+            playsInline
+            onEnded={() => setCurrentMedia(null)}
+          />
+          <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+            Fase {(currentSession as any)?.current_fase} — {currentMedia.name}
+          </div>
+        </div>
+      )}
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
       
