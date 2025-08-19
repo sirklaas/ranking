@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# media/editor bundles (prevent massive accidental commits)
+*.fcpbundle
+*.fcpevent
+*.fcpproject
+*.flexolibrary
+*.fcarch
+*.fcarchive
+*.fcbundle

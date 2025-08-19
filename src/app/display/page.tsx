@@ -16,7 +16,10 @@ export default function DisplayPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameCode, setGameCode] = useState<string>('');
-  const [currentMedia, setCurrentMedia] = useState<null | { url: string; name: string; type: 'video' | 'image' }>(null);
+  const [currentMedia, setCurrentMedia] = useState<
+    | null
+    | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
+  >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
@@ -239,15 +242,13 @@ export default function DisplayPage() {
             setCurrentMedia(null);
             return;
           }
-          if (!motherMeta) {
-            console.log('[Display] motherMeta not ready even though Motherfile has media; waiting for meta');
-            setCurrentMedia(null);
-            return;
-          }
+          // We only use Motherfile to discover the filename; then resolve from ranking or local
           const isVideoMf = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(mfFileName);
-          const urlMf = `${baseUrl}/api/files/${motherMeta.collection}/${motherMeta.recordId}/${encodeURIComponent(mfFileName)}`;
-          console.log('[Display] Resolved media via Motherfile fallback', { faseKey, mfFileName, isVideoMf, urlMf });
-          setCurrentMedia({ url: urlMf, name: mfFileName, type: isVideoMf ? 'video' : 'image' });
+          const rankingUrlMf = resolveFromRanking(mfFileName);
+          const localUrlMf = resolveFromLocal(mfFileName);
+          const chosenUrlMf = rankingUrlMf || localUrlMf;
+          console.log('[Display] Resolved media via Motherfile filename (ranking/local URL)', { faseKey, mfFileName, isVideoMf, rankingUrlMf, localUrlMf });
+          setCurrentMedia({ url: chosenUrlMf, name: mfFileName, type: isVideoMf ? 'video' : 'image', fallbackLocalUrl: localUrlMf });
         } catch (e) {
           console.log('[Display] Motherfile fallback failed', e);
           setCurrentMedia(null);
@@ -264,7 +265,7 @@ export default function DisplayPage() {
     // Optimistic set with ranking URL; video/image elements will log error events if truly 404
     const chosenUrl = rankingUrl || localUrl;
     console.log('[Display] Resolved media (ranking first)', { faseKey, fileName, isVideo, rankingUrl, localUrl });
-    setCurrentMedia({ url: chosenUrl, name: fileName, type: isVideo ? 'video' : 'image' });
+    setCurrentMedia({ url: chosenUrl, name: fileName, type: isVideo ? 'video' : 'image', fallbackLocalUrl: localUrl });
 
     // Add a light-weight preload hint for smoother start
     try {
@@ -334,12 +335,23 @@ export default function DisplayPage() {
             playsInline
             onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
             onPlay={() => console.log('[Display] video play', currentMedia)}
-            onError={(e) => console.log('[Display] video error', e)}
+            onError={(e) => {
+              console.log('[Display] video error', e);
+              setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
+            }}
             onEnded={() => { console.log('[Display] video ended'); setCurrentMedia(null); }}
           />
           <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Fase {currentSession?.current_fase} — {currentMedia.name}
           </div>
+          {currentMedia?.fallbackLocalUrl && currentMedia.url === currentMedia.fallbackLocalUrl && (
+            <div
+              className="absolute top-2 right-3 bg-white/85 text-black px-2 py-0.5 rounded text-xs shadow"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Local file
+            </div>
+          )}
           {/* Sound toggle */}
           <div className="absolute bottom-3 right-3">
             <button
