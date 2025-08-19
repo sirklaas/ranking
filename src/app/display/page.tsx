@@ -132,25 +132,6 @@ export default function DisplayPage() {
       }
     })();
 
-  // Try to start playback with sound; if blocked (Safari/iOS policy), ask for user interaction
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!currentMedia || currentMedia.type !== 'video' || !allowMediaOverlay || !v) {
-      setNeedsInteraction(false);
-      return;
-    }
-    try {
-      v.muted = false;
-      v.volume = 1;
-      const p = v.play();
-      if (p && typeof (p as Promise<void>).then === 'function') {
-        (p as Promise<void>).then(() => setNeedsInteraction(false)).catch(() => setNeedsInteraction(true));
-      }
-    } catch {
-      setNeedsInteraction(true);
-    }
-  }, [currentMedia, allowMediaOverlay]);
-
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' || e.key === 'F') {
@@ -169,6 +150,36 @@ export default function DisplayPage() {
       document.head.removeChild(link);
     };
   }, [loadSessionData]);
+
+  // Try to start playback with sound; if blocked (Safari/iOS policy), ask for user interaction
+  useEffect(() => {
+    const v = videoRef.current;
+    // Compute locally if media overlay is allowed for the current fase
+    const faseStr = currentSession?.current_fase || '';
+    const allow = (() => {
+      const m = faseStr.match(/^01\/(\d{2})$/);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        return n >= 4; // allow from 01/04 and later
+      }
+      return true; // other groups unaffected
+    })();
+
+    if (!currentMedia || currentMedia.type !== 'video' || !allow || !v) {
+      setNeedsInteraction(false);
+      return;
+    }
+    try {
+      v.muted = false;
+      v.volume = 1;
+      const p = v.play();
+      if (p && typeof (p as Promise<void>).then === 'function') {
+        (p as Promise<void>).then(() => setNeedsInteraction(false)).catch(() => setNeedsInteraction(true));
+      }
+    } catch {
+      setNeedsInteraction(true);
+    }
+  }, [currentMedia, currentSession]);
 
   // Subscribe to PocketBase session updates (current_fase changes)
   useEffect(() => {

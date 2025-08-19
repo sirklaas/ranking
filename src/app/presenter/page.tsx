@@ -538,19 +538,6 @@ export default function PresenterPage() {
     return text.replaceAll('/n', '\n');
   };
 
-  // Check if a fase has an associated media file in headings JSON
-  const hasMediaForFase = useCallback((faseKey: string): boolean => {
-    try {
-      const headings = Object.keys(editingHeadings).length
-        ? editingHeadings
-        : faseService.parseHeadings(selectedSession?.headings || '{}');
-      const img = headings[faseKey]?.image;
-      return !!(img && String(img).trim().length > 0);
-    } catch {
-      return false;
-    }
-  }, [editingHeadings, selectedSession]);
-
   // Generic Arrow navigation for the current group (derived from currentFase prefix)
   useEffect(() => {
     if (currentView !== 'game') return;
