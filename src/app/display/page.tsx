@@ -172,7 +172,7 @@ export default function DisplayPage() {
           try {
             const fresh = await rankingService.getSessionById(rec.id as string);
             setCurrentSession(prev => ({ ...(prev as RankingSession), ...(fresh as unknown as RankingSession) }));
-          } catch (fetchErr) {
+          } catch {
             // Fallback: merge what we have
             setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
           }
@@ -203,8 +203,8 @@ export default function DisplayPage() {
       setCurrentMedia(null);
       return;
     }
-    let item = headings[faseKey];
-    let fileName = item?.image?.trim();
+    const item = headings[faseKey];
+    const fileName = item?.image?.trim();
 
     if (!fileName) {
       // Better diagnostics and fallback to Motherfile fases

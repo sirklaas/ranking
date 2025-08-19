@@ -19,14 +19,12 @@ export default function PresenterPage() {
   const [gameTime, setGameTime] = useState('00:00');
   const [isClient, setIsClient] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
-  const [mediaList, setMediaList] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  
 
   // Upload a single media file and assign it to a specific fase's Picture field
   const handleUploadPictureForFase = async (fase: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
     try {
-      setIsUploading(true);
       const file = files[0];
       const form = new FormData();
       form.append('media', file);
@@ -43,14 +41,12 @@ export default function PresenterPage() {
       throw new Error(errMsg as string);
     }
 
-      // After upload, refresh motherfile to cache recordId and media list
+      // After upload, refresh motherfile to cache recordId
       try {
         const resAfter = await fetch('/api/pb-motherfile', { cache: 'no-store' });
         const jsonAfter = await resAfter.json();
         const rid = jsonAfter?.meta?.recordId as string | undefined;
         if (rid) motherfileService.setRecordId(rid);
-        const media = jsonAfter?.data?.media || [];
-        setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
       } catch {}
 
       // Set the fase image to the uploaded file name (URL built via motherfileService.fileUrl at render time)
@@ -59,16 +55,6 @@ export default function PresenterPage() {
         [fase]: { heading: prev[fase]?.heading || '', image: file.name }
       }));
 
-      // Refresh media list quietly
-      try {
-        const resList = await fetch('/api/pb-motherfile', { cache: 'no-store' });
-        const jsonList = await resList.json();
-        const rid = jsonList?.meta?.recordId as string | undefined;
-        if (rid) motherfileService.setRecordId(rid);
-        const media = jsonList?.data?.media || [];
-        setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
-      } catch {}
-
       setSaveBanner('Picture uploaded and linked to this fase');
       setTimeout(() => setSaveBanner(null), 3000);
     } catch (err) {
@@ -76,7 +62,7 @@ export default function PresenterPage() {
       setSaveBanner('Failed to upload picture');
       setTimeout(() => setSaveBanner(null), 4000);
     } finally {
-      setIsUploading(false);
+      // no-op
     }
   };
 
@@ -170,24 +156,7 @@ export default function PresenterPage() {
     return () => clearInterval(timer);
   }, [gameStartTime]);
 
-  // Load motherfile media list when entering manage view
-  useEffect(() => {
-    const loadMedia = async () => {
-      try {
-        const res = await fetch('/api/pb-motherfile', { cache: 'no-store' });
-        const json = await res.json();
-        if (json?.success) {
-          const media = json.data?.media || [];
-          setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
-        } else {
-          console.warn('Could not load Motherfile media list', json?.error);
-        }
-      } catch (err) {
-        console.warn('Could not load Motherfile media list', err);
-      }
-    };
-    if (currentView === 'manage') loadMedia();
-  }, [currentView]);
+  
 
   // Define fase groups
   const faseGroups = {
@@ -233,34 +202,7 @@ export default function PresenterPage() {
     }
   };
 
-  // Upload media to Motherfile
-  const handleUploadMedia = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    try {
-      setIsUploading(true);
-      const arr = Array.from(files);
-      const form = new FormData();
-      for (const f of arr) form.append('media', f);
-      const res = await fetch('/api/pb-motherfile', { method: 'POST', body: form });
-      const json = await res.json();
-      if (!json?.success) throw new Error(json?.error || 'Upload failed');
-      // Reload list
-      try {
-        const resList = await fetch('/api/pb-motherfile', { cache: 'no-store' });
-        const jsonList = await resList.json();
-        const media = jsonList?.data?.media || [];
-        setMediaList(Array.isArray(media) ? media : (media ? [media] : []));
-      } catch {}
-      setSaveBanner('Media uploaded to Motherfile');
-      setTimeout(() => setSaveBanner(null), 3000);
-    } catch (err) {
-      console.error('Upload failed:', err);
-      setSaveBanner('Failed to upload media');
-      setTimeout(() => setSaveBanner(null), 4000);
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  
 
   const handleStartRankingGame = () => {
     console.log('Start Ranking Game clicked!', { selectedSession, currentView });
@@ -366,124 +308,6 @@ export default function PresenterPage() {
     return null;
   };
 
-  const renderMediaPreview = (media: { type: 'video' | 'image', path: string, name: string, heading?: string, fase?: string } | null) => {
-    if (!media) {
-      return (
-        <div className="w-full h-full flex flex-col items-center justify-center text-white">
-          <div className="text-4xl mb-4">📋</div>
-          <div className="text-lg font-bold mb-2">No Next Media</div>
-          <div className="text-sm opacity-80">No upcoming media found</div>
-        </div>
-      );
-    }
-    if (media.type === 'video') {
-      return (
-        <div className="w-full h-full flex flex-col">
-          {/* Heading above video */}
-          {media.heading && (
-            <div className="text-center py-2 px-4 bg-black/20 rounded-t text-white">
-              <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '24px', lineHeight: 1.2 }}>
-                {media.heading}
-              </div>
-              {media.fase && (
-                <div className="text-xs opacity-70">Fase {media.fase}</div>
-              )}
-            </div>
-          )}
-          {/* Video thumbnail/preview */}
-          <div className="flex-1 bg-black rounded flex items-center justify-center relative overflow-hidden">
-            <video 
-              src={media.path} 
-              className="w-full h-full object-cover"
-              muted
-              preload="metadata"
-              poster=""
-              onLoadedMetadata={(e) => {
-                // Seek to first frame to show thumbnail
-                const video = e.currentTarget;
-                video.currentTime = 0.1;
-              }}
-              onError={() => {
-                // Fallback if video can't load
-                console.log('Video preview failed to load:', media.path);
-              }}
-            />
-            <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-              🎬 VIDEO
-            </div>
-          </div>
-          <div className="p-2 text-center">
-            <div className="text-sm font-bold">{media.name}</div>
-            <div className="text-xs opacity-60">{media.path}</div>
-          </div>
-        
-          {/* Motherfile Media Upload & List */}
-          <div className="mt-8 border-t pt-6">
-            <h3 className="font-semibold text-gray-900 mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Motherfile Media
-            </h3>
-            <div className="flex items-center gap-3 mb-4">
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                onChange={(e) => handleUploadMedia(e.target.files)}
-                className="block w-full text-sm text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#0A1752] file:text-white hover:file:bg-[#0A1752]/90"
-              />
-              {isUploading && (
-                <span className="text-sm text-gray-600">Uploading...</span>
-              )}
-            </div>
-            {mediaList.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {mediaList.map((file) => (
-                  <div key={file} className="bg-white border rounded p-2">
-                    <div className="text-xs break-all mb-2" title={file}>{file}</div>
-                    <div className="relative w-full aspect-video bg-black/5 overflow-hidden rounded">
-                      {/* Use img to avoid next/image domain config; URLs come from PocketBase */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={motherfileService.fileUrl(file)} alt={file} className="w-full h-full object-cover" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-gray-600">No media uploaded yet.</div>
-            )}
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="w-full h-full flex flex-col">
-          {/* Heading above image */}
-          {media.heading && (
-            <div className="text-center py-2 px-4 bg-black/20 rounded-t text-white">
-              <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '24px', lineHeight: 1.2 }}>
-                {media.heading}
-              </div>
-              {media.fase && (
-                <div className="text-xs opacity-70">Fase {media.fase}</div>
-              )}
-            </div>
-          )}
-          {/* Image preview */}
-          <div className="flex-1 bg-black rounded flex items-center justify-center relative overflow-hidden">
-            <Image
-              src={media.path}
-              alt={media.name}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="p-2 text-center">
-            <div className="text-sm font-bold">{media.name}</div>
-            <div className="text-xs opacity-60">{media.path}</div>
-          </div>
-        </div>
-      );
-    }
-  };
 
   const handleSessionSelect = async (session: RankingSession) => {
     setSelectedSession(session);
@@ -702,7 +526,6 @@ export default function PresenterPage() {
   }, [getOrderedFasesForGroup]);
 
   const currentVideoRef = useRef<HTMLVideoElement | null>(null);
-  const [isPlaying07, setIsPlaying07] = useState(false);
 
   const formatHeading = (text?: string) => {
     if (!text) return '';
@@ -751,11 +574,6 @@ export default function PresenterPage() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup, hasMediaForFase]);
-
-  // Reset playing flag when fase changes
-  useEffect(() => {
-    setIsPlaying07(false);
-  }, [currentFase]);
 
   // No presenter-side autoplay; Display page handles playback
 
@@ -831,7 +649,6 @@ export default function PresenterPage() {
                                 const v = e.currentTarget;
                                 v.currentTime = 0.01;
                               }}
-                              onEnded={() => setIsPlaying07(false)}
                             />
                           ) : (
                             <div className="absolute inset-0 flex items-center justify-center px-6 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
