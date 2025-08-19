@@ -199,10 +199,10 @@
 
 ## Session Summary
 
-**Last Updated**: 2025-08-18  
-**Version**: 1.7  
-**Status**: Presenter layout full-width with precise proportions; Player onboarding stable  
-**Next Steps**: Implement Presenter "Current/Next" flow for Phase 01 with filename-only headings, keyboard navigation, and Display auto-play
+**Last Updated**: 2025-08-19  
+**Version**: 1.8  
+**Status**: Display media now resolves from Ranking collection first with automatic local `/pics` fallback and visual banner; Presenter & Player stable  
+**Next Steps**: Verify live Display/Presenter sync on production; optionally add Presenter upload to Ranking record or rely on `/pics` files with headings
 
 ### Recent Updates (2025-08-11)
 - ✅ Image delivery: configured `next.config.ts` to allow `next/image` from `pinkmilk.pockethost.io` (PocketBase).

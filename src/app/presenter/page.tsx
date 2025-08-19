@@ -555,20 +555,26 @@ export default function PresenterPage() {
   useEffect(() => {
     if (currentView !== 'game') return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      // Ignore when typing in inputs/textareas/selects or contentEditable
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toLowerCase();
+      const isEditable = !!(target && (target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select'));
+      if (isEditable) return;
+
+      // Support Arrow keys and bracket aliases
+      const isNext = e.key === 'ArrowRight' || e.key === ']';
+      const isPrev = e.key === 'ArrowLeft' || e.key === '[';
+      if (!isNext && !isPrev) return;
+
       e.preventDefault();
-      const prefix = (currentFase.split('/')[0] || '').padStart(2, '0');
-      if (e.key === 'ArrowRight') {
-        // If current fase has media, do not advance on ArrowRight
-        if (hasMediaForFase(currentFase)) {
-          return;
-        }
+      const prefix = (currentFase.split('/')![0] || '').padStart(2, '0');
+      if (isNext) {
         const next = getNextFaseInGroup(currentFase, prefix);
         setCurrentFase(next);
         if (selectedSession) {
           rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => {});
         }
-      } else if (e.key === 'ArrowLeft') {
+      } else if (isPrev) {
         const prev = getPrevFaseInGroup(currentFase, prefix);
         setCurrentFase(prev);
         if (selectedSession) {
@@ -578,7 +584,7 @@ export default function PresenterPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup, hasMediaForFase]);
+  }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
 
   // No presenter-side autoplay; Display page handles playback
 

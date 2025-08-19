@@ -207,5 +207,12 @@ src/
 
 ---
 
-*Last Updated: 2025-07-24*
-*Next Review: After Phase 1 completion*
+## Status Update (2025-08-19)
+
+- Display media pathing updated: ranking collection first, then local `/pics` fallback.
+- Visual "Local file" badge added to Display when fallback is used.
+- Cleaned repo (ignore FCP bundles) and pushed changes; Vercel auto-deploy monitors live at `https://ranking.pinkmilk.eu`.
+- Next: verify Presenter/Display sync with filename-only headings and refine Presenter input UX for selecting `/pics` files.
+
+*Last Updated: 2025-08-19*
+*Next Review: After production verification of Display/Presenter media sync*
