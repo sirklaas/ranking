@@ -21,7 +21,6 @@ export default function DisplayPage() {
     | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
   >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isMuted, setIsMuted] = useState(true);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
 
   // Generate a random 4-digit game code
@@ -140,9 +139,7 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
-      if (e.key === 'm' || e.key === 'M') {
-        setIsMuted((prev) => !prev);
-      }
+      // Removed M to toggle mute/unmute
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -280,18 +277,21 @@ export default function DisplayPage() {
     } catch {}
   }, [currentSession, motherMeta]);
 
-  // Keep video element in sync with mute state and current media
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    try {
-      v.muted = isMuted;
-      v.volume = isMuted ? 0 : 1;
-    } catch {}
-  }, [currentMedia, isMuted]);
+  // Removed mute state syncing; videos play with sound by default
 
-  // Generate QR code URL for joining
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://ranking.pinkmilk.eu/player?code=${gameCode}`)}`;
+  // Generate QR code URL for joining (bigger)
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`https://ranking.pinkmilk.eu/player?code=${gameCode}`)}`;
+
+  // Only show media overlay from fase 01/04 onwards; keep intro screen before that
+  const currentFaseStr = currentSession?.current_fase || '';
+  const allowMediaOverlay = (() => {
+    const m = currentFaseStr.match(/^01\/(\d{2})$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      return n >= 4; // allow from 01/04 and later
+    }
+    return true; // other groups unaffected
+  })();
 
   if (isLoading) {
     return (
@@ -323,7 +323,7 @@ export default function DisplayPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
       {/* Media overlay: plays current fase video when available */}
-      {currentMedia?.type === 'video' && currentMedia.url && (
+      {currentMedia?.type === 'video' && currentMedia.url && allowMediaOverlay && (
         <div className="fixed inset-0 z-50 bg-black">
           <video
             key={currentMedia.url}
@@ -331,7 +331,7 @@ export default function DisplayPage() {
             src={currentMedia.url}
             className="w-full h-full object-contain"
             autoPlay
-            muted={isMuted}
+            muted={false}
             playsInline
             onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
             onPlay={() => console.log('[Display] video play', currentMedia)}
@@ -344,24 +344,7 @@ export default function DisplayPage() {
           <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Fase {currentSession?.current_fase} — {currentMedia.name}
           </div>
-          {currentMedia?.fallbackLocalUrl && currentMedia.url === currentMedia.fallbackLocalUrl && (
-            <div
-              className="absolute top-2 right-3 bg-white/85 text-black px-2 py-0.5 rounded text-xs shadow"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              Local file
-            </div>
-          )}
-          {/* Sound toggle */}
-          <div className="absolute bottom-3 right-3">
-            <button
-              onClick={() => setIsMuted((m) => !m)}
-              className="bg-white/80 text-black px-3 py-1 rounded shadow text-sm hover:bg-white"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              {isMuted ? 'Unmute (M)' : 'Mute (M)'}
-            </button>
-          </div>
+          {/* Removed local-fallback badge and sound toggle */}
         </div>
       )}
       {/* Animated background */}
@@ -400,17 +383,16 @@ export default function DisplayPage() {
           </p>
         </div>
         
-        {/* QR Code - Right side of band */}
+        {/* QR Code - Right side of band (bigger) */}
         <div className="bg-white p-2 rounded-lg shadow-lg">
           <Image
             src={qrCodeUrl}
             alt="Join Game QR Code"
-            width={64}
-            height={64}
-            className="w-16 h-16"
+            width={160}
+            height={160}
+            className="w-40 h-40"
             unoptimized
           />
-          <p className="text-center text-xs font-semibold text-gray-700 mt-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Code: {gameCode}</p>
         </div>
       </div>
       
