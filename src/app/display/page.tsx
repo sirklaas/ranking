@@ -21,6 +21,7 @@ export default function DisplayPage() {
     | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
   >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [needsInteraction, setNeedsInteraction] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
 
   // Generate a random 4-digit game code
@@ -130,6 +131,25 @@ export default function DisplayPage() {
         console.warn('[Display] motherfile GET error', e);
       }
     })();
+
+  // Try to start playback with sound; if blocked (Safari/iOS policy), ask for user interaction
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!currentMedia || currentMedia.type !== 'video' || !allowMediaOverlay || !v) {
+      setNeedsInteraction(false);
+      return;
+    }
+    try {
+      v.muted = false;
+      v.volume = 1;
+      const p = v.play();
+      if (p && typeof (p as Promise<void>).then === 'function') {
+        (p as Promise<void>).then(() => setNeedsInteraction(false)).catch(() => setNeedsInteraction(true));
+      }
+    } catch {
+      setNeedsInteraction(true);
+    }
+  }, [currentMedia, allowMediaOverlay]);
 
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -341,6 +361,19 @@ export default function DisplayPage() {
             }}
             onEnded={() => { console.log('[Display] video ended'); setCurrentMedia(null); }}
           />
+          {needsInteraction && (
+            <button
+              onClick={() => {
+                try {
+                  const v = videoRef.current; if (v) { v.muted = false; v.volume = 1; v.play().then(() => setNeedsInteraction(false)).catch(() => {}); }
+                } catch {}
+              }}
+              className="absolute inset-0 m-auto h-16 w-64 rounded-lg bg-white text-black text-xl font-semibold shadow flex items-center justify-center"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Click to start sound
+            </button>
+          )}
           <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Fase {currentSession?.current_fase} — {currentMedia.name}
           </div>
