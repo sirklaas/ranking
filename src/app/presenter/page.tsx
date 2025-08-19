@@ -492,13 +492,18 @@ export default function PresenterPage() {
 
   const getOrderedFasesForGroup = useCallback((prefix: string) => {
     const headings = getHeadingsSource();
-    return Object.keys(headings)
+    const fromHeadings = Object.keys(headings)
       .filter(k => k.startsWith(prefix + '/'))
       .sort((a, b) => {
         const pa = parseInt(a.split('/')[1] || '0', 10);
         const pb = parseInt(b.split('/')[1] || '0', 10);
         return pa - pb;
       });
+    if (fromHeadings.length > 0) return fromHeadings;
+    // Fallback to predefined list when headings are empty/missing for this group
+    const norm = prefix.replace(/^0+/, '') || prefix; // '01' -> '1'
+    const fg = faseGroups[norm as keyof typeof faseGroups];
+    return fg?.fases || [];
   }, [getHeadingsSource]);
 
   const getMediaForFase = useCallback((faseKey: string) => {
