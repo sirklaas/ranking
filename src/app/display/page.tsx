@@ -206,11 +206,29 @@ export default function DisplayPage() {
     const item = headings[faseKey];
     const fileName = item?.image?.trim();
 
+    const baseUrl =
+      process.env.NEXT_PUBLIC_PB_URL ||
+      process.env.NEXT_PUBLIC_POCKETBASE_URL ||
+      (typeof window !== 'undefined' && window.location?.protocol === 'https:'
+        ? 'https://pinkmilk.pockethost.io'
+        : 'http://127.0.0.1:8090');
+
+    // Helper: prefer Ranking collection file, then local assets, then Motherfile fallback
+    const resolveFromRanking = (name: string) => {
+      if (/^https?:\/\//i.test(name)) return name; // absolute URL
+      if (!currentSession?.id) return '';
+      return `${baseUrl}/api/files/ranking/${currentSession.id}/${encodeURIComponent(name)}`;
+    };
+
+    const resolveFromLocal = (name: string) => {
+      if (!name) return '';
+      return `/pics/${name}`; // requires file to exist under public/pics
+    };
+
     if (!fileName) {
-      // Better diagnostics and fallback to Motherfile fases
+      // No media in ranking headings → Motherfile fallback
       const keys = Object.keys(headings);
       console.log('[Display] No media for fase', faseKey, 'item:', item, 'Available keys:', keys);
-      // Attempt fallback: read motherfile fases
       void (async () => {
         try {
           const mother = await motherfileService.get();
@@ -227,7 +245,7 @@ export default function DisplayPage() {
             return;
           }
           const isVideoMf = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(mfFileName);
-          const urlMf = `${motherMeta.baseUrl}/api/files/${motherMeta.collection}/${motherMeta.recordId}/${encodeURIComponent(mfFileName)}`;
+          const urlMf = `${baseUrl}/api/files/${motherMeta.collection}/${motherMeta.recordId}/${encodeURIComponent(mfFileName)}`;
           console.log('[Display] Resolved media via Motherfile fallback', { faseKey, mfFileName, isVideoMf, urlMf });
           setCurrentMedia({ url: urlMf, name: mfFileName, type: isVideoMf ? 'video' : 'image' });
         } catch (e) {
@@ -237,16 +255,28 @@ export default function DisplayPage() {
       })();
       return;
     }
+
     const isVideo = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(fileName);
-    // Ensure we have motherMeta before creating a PB file URL; otherwise we risk a bare filename path
-    if (!motherMeta) {
-      console.log('[Display] motherMeta not ready; delaying media set for', faseKey, fileName);
-      setCurrentMedia(null);
-      return;
-    }
-    const url = `${motherMeta.baseUrl}/api/files/${motherMeta.collection}/${motherMeta.recordId}/${encodeURIComponent(fileName)}`;
-    console.log('[Display] Resolved media', { faseKey, fileName, isVideo, url, motherMeta });
-    setCurrentMedia({ url, name: fileName, type: isVideo ? 'video' : 'image' });
+    // Primary: Ranking collection file URL
+    const rankingUrl = resolveFromRanking(fileName);
+    const localUrl = resolveFromLocal(fileName);
+
+    // Optimistic set with ranking URL; video/image elements will log error events if truly 404
+    const chosenUrl = rankingUrl || localUrl;
+    console.log('[Display] Resolved media (ranking first)', { faseKey, fileName, isVideo, rankingUrl, localUrl });
+    setCurrentMedia({ url: chosenUrl, name: fileName, type: isVideo ? 'video' : 'image' });
+
+    // Add a light-weight preload hint for smoother start
+    try {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = isVideo ? 'video' : 'image';
+      link.href = chosenUrl;
+      document.head.appendChild(link);
+      setTimeout(() => {
+        try { document.head.removeChild(link); } catch {}
+      }, 5000);
+    } catch {}
   }, [currentSession, motherMeta]);
 
   // Keep video element in sync with mute state and current media

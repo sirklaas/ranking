@@ -271,7 +271,7 @@ export default function PresenterPage() {
           // Determine file type
           const fileName = faseData.image;
           const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
-          const path = fileName.startsWith('/') ? fileName : `/githublocal/pcs/${fileName}`;
+          const path = fileName.startsWith('/') ? fileName : `/pics/${fileName}`;
           
           return {
             type: isVideo ? 'video' as const : 'image' as const,
@@ -294,7 +294,12 @@ export default function PresenterPage() {
         // Determine file type
         const fileName = faseData.image;
         const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
-        const path = motherfileService.fileUrl(fileName);
+        // Prefer ranking collection URL for this session; fallback to local asset path
+        const baseUrl = (process.env.NEXT_PUBLIC_PB_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL ||
+          ((typeof window !== 'undefined' && window.location?.protocol === 'https:') ? 'https://pinkmilk.pockethost.io' : 'http://127.0.0.1:8090')) as string;
+        const rankingUrl = selectedSession?.id ? `${baseUrl}/api/files/ranking/${selectedSession.id}/${encodeURIComponent(fileName)}` : '';
+        const localUrl = fileName.startsWith('/') ? fileName : `/pics/${fileName}`;
+        const path = rankingUrl || localUrl;
         
         return {
           type: isVideo ? 'video' as const : 'image' as const,
