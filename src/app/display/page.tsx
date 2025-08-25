@@ -22,6 +22,7 @@ export default function DisplayPage() {
   >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [needsInteraction, setNeedsInteraction] = useState(false);
+  const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
 
   // Generate a random 4-digit game code
@@ -174,12 +175,12 @@ export default function DisplayPage() {
       v.volume = 1;
       const p = v.play();
       if (p && typeof (p as Promise<void>).then === 'function') {
-        (p as Promise<void>).then(() => setNeedsInteraction(false)).catch(() => setNeedsInteraction(true));
+        (p as Promise<void>).then(() => setNeedsInteraction(false)).catch(() => setNeedsInteraction(!userEnabledSound));
       }
     } catch {
-      setNeedsInteraction(true);
+      setNeedsInteraction(!userEnabledSound);
     }
-  }, [currentMedia, currentSession]);
+  }, [currentMedia, currentSession, userEnabledSound]);
 
   // Subscribe to PocketBase session updates (current_fase changes)
   useEffect(() => {
@@ -522,6 +523,30 @@ export default function DisplayPage() {
         <p>Press &apos;F&apos; for fullscreen</p>
         <p>Press &apos;R&apos; to refresh</p>
       </div>
+
+      {/* Intro-screen sound enable button (only before 01/04 and when no overlay) */}
+      {!allowMediaOverlay && (
+        <button
+          onClick={() => {
+            try {
+              setUserEnabledSound(true);
+              // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported
+              const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+              const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
+              if (AC) {
+                const ctx = new AC();
+                // create and stop a silent buffer
+                const osc = ctx.createOscillator(); osc.frequency.value = 0.0001; osc.connect(ctx.destination); osc.start(0); osc.stop(0.01);
+                if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+              }
+            } catch {}
+          }}
+          className="fixed bottom-4 right-4 z-20 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
+          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+        >
+          Enable sound
+        </button>
+      )}
     </div>
   );
 }

@@ -523,14 +523,24 @@ export default function PresenterPage() {
 
   const getNextFaseInGroup = useCallback((faseKey: string, prefix: string) => {
     const ordered = getOrderedFasesForGroup(prefix);
-    const idx = ordered.indexOf(faseKey);
+    let idx = ordered.indexOf(faseKey);
+    if (idx === -1) {
+      // Fallback: compare numerically on the second component
+      const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
+      idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
+    }
     if (idx === -1) return ordered[0] || faseKey;
     return ordered[idx + 1] || ordered[idx] || faseKey;
   }, [getOrderedFasesForGroup]);
 
   const getPrevFaseInGroup = useCallback((faseKey: string, prefix: string) => {
     const ordered = getOrderedFasesForGroup(prefix);
-    const idx = ordered.indexOf(faseKey);
+    let idx = ordered.indexOf(faseKey);
+    if (idx === -1) {
+      // Fallback: compare numerically on the second component
+      const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
+      idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
+    }
     if (idx === -1) return ordered[0] || faseKey;
     return ordered[idx - 1] || ordered[idx] || faseKey;
   }, [getOrderedFasesForGroup]);
