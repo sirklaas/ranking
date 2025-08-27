@@ -121,30 +121,32 @@
 }
 
 /* Mobile: allow horizontal scroll so holes are not squeezed */
-@media (max-width: 480px) {
+/* Tablets and small laptops */
+@media (max-width: 768px) {
   .planner-canvas {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     touch-action: pan-x pan-y;
   }
-  .grid {
-    min-width: 980px; /* base width for 6 columns */
-  }
+  .grid { width: max-content; min-width: 960px; }
   .day-row,
-  .slot-row {
-    grid-template-columns: repeat(6, 160px); /* fixed column width so holes don’t squeeze */
-  }
+  .slot-row { grid-template-columns: repeat(6, 150px); }
   .task-title { font-size: 18px; }
   .task-body { font-size: 14px; }
 }
 
-/* Ensure small phones definitely get horizontal scroll and non-squeezed columns */
+/* Phones: tighter columns and typography, ensure clean horizontal scroll */
 @media (max-width: 480px) {
-  .planner-canvas { overflow-x: auto; }
-  .grid { width: max-content; min-width: 1120px; }
-  .day-row, .slot-row { grid-template-columns: repeat(6, 160px); }
-  .tray .task { padding: 8px 12px; }
+  .planner-header { padding: 6px 12px; }
+  .planner-canvas { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .grid { width: max-content; min-width: 900px; }
+  .day-row, .slot-row { grid-template-columns: repeat(6, 140px); }
+  .task { padding: 8px 10px; }
+  .task-title { font-size: 16px; }
+  .task-body { font-size: 14px; }
+  .tray { height: 8dvh; }
+  .tray .task { padding: 6px 10px; height: calc(100% - 10px); margin: 5px 0; }
 }
 
 /* iOS safe area support for header and tray */
