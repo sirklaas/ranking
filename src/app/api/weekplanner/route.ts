@@ -10,27 +10,7 @@ function badRequest(msg: string) {
 // Shape stored in PB for a single owner record
 // { ownerId: string, data?: { tasks?: unknown[] } }
 
-// Compute ISO week key like "2025-W35" using Europe/Amsterdam timezone
-function isoWeekKeyEuropeAmsterdam(date = new Date()): string {
-  // Convert to Europe/Amsterdam by formatting parts and reconstructing date
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/Amsterdam',
-    year: 'numeric', month: '2-digit', day: '2-digit'
-  }).formatToParts(date);
-  const y = Number(parts.find(p => p.type === 'year')?.value || date.getUTCFullYear());
-  const m = Number(parts.find(p => p.type === 'month')?.value || (date.getUTCMonth() + 1));
-  const d = Number(parts.find(p => p.type === 'day')?.value || date.getUTCDate());
-  const local = new Date(Date.UTC(y, m - 1, d));
-  // ISO week number
-  const dayNum = (local.getUTCDay() + 6) % 7; // Mon=0..Sun=6
-  const thursday = new Date(local);
-  thursday.setUTCDate(local.getUTCDate() - dayNum + 3);
-  const firstThursday = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 4));
-  const week = 1 + Math.round(((thursday.getTime() - firstThursday.getTime()) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
-  const year = thursday.getUTCFullYear();
-  const ww = String(week).padStart(2, '0');
-  return `${year}-W${ww}`;
-}
+// Legacy week-based storage removed: we only store flat data.tasks now.
 
 export async function GET(req: Request) {
   try {
@@ -44,15 +24,7 @@ export async function GET(req: Request) {
         `ownerId = "${ownerId}"`
       );
       const data = (rec as unknown as { data?: any }).data || {};
-      let tasks: unknown[] = Array.isArray(data?.tasks) ? (data.tasks as unknown[]) : [];
-      // Legacy fallback: data.weeks[currentWeek]?.tasks
-      if ((!tasks || tasks.length === 0) && data && data.weeks && typeof data.weeks === 'object') {
-        const key = isoWeekKeyEuropeAmsterdam();
-        const wk = data.weeks[key];
-        if (wk && Array.isArray(wk.tasks)) {
-          tasks = wk.tasks as unknown[];
-        }
-      }
+      const tasks: unknown[] = Array.isArray(data?.tasks) ? (data.tasks as unknown[]) : [];
       return NextResponse.json(
         { id: (rec as any).id, tasks },
         { headers: { 'Cache-Control': 'no-store' } }
@@ -87,18 +59,13 @@ export async function POST(req: Request) {
       );
     } catch {}
 
-    const weekKey = isoWeekKeyEuropeAmsterdam();
-
     if (rec) {
-      const existingData = (rec.data || {}) as any;
-      const weeks = { ...(existingData.weeks || {}) };
-      const prevWeek = weeks[weekKey] || { meta: { timezone: 'Europe/Amsterdam', weekKey }, tasks: [] };
-      weeks[weekKey] = { ...prevWeek, tasks };
-      const updated = await pb.collection(COLLECTION).update(rec.id, { data: { ...existingData, tasks, weeks } });
+      // Clear any legacy fields by writing only { tasks }
+      const updated = await pb.collection(COLLECTION).update(rec.id, { data: { tasks } });
       return NextResponse.json({ id: updated.id, tasks });
     }
 
-    const created = await pb.collection(COLLECTION).create({ ownerId, data: { tasks, weeks: { [weekKey]: { meta: { timezone: 'Europe/Amsterdam', weekKey }, tasks } } } });
+    const created = await pb.collection(COLLECTION).create({ ownerId, data: { tasks } });
     return NextResponse.json({ id: created.id, tasks });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
