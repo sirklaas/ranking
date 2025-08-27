@@ -20,16 +20,6 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 const SLOTS = Array.from({ length: 8 }, (_, i) => i); // 8 slots, starting 09:00
 const TOTAL_SLOTS = DAYS.length * SLOTS.length; // 48
 
-// Helpers
-const weekStartKey = (d = new Date()) => {
-  // Week starts on Monday
-  const date = new Date(d);
-  const day = (date.getDay() + 6) % 7; // 0=Mon
-  date.setDate(date.getDate() - day);
-  date.setHours(0, 0, 0, 0);
-  return date.toISOString().slice(0, 10);
-};
-
 // Compute ISO week key like 2025-W34 (timezone-agnostic)
 const isoWeekKey = (d = new Date()) => {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -43,7 +33,7 @@ const isoWeekKey = (d = new Date()) => {
 };
 
 const STORAGE_KEY = "planner.tasks.v1";
-const WEEK_KEY = "planner.weekStart";
+// removed WEEK_KEY (no week rollover)
 const OWNER_KEY = "planner.ownerId";
 // const WEEK_ID_KEY_PREFIX = "planner.weekId:"; // key = `${WEEK_ID_KEY_PREFIX}${ownerId}:${weekISO}`
 

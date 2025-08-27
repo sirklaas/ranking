@@ -21,7 +21,7 @@ export default function DisplayPage() {
     | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
   >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [needsInteraction, setNeedsInteraction] = useState(false);
+  // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
 
@@ -167,7 +167,6 @@ export default function DisplayPage() {
     })();
 
     if (!currentMedia || currentMedia.type !== 'video' || !allow || !v) {
-      setNeedsInteraction(false);
       return;
     }
     try {
@@ -175,10 +174,10 @@ export default function DisplayPage() {
       v.volume = 1;
       const p = v.play();
       if (p && typeof (p as Promise<void>).then === 'function') {
-        (p as Promise<void>).then(() => setNeedsInteraction(false)).catch(() => setNeedsInteraction(!userEnabledSound));
+        (p as Promise<void>).then(() => {/* ok */}).catch(() => {/* blocked if not userEnabledSound */});
       }
     } catch {
-      setNeedsInteraction(!userEnabledSound);
+      // ignore; overlay is on intro screen only
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 

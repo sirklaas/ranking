@@ -490,22 +490,19 @@ export default function PresenterPage() {
     return Object.keys(editingHeadings).length ? editingHeadings : parsed;
   }, [selectedSession, editingHeadings]);
 
+  // Ordered fase keys for a group prefix like '01', '07', etc.
   const getOrderedFasesForGroup = useCallback((prefix: string) => {
-    const headings = getHeadingsSource();
-    const fromHeadings = Object.keys(headings)
-      .filter(k => k.startsWith(prefix + '/'))
-      .sort((a, b) => {
-        const pa = parseInt(a.split('/')[1] || '0', 10);
-        const pb = parseInt(b.split('/')[1] || '0', 10);
-        return pa - pb;
-      });
-    if (fromHeadings.length > 0) return fromHeadings;
-    // Fallback to predefined list when headings are empty/missing for this group
-    const norm = prefix.replace(/^0+/, '') || prefix; // '01' -> '1'
-    const fg = faseGroups[norm as keyof typeof faseGroups];
-    return fg?.fases || [];
+    const src = getHeadingsSource();
+    const keys = Object.keys(src).filter((k) => k.startsWith(`${prefix}/`));
+    keys.sort((a, b) => {
+      const na = parseInt(a.split('/')[1] || '0', 10);
+      const nb = parseInt(b.split('/')[1] || '0', 10);
+      return na - nb;
+    });
+    return keys;
   }, [getHeadingsSource]);
 
+  // Build media descriptor for a specific fase key from headings/motherfile
   const getMediaForFase = useCallback((faseKey: string) => {
     const headings = getHeadingsSource();
     const item = headings[faseKey];
@@ -516,7 +513,7 @@ export default function PresenterPage() {
       type: isVideo ? 'video' as const : 'image' as const,
       path: motherfileService.fileUrl(fileName),
       name: fileName,
-      heading: (item.heading || `Fase ${faseKey}`),
+      heading: item.heading || `Fase ${faseKey}`,
       fase: faseKey,
     };
   }, [getHeadingsSource]);

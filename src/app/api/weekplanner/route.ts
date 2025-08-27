@@ -21,8 +21,8 @@ export async function GET(req: Request) {
       const rec = await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}"`
       );
-      const data = (rec as unknown as { data?: { tasks?: unknown[] } }).data || {};
-      const tasks = Array.isArray((data as any).tasks) ? (data as any).tasks : [];
+      const container = (rec as unknown as { data?: { tasks?: unknown[] } }).data;
+      const tasks: unknown[] = Array.isArray(container?.tasks) ? (container?.tasks as unknown[]) : [];
       return NextResponse.json(
         { id: rec.id, tasks },
         { headers: { 'Cache-Control': 'no-store' } }
