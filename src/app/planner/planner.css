@@ -152,7 +152,7 @@
   .tray { height: 8dvh; }
   .tray .task { padding: 6px 10px; height: calc(100% - 10px); margin: 5px 0; }
   /* Slightly larger mid split on phones */
-  .grid > .slot-row:nth-child(6) { margin-top: 16px; }
+  .grid > .slot-row:nth-child(8) { margin-top: 16px; }
 }
 
 /* iOS safe area support for header and tray */
@@ -190,8 +190,9 @@
 }
 
 /* Add a little extra space between the first 4 holes and the last 4 holes */
-/* day-row is the first child; slot rows start at child 2. The 5th slot row is child 6. */
-.grid > .slot-row:nth-child(6) {
+/* grid children: red-line (1), time-badge (2), day-row (3), then slot rows start at child 4.
+   Therefore the 5th slot row is child 8. */
+.grid > .slot-row:nth-child(8) {
   margin-top: 12px;
 }
 
