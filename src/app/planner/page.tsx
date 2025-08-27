@@ -376,13 +376,13 @@ export default function PlannerPage() {
               style={{
                 padding: '3px 10px',
                 borderRadius: 6,
-                border: ownerId === 'klaas' ? '2px solid #0A1752' : '1px solid #666',
+                border: ownerId === 'klaas' ? '2px solid #FFFFFF' : '1px solid #666',
                 background: ownerId === 'klaas' ? '#0A1752' : (loadingOwner ? 'rgba(240,240,240,0.7)' : 'rgba(240,240,240,0.9)'),
                 backdropFilter: ownerId === 'klaas' ? 'none' : 'blur(2px)',
                 color: ownerId === 'klaas' ? '#fff' : '#222',
-                fontWeight: 600,
+                fontWeight: ownerId === 'klaas' ? 500 : 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
-                boxShadow: ownerId === 'klaas' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
+                boxShadow: ownerId === 'klaas' ? '0 0 0 2px #0A1752, 0 0 0 4px rgba(10,23,82,0.15)' : 'none',
                 cursor: ownerId === 'klaas' || loadingOwner ? 'not-allowed' : 'pointer',
               }}
               aria-busy={loadingOwner ? true : undefined}
@@ -396,13 +396,13 @@ export default function PlannerPage() {
               style={{
                 padding: '3px 10px',
                 borderRadius: 6,
-                border: ownerId === 'liza' ? '2px solid #0A1752' : '1px solid #666',
+                border: ownerId === 'liza' ? '2px solid #FFFFFF' : '1px solid #666',
                 background: ownerId === 'liza' ? '#0A1752' : (loadingOwner ? 'rgba(240,240,240,0.7)' : 'rgba(240,240,240,0.9)'),
                 backdropFilter: ownerId === 'liza' ? 'none' : 'blur(2px)',
                 color: ownerId === 'liza' ? '#fff' : '#222',
-                fontWeight: 600,
+                fontWeight: ownerId === 'liza' ? 500 : 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
-                boxShadow: ownerId === 'liza' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
+                boxShadow: ownerId === 'liza' ? '0 0 0 2px #0A1752, 0 0 0 4px rgba(10,23,82,0.15)' : 'none',
                 cursor: ownerId === 'liza' || loadingOwner ? 'not-allowed' : 'pointer',
               }}
               aria-busy={loadingOwner ? true : undefined}

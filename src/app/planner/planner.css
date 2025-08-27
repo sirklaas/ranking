@@ -142,11 +142,17 @@
   .planner-canvas { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .grid { width: max-content; min-width: 900px; }
   .day-row, .slot-row { grid-template-columns: repeat(6, 140px); }
-  .task { padding: 8px 10px; }
+  /* Make inputs span full hole width: remove outer card padding */
+  .task { padding: 0; }
+  /* Apply internal spacing on fields, maintain 100% width */
+  .task-content { padding: 8px 10px; width: 100%; box-sizing: border-box; }
+  .task-title, .task-body, .task-input { width: 100%; box-sizing: border-box; }
   .task-title { font-size: 16px; }
   .task-body { font-size: 14px; }
   .tray { height: 8dvh; }
   .tray .task { padding: 6px 10px; height: calc(100% - 10px); margin: 5px 0; }
+  /* Slightly larger mid split on phones */
+  .grid > .slot-row:nth-child(6) { margin-top: 16px; }
 }
 
 /* iOS safe area support for header and tray */
@@ -181,6 +187,12 @@
   grid-template-columns: repeat(6, var(--day-w));
   gap: var(--gap);
   min-height: 0;
+}
+
+/* Add a little extra space between the first 4 holes and the last 4 holes */
+/* day-row is the first child; slot rows start at child 2. The 5th slot row is child 6. */
+.grid > .slot-row:nth-child(6) {
+  margin-top: 12px;
 }
 
 /* Deep cutout holes */
