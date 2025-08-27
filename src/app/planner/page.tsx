@@ -328,6 +328,7 @@ export default function PlannerPage() {
     try { localStorage.setItem(OWNER_KEY, owner); } catch {}
     // Reset last saved hash to ensure proper change detection after switch
     lastSavedHashRef.current = null;
+    console.log('[planner] switchOwner ->', owner);
     setLoadingOwner(true);
     setOwnerId(owner);
   };
@@ -376,8 +377,11 @@ export default function PlannerPage() {
                 fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 boxShadow: ownerId === 'klaas' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
+                cursor: loadingOwner ? 'not-allowed' : 'pointer',
               }}
-            >Klaas</button>
+              aria-busy={loadingOwner ? true : undefined}
+              type="button"
+            >{ownerId === 'klaas' && loadingOwner ? 'Klaas…' : 'Klaas'}</button>
             <button
               className="owner-btn"
               onClick={() => switchOwner('liza')}
@@ -393,8 +397,11 @@ export default function PlannerPage() {
                 fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 boxShadow: ownerId === 'liza' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
+                cursor: loadingOwner ? 'not-allowed' : 'pointer',
               }}
-            >Liza</button>
+              aria-busy={loadingOwner ? true : undefined}
+              type="button"
+            >{ownerId === 'liza' && loadingOwner ? 'Liza…' : 'Liza'}</button>
           </div>
           {/* Home link removed as requested */}
         </div>
