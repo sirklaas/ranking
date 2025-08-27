@@ -373,19 +373,7 @@ export default function DisplayPage() {
             }}
             onEnded={() => { console.log('[Display] video ended'); setCurrentMedia(null); }}
           />
-          {needsInteraction && (
-            <button
-              onClick={() => {
-                try {
-                  const v = videoRef.current; if (v) { v.muted = false; v.volume = 1; v.play().then(() => setNeedsInteraction(false)).catch(() => {}); }
-                } catch {}
-              }}
-              className="absolute bottom-4 right-4 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              Tap to enable sound
-            </button>
-          )}
+          {/* Removed in-video needsInteraction button; sound enable is provided on intro screen */}
           <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Fase {currentSession?.current_fase} — {currentMedia.name}
           </div>
