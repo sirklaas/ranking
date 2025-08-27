@@ -126,11 +126,13 @@ export default function PlannerPage() {
   // Load via server API (overrides localStorage if found)
   useEffect(() => {
     const abort: { canceled: boolean } = { canceled: false };
+    const controller = new AbortController();
+    const t = window.setTimeout(() => controller.abort(), 5000);
     (async () => {
       try {
         if (!ownerId) return;
         setLoadingOwner(true);
-        const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}`, { cache: 'no-store' });
+        const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}`, { cache: 'no-store', signal: controller.signal });
         const json = await res.json();
         const rec = json && typeof json === 'object' ? json as { id?: string | null; tasks?: unknown } : null;
         if (abort.canceled) return;
@@ -147,13 +149,17 @@ export default function PlannerPage() {
           } as Task;
         });
         setTasks(parsed.length ? parsed : [{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
-      } catch {
-        // ignore; stay on local cache
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') {
+          console.warn('[planner] owner fetch aborted (timeout)');
+        }
+        // ignore other errors; stay on local cache
       } finally {
+        window.clearTimeout(t);
         if (!abort.canceled) setLoadingOwner(false);
       }
     })();
-    return () => { abort.canceled = true; };
+    return () => { abort.canceled = true; controller.abort(); window.clearTimeout(t); };
   }, [ownerId]);
 
 
@@ -366,7 +372,7 @@ export default function PlannerPage() {
               className="owner-btn"
               onClick={() => switchOwner('klaas')}
               aria-pressed={ownerId === 'klaas'}
-              disabled={loadingOwner}
+              disabled={ownerId === 'klaas' || loadingOwner}
               style={{
                 padding: '3px 10px',
                 borderRadius: 6,
@@ -377,7 +383,7 @@ export default function PlannerPage() {
                 fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 boxShadow: ownerId === 'klaas' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
-                cursor: loadingOwner ? 'not-allowed' : 'pointer',
+                cursor: ownerId === 'klaas' || loadingOwner ? 'not-allowed' : 'pointer',
               }}
               aria-busy={loadingOwner ? true : undefined}
               type="button"
@@ -386,7 +392,7 @@ export default function PlannerPage() {
               className="owner-btn"
               onClick={() => switchOwner('liza')}
               aria-pressed={ownerId === 'liza'}
-              disabled={loadingOwner}
+              disabled={ownerId === 'liza' || loadingOwner}
               style={{
                 padding: '3px 10px',
                 borderRadius: 6,
@@ -397,7 +403,7 @@ export default function PlannerPage() {
                 fontWeight: 600,
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 boxShadow: ownerId === 'liza' ? '0 0 0 2px rgba(10,23,82,0.25)' : 'none',
-                cursor: loadingOwner ? 'not-allowed' : 'pointer',
+                cursor: ownerId === 'liza' || loadingOwner ? 'not-allowed' : 'pointer',
               }}
               aria-busy={loadingOwner ? true : undefined}
               type="button"
