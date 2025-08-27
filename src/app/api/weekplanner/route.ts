@@ -9,6 +9,8 @@ function badRequest(msg: string) {
 
 // Shape stored in PB for a single owner record
 // { ownerId: string, data?: { tasks?: unknown[] } }
+type PlannerData = { tasks?: unknown[] };
+type PBRecord = { id: string; data?: PlannerData };
 
 // Legacy week-based storage removed: we only store flat data.tasks now.
 
@@ -20,13 +22,13 @@ export async function GET(req: Request) {
 
     const pb = await getServerPocketBase();
     try {
-      const rec = await pb.collection(COLLECTION).getFirstListItem(
+      const rec = (await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}"`
-      );
-      const data = (rec as unknown as { data?: any }).data || {};
-      const tasks: unknown[] = Array.isArray(data?.tasks) ? (data.tasks as unknown[]) : [];
+      )) as PBRecord;
+      const data: PlannerData = rec.data || {};
+      const tasks: unknown[] = Array.isArray(data.tasks) ? (data.tasks as unknown[]) : [];
       return NextResponse.json(
-        { id: (rec as any).id, tasks },
+        { id: rec.id, tasks },
         { headers: { 'Cache-Control': 'no-store' } }
       );
     } catch {
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
     const pb = await getServerPocketBase();
 
     // Try find existing owner record
-    let rec: { id: string; data?: { tasks?: unknown[] } } | null = null;
+    let rec: PBRecord | null = null;
     try {
       rec = await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}"`
@@ -61,11 +63,11 @@ export async function POST(req: Request) {
 
     if (rec) {
       // Clear any legacy fields by writing only { tasks }
-      const updated = await pb.collection(COLLECTION).update(rec.id, { data: { tasks } });
+      const updated = (await pb.collection(COLLECTION).update(rec.id, { data: { tasks } })) as PBRecord;
       return NextResponse.json({ id: updated.id, tasks });
     }
 
-    const created = await pb.collection(COLLECTION).create({ ownerId, data: { tasks } });
+    const created = (await pb.collection(COLLECTION).create({ ownerId, data: { tasks } })) as PBRecord;
     return NextResponse.json({ id: created.id, tasks });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
