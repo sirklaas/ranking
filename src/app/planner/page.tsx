@@ -140,31 +140,23 @@ export default function PlannerPage() {
       try {
         if (!ownerId) return;
         setLoadingOwner(true);
-        const wk = isoWeekKey();
-        const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}&weekKey=${encodeURIComponent(wk)}`, { cache: 'no-store' });
+        const res = await fetch(`/api/weekplanner?owner=${encodeURIComponent(ownerId)}`, { cache: 'no-store' });
         const json = await res.json();
-        const rec = json && typeof json === 'object' ? json as { id?: string | null; week?: unknown } : null;
+        const rec = json && typeof json === 'object' ? json as { id?: string | null; tasks?: unknown } : null;
         if (abort.canceled) return;
-        if (rec && rec.week && typeof rec.week === "object") {
-          const payload = rec.week as unknown as { tasks?: unknown };
-          if (Array.isArray(payload.tasks)) {
-            const parsed: Task[] = (payload.tasks as unknown[]).map((t) => {
-              const obj = t as Partial<Task> & Record<string, unknown>;
-              return {
-                id: typeof obj.id === "string" ? obj.id : crypto.randomUUID(),
-                title: typeof obj.title === "string" ? obj.title : "",
-                body: typeof obj.body === "string" ? obj.body : "",
-                day: (typeof obj.day === "number" ? (obj.day as number) : null) as DayIndex | null,
-                slot: (typeof obj.slot === "number" ? (obj.slot as number) : null),
-                completed: Boolean(obj.completed),
-              } as Task;
-            });
-            setTasks(parsed.length ? parsed : [{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
-          }
-        } else {
-          // No server data yet; reset to a clean slate for this owner/week
-          setTasks([{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
-        }
+        const arr = rec && Array.isArray(rec.tasks) ? (rec.tasks as unknown[]) : [];
+        const parsed: Task[] = arr.map((t) => {
+          const obj = t as Partial<Task> & Record<string, unknown>;
+          return {
+            id: typeof obj.id === "string" ? obj.id : crypto.randomUUID(),
+            title: typeof obj.title === "string" ? obj.title : (typeof obj.text === "string" ? obj.text : ""),
+            body: typeof obj.body === "string" ? obj.body : "",
+            day: (typeof obj.day === "number" ? (obj.day as number) : null) as DayIndex | null,
+            slot: (typeof obj.slot === "number" ? (obj.slot as number) : null),
+            completed: Boolean(obj.completed),
+          } as Task;
+        });
+        setTasks(parsed.length ? parsed : [{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }]);
       } catch {
         // ignore; stay on local cache
       } finally {
@@ -174,29 +166,6 @@ export default function PlannerPage() {
     return () => { abort.canceled = true; };
   }, [ownerId]);
 
-  // Weekly rollover
-  useEffect(() => {
-    const currentWeek = weekStartKey();
-    const storedWeek = localStorage.getItem(WEEK_KEY);
-    if (!storedWeek) {
-      localStorage.setItem(WEEK_KEY, currentWeek);
-      return;
-    }
-    if (storedWeek !== currentWeek) {
-      // Move unfinished tasks to Monday, keep slot
-      setTasks((prev) => {
-        const moved = prev
-          .filter((t) => !t.completed && t.slot !== null)
-          .map((t) => ({ ...t, day: 0 as DayIndex }));
-        const tray = prev.filter((t) => t.slot === null && !t.completed);
-        const next = [...moved, ...tray];
-        localStorage.setItem(WEEK_KEY, currentWeek);
-        return next.length > 0
-          ? next
-          : [{ id: crypto.randomUUID(), title: "", body: "", day: null, slot: null }];
-      });
-    }
-  }, []);
 
   // Persist locally and upsert via server API (debounced, skip if unchanged)
   useEffect(() => {
@@ -206,15 +175,7 @@ export default function PlannerPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
     } catch {}
 
-    const weekKey = isoWeekKey();
-    const payload = {
-      meta: {
-        weekKey,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      tasks,
-    };
-    const hash = JSON.stringify({ ownerId, weekKey, tasks });
+    const hash = JSON.stringify({ ownerId, tasks });
 
     // Cancel previous pending save
     if (saveTimerRef.current) {
@@ -235,7 +196,7 @@ export default function PlannerPage() {
         const res = await fetch('/api/weekplanner', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ownerId, weekKey, weekData: payload })
+          body: JSON.stringify({ ownerId, tasks })
         });
         if (!res.ok) throw new Error(`Save failed: ${res.status}`);
         await res.json();
@@ -255,12 +216,12 @@ export default function PlannerPage() {
     };
   }, [tasks, ownerId, loadingOwner]);
 
-  // Red line positioning (represents current time 09:00-17:00)
+  // Red line positioning (represents current time, clamped 09:00-18:00)
   useEffect(() => {
     const compute = () => {
       const now = new Date();
       const startH = 9; // 09:00
-      const endH = 17; // exclusive upper bound (8 slots)
+      const endH = 18; // clamp to 18:00 bottom
       const h = now.getHours() + now.getMinutes() / 60;
       const clamped = Math.max(startH, Math.min(endH, h));
       const hourIndex = clamped - startH; // 0..8
@@ -395,7 +356,19 @@ export default function PlannerPage() {
         </div>
       )}
       <header className="planner-header">
-        <div className="title">Weekly Planner</div>
+        <div className="title" style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span>Weekly Planner</span>
+          <span style={{
+            fontFamily: 'Barlow Semi Condensed, sans-serif',
+            fontWeight: 600,
+            fontSize: 14,
+            padding: '2px 6px',
+            border: '1px solid #fff',
+            borderRadius: 6,
+            color: '#fff',
+            background: 'rgba(255,255,255,0.12)'
+          }}>W{isoWeekKey().split('-W')[1]}</span>
+        </div>
         <div className="meta">
           <div className="owner-buttons" style={{ display: 'flex', gap: 8 }}>
             <button
@@ -445,11 +418,27 @@ export default function PlannerPage() {
           <div className="time-badge" aria-hidden style={{ top: redLineTop }}>{timeLabel}</div>
           {/* Day headers */}
           <div className="day-row">
-            {DAYS.map((d) => (
-              <div key={d} className="day-col day-header">
-                {d}
-              </div>
-            ))}
+            {DAYS.map((d, idx) => {
+              const jsDay = new Date().getDay(); // 0=Sun..6=Sat
+              const currentIdx = (jsDay + 6) % 7; // 0=Mon..6=Sun
+              const isCurrent = currentIdx === idx; // only Mon..Sat columns exist
+              return (
+                <div
+                  key={d}
+                  className="day-col day-header"
+                  style={isCurrent ? {
+                    border: '2px solid #fff',
+                    fontWeight: 600,
+                    color: '#fff',
+                    borderRadius: 6,
+                    textShadow: '0 1px 1px rgba(0,0,0,0.25)',
+                    fontFamily: 'Barlow Semi Condensed, sans-serif',
+                  } : {}}
+                >
+                  {d}
+                </div>
+              );
+            })}
           </div>
 
           {/* Slots rows */}

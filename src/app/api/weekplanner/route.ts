@@ -7,31 +7,29 @@ function badRequest(msg: string) {
   return NextResponse.json({ error: msg }, { status: 400 });
 }
 
-// Shape stored in PB for a single owner record (compatible with existing schema)
-// { ownerId: string, data?: { weeks?: { [weekKey: string]: unknown } } }
+// Shape stored in PB for a single owner record
+// { ownerId: string, data?: { tasks?: unknown[] } }
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const ownerId = searchParams.get('owner') || searchParams.get('ownerId');
-    const weekKey = searchParams.get('weekKey'); // e.g. 2025-W34
-    if (!ownerId || !weekKey) return badRequest('Missing ownerId or weekKey');
+    if (!ownerId) return badRequest('Missing ownerId');
 
     const pb = await getServerPocketBase();
     try {
       const rec = await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}"`
       );
-      const container = (rec as unknown as { data?: { weeks?: Record<string, unknown> } }).data || {};
-      const weeks = (container.weeks || {}) as Record<string, unknown>;
-      const weekData = weeks[weekKey] ?? null;
+      const data = (rec as unknown as { data?: { tasks?: unknown[] } }).data || {};
+      const tasks = Array.isArray((data as any).tasks) ? (data as any).tasks : [];
       return NextResponse.json(
-        { id: rec.id, week: weekData },
+        { id: rec.id, tasks },
         { headers: { 'Cache-Control': 'no-store' } }
       );
     } catch {
       return NextResponse.json(
-        { id: null, week: null },
+        { id: null, tasks: [] },
         { headers: { 'Cache-Control': 'no-store' } }
       );
     }
@@ -44,16 +42,15 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const ownerId: string | undefined = body?.ownerId;
-    const weekKey: string | undefined = body?.weekKey; // e.g. 2025-W34
-    const weekData = body?.weekData; // arbitrary payload for that week
-    if (!ownerId || !weekKey || typeof weekData === 'undefined') {
-      return badRequest('Missing ownerId, weekKey or weekData');
+    const tasks: unknown[] | undefined = body?.tasks;
+    if (!ownerId || !Array.isArray(tasks)) {
+      return badRequest('Missing ownerId or invalid tasks');
     }
 
     const pb = await getServerPocketBase();
 
     // Try find existing owner record
-    let rec: { id: string; data?: { weeks?: Record<string, unknown> } } | null = null;
+    let rec: { id: string; data?: { tasks?: unknown[] } } | null = null;
     try {
       rec = await pb.collection(COLLECTION).getFirstListItem(
         `ownerId = "${ownerId}"`
@@ -61,15 +58,13 @@ export async function POST(req: Request) {
     } catch {}
 
     if (rec) {
-      const existingData = (rec.data || {}) as { weeks?: Record<string, unknown> };
-      const existingWeeks = (existingData.weeks || {}) as Record<string, unknown>;
-      const nextWeeks = { ...existingWeeks, [weekKey]: weekData } as Record<string, unknown>;
-      const updated = await pb.collection(COLLECTION).update(rec.id, { data: { ...existingData, weeks: nextWeeks } });
-      return NextResponse.json({ id: updated.id, week: nextWeeks[weekKey] });
+      const existingData = (rec.data || {}) as { tasks?: unknown[] };
+      const updated = await pb.collection(COLLECTION).update(rec.id, { data: { ...existingData, tasks } });
+      return NextResponse.json({ id: updated.id, tasks });
     }
 
-    const created = await pb.collection(COLLECTION).create({ ownerId, data: { weeks: { [weekKey]: weekData } } });
-    return NextResponse.json({ id: created.id, week: weekData });
+    const created = await pb.collection(COLLECTION).create({ ownerId, data: { tasks } });
+    return NextResponse.json({ id: created.id, tasks });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
