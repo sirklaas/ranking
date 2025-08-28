@@ -354,6 +354,80 @@
   left: calc(16px + ((100% - 32px - 5 * var(--gap)) / 6) * 3 + var(--gap) * 2.5);
 }
 
+/* Owner selection popup */
+.owner-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.owner-popup {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,240,240,0.95));
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  text-align: center;
+  min-width: 300px;
+}
+
+.owner-title {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 24px;
+  font-weight: 300;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+}
+
+.owner-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.owner-btn {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #0A1752;
+  color: white;
+  cursor: pointer;
+  transition: all 150ms ease;
+  min-width: 80px;
+}
+
+.owner-btn:hover {
+  background: #0d1d63;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 23, 82, 0.3);
+}
+
+.owner-switch {
+  font-family: 'Barlow Semi Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: all 150ms ease;
+  backdrop-filter: blur(2px);
+}
+
+.owner-switch:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.5);
+}
+
 /* Scrollbars subtle */
 .planner-canvas::-webkit-scrollbar { height: 10px; width: 10px; }
 .planner-canvas::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 6px; }
