@@ -2,9 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Live Audience Voting</title>
+    <!-- Barlow Semi Condensed Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Barlow Semi Condensed', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
     <!-- Library for parsing Excel files -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <!-- PocketBase SDK -->
@@ -41,7 +56,7 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/votes/assets/index-DcT2AK1g.js"></script>
+  <script type="module" crossorigin src="/votes/assets/index-VoN60VEe.js"></script>
 </head>
   <body class="bg-gray-900 text-white antialiased">
     <div id="root"></div>
