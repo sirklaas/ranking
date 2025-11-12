@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Audience Voting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Library for parsing Excel files -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- PocketBase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
+
+<style>
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+      100% { transform: translateY(0px); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 0.7; transform: scale(1); }
+    }
+    .animate-float {
+      animation-name: float;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-in-out;
+    }
+    .animate-fade-in {
+      animation-name: fadeIn;
+      animation-fill-mode: forwards;
+      animation-timing-function: ease-out;
+    }
+  </style>
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/votes/assets/index-BAV6KAXe.js"></script>
+</head>
+  <body class="bg-gray-900 text-white antialiased">
+    <div id="root"></div>
+  </body>
+</html>
