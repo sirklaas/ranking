@@ -210,10 +210,10 @@ export const rankingService = {
   },
 
   // Subscribe to specific session updates
-  async subscribeToSession(id: string, callback: (data: any) => void) {
+  async subscribeToSession(id: string, callback: (data: Record<string, unknown>) => void) {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
-    return await pb.collection('ranking').subscribe(id, (e) => callback(e.record));
+    return await pb.collection('ranking').subscribe(id, (e) => callback(e.record as Record<string, unknown>));
   },
 
   // Search sessions by show name or city

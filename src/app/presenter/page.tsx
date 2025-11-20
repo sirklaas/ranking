@@ -6,10 +6,9 @@ import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
 import { teamService, faseService, rankingService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
 import '@/modules/fases/auto-register';
-import { EliminationState, EliminationOption } from '@/types';
+import { EliminationState } from '@/types';
 import * as eliminationLogic from '@/modules/elimination/logic';
 import { DotsTimer } from '@/components/elimination/DotsTimer';
-import { BlueNeonTimer } from '@/components/elimination/BlueNeonTimer';
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');

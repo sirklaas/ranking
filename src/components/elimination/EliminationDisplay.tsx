@@ -1,6 +1,6 @@
 import React from 'react';
-import { EliminationOption, EliminationState } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { EliminationState } from '@/types';
+import { motion } from 'framer-motion';
 import { BlueNeonTimer } from './BlueNeonTimer';
 
 interface EliminationDisplayProps {

@@ -46,103 +46,6 @@ export default function PlayerPage() {
   const [eliminationState, setEliminationState] = useState<EliminationState | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
 
-  // Subscribe to session updates for Elimination Game
-  useEffect(() => {
-    if (!currentSession) return;
-
-    // Initial parse
-    if (currentSession.elimination_state) {
-      try {
-        setEliminationState(JSON.parse(currentSession.elimination_state));
-      } catch (e) {
-        console.error("Failed to parse elimination state", e);
-      }
-    }
-
-    const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: any) => {
-      if (data.elimination_state) {
-        try {
-          const newState = JSON.parse(data.elimination_state);
-          setEliminationState(newState);
-
-          // Reset hasVoted when starting a new round or new voting session
-          if (newState.status === 'waiting') {
-            setHasVoted(false);
-          }
-        } catch (e) {
-          console.error("Failed to parse elimination state update", e);
-        }
-      }
-      // Also update current fase if changed
-      if (data.current_fase) {
-        setCurrentSession((prev: RankingSession | null) => prev ? { ...prev, current_fase: data.current_fase } : null);
-      }
-    });
-
-    return () => {
-      unsubscribe.then((unsub: any) => unsub());
-    };
-  }, [currentSession?.id]);
-
-  // Render Elimination Game View if current fase starts with '02'
-  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
-    return (
-      <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
-        {/* Sticky Header with Logo and DotsTimer */}
-        <div className="sticky top-0 z-50 bg-[#0A1752] border-b border-blue-900 shadow-lg">
-          <div className="flex justify-center p-2">
-            <Image
-              src="/assets/ranking_logo.webp"
-              alt="Ranking Logo"
-              width={120}
-              height={60}
-              className="h-12 w-auto object-contain"
-            />
-          </div>
-
-          {/* DOTS TIMER - STICKY */}
-          <div className="px-4 pb-2">
-            <DotsTimer
-              duration={eliminationState.timerDuration || 20}
-              startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
-            />
-          </div>
-        </div>
-
-        {/* Main Voting Content */}
-        <div className="flex-1 p-4">
-          <EliminationVoting
-            options={eliminationState.options.filter(opt => !opt.eliminated)}
-            isVotingOpen={eliminationState.status === 'voting'}
-            hasVoted={hasVoted}
-            onVote={async (optionId) => {
-              if (currentSession && !hasVoted) {
-                setHasVoted(true);
-                // Optimistic update locally? Or just call logic
-                // For now, call logic which updates PB
-                // Note: In a real app with many players, we wouldn't update the session directly from every player.
-                // We would create a 'submission' record. 
-                // But adhering to the "minimize PB usage" and "MVP" logic from before:
-                // We will just call the logic.ts function which updates the session.
-                // WAIT: If 100 players update the session at once, it will race.
-                // The user said "minimize intensive PocketBase usage".
-                // Updating the session 100 times is intensive.
-                // Better approach for MVP: Just show the UI, let the presenter control the state.
-                // But players need to VOTE.
-                // Let's use the 'submitVote' logic but maybe we should rethink the backend part later.
-                // For now, I will implement the UI.
-
-                // Actually, logic.ts submitVote DOES update the session.
-                // Let's assume for this task we just hook it up.
-                await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId);
-              }
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
   // Load PocketBase session ONCE (for team members and links) - no polling
   useEffect(() => {
     const loadSessionData = async () => {
@@ -183,6 +86,8 @@ export default function PlayerPage() {
   const animatedKeysRef = useRef<Set<string>>(new Set());
   const startedKeysRef = useRef<Set<string>>(new Set());
   const [currentHeadingKey, setCurrentHeadingKey] = useState<string>('');
+  const [popupFadingOut, setPopupFadingOut] = useState(false);
+  const [welcomePopupFadingOut, setWelcomePopupFadingOut] = useState(false);
 
   // Update heading when phase or motherfile changes – guard to avoid redundant updates
   const lastHeadingRef = useRef<string>('');
@@ -233,8 +138,87 @@ export default function PlayerPage() {
     setIsLoading(false);
   };
 
-  const [popupFadingOut, setPopupFadingOut] = useState(false);
-  const [welcomePopupFadingOut, setWelcomePopupFadingOut] = useState(false);
+  // Subscribe to session updates for Elimination Game
+  useEffect(() => {
+    if (!currentSession) return;
+
+    // Initial parse
+    if (currentSession.elimination_state) {
+      try {
+        setEliminationState(JSON.parse(currentSession.elimination_state));
+      } catch (e) {
+        console.error("Failed to parse elimination state", e);
+      }
+    }
+
+    const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
+      if (data.elimination_state) {
+        try {
+          const newState = JSON.parse(data.elimination_state as string);
+          setEliminationState(newState);
+
+          // Reset hasVoted when starting a new round or new voting session
+          if (newState.status === 'waiting') {
+            setHasVoted(false);
+          }
+        } catch (e) {
+          console.error("Failed to parse elimination state update", e);
+        }
+      }
+      // Also update current fase if changed
+      if (data.current_fase) {
+        setCurrentSession((prev: RankingSession | null) => prev ? { ...prev, current_fase: data.current_fase as string } : null);
+      }
+    });
+
+    return () => {
+      unsubscribe.then((unsub: () => void) => unsub());
+    };
+  }, [currentSession]);
+
+  // Render Elimination Game View if current fase starts with '02'
+  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
+    return (
+      <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
+        {/* Sticky Header with Logo and DotsTimer */}
+        <div className="sticky top-0 z-50 bg-[#0A1752] border-b border-blue-900 shadow-lg">
+          <div className="flex justify-center p-2">
+            <Image
+              src="/assets/ranking_logo.webp"
+              alt="Ranking Logo"
+              width={120}
+              height={60}
+              className="h-12 w-auto object-contain"
+            />
+          </div>
+
+          {/* DOTS TIMER - STICKY */}
+          <div className="px-4 pb-2">
+            <DotsTimer
+              duration={eliminationState.timerDuration || 20}
+              startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
+            />
+          </div>
+        </div>
+
+        {/* Main Voting Content */}
+        <div className="flex-1 p-4">
+          <EliminationVoting
+            options={eliminationState.options.filter(opt => !opt.eliminated)}
+            isVotingOpen={eliminationState.status === 'voting'}
+            hasVoted={hasVoted}
+            onVote={async (optionId) => {
+              if (currentSession && !hasVoted) {
+                setHasVoted(true);
+                await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId);
+              }
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   const closePopup = () => {
     // Fade out popup, then start fase 01/02
     setPopupFadingOut(true);
