@@ -18,6 +18,7 @@ export interface RankingSession extends PocketBaseRecord {
   team_assignments: string; // JSON string of team assignments {"1": ["player1", "player2"], "2": ["player3", "player4"]}
   headings: string; // JSON string for fase headings {"01/00": {"heading": "Text", "image": "pic.jpg"}}
   current_fase: string; // Current fase (e.g., "01/00")
+  elimination_state?: string; // JSON string of EliminationState
 }
 
 // Parsed types for easier handling
@@ -181,3 +182,21 @@ export interface DisplayScreenProps {
 export type GameCode = string; // 4-6 character code
 export type PlayerId = string;
 export type GameId = string;
+
+// Elimination Game Types
+export interface EliminationOption {
+  id: string;
+  label: string;
+  votes: number;
+  eliminated: boolean;
+  color?: string;
+}
+
+export interface EliminationState {
+  round: number; // 1, 2, 3
+  options: EliminationOption[];
+  status: 'waiting' | 'voting' | 'results' | 'reveal';
+  totalVotes: number;
+  timerStart?: number; // timestamp
+  timerDuration?: number; // seconds
+}

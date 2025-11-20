@@ -1,4 +1,4 @@
-  'use client';
+'use client';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import RankingSessionForm from '@/components/game/RankingSessionForm';
@@ -6,6 +6,9 @@ import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
 import { teamService, faseService, rankingService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
 import '@/modules/fases/auto-register';
+import { EliminationState, EliminationOption } from '@/types';
+import * as eliminationLogic from '@/modules/elimination/logic';
+import { BlueNeonTimer } from '@/components/elimination/BlueNeonTimer';
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -19,7 +22,21 @@ export default function PresenterPage() {
   const [gameTime, setGameTime] = useState('00:00');
   const [isClient, setIsClient] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
-  
+  const [eliminationState, setEliminationState] = useState<EliminationState>(eliminationLogic.getInitialState());
+
+  // Sync elimination state from session
+  useEffect(() => {
+    if (selectedSession?.elimination_state) {
+      try {
+        const parsed = JSON.parse(selectedSession.elimination_state);
+        // Only update if different to avoid loops, or just trust the server state
+        setEliminationState(parsed);
+      } catch (e) {
+        console.error("Failed to parse elimination state", e);
+      }
+    }
+  }, [selectedSession]);
+
 
   // Upload a single media file and assign it to a specific fase's Picture field
   const handleUploadPictureForFase = async (fase: string, files: FileList | null) => {
@@ -36,10 +53,10 @@ export default function PresenterPage() {
         throw new Error('Upload response was not JSON');
       }
       const isOk = typeof json === 'object' && json !== null && (json as { success?: boolean }).success === true;
-    if (!isOk) {
-      const errMsg = (typeof json === 'object' && json && (json as { error?: string }).error) || `Upload failed (${res.status})`;
-      throw new Error(errMsg as string);
-    }
+      if (!isOk) {
+        const errMsg = (typeof json === 'object' && json && (json as { error?: string }).error) || `Upload failed (${res.status})`;
+        throw new Error(errMsg as string);
+      }
 
       // After upload, refresh motherfile to cache recordId
       try {
@@ -47,7 +64,7 @@ export default function PresenterPage() {
         const jsonAfter = await resAfter.json();
         const rid = jsonAfter?.meta?.recordId as string | undefined;
         if (rid) motherfileService.setRecordId(rid);
-      } catch {}
+      } catch { }
 
       // Set the fase image to the uploaded file name (URL built via motherfileService.fileUrl at render time)
       setEditingHeadings(prev => ({
@@ -156,7 +173,7 @@ export default function PresenterPage() {
     return () => clearInterval(timer);
   }, [gameStartTime]);
 
-  
+
 
   // Define fase groups
   const faseGroups = {
@@ -202,7 +219,7 @@ export default function PresenterPage() {
     }
   };
 
-  
+
 
   const handleStartRankingGame = () => {
     console.log('Start Ranking Game clicked!', { selectedSession, currentView });
@@ -210,7 +227,7 @@ export default function PresenterPage() {
       console.log('No selected session - returning');
       return;
     }
-    
+
 
     console.log('Setting game started and changing view to game');
     setGameStarted(true);
@@ -219,8 +236,8 @@ export default function PresenterPage() {
     setCurrentFase('01/01');
     // Persist initial fase so Display receives a defined value immediately
     try {
-      rankingService.updateSession(selectedSession.id, { current_fase: '01/01' }).catch(() => {});
-    } catch {}
+      rankingService.updateSession(selectedSession.id, { current_fase: '01/01' }).catch(() => { });
+    } catch { }
     console.log('State updated - should show game interface now');
   };
 
@@ -246,12 +263,12 @@ export default function PresenterPage() {
       console.log('No selected session');
       return null;
     }
-    
+
     // Use currently edited headings as source of truth (falls back to session JSON)
     const headings = Object.keys(editingHeadings).length
       ? editingHeadings
       : faseService.parseHeadings(selectedSession.headings || '{}');
-    
+
     // If headings are empty, use fallback data for testing
     if (Object.keys(headings).length === 0) {
       const fallbackHeadings = {
@@ -260,11 +277,11 @@ export default function PresenterPage() {
         '01/03': { heading: 'Wat is jouw naam?', image: '' },
         '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' }
       };
-      
+
       // Find the next fase with a non-empty image/Picture field
       const currentFaseIndex = Object.keys(fallbackHeadings).indexOf(currentFase);
       const faseKeys = Object.keys(fallbackHeadings).slice(currentFaseIndex + 1);
-      
+
       for (const faseKey of faseKeys) {
         const faseData = fallbackHeadings[faseKey as keyof typeof fallbackHeadings];
         if (faseData?.image && faseData.image.trim() !== '') {
@@ -272,7 +289,7 @@ export default function PresenterPage() {
           const fileName = faseData.image;
           const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
           const path = fileName.startsWith('/') ? fileName : `/pics/${fileName}`;
-          
+
           return {
             type: isVideo ? 'video' as const : 'image' as const,
             path: path,
@@ -283,11 +300,11 @@ export default function PresenterPage() {
         }
       }
     }
-    
+
     // Find the next fase with a non-empty image/Picture field
     const currentFaseIndex = Object.keys(headings).indexOf(currentFase);
     const faseKeys = Object.keys(headings).slice(currentFaseIndex + 1);
-    
+
     for (const faseKey of faseKeys) {
       const faseData = headings[faseKey];
       if (faseData?.image && faseData.image.trim() !== '') {
@@ -300,7 +317,7 @@ export default function PresenterPage() {
         const rankingUrl = selectedSession?.id ? `${baseUrl}/api/files/ranking/${selectedSession.id}/${encodeURIComponent(fileName)}` : '';
         const localUrl = fileName.startsWith('/') ? fileName : `/pics/${fileName}`;
         const path = rankingUrl || localUrl;
-        
+
         return {
           type: isVideo ? 'video' as const : 'image' as const,
           path: path,
@@ -319,7 +336,7 @@ export default function PresenterPage() {
     setCurrentView('manage');
     // Load existing headings or import master template if empty
     let headings = faseService.parseHeadings(session.headings || '{}');
-    
+
     // If no headings exist, load from master template
     if (Object.keys(headings).length === 0) {
       // Try to load from master template first
@@ -379,14 +396,14 @@ export default function PresenterPage() {
           '20/01': { heading: 'De Finale', image: 'trailerfinale' }
         };
       }
-      
+
       // Auto-save the default structure to PocketBase
       const headingsJson = JSON.stringify(headings);
       rankingService.updateSession(session.id, {
         headings: headingsJson
       }).catch(error => console.error('Error auto-saving headings:', error));
     }
-    
+
     setEditingHeadings(headings);
     setCurrentFase(session.current_fase || '01/01');
   };
@@ -416,23 +433,23 @@ export default function PresenterPage() {
 
   const saveHeadings = async (options?: { updateMotherfile?: boolean }) => {
     if (!selectedSession) return;
-    
+
     try {
       const headingsJson = JSON.stringify(editingHeadings);
-      
+
       // Save to current session
       await rankingService.updateSession(selectedSession.id, {
         headings: headingsJson,
         current_fase: currentFase
       });
-      
+
       // Update local session
       setSelectedSession(prev => prev ? {
         ...prev,
         headings: headingsJson,
         current_fase: currentFase
       } : null);
-      
+
       // Optionally update the motherfile (global defaults)
       if (options?.updateMotherfile) {
         const masterResult = await updateMasterTemplate(editingHeadings);
@@ -571,13 +588,13 @@ export default function PresenterPage() {
         const next = getNextFaseInGroup(currentFase, prefix);
         setCurrentFase(next);
         if (selectedSession) {
-          rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => {});
+          rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => { });
         }
       } else if (isPrev) {
         const prev = getPrevFaseInGroup(currentFase, prefix);
         setCurrentFase(prev);
         if (selectedSession) {
-          rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => {});
+          rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => { });
         }
       }
     };
@@ -589,6 +606,126 @@ export default function PresenterPage() {
 
   // No Space shortcut in presentation mode
 
+  const renderEliminationControls = () => {
+    if (!currentFase.startsWith('02')) return null;
+
+    return (
+      <div className="bg-[#0A1752] p-6 rounded-lg mt-4 text-white shadow-lg border border-blue-800">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Ronde {eliminationState.round}</h3>
+            <div className="text-blue-300 text-sm">Status: {eliminationState.status}</div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-blue-900/50 px-3 py-1 rounded">
+              <span className="text-sm text-blue-200">Timer (sec)</span>
+              <input
+                type="number"
+                value={eliminationState.timerDuration || 20}
+                onChange={(e) => setEliminationState({ ...eliminationState, timerDuration: parseInt(e.target.value) || 20 })}
+                className="w-16 bg-gray-800 border border-blue-700 rounded px-2 py-1 text-center text-white"
+              />
+            </div>
+
+            <div className="w-64">
+              {/* Mini Timer Preview */}
+              <BlueNeonTimer
+                totalVotes={eliminationState.totalVotes}
+                duration={eliminationState.timerDuration || 20}
+                startTime={eliminationState.timerStart}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mb-6">
+          <button
+            onClick={async () => {
+              if (selectedSession) {
+                const newState = await eliminationLogic.startVoting(selectedSession.id, eliminationState);
+                setEliminationState(newState);
+              }
+            }}
+            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status === 'voting' ? 'bg-blue-800 text-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]'}`}
+            disabled={eliminationState.status === 'voting'}
+          >
+            Start voting
+          </button>
+
+          <button
+            onClick={async () => {
+              if (selectedSession) {
+                const newState = await eliminationLogic.showResults(selectedSession.id, eliminationState);
+                setEliminationState(newState);
+              }
+            }}
+            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status !== 'voting' ? 'bg-teal-900/50 text-teal-700 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-600 text-white'}`}
+            disabled={eliminationState.status !== 'voting'}
+          >
+            Show results
+          </button>
+
+          <button
+            onClick={async () => {
+              if (selectedSession) {
+                const newState = await eliminationLogic.revealWinner(selectedSession.id, eliminationState);
+                setEliminationState(newState);
+              }
+            }}
+            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status !== 'results' ? 'bg-purple-900/50 text-purple-700 cursor-not-allowed' : 'bg-purple-700 hover:bg-purple-600 text-white'}`}
+            disabled={eliminationState.status !== 'results'}
+          >
+            Reveal Winner
+          </button>
+
+          <button
+            onClick={async () => {
+              if (selectedSession) {
+                const newState = await eliminationLogic.nextRound(selectedSession.id, eliminationState);
+                setEliminationState(newState);
+              }
+            }}
+            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status !== 'reveal' ? 'bg-indigo-900/50 text-indigo-700 cursor-not-allowed' : 'bg-indigo-700 hover:bg-indigo-600 text-white'}`}
+            disabled={eliminationState.status !== 'reveal'}
+          >
+            Next round
+          </button>
+
+          <button
+            onClick={async () => {
+              const newState = eliminationLogic.getInitialState();
+              setEliminationState(newState);
+              if (selectedSession) {
+                await rankingService.updateSession(selectedSession.id, {
+                  elimination_state: JSON.stringify(newState)
+                });
+              }
+            }}
+            className="px-6 py-3 rounded font-bold bg-gray-600 hover:bg-gray-500 text-white ml-auto"
+          >
+            Reset game
+          </button>
+        </div>
+
+        {/* Options Grid */}
+        <div className="grid grid-cols-4 gap-4">
+          {eliminationState.options.map(opt => (
+            <div key={opt.id} className={`relative p-4 rounded-lg border overflow-hidden transition-all ${opt.eliminated ? 'bg-red-900/20 border-red-900/50 opacity-60' : 'bg-gray-800 border-gray-700'}`}>
+              {opt.eliminated && <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-red-500 font-bold uppercase tracking-widest rotate-12">Eliminated</div>}
+              <div className="font-bold text-lg text-white mb-1">{opt.id} {opt.label}</div>
+              <div className="text-2xl font-mono text-blue-400">{opt.votes} <span className="text-xs text-gray-500">votes</span></div>
+              {/* Progress bar for votes */}
+              <div className="w-full h-1 bg-gray-700 mt-2 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500" style={{ width: `${eliminationState.totalVotes > 0 ? (opt.votes / eliminationState.totalVotes) * 100 : 0}%` }}></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderGameInterface = () => {
     console.log('renderGameInterface called', { selectedSession, currentView });
     if (!selectedSession) {
@@ -598,6 +735,7 @@ export default function PresenterPage() {
 
     const phaseButtons = [
       { label: '1', name: 'Intro', fases: faseGroups['1'].fases },
+      { label: 'F1', name: 'Elimination', fases: ['02/01'] },
       { label: '2', name: 'Guilty Pleasures', fases: faseGroups['4'].fases },
       { label: '3', name: 'Zitten en Staan', fases: faseGroups['7'].fases },
       { label: '4', name: 'De Top 3', fases: faseGroups['10'].fases },
@@ -611,33 +749,34 @@ export default function PresenterPage() {
     return (
       <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         <div style={{ margin: '0 2%' }}>
-        {/* Header with game info - with 2% side margins */}
-        <div className="bg-white shadow-md p-6">
-          <div className="flex justify-between items-center">
-            {/* Left side - Game info in one line */}
-            <div className="flex items-center gap-8">
-              <h1 className="text-3xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
-              <span className="text-xl font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
-              <span className="text-xl font-semibold text-gray-700">{gameTime} [game time]</span>
+          {/* Header with game info - with 2% side margins */}
+          <div className="bg-white shadow-md p-6">
+            <div className="flex justify-between items-center">
+              {/* Left side - Game info in one line */}
+              <div className="flex items-center gap-8">
+                <h1 className="text-3xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
+                <span className="text-xl font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
+                <span className="text-xl font-semibold text-gray-700">{gameTime} [game time]</span>
+              </div>
+              <button
+                onClick={() => setCurrentView('manage')}
+                className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+              >
+                ← Back to Setup
+              </button>
             </div>
-            <button
-              onClick={() => setCurrentView('manage')}
-              className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
-            >
-              ← Back to Setup
-            </button>
           </div>
-        </div>
 
-        {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
-        <div
-          className="grid mt-4 gap-4"
-          style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
-        >
-          {/* Current Display (43%) */}
-          <div className="flex flex-col">
-            {/* Current Display - Left screen (16:9) */}
-            <div>
+          {renderEliminationControls()}
+          {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
+          <div
+            className="grid mt-4 gap-4"
+            style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
+          >
+            {/* Current Display (43%) */}
+            <div className="flex flex-col">
+              {/* Current Display - Left screen (16:9) */}
+              <div>
                 <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
                   {isGroup07 ? (
                     (() => {
@@ -752,34 +891,33 @@ export default function PresenterPage() {
               </div>
             </div>
 
-          {/* Next Display (43%) */}
-          <div className="flex flex-col">
-            <div>
-              <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
-                {renderNextPreview(nextMedia)}
+            {/* Next Display (43%) */}
+            <div className="flex flex-col">
+              <div>
+                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
+                  {renderNextPreview(nextMedia)}
+                </div>
+                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
               </div>
-              <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
             </div>
-          </div>
 
-          {/* Fases (8%) */}
-          <div className="space-y-3 flex flex-col">
-            {phaseButtons.map((phase) => (
-              <button
-                key={phase.label}
-                onClick={() => handlePhaseNavigation(phase.fases[0])}
-                className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${
-                  phase.fases.includes(currentFase)
+            {/* Fases (8%) */}
+            <div className="space-y-3 flex flex-col">
+              {phaseButtons.map((phase) => (
+                <button
+                  key={phase.label}
+                  onClick={() => handlePhaseNavigation(phase.fases[0])}
+                  className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
                     ? 'bg-orange-600 shadow-lg'
                     : 'bg-orange-400 hover:bg-orange-500'
-                }`}
-              >
-                <div>{phase.label}</div>
-                <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
-              </button>
-            ))}
+                    }`}
+                >
+                  <div>{phase.label}</div>
+                  <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     );
@@ -873,7 +1011,7 @@ export default function PresenterPage() {
               {saveBanner}
             </div>
           )}
-          
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
               Current Fase Group:
@@ -978,7 +1116,7 @@ export default function PresenterPage() {
         )}
 
         {currentView === 'manage' && renderSessionDetails()}
-        
+
         {currentView === 'game' && isClient && renderGameInterface()}
       </div>
     </div>
