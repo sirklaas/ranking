@@ -8,6 +8,7 @@ import { teamService, faseService, rankingService, motherfileService, Motherfile
 import '@/modules/fases/auto-register';
 import { EliminationState, EliminationOption } from '@/types';
 import * as eliminationLogic from '@/modules/elimination/logic';
+import { DotsTimer } from '@/components/elimination/DotsTimer';
 import { BlueNeonTimer } from '@/components/elimination/BlueNeonTimer';
 
 export default function PresenterPage() {
@@ -696,8 +697,15 @@ export default function PresenterPage() {
           </div>
         </div>
 
-        {/* THE BLUE NEON LINE */}
-        <div className="w-full h-0.5 bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)] rounded-full"></div>
+
+
+        {/* THE DOTS TIMER */}
+        <div className="w-full py-2">
+          <DotsTimer
+            duration={eliminationState.timerDuration || 20}
+            startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
+          />
+        </div>
 
         {/* Bottom Section: Two Columns */}
         <div className="grid grid-cols-12 gap-6">

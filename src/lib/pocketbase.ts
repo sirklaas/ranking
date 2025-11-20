@@ -207,7 +207,14 @@ export const rankingService = {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
     return pb.collection('ranking').subscribe('*', callback);
- },
+  },
+
+  // Subscribe to specific session updates
+  async subscribeToSession(id: string, callback: (data: any) => void) {
+    const pb = getPocketBase();
+    if (!pb) throw new Error('PocketBase not available');
+    return await pb.collection('ranking').subscribe(id, (e) => callback(e.record));
+  },
 
   // Search sessions by show name or city
   async searchSessions(query: string) {
@@ -234,10 +241,10 @@ export const teamService = {
   // Assign team numbers to player names by prefixing (rock-solid approach)
   assignTeamNumbersToPlayers: (playerNames: string[], numberOfTeams: number): string[] => {
     if (!playerNames.length || numberOfTeams === 0) return playerNames;
-    
+
     // Shuffle players randomly for initial distribution
     const shuffledPlayers = [...playerNames].sort(() => Math.random() - 0.5);
-    
+
     // Assign team numbers by prefixing names
     return shuffledPlayers.map((player, index) => {
       const teamNumber = (index % numberOfTeams) + 1;
@@ -260,14 +267,14 @@ export const teamService = {
   // Generate team assignments from prefixed player names
   generateTeamAssignments: (playerNames: string[], numberOfTeams: number): { [key: number]: string[] } => {
     if (!playerNames.length || numberOfTeams === 0) return {};
-    
+
     const teams: { [key: number]: string[] } = {};
-    
+
     // Initialize teams
     for (let i = 1; i <= numberOfTeams; i++) {
       teams[i] = [];
     }
-    
+
     // Group players by their team number prefix
     playerNames.forEach(playerName => {
       const teamNumber = teamService.getPlayerTeamNumber(playerName);
@@ -276,7 +283,7 @@ export const teamService = {
         teams[teamNumber].push(displayName);
       }
     });
-    
+
     return teams;
   },
 
@@ -299,12 +306,12 @@ export const teamService = {
       const s = session as { nr_players?: number };
       return sum + (s.nr_players || 0);
     }, 0);
-    
+
     const totalTeams = sessions.reduce((sum, session) => {
       const s = session as { nr_teams?: number };
       return sum + (s.nr_teams || 0);
     }, 0);
-    
+
     const cities = [...new Set(sessions.map(session => {
       const s = session as { city?: string };
       return s.city;
@@ -356,7 +363,7 @@ export const faseService = {
   // Navigate to next fase variant (01/00 → 01/01)
   getNextVariant: (currentFase: string): string => {
     if (!faseService.isValidFaseFormat(currentFase)) return '01/00';
-    
+
     const [phase, variant] = currentFase.split('/').map(Number);
     const nextVariant = variant + 1;
     return `${phase.toString().padStart(2, '0')}/${nextVariant.toString().padStart(2, '0')}`;
@@ -365,7 +372,7 @@ export const faseService = {
   // Navigate to next phase (01/XX → 02/00)
   getNextPhase: (currentFase: string): string => {
     if (!faseService.isValidFaseFormat(currentFase)) return '01/00';
-    
+
     const [phase] = currentFase.split('/').map(Number);
     const nextPhase = phase + 1;
     return `${nextPhase.toString().padStart(2, '0')}/00`;
