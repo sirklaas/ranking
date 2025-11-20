@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { rankingService, teamService, motherfileService, faseService } from '@/lib/pocketbase';
-import { RankingSession } from '@/types';
+import { RankingSession, EliminationState } from '@/types';
 import '@/modules/fases/auto-register';
+import { DotsTimer } from '@/components/elimination/DotsTimer';
+import { EliminationDisplay } from '@/components/elimination/EliminationDisplay';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -24,6 +26,7 @@ export default function DisplayPage() {
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
+  const [eliminationState, setEliminationState] = useState<EliminationState | null>(null);
 
   // Generate a random 4-digit game code
   const generateGameCode = () => {
@@ -37,14 +40,14 @@ export default function DisplayPage() {
       console.log('No player names found in session');
       return {};
     }
-    
+
     try {
       const playerNames = teamService.parsePlayerNames(session.playernames);
       if (playerNames.length === 0) {
         console.log('No valid player names after parsing');
         return {};
       }
-      
+
       return teamService.generateTeamAssignments(playerNames, session.nr_teams || 1);
     } catch (error) {
       console.error('Error generating team assignments:', error);
@@ -57,13 +60,13 @@ export default function DisplayPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const sessions = await rankingService.getAllSessions();
       if (sessions.length === 0) {
         setError('No active sessions found');
         return;
       }
-      
+
       const latestShallow = sessions[0] as unknown as RankingSession;
       // Fetch full record to ensure fields like current_fase are present
       try {
@@ -73,15 +76,15 @@ export default function DisplayPage() {
         // Fallback to shallow if detail fetch fails
         setCurrentSession(latestShallow);
       }
-      
+
       const teamAssignments = getTeamAssignments(latestShallow);
       setPlayersByTeam(teamAssignments);
-      
+
       // Generate game code if not exists
       if (!gameCode) {
         setGameCode(generateGameCode());
       }
-      
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load session data');
     } finally {
@@ -174,14 +177,14 @@ export default function DisplayPage() {
       v.volume = 1;
       const p = v.play();
       if (p && typeof (p as Promise<void>).then === 'function') {
-        (p as Promise<void>).then(() => {/* ok */}).catch(() => {/* blocked if not userEnabledSound */});
+        (p as Promise<void>).then(() => {/* ok */ }).catch(() => {/* blocked if not userEnabledSound */ });
       }
     } catch {
       // ignore; overlay is on intro screen only
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 
-  // Subscribe to PocketBase session updates (current_fase changes)
+  // Subscribe to PocketBase session updates (current_fase and elimination_state changes)
   useEffect(() => {
     type PBEvent = { record?: Partial<RankingSession> } | Partial<RankingSession>;
     const unsub = rankingService.subscribeToRankings(async (e: unknown) => {
@@ -198,6 +201,16 @@ export default function DisplayPage() {
           current_fase_prev: currentSession?.current_fase,
         });
         if (!same) return;
+
+        // Parse elimination_state if present
+        if (rec.elimination_state) {
+          try {
+            setEliminationState(JSON.parse(rec.elimination_state as string));
+          } catch (e) {
+            console.error('[Display] Failed to parse elimination_state', e);
+          }
+        }
+
         // If PocketBase event doesn't include current_fase, fetch the full record to get the latest value
         if (typeof rec.current_fase === 'undefined') {
           try {
@@ -303,9 +316,9 @@ export default function DisplayPage() {
       link.href = chosenUrl;
       document.head.appendChild(link);
       setTimeout(() => {
-        try { document.head.removeChild(link); } catch {}
+        try { document.head.removeChild(link); } catch { }
       }, 5000);
-    } catch {}
+    } catch { }
   }, [currentSession, motherMeta]);
 
   // Removed mute state syncing; videos play with sound by default
@@ -340,12 +353,48 @@ export default function DisplayPage() {
       <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center">
         <div className="text-center text-white">
           <p className="text-xl mb-4">{error || 'No session data available'}</p>
-          <button 
+          <button
             onClick={loadSessionData}
             className="bg-white text-purple-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
             Retry
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render Elimination Game View if current fase starts with '02'
+  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
+    return (
+      <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
+        {/* Top Section: Logo and DotsTimer */}
+        <div className="bg-[#0A1752] border-b border-blue-900 shadow-lg">
+          <div className="flex justify-center p-4">
+            <Image
+              src="/assets/ranking_logo.webp"
+              alt="Ranking Logo"
+              width={240}
+              height={120}
+              className="h-24 w-auto object-contain"
+              priority
+            />
+          </div>
+
+          {/* DOTS TIMER - FULL WIDTH AT TOP */}
+          <div className="px-8 pb-4">
+            <DotsTimer
+              duration={eliminationState.timerDuration || 20}
+              startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
+            />
+          </div>
+        </div>
+
+        {/* Main Content: Elimination Display */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <EliminationDisplay
+            state={eliminationState}
+          />
         </div>
       </div>
     );
@@ -381,11 +430,11 @@ export default function DisplayPage() {
       )}
       {/* Animated background */}
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
-      
+
       {/* Horizontal Band with Background + Overlaid Text and Logo */}
-      <div 
+      <div
         className="relative z-10 w-full h-48 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8"
-        style={{ 
+        style={{
           backgroundImage: 'url(/assets/band.webp)',
           marginTop: '50px'
         }}
@@ -401,7 +450,7 @@ export default function DisplayPage() {
             priority
           />
         </div>
-        
+
         {/* Centered Text Overlay */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
           <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
@@ -414,7 +463,7 @@ export default function DisplayPage() {
             De teams van vandaag zijn:
           </p>
         </div>
-        
+
         {/* QR Code - Right side of band (bigger) */}
         <div className="bg-white p-2 rounded-lg shadow-lg">
           <Image
@@ -427,27 +476,27 @@ export default function DisplayPage() {
           />
         </div>
       </div>
-      
+
       <div className="relative z-10 w-full px-4 py-8">
-        
+
         {/* Teams Display - Single Row Layout */}
         <div className="flex justify-center items-start overflow-hidden w-full px-2">
           {Array.from({ length: currentSession.nr_teams }, (_, index) => {
             const teamNumber = index + 1;
             const teamPlayers = playersByTeam[teamNumber] || [];
-            
+
             return (
-              <div 
-                key={teamNumber} 
+              <div
+                key={teamNumber}
                 className="flex flex-col items-center flex-shrink-0"
-                style={{ 
+                style={{
                   width: `calc((100vw - 2rem) / ${currentSession.nr_teams})`,
                   maxWidth: 'none',
                   padding: '0 4px'
                 }}
               >
                 {/* Team Circle with 15px outline */}
-                <div 
+                <div
                   className="bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
                   style={{
                     width: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
@@ -457,24 +506,24 @@ export default function DisplayPage() {
                     minHeight: '80px'
                   }}
                 >
-                  <span 
+                  <span
                     className="font-bold text-black text-2xl"
-                    style={{ 
+                    style={{
                       fontSize: `min(3rem, calc((100vw - 12rem) / ${currentSession.nr_teams} * 0.35))`
                     }}
                   >
                     {teamNumber}
                   </span>
                 </div>
-                
+
                 {/* Player Names */}
                 <div className="flex flex-col gap-1 w-full px-1">
                   {teamPlayers.map((player, playerIndex) => (
-                    <div 
+                    <div
                       key={playerIndex}
                       className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden"
-                      style={{ 
-                        fontFamily: 'Barlow Semi Condensed, sans-serif', 
+                      style={{
+                        fontFamily: 'Barlow Semi Condensed, sans-serif',
                         fontWeight: 500,
                         fontSize: '1.125rem' // 1.5x bigger than text-sm (0.875rem * 1.5 ≈ 1.125rem)
                       }}
@@ -482,7 +531,7 @@ export default function DisplayPage() {
                       <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{player}</span>
                     </div>
                   ))}
-                  
+
                   {/* Empty slots if team has fewer players */}
                   {teamPlayers.length === 0 && (
                     <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
@@ -494,17 +543,17 @@ export default function DisplayPage() {
             );
           })}
         </div>
-        
+
         {/* Footer Info */}
         <div className="text-center mt-16 text-white/80">
           <p className="text-lg">
-            Total Players: {Object.values(playersByTeam).flat().length} | 
-            Teams: {currentSession.nr_teams} | 
+            Total Players: {Object.values(playersByTeam).flat().length} |
+            Teams: {currentSession.nr_teams} |
             Location: {currentSession.city}
           </p>
         </div>
       </div>
-      
+
       {/* Keyboard hints */}
       <div className="absolute bottom-4 left-4 text-white/60 text-sm">
         <p>Press &apos;F&apos; for fullscreen</p>
@@ -524,9 +573,9 @@ export default function DisplayPage() {
                 const ctx = new AC();
                 // create and stop a silent buffer
                 const osc = ctx.createOscillator(); osc.frequency.value = 0.0001; osc.connect(ctx.destination); osc.start(0); osc.stop(0.01);
-                if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                if (ctx.state === 'suspended') ctx.resume().catch(() => { });
               }
-            } catch {}
+            } catch { }
           }}
           className="fixed bottom-4 right-4 z-20 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
           style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
