@@ -610,117 +610,155 @@ export default function PresenterPage() {
     if (!currentFase.startsWith('02')) return null;
 
     return (
-      <div className="bg-[#0A1752] p-6 rounded-lg mt-4 text-white shadow-lg border border-blue-800">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h3 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Ronde {eliminationState.round}</h3>
-            <div className="text-blue-300 text-sm">Status: {eliminationState.status}</div>
-          </div>
+      <div className="flex flex-col gap-6 mt-4">
+        {/* Top Bar: Ronde 1 & Controls */}
+        <div className="bg-[#0A1752] p-4 rounded-lg text-white shadow-lg border border-blue-800 flex justify-between items-center">
+          <div className="flex items-center gap-6">
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Ronde {eliminationState.round}</h3>
+              <div className="text-blue-300 text-xs">Status: {eliminationState.status}</div>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-blue-900/50 px-3 py-1 rounded">
+            <div className="flex items-center gap-2 bg-blue-900/50 px-3 py-1 rounded border border-blue-800">
               <span className="text-sm text-blue-200">Timer (sec)</span>
               <input
                 type="number"
                 value={eliminationState.timerDuration || 20}
                 onChange={(e) => setEliminationState({ ...eliminationState, timerDuration: parseInt(e.target.value) || 20 })}
-                className="w-16 bg-gray-800 border border-blue-700 rounded px-2 py-1 text-center text-white"
+                className="w-12 bg-gray-800 border border-blue-700 rounded px-1 py-0.5 text-center text-white text-sm"
               />
             </div>
 
-            <div className="w-64">
-              {/* Mini Timer Preview */}
-              <BlueNeonTimer
-                totalVotes={eliminationState.totalVotes}
-                duration={eliminationState.timerDuration || 20}
-                startTime={eliminationState.timerStart}
-              />
+            {/* Mini Timer Preview */}
+            <div className="w-16">
+              <div className="text-xl font-mono text-cyan-300 font-bold">
+                {eliminationState.timerStart && eliminationState.status === 'voting'
+                  ? Math.max(0, Math.ceil((eliminationState.timerDuration || 20) - (Date.now() - eliminationState.timerStart) / 1000)) + 's'
+                  : (eliminationState.timerDuration || 20) + 's'}
+              </div>
             </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                if (selectedSession) {
+                  const newState = await eliminationLogic.startVoting(selectedSession.id, eliminationState);
+                  setEliminationState(newState);
+                }
+              }}
+              className={`px-4 py-2 rounded font-bold text-sm transition-all ${eliminationState.status === 'voting' ? 'bg-blue-800 text-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]'}`}
+              disabled={eliminationState.status === 'voting'}
+            >
+              Start voting
+            </button>
+
+            <button
+              onClick={async () => {
+                if (selectedSession) {
+                  const newState = await eliminationLogic.showResults(selectedSession.id, eliminationState);
+                  setEliminationState(newState);
+                }
+              }}
+              className={`px-4 py-2 rounded font-bold text-sm transition-all ${eliminationState.status !== 'voting' ? 'bg-teal-900/50 text-teal-700 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-600 text-white'}`}
+              disabled={eliminationState.status !== 'voting'}
+            >
+              Show results
+            </button>
+
+            <button
+              onClick={async () => {
+                if (selectedSession) {
+                  const newState = await eliminationLogic.nextRound(selectedSession.id, eliminationState);
+                  setEliminationState(newState);
+                }
+              }}
+              className={`px-4 py-2 rounded font-bold text-sm transition-all ${eliminationState.status !== 'reveal' ? 'bg-purple-900/50 text-purple-700 cursor-not-allowed' : 'bg-purple-700 hover:bg-purple-600 text-white'}`}
+              disabled={eliminationState.status !== 'reveal'}
+            >
+              Next round
+            </button>
+
+            <button
+              onClick={async () => {
+                const newState = eliminationLogic.getInitialState();
+                setEliminationState(newState);
+                if (selectedSession) {
+                  await rankingService.updateSession(selectedSession.id, {
+                    elimination_state: JSON.stringify(newState)
+                  });
+                }
+              }}
+              className="px-4 py-2 rounded font-bold text-sm bg-gray-600 hover:bg-gray-500 text-white"
+            >
+              Reset game
+            </button>
           </div>
         </div>
 
-        <div className="flex gap-3 mb-6">
-          <button
-            onClick={async () => {
-              if (selectedSession) {
-                const newState = await eliminationLogic.startVoting(selectedSession.id, eliminationState);
-                setEliminationState(newState);
-              }
-            }}
-            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status === 'voting' ? 'bg-blue-800 text-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]'}`}
-            disabled={eliminationState.status === 'voting'}
-          >
-            Start voting
-          </button>
+        {/* THE BLUE NEON LINE */}
+        <div className="w-full h-0.5 bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)] rounded-full"></div>
 
-          <button
-            onClick={async () => {
-              if (selectedSession) {
-                const newState = await eliminationLogic.showResults(selectedSession.id, eliminationState);
-                setEliminationState(newState);
-              }
-            }}
-            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status !== 'voting' ? 'bg-teal-900/50 text-teal-700 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-600 text-white'}`}
-            disabled={eliminationState.status !== 'voting'}
-          >
-            Show results
-          </button>
+        {/* Bottom Section: Two Columns */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Column: Importeer spelers (Placeholder based on screenshot) */}
+          <div className="col-span-4 bg-[#0e1629] border border-gray-800 rounded-lg p-4">
+            <h4 className="text-green-400 font-bold text-lg mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Importeer spelers</h4>
+            <p className="text-gray-500 text-xs mb-4">Excel (.xlsx) met namen in kolom A</p>
 
-          <button
-            onClick={async () => {
-              if (selectedSession) {
-                const newState = await eliminationLogic.revealWinner(selectedSession.id, eliminationState);
-                setEliminationState(newState);
-              }
-            }}
-            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status !== 'results' ? 'bg-purple-900/50 text-purple-700 cursor-not-allowed' : 'bg-purple-700 hover:bg-purple-600 text-white'}`}
-            disabled={eliminationState.status !== 'results'}
-          >
-            Reveal Winner
-          </button>
-
-          <button
-            onClick={async () => {
-              if (selectedSession) {
-                const newState = await eliminationLogic.nextRound(selectedSession.id, eliminationState);
-                setEliminationState(newState);
-              }
-            }}
-            className={`px-6 py-3 rounded font-bold transition-all ${eliminationState.status !== 'reveal' ? 'bg-indigo-900/50 text-indigo-700 cursor-not-allowed' : 'bg-indigo-700 hover:bg-indigo-600 text-white'}`}
-            disabled={eliminationState.status !== 'reveal'}
-          >
-            Next round
-          </button>
-
-          <button
-            onClick={async () => {
-              const newState = eliminationLogic.getInitialState();
-              setEliminationState(newState);
-              if (selectedSession) {
-                await rankingService.updateSession(selectedSession.id, {
-                  elimination_state: JSON.stringify(newState)
-                });
-              }
-            }}
-            className="px-6 py-3 rounded font-bold bg-gray-600 hover:bg-gray-500 text-white ml-auto"
-          >
-            Reset game
-          </button>
-        </div>
-
-        {/* Options Grid */}
-        <div className="grid grid-cols-4 gap-4">
-          {eliminationState.options.map(opt => (
-            <div key={opt.id} className={`relative p-4 rounded-lg border overflow-hidden transition-all ${opt.eliminated ? 'bg-red-900/20 border-red-900/50 opacity-60' : 'bg-gray-800 border-gray-700'}`}>
-              {opt.eliminated && <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-red-500 font-bold uppercase tracking-widest rotate-12">Eliminated</div>}
-              <div className="font-bold text-lg text-white mb-1">{opt.id} {opt.label}</div>
-              <div className="text-2xl font-mono text-blue-400">{opt.votes} <span className="text-xs text-gray-500">votes</span></div>
-              {/* Progress bar for votes */}
-              <div className="w-full h-1 bg-gray-700 mt-2 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500" style={{ width: `${eliminationState.totalVotes > 0 ? (opt.votes / eliminationState.totalVotes) * 100 : 0}%` }}></div>
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <button className="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors">
+                Choose File
+              </button>
+              <span className="text-gray-600 text-xs">no file selected</span>
             </div>
-          ))}
+
+            <div className="bg-[#131c33] rounded border border-gray-800 p-3 h-64 overflow-y-auto">
+              <div className="text-white text-sm font-bold mb-2">{selectedSession?.nr_players || 0} spelers</div>
+              <ul className="space-y-1">
+                {teamService.parsePlayerNames(selectedSession?.playernames || '').map((name, i) => (
+                  <li key={i} className="text-gray-400 text-xs flex items-center gap-2">
+                    <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Right Column: Configureer opties */}
+          <div className="col-span-8 bg-[#0e1629] border border-gray-800 rounded-lg p-4">
+            <h4 className="text-green-400 font-bold text-lg mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Configureer opties</h4>
+
+            <div className="grid grid-cols-2 gap-4">
+              {eliminationState.options.map(opt => (
+                <div key={opt.id} className={`relative bg-[#131c33] rounded-lg overflow-hidden border ${opt.eliminated ? 'border-red-900 opacity-60' : 'border-gray-700'}`}>
+                  {/* Image Placeholder */}
+                  <div className="h-32 bg-gray-800 relative">
+                    {opt.id === '1' && <img src="/assets/ariel.webp" className="w-full h-full object-cover" alt="Ariel" onError={(e) => e.currentTarget.style.display = 'none'} />}
+                    {opt.id === '2' && <img src="/assets/sage.webp" className="w-full h-full object-cover" alt="Sage" onError={(e) => e.currentTarget.style.display = 'none'} />}
+                    {opt.eliminated && <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-red-500 font-bold uppercase tracking-widest rotate-12 border-2 border-red-500 m-4">Eliminated</div>}
+                  </div>
+
+                  <div className="p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white font-medium">{opt.id} {opt.label}</span>
+                      <span className="text-blue-400 font-mono">{opt.votes} votes</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${eliminationState.totalVotes > 0 ? (opt.votes / eliminationState.totalVotes) * 100 : 0}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex justify-center">
+              <button className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded transition-colors">
+                Save namen
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
