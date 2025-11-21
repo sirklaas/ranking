@@ -1,4 +1,4 @@
-import { EliminationState, EliminationOption } from '@/types';
+import { EliminationState, EliminationOption, EliminationSubmission } from '@/types';
 import { rankingService } from '@/lib/pocketbase';
 
 export const INITIAL_OPTIONS: EliminationOption[] = [
@@ -37,15 +37,15 @@ export const startVoting = async (sessionId: string, currentState: EliminationSt
 export const submitVote = async (sessionId: string, currentState: EliminationState, optionId: string, playerId: string) => {
     // 1. Fetch current session to get existing submissions
     const session = await rankingService.getSessionById(sessionId);
-    const currentSubmissions = session.submissions || [];
+    const currentSubmissions = (session.submissions || []) as EliminationSubmission[];
 
     // 2. Check if player already voted in this round (optional but good)
     // For now, we just append. If we want to enforce one vote per round per player:
-    // const hasVoted = currentSubmissions.some((s: any) => s.playerId === playerId && s.round === currentState.round);
+    // const hasVoted = currentSubmissions.some((s) => s.playerId === playerId && s.round === currentState.round);
     // if (hasVoted) return currentState;
 
     // 3. Append new submission
-    const newSubmission = {
+    const newSubmission: EliminationSubmission = {
         playerId,
         optionId,
         round: currentState.round,
@@ -55,13 +55,13 @@ export const submitVote = async (sessionId: string, currentState: EliminationSta
 
     // 4. Recalculate vote counts for elimination_state based on submissions for CURRENT ROUND
     // We filter submissions for the current round
-    const roundSubmissions = updatedSubmissions.filter((s: any) => s.round === currentState.round);
+    const roundSubmissions = updatedSubmissions.filter((s) => s.round === currentState.round);
 
     // Reset counts
     const optionsWithResetCounts = currentState.options.map(o => ({ ...o, votes: 0 }));
 
     // Tally votes
-    roundSubmissions.forEach((s: any) => {
+    roundSubmissions.forEach((s) => {
         const opt = optionsWithResetCounts.find(o => o.id === s.optionId);
         if (opt) {
             opt.votes++;

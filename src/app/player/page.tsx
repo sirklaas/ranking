@@ -21,6 +21,161 @@ interface RankingSession {
   elimination_state?: string;
 }
 
+// Extracted TypewriterHeading to avoid re-definition on every render
+const TypewriterHeading = ({ lines, visible, animate, onStart, onDone }: { lines: string[]; visible: boolean; animate: boolean; onStart?: () => void; onDone?: () => void }) => {
+  const [displayedLines, setDisplayedLines] = useState<string[]>([]);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [isTyping, setIsTyping] = useState(true);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const [lastLines, setLastLines] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Do not reset on visibility changes; only re-run when lines actually change.
+    if (!visible) {
+      return;
+    }
+
+    // Check if lines have actually changed
+    const linesChanged = JSON.stringify(lines) !== JSON.stringify(lastLines);
+
+    // If lines changed, reset animation
+    if (linesChanged) {
+      setLastLines(lines);
+      if (animate) {
+        if (onStart) onStart();
+        setDisplayedLines([]);
+        setCurrentLineIndex(0);
+        setCurrentCharIndex(0);
+        setIsTyping(true);
+        setHasAnimated(false);
+      } else {
+        setDisplayedLines(lines);
+        setIsTyping(false);
+        setHasAnimated(true);
+      }
+      return;
+    }
+
+    // If already animated or animation disabled, just show the complete text
+    if (hasAnimated || !animate) {
+      setDisplayedLines(lines);
+      setIsTyping(false);
+      return;
+    }
+
+    if (currentLineIndex >= lines.length) {
+      setIsTyping(false);
+      setHasAnimated(true);
+      if (onDone) onDone();
+      return;
+    }
+
+    const currentLine = lines[currentLineIndex];
+    if (currentCharIndex <= currentLine.length) {
+      const timer = setTimeout(() => {
+        setDisplayedLines(prev => {
+          const newLines = [...prev];
+          newLines[currentLineIndex] = currentLine.slice(0, currentCharIndex);
+          return newLines;
+        });
+        setCurrentCharIndex(prev => prev + 1);
+      }, 50); // Typewriter speed
+
+      return () => clearTimeout(timer);
+    } else {
+      // Move to next line
+      const timer = setTimeout(() => {
+        setCurrentLineIndex(prev => prev + 1);
+        setCurrentCharIndex(0);
+      }, 300); // Pause between lines
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines, lines, animate, onStart, onDone]);
+
+  return (
+    <div
+      className={`transition-opacity duration-1000 ${visible ? 'opacity-100' : 'opacity-0'
+        }`}
+    >
+      {displayedLines.map((line, index) => (
+        <div key={index} className="text-3xl text-white text-center leading-tight"
+          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+          {line}
+          {index === currentLineIndex && isTyping && (
+            <span className="animate-pulse">|</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Memoized version
+const MemoTypewriterHeading = React.memo(
+  TypewriterHeading,
+  (prevProps, nextProps) => (
+    JSON.stringify(prevProps.lines) === JSON.stringify(nextProps.lines) && prevProps.visible === nextProps.visible && prevProps.animate === nextProps.animate
+  )
+);
+
+// Extracted Elimination Game View
+const EliminationGameView = ({
+  eliminationState,
+  hasVoted,
+  currentSession,
+  selectedPlayerName,
+  setHasVoted
+}: {
+  eliminationState: EliminationState,
+  hasVoted: boolean,
+  currentSession: RankingSession,
+  selectedPlayerName: string,
+  setHasVoted: (v: boolean) => void
+}) => {
+  return (
+    <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
+      {/* Sticky Header with Logo and DotsTimer */}
+      <div className="sticky top-0 z-50 bg-[#0A1752] border-b border-blue-900 shadow-lg">
+        <div className="flex justify-center p-2">
+          <Image
+            src="/assets/ranking_logo.webp"
+            alt="Ranking Logo"
+            width={120}
+            height={60}
+            className="h-12 w-auto object-contain"
+          />
+        </div>
+
+        {/* DOTS TIMER - STICKY */}
+        <div className="px-4 pb-2">
+          <DotsTimer
+            duration={eliminationState.timerDuration || 20}
+            startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
+          />
+        </div>
+      </div>
+
+      {/* Main Voting Content */}
+      <div className="flex-1 p-4">
+        <EliminationVoting
+          options={eliminationState.options.filter(opt => !opt.eliminated)}
+          isVotingOpen={eliminationState.status === 'voting'}
+          hasVoted={hasVoted}
+          onVote={async (optionId) => {
+            if (currentSession && !hasVoted) {
+              setHasVoted(true);
+              const playerId = selectedPlayerName || `anon_${Date.now()}`;
+              await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId, playerId);
+            }
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 export default function PlayerPage() {
   const [teamNumber, setTeamNumber] = useState('');
   const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
@@ -176,50 +331,6 @@ export default function PlayerPage() {
     };
   }, [currentSession]);
 
-  // Render Elimination Game View if current fase starts with '02'
-  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
-    return (
-      <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
-        {/* Sticky Header with Logo and DotsTimer */}
-        <div className="sticky top-0 z-50 bg-[#0A1752] border-b border-blue-900 shadow-lg">
-          <div className="flex justify-center p-2">
-            <Image
-              src="/assets/ranking_logo.webp"
-              alt="Ranking Logo"
-              width={120}
-              height={60}
-              className="h-12 w-auto object-contain"
-            />
-          </div>
-
-          {/* DOTS TIMER - STICKY */}
-          <div className="px-4 pb-2">
-            <DotsTimer
-              duration={eliminationState.timerDuration || 20}
-              startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
-            />
-          </div>
-        </div>
-
-        {/* Main Voting Content */}
-        <div className="flex-1 p-4">
-          <EliminationVoting
-            options={eliminationState.options.filter(opt => !opt.eliminated)}
-            isVotingOpen={eliminationState.status === 'voting'}
-            hasVoted={hasVoted}
-            onVote={async (optionId) => {
-              if (currentSession && !hasVoted) {
-                setHasVoted(true);
-                const playerId = selectedPlayerName || `anon_${Date.now()}`;
-                await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId, playerId);
-              }
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
   const closePopup = () => {
     // Fade out popup, then start fase 01/02
     setPopupFadingOut(true);
@@ -269,104 +380,18 @@ export default function PlayerPage() {
     setShowTeamInfo(true);
   };
 
-  // TypewriterHeading Component with animations
-  const TypewriterHeading = ({ lines, visible, animate, onStart, onDone }: { lines: string[]; visible: boolean; animate: boolean; onStart?: () => void; onDone?: () => void }) => {
-    const [displayedLines, setDisplayedLines] = useState<string[]>([]);
-    const [currentLineIndex, setCurrentLineIndex] = useState(0);
-    const [currentCharIndex, setCurrentCharIndex] = useState(0);
-    const [isTyping, setIsTyping] = useState(true);
-    const [hasAnimated, setHasAnimated] = useState(false);
-    const [lastLines, setLastLines] = useState<string[]>([]);
-
-    useEffect(() => {
-      // Do not reset on visibility changes; only re-run when lines actually change.
-      if (!visible) {
-        return;
-      }
-
-      // Check if lines have actually changed
-      const linesChanged = JSON.stringify(lines) !== JSON.stringify(lastLines);
-
-      // If lines changed, reset animation
-      if (linesChanged) {
-        setLastLines(lines);
-        if (animate) {
-          if (onStart) onStart();
-          setDisplayedLines([]);
-          setCurrentLineIndex(0);
-          setCurrentCharIndex(0);
-          setIsTyping(true);
-          setHasAnimated(false);
-        } else {
-          setDisplayedLines(lines);
-          setIsTyping(false);
-          setHasAnimated(true);
-        }
-        return;
-      }
-
-      // If already animated or animation disabled, just show the complete text
-      if (hasAnimated || !animate) {
-        setDisplayedLines(lines);
-        setIsTyping(false);
-        return;
-      }
-
-      if (currentLineIndex >= lines.length) {
-        setIsTyping(false);
-        setHasAnimated(true);
-        if (onDone) onDone();
-        return;
-      }
-
-      const currentLine = lines[currentLineIndex];
-      if (currentCharIndex <= currentLine.length) {
-        const timer = setTimeout(() => {
-          setDisplayedLines(prev => {
-            const newLines = [...prev];
-            newLines[currentLineIndex] = currentLine.slice(0, currentCharIndex);
-            return newLines;
-          });
-          setCurrentCharIndex(prev => prev + 1);
-        }, 50); // Typewriter speed
-
-        return () => clearTimeout(timer);
-      } else {
-        // Move to next line
-        const timer = setTimeout(() => {
-          setCurrentLineIndex(prev => prev + 1);
-          setCurrentCharIndex(0);
-        }, 300); // Pause between lines
-
-        return () => clearTimeout(timer);
-      }
-    }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines, lines, animate, onStart, onDone]);
-
+  // Render Elimination Game View if current fase starts with '02'
+  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
     return (
-      <div
-        className={`transition-opacity duration-1000 ${visible ? 'opacity-100' : 'opacity-0'
-          }`}
-      >
-        {displayedLines.map((line, index) => (
-          <div key={index} className="text-3xl text-white text-center leading-tight"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            {line}
-            {index === currentLineIndex && isTyping && (
-              <span className="animate-pulse">|</span>
-            )}
-          </div>
-        ))}
-      </div>
+      <EliminationGameView
+        eliminationState={eliminationState}
+        hasVoted={hasVoted}
+        currentSession={currentSession}
+        selectedPlayerName={selectedPlayerName}
+        setHasVoted={setHasVoted}
+      />
     );
-  };
-
-  // Memoized version to avoid rerenders if lines/visible are unchanged
-  const MemoTypewriterHeading = React.memo(
-    TypewriterHeading,
-    (prevProps, nextProps) => (
-      JSON.stringify(prevProps.lines) === JSON.stringify(nextProps.lines) && prevProps.visible === nextProps.visible && prevProps.animate === nextProps.animate
-    )
-  );
+  }
 
   return (
     <div
