@@ -210,7 +210,8 @@ export default function PlayerPage() {
             onVote={async (optionId) => {
               if (currentSession && !hasVoted) {
                 setHasVoted(true);
-                await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId);
+                const playerId = selectedPlayerName || `anon_${Date.now()}`;
+                await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId, playerId);
               }
             }}
           />

@@ -34,25 +34,51 @@ export const startVoting = async (sessionId: string, currentState: EliminationSt
     return newState;
 };
 
-export const submitVote = async (sessionId: string, currentState: EliminationState, optionId: string) => {
-    // Optimistic update
-    const updatedOptions = currentState.options.map(opt =>
-        opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
-    );
+export const submitVote = async (sessionId: string, currentState: EliminationState, optionId: string, playerId: string) => {
+    // 1. Fetch current session to get existing submissions
+    const session = await rankingService.getSessionById(sessionId);
+    const currentSubmissions = session.submissions || [];
+
+    // 2. Check if player already voted in this round (optional but good)
+    // For now, we just append. If we want to enforce one vote per round per player:
+    // const hasVoted = currentSubmissions.some((s: any) => s.playerId === playerId && s.round === currentState.round);
+    // if (hasVoted) return currentState;
+
+    // 3. Append new submission
+    const newSubmission = {
+        playerId,
+        optionId,
+        round: currentState.round,
+        timestamp: Date.now()
+    };
+    const updatedSubmissions = [...currentSubmissions, newSubmission];
+
+    // 4. Recalculate vote counts for elimination_state based on submissions for CURRENT ROUND
+    // We filter submissions for the current round
+    const roundSubmissions = updatedSubmissions.filter((s: any) => s.round === currentState.round);
+
+    // Reset counts
+    const optionsWithResetCounts = currentState.options.map(o => ({ ...o, votes: 0 }));
+
+    // Tally votes
+    roundSubmissions.forEach((s: any) => {
+        const opt = optionsWithResetCounts.find(o => o.id === s.optionId);
+        if (opt) {
+            opt.votes++;
+        }
+    });
 
     const newState: EliminationState = {
         ...currentState,
-        options: updatedOptions,
-        totalVotes: currentState.totalVotes + 1
+        options: optionsWithResetCounts,
+        totalVotes: roundSubmissions.length
     };
 
-    // We don't save every single vote to the session JSON to avoid race conditions in this simple implementation.
-    // Ideally, votes are individual records in a 'submissions' collection, and we aggregate them.
-    // For this MVP, we'll assume the Presenter is the source of truth or we use a 'submissions' listener.
-    // BUT, since the user asked NOT to use PB too intensively, we might rely on client-side aggregation or
-    // a simple counter if concurrency isn't huge.
-    // Let's try to save it for now, but debounced in a real scenario. 
-    // Here we will just return the state for the client to handle or save.
+    // 5. Update PocketBase with BOTH submissions and elimination_state
+    await rankingService.updateSession(sessionId, {
+        submissions: updatedSubmissions, // Store as JSON array
+        elimination_state: JSON.stringify(newState)
+    });
 
     return newState;
 };

@@ -19,6 +19,7 @@ export interface RankingSession extends PocketBaseRecord {
   headings: string; // JSON string for fase headings {"01/00": {"heading": "Text", "image": "pic.jpg"}}
   current_fase: string; // Current fase (e.g., "01/00")
   elimination_state?: string; // JSON string of EliminationState
+  submissions?: any; // JSON field
 }
 
 // Parsed types for easier handling
