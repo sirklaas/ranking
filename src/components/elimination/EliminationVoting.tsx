@@ -18,8 +18,8 @@ export const EliminationVoting: React.FC<EliminationVotingProps> = ({
     if (!isVotingOpen) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-white p-6 text-center">
-                <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Masked Employee</h2>
-                <p className="opacity-80">Wait for the voting to start...</p>
+                <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Eerste Ronde</h2>
+                <p className="opacity-80">Je kan zo dadelijk gaan stemmen</p>
             </div>
         );
     }
@@ -28,8 +28,8 @@ export const EliminationVoting: React.FC<EliminationVotingProps> = ({
         return (
             <div className="flex flex-col items-center justify-center h-full text-white p-6 text-center">
                 <div className="text-4xl mb-4">✅</div>
-                <h2 className="text-2xl font-bold">Vote Submitted!</h2>
-                <p className="opacity-80">Good luck!</p>
+                <h2 className="text-2xl font-bold">Stem Ingediend!</h2>
+                <p className="opacity-80">Succes!</p>
             </div>
         );
     }
@@ -37,7 +37,7 @@ export const EliminationVoting: React.FC<EliminationVotingProps> = ({
     return (
         <div className="flex flex-col h-full">
             <h2 className="text-3xl font-bold text-center mb-6 text-white" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                Maak je keuze
+                Eerste Ronde
             </h2>
             <div className="grid grid-cols-1 gap-4 p-4 flex-1 overflow-y-auto">
                 {options.map((option) => (
