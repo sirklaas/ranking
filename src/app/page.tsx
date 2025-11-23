@@ -13,11 +13,11 @@ export default function Home() {
             Interactive ranking games with real-time audience participation
           </p>
         </div>
-        
+
         {/* Three Screen Navigation */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Presenter Interface */}
-          <Link href="/presenter" className="group">
+          <Link href="/me/presenter" className="group">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
               <div className="text-center">
                 <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-blue-400 transition-colors">
@@ -35,9 +35,9 @@ export default function Home() {
               </div>
             </div>
           </Link>
-          
+
           {/* Player Interface */}
-          <Link href="/player" className="group">
+          <Link href="/me/phone" className="group">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
               <div className="text-center">
                 <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-green-400 transition-colors">
@@ -45,7 +45,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold mb-4">Player</h2>
+                <h2 className="text-2xl font-bold mb-4">Phone</h2>
                 <p className="text-gray-300 mb-6">
                   Join games and submit your rankings
                 </p>
@@ -55,9 +55,9 @@ export default function Home() {
               </div>
             </div>
           </Link>
-          
+
           {/* Display Interface */}
-          <Link href="/display" className="group">
+          <Link href="/me/display" className="group">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
               <div className="text-center">
                 <div className="w-16 h-16 bg-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-purple-400 transition-colors">
@@ -76,7 +76,7 @@ export default function Home() {
             </div>
           </Link>
         </div>
-        
+
         {/* Features */}
         <div className="mt-16 text-center">
           <h3 className="text-2xl font-bold mb-8">Key Features</h3>
