@@ -1,154 +1,237 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { rankingService, teamService, faseService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
+import { rankingService, teamService } from '@/lib/pocketbase';
 import { DotsTimer } from '@/components/elimination/DotsTimer';
 import { EliminationVoting } from '@/components/elimination/EliminationVoting';
-import { EliminationState } from '@/types';
+import { EliminationState, RankingSession } from '@/types';
 import * as eliminationLogic from '@/modules/elimination/logic';
 
-interface RankingSession {
-  id: string;
-  gamename: string;
-  city: string;
-  playernames: string;
-  nr_teams: number;
-  nr_players: number;
-  photocircle: string;
-  headings: string; // JSON string for fase headings
-  current_fase: string; // Current fase (e.g., "01/00")
-  elimination_state?: string;
-}
+export default function PlayerPage() {
+  const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
+  const [eliminationState, setEliminationState] = useState<EliminationState | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
 
-// Extracted TypewriterHeading to avoid re-definition on every render
-const TypewriterHeading = ({ lines, visible, animate, onStart, onDone }: { lines: string[]; visible: boolean; animate: boolean; onStart?: () => void; onDone?: () => void }) => {
-  const [displayedLines, setDisplayedLines] = useState<string[]>([]);
-  const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [currentCharIndex, setCurrentCharIndex] = useState(0);
-  const [isTyping, setIsTyping] = useState(true);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const [lastLines, setLastLines] = useState<string[]>([]);
+  // Login State
+  const [teamNumber, setTeamNumber] = useState('');
+  const [teamMembers, setTeamMembers] = useState<string[]>([]);
+  const [selectedPlayerName, setSelectedPlayerName] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginPhase, setLoginPhase] = useState<'team' | 'photocircle' | 'name'>('team');
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load Session
   useEffect(() => {
-    // Do not reset on visibility changes; only re-run when lines actually change.
-    if (!visible) {
-      return;
-    }
+    const loadSession = async () => {
+      try {
+        const sessions = await rankingService.getAllSessions();
+        if (sessions && sessions.length > 0) {
+          const latest = sessions[0] as unknown as RankingSession;
+          setCurrentSession(latest);
 
-    // Check if lines have actually changed
-    const linesChanged = JSON.stringify(lines) !== JSON.stringify(lastLines);
-
-    // If lines changed, reset animation
-    if (linesChanged) {
-      setLastLines(lines);
-      if (animate) {
-        if (onStart) onStart();
-        setDisplayedLines([]);
-        setCurrentLineIndex(0);
-        setCurrentCharIndex(0);
-        setIsTyping(true);
-        setHasAnimated(false);
-      } else {
-        setDisplayedLines(lines);
-        setIsTyping(false);
-        setHasAnimated(true);
+          if (latest.elimination_state) {
+            setEliminationState(JSON.parse(latest.elimination_state));
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load session", e);
       }
-      return;
+    };
+    loadSession();
+  }, []);
+
+  // Subscribe to updates
+  useEffect(() => {
+    if (!currentSession) return;
+
+    const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
+      if (data.elimination_state) {
+        try {
+          const newState = JSON.parse(data.elimination_state as string);
+          setEliminationState(newState);
+
+          // Reset vote status on new round
+          if (newState.status === 'waiting') {
+            setHasVoted(false);
+          }
+        } catch (e) {
+          console.error("Failed to parse elimination state update", e);
+        }
+      }
+    });
+
+    return () => {
+      unsubscribe.then((unsub: () => void) => unsub());
+    };
+  }, [currentSession]);
+
+  // Restore login from local storage
+  useEffect(() => {
+    const saved = localStorage.getItem('me_player_data');
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.playerName && data.teamNumber) {
+        setTeamNumber(data.teamNumber);
+        setSelectedPlayerName(data.playerName);
+        setIsLoggedIn(true);
+      }
     }
+  }, []);
 
-    // If already animated or animation disabled, just show the complete text
-    if (hasAnimated || !animate) {
-      setDisplayedLines(lines);
-      setIsTyping(false);
-      return;
+  const handleTeamSubmit = () => {
+    if (!teamNumber || !currentSession) return;
+    setIsLoading(true);
+
+    try {
+      const playerNames = teamService.parsePlayerNames(currentSession.playernames);
+      const assignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams);
+      const members = assignments[parseInt(teamNumber)] || [];
+      setTeamMembers(members);
+      setLoginPhase('photocircle');
+    } catch (e) {
+      console.error("Error getting team members", e);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    if (currentLineIndex >= lines.length) {
-      setIsTyping(false);
-      setHasAnimated(true);
-      if (onDone) onDone();
-      return;
-    }
+  const handleNameSelect = (name: string) => {
+    setSelectedPlayerName(name);
+    setIsLoggedIn(true);
+    localStorage.setItem('me_player_data', JSON.stringify({
+      teamNumber,
+      playerName: name
+    }));
+  };
 
-    const currentLine = lines[currentLineIndex];
-    if (currentCharIndex <= currentLine.length) {
-      const timer = setTimeout(() => {
-        setDisplayedLines(prev => {
-          const newLines = [...prev];
-          newLines[currentLineIndex] = currentLine.slice(0, currentCharIndex);
-          return newLines;
-        });
-        setCurrentCharIndex(prev => prev + 1);
-      }, 50); // Typewriter speed
+  // ------------------------------------------------------------------
+  // RENDER: LOGIN FLOW
+  // ------------------------------------------------------------------
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-500 to-purple-600 font-sans text-white p-6 flex flex-col items-center justify-center">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <Image
+              src="/assets/ranking_logo.webp"
+              alt="Logo"
+              width={200}
+              height={100}
+              className="mx-auto mb-8"
+            />
+            <h1 className="text-3xl font-bold mb-2">Masked Employee</h1>
+            <p className="opacity-80">Join the game to vote!</p>
+          </div>
 
-      return () => clearTimeout(timer);
-    } else {
-      // Move to next line
-      const timer = setTimeout(() => {
-        setCurrentLineIndex(prev => prev + 1);
-        setCurrentCharIndex(0);
-      }, 300); // Pause between lines
+          {/* Phase 1: Team Number */}
+          {loginPhase === 'team' && (
+            <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-center">
+              <h2 className="text-xl mb-6">What is your Team Number?</h2>
+              <div className="flex justify-center mb-6">
+                <input
+                  type="number"
+                  value={teamNumber}
+                  onChange={(e) => setTeamNumber(e.target.value)}
+                  className="w-24 h-24 text-center text-4xl font-bold bg-white text-purple-600 rounded-full shadow-lg outline-none focus:ring-4 focus:ring-purple-300"
+                  placeholder="#"
+                />
+              </div>
+              <button
+                onClick={handleTeamSubmit}
+                disabled={!teamNumber || isLoading}
+                className="w-full py-4 bg-purple-800 hover:bg-purple-700 rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
+              >
+                {isLoading ? 'Checking...' : 'Next →'}
+              </button>
+            </div>
+          )}
 
-      return () => clearTimeout(timer);
-    }
-  }, [visible, currentLineIndex, currentCharIndex, hasAnimated, lastLines, lines, animate, onStart, onDone]);
+          {/* Phase 2: PhotoCircle (Simplified) */}
+          {loginPhase === 'photocircle' && (
+            <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-center">
+              <h2 className="text-xl mb-6">Do you have the PhotoCircle App?</h2>
+              <div className="space-y-4">
+                <button
+                  onClick={() => setLoginPhase('name')}
+                  className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg transition-colors"
+                >
+                  Yes, I have it
+                </button>
+                <button
+                  onClick={() => alert('Please download PhotoCircle first!')}
+                  className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold text-lg transition-colors"
+                >
+                  No, not yet
+                </button>
+              </div>
+            </div>
+          )}
 
-  return (
-    <div
-      className={`transition-opacity duration-1000 ${visible ? 'opacity-100' : 'opacity-0'
-        }`}
-    >
-      {displayedLines.map((line, index) => (
-        <div key={index} className="text-3xl text-white text-center leading-tight"
-          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-          {line}
-          {index === currentLineIndex && isTyping && (
-            <span className="animate-pulse">|</span>
+          {/* Phase 3: Name Selection */}
+          {loginPhase === 'name' && (
+            <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20 text-center">
+              <h2 className="text-xl mb-6">Who are you?</h2>
+              <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+                {teamMembers.map((member) => (
+                  <button
+                    key={member}
+                    onClick={() => handleNameSelect(member)}
+                    className="py-3 px-4 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors text-left"
+                  >
+                    {member}
+                  </button>
+                ))}
+                {teamMembers.length === 0 && (
+                  <p className="text-yellow-300">No members found for Team {teamNumber}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setLoginPhase('team')}
+                className="mt-6 text-sm opacity-60 hover:opacity-100 underline"
+              >
+                ← Back to Team Number
+              </button>
+            </div>
           )}
         </div>
-      ))}
-    </div>
-  );
-};
+      </div>
+    );
+  }
 
-// Memoized version
-const MemoTypewriterHeading = React.memo(
-  TypewriterHeading,
-  (prevProps, nextProps) => (
-    JSON.stringify(prevProps.lines) === JSON.stringify(nextProps.lines) && prevProps.visible === nextProps.visible && prevProps.animate === nextProps.animate
-  )
-);
+  // ------------------------------------------------------------------
+  // RENDER: GAME INTERFACE (Logged In)
+  // ------------------------------------------------------------------
+  if (!eliminationState || !currentSession) {
+    return (
+      <div className="min-h-screen bg-[#0A1752] text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Connecting to game...</p>
+        </div>
+      </div>
+    );
+  }
 
-// Extracted Elimination Game View
-const EliminationGameView = ({
-  eliminationState,
-  hasVoted,
-  currentSession,
-  selectedPlayerName,
-  setHasVoted
-}: {
-  eliminationState: EliminationState,
-  hasVoted: boolean,
-  currentSession: RankingSession,
-  selectedPlayerName: string,
-  setHasVoted: (v: boolean) => void
-}) => {
   return (
-    <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
-      {/* Sticky Header with Logo and DotsTimer */}
+    <div className="min-h-screen bg-[#0A1752] text-white flex flex-col font-sans">
+      {/* Sticky Header */}
       <div className="sticky top-0 z-50 bg-[#0A1752] border-b border-blue-900 shadow-lg">
-        <div className="flex justify-center p-2">
+        <div className="flex justify-between items-center p-4">
           <Image
             src="/assets/ranking_logo.webp"
-            alt="Ranking Logo"
-            width={120}
-            height={60}
-            className="h-12 w-auto object-contain"
+            alt="Logo"
+            width={100}
+            height={50}
+            className="h-10 w-auto object-contain"
           />
+          <div className="text-right">
+            <div className="text-xs text-gray-400">Player</div>
+            <div className="font-bold text-sm">{selectedPlayerName}</div>
+          </div>
         </div>
 
-        {/* DOTS TIMER - STICKY */}
+        {/* DOTS TIMER */}
         <div className="px-4 pb-2">
           <DotsTimer
             duration={eliminationState.timerDuration || 20}
@@ -158,7 +241,7 @@ const EliminationGameView = ({
       </div>
 
       {/* Main Voting Content */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 flex flex-col">
         <EliminationVoting
           options={eliminationState.options.filter(opt => !opt.eliminated)}
           isVotingOpen={eliminationState.status === 'voting'}
@@ -166,533 +249,11 @@ const EliminationGameView = ({
           onVote={async (optionId) => {
             if (currentSession && !hasVoted) {
               setHasVoted(true);
-              const playerId = selectedPlayerName || `anon_${Date.now()}`;
-              await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId, playerId);
+              await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId, selectedPlayerName);
             }
           }}
         />
       </div>
-    </div>
-  );
-};
-
-export default function PlayerPage() {
-  const [teamNumber, setTeamNumber] = useState('');
-  const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
-  const [teamMembers, setTeamMembers] = useState<string[]>([]);
-  const [showTeamInfo, setShowTeamInfo] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  const [selectedPlayerName, setSelectedPlayerName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Player onboarding flow states
-  const [currentPhase, setCurrentPhase] = useState<'team' | 'photocircle' | 'name' | 'complete'>('team');
-  const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
-  const [, setPlayerData] = useState<{ teamNumber: string, playerName: string, hasPhotoCircle: boolean } | null>(null);
-
-  // Dynamic heading states
-  const [currentHeading, setCurrentHeading] = useState<string[]>([]);
-  const [headingVisible, setHeadingVisible] = useState(true);
-  const [motherfile, setMotherfile] = useState<MotherfileFases | null>(null);
-  const fadeDurationMs = 1000; // 1s fade for heading transitions
-
-  // Elimination Game State
-  const [eliminationState, setEliminationState] = useState<EliminationState | null>(null);
-  const [hasVoted, setHasVoted] = useState(false);
-
-  // Load PocketBase session ONCE (for team members and links) - no polling
-  useEffect(() => {
-    const loadSessionData = async () => {
-      try {
-        const sessions = await rankingService.getAllSessions();
-        if (sessions && sessions.length > 0) {
-          const latestSession = sessions[0] as unknown as RankingSession;
-          setCurrentSession(latestSession);
-        }
-      } catch (error) {
-        console.error('Failed to load session data (PocketBase):', error);
-      }
-    };
-    loadSessionData();
-  }, []);
-
-  // Load headings motherfile ONCE from PocketBase singleton
-  useEffect(() => {
-    const loadMotherfile = async () => {
-      try {
-        const record = await motherfileService.get();
-        const mf = record.fases || {};
-        setMotherfile(mf);
-      } catch (err) {
-        console.error('Error loading motherfile from PocketBase:', err);
-        // Minimal fallback
-        setMotherfile({
-          '01/01': { heading: 'In welk team zit je?' },
-          '01/02': { heading: "Heb je 'n PhotoCircle account?" },
-          '01/03': { heading: 'Wat is jouw naam?' }
-        });
-      }
-    };
-    loadMotherfile();
-  }, []);
-
-  // Track which heading keys have animated, so we never animate the same content twice
-  const animatedKeysRef = useRef<Set<string>>(new Set());
-  const startedKeysRef = useRef<Set<string>>(new Set());
-  const [currentHeadingKey, setCurrentHeadingKey] = useState<string>('');
-  const [popupFadingOut, setPopupFadingOut] = useState(false);
-  const [welcomePopupFadingOut, setWelcomePopupFadingOut] = useState(false);
-
-  // Update heading when phase or motherfile changes – guard to avoid redundant updates
-  const lastHeadingRef = useRef<string>('');
-  useEffect(() => {
-    if (!motherfile) return;
-    const faseKey = currentPhase === 'team' ? '01/01' : currentPhase === 'photocircle' ? '01/02' : currentPhase === 'name' ? '01/03' : '';
-    if (!faseKey) return;
-    try {
-      const headingText = faseService.getCurrentHeading(JSON.stringify(motherfile), faseKey);
-      const formatted = faseService.formatHeadingText(headingText || '');
-      const hash = JSON.stringify(formatted || []);
-      if (hash !== lastHeadingRef.current) {
-        lastHeadingRef.current = hash;
-        setCurrentHeading(formatted && formatted.length ? formatted : ['']);
-        setCurrentHeadingKey(`${faseKey}:${hash}`);
-      }
-    } catch (e) {
-      console.error('Failed to parse heading from motherfile', e);
-    }
-  }, [currentPhase, motherfile]);
-
-  // Helper to advance phases with fade-out/in of heading
-  const advancePhase = (next: 'photocircle' | 'name' | 'complete') => {
-    setHeadingVisible(false);
-    setTimeout(() => {
-      setCurrentPhase(next);
-      // Allow Typewriter to mount new text, then fade in
-      requestAnimationFrame(() => {
-        setHeadingVisible(true);
-      });
-    }, fadeDurationMs);
-  };
-
-  const handleTeamSubmit = () => {
-    if (!teamNumber || !currentSession) return;
-
-    setIsLoading(true);
-
-    // Get team assignments from prefixed player names (rock-solid approach)
-    const playerNames = teamService.parsePlayerNames(currentSession.playernames);
-    const teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams);
-
-    const selectedTeamMembers = teamAssignments[parseInt(teamNumber)] || [];
-
-    setTeamMembers(selectedTeamMembers);
-    // Show popup only; do NOT change phase yet to avoid re-animating 01/01.
-    setShowPopup(true);
-    setIsLoading(false);
-  };
-
-  // Subscribe to session updates for Elimination Game
-  useEffect(() => {
-    if (!currentSession) return;
-
-    // Initial parse
-    if (currentSession.elimination_state) {
-      try {
-        setEliminationState(JSON.parse(currentSession.elimination_state));
-      } catch (e) {
-        console.error("Failed to parse elimination state", e);
-      }
-    }
-
-    const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
-      if (data.elimination_state) {
-        try {
-          const newState = JSON.parse(data.elimination_state as string);
-          setEliminationState(newState);
-
-          // Reset hasVoted when starting a new round or new voting session
-          if (newState.status === 'waiting') {
-            setHasVoted(false);
-          }
-        } catch (e) {
-          console.error("Failed to parse elimination state update", e);
-        }
-      }
-      // Also update current fase if changed
-      if (data.current_fase) {
-        setCurrentSession((prev: RankingSession | null) => prev ? { ...prev, current_fase: data.current_fase as string } : null);
-      }
-    });
-
-    return () => {
-      unsubscribe.then((unsub: () => void) => unsub());
-    };
-  }, [currentSession]);
-
-  const closePopup = () => {
-    // Fade out popup, then start fase 01/02
-    setPopupFadingOut(true);
-    setTimeout(() => {
-      setShowPopup(false);
-      setPopupFadingOut(false);
-      advancePhase('photocircle');
-    }, 1000);
-  };
-
-  // Fade out and close the welcome popup (1s)
-  const closeWelcomePopup = () => {
-    setWelcomePopupFadingOut(true);
-    setTimeout(() => {
-      setShowWelcomePopup(false);
-      setWelcomePopupFadingOut(false);
-    }, 1000);
-  };
-
-  const handlePhotoCircleResponse = (hasAccount: boolean) => {
-    setHasPhotoCircleAccount(hasAccount);
-    if (!hasAccount) {
-      // Show popup again if no account
-      setShowPopup(true);
-    } else {
-      // Move to name selection phase with fade
-      advancePhase('name');
-    }
-  };
-
-  const handleNameSelection = (name: string) => {
-    setSelectedPlayerName(name);
-    // Store player data in memory for later use
-    const data = {
-      teamNumber,
-      playerName: name,
-      hasPhotoCircle: hasPhotoCircleAccount || false
-    };
-    setPlayerData(data);
-
-    // Store in localStorage for persistence
-    localStorage.setItem('rankingPlayerData', JSON.stringify(data));
-
-    // Show welcome popup first, then complete the phase
-    setShowWelcomePopup(true);
-    setCurrentPhase('complete');
-    setShowTeamInfo(true);
-  };
-
-  // Render Elimination Game View if current fase starts with '02'
-  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
-    return (
-      <EliminationGameView
-        eliminationState={eliminationState}
-        hasVoted={hasVoted}
-        currentSession={currentSession}
-        selectedPlayerName={selectedPlayerName}
-        setHasVoted={setHasVoted}
-      />
-    );
-  }
-
-  return (
-    <div
-      className="min-h-screen relative overflow-hidden"
-      style={{
-        fontFamily: 'Barlow Semi Condensed, sans-serif',
-        background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
-      }}
-    >
-      {/* 12-Section Grid Container */}
-      <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
-
-        {/* Sections 1-2: Logo Background + Logo Overlay - Sticky Header */}
-        <div
-          className="row-span-2 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50 sticky-header"
-          style={{
-            backgroundImage: 'url(/assets/band.webp)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            minHeight: '16.666667vh' // Ensure proper height
-          }}
-        >
-          {/* Logo Overlay - Much Bigger */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Image
-              src="/assets/ranking_logo.webp"
-              alt="Ranking Logo"
-              width={256}
-              height={128}
-              className="h-full max-h-32 w-auto object-contain p-2"
-              priority
-            />
-          </div>
-        </div>
-
-        {/* Sections 3-4: Dynamic Heading with Typewriter Animation */}
-        <div className="row-span-2 flex items-center justify-center px-4">
-          <MemoTypewriterHeading
-            lines={currentHeading}
-            visible={headingVisible}
-            animate={!animatedKeysRef.current.has(currentHeadingKey) && !startedKeysRef.current.has(currentHeadingKey)}
-            onStart={() => startedKeysRef.current.add(currentHeadingKey)}
-            onDone={() => animatedKeysRef.current.add(currentHeadingKey)}
-          />
-        </div>
-
-        {/* Sections 5-6: Team Number Input Circle - Moved lower for two-line headings */}
-        <div className="row-span-2 flex items-center justify-center">
-          {!showTeamInfo ? (
-            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
-              <input
-                type="number"
-                value={teamNumber}
-                onChange={(e) => {
-                  setTeamNumber(e.target.value);
-                  if (headingVisible) setHeadingVisible(false); // fade out heading while typing
-                }}
-                onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
-                className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
-                style={{
-                  fontFamily: 'Barlow Semi Condensed, sans-serif',
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'textfield'
-                }}
-                placeholder="?"
-                min="1"
-                max={currentSession?.nr_teams || 10}
-              />
-            </div>
-          ) : (
-            <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
-              <span className="text-5xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{teamNumber}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Show button when team number is entered */}
-        {/* Section 6: Dynamic Action Button */}
-        {currentPhase === 'team' && !showTeamInfo && teamNumber && (
-          <div className="flex items-center justify-center px-4 mt-6">
-            <button
-              onClick={handleTeamSubmit}
-              disabled={!teamNumber || isLoading}
-              className="text-white px-8 py-4 rounded-2xl text-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
-            >
-              {isLoading ? 'Loading...' : 'Dat is mijn team!'}
-            </button>
-          </div>
-        )}
-
-        {/* PhotoCircle Account Check Phase */}
-        {currentPhase === 'photocircle' && (
-          <div className="flex items-center justify-center px-4 gap-4">
-            <button
-              onClick={() => handlePhotoCircleResponse(true)}
-              className="text-white px-6 py-3 rounded-xl text-lg font-bold transition-colors"
-              style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
-            >
-              Ja
-            </button>
-            <button
-              onClick={() => handlePhotoCircleResponse(false)}
-              className="bg-red-600 text-white px-6 py-3 rounded-xl text-lg font-bold hover:bg-red-700 transition-colors"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              Nee
-            </button>
-          </div>
-        )}
-
-        {/* Name Selection Phase */}
-        {currentPhase === 'name' && (
-          <div className="flex items-center justify-center px-4">
-            <div className="text-center text-white">
-              <p className="mb-4 text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                Kies je naam uit de lijst hieronder:
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Sections 7-12: Team Members Display */}
-        <div className="row-span-6 overflow-y-auto px-4">
-          {(showTeamInfo || currentPhase === 'name') && teamMembers.length > 0 && (
-            <div className="h-full pt-4">
-              {/* Two column grid for team members */}
-              <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
-                {teamMembers.map((member, index) => (
-                  currentPhase === 'name' ? (
-                    <button
-                      key={index}
-                      onClick={() => handleNameSelection(member)}
-                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all transform hover:scale-105"
-                      style={{
-                        fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontWeight: 400,
-                        fontSize: '0.9rem',
-                        animationDelay: `${index * 200}ms`,
-                        animationFillMode: 'both'
-                      }}
-                    >
-                      {member}
-                    </button>
-                  ) : (
-                    <div
-                      key={index}
-                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden animate-fade-in"
-                      style={{
-                        fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontWeight: 400,
-                        fontSize: '0.9rem',
-                        animationDelay: `${index * 200}ms`,
-                        animationFillMode: 'both'
-                      }}
-                    >
-                      {member}
-                    </div>
-                  )
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* PhotoCircle Popup */}
-      {showPopup && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-1000 ${popupFadingOut ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="flex items-center justify-center px-4">
-            <div
-              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
-              style={{
-                background: 'linear-gradient(135deg, #cc6344 0%, #cc8f5d 25%, #6782bb 50%, #6262ab 75%, #6fb7b3 100%)',
-                border: '4px solid white',
-                minHeight: '320px'
-              }}
-            >
-              {/* Close X button - centered and thinner */}
-              <button
-                onClick={closePopup}
-                className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none border border-white/60"
-                style={{ fontSize: '2.5rem', fontWeight: 300, lineHeight: 1 }}
-                aria-label="Close"
-              >
-                ×
-              </button>
-
-              <div className="text-center text-white space-y-6 pt-16 px-2">
-                <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                  Download nu deze App:
-                </h3>
-
-                {currentSession?.photocircle && (
-                  <a
-                    href={currentSession.photocircle}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', backgroundColor: '#0A1752' }}
-                  >
-                    PhotoCircle App
-                  </a>
-                )}
-
-                <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                  <p>Maak daar een account aan</p>
-                  <p>en kom dan hier terug.</p>
-                  <p></p>
-                  <p>Als je hulp nodig hebt laat het me weten</p>
-                  <p>en dan kom ik je graag helpen.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Welcome Popup - Shows after name selection */}
-      {showWelcomePopup && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-1000 ${welcomePopupFadingOut ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="flex items-center justify-center px-4">
-            <div
-              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
-              style={{
-                background: 'linear-gradient(135deg, #cc6344 0%, #cc8f5d 25%, #6782bb 50%, #6262ab 75%, #6fb7b3 100%)',
-                border: '4px solid white',
-                minHeight: '320px'
-              }}
-            >
-              {/* Close X button - Twice as big */}
-              <button
-                onClick={closeWelcomePopup}
-                className="absolute top-4 right-4 w-20 h-20 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none"
-                style={{ fontSize: '3.75rem', fontWeight: 300, lineHeight: 1 }}
-              >
-                ×
-              </button>
-
-              <div className="text-center text-white space-y-6 pt-16 px-2">
-                <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                  Welkom {selectedPlayerName}!
-                </h3>
-
-                <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                  <p>Je bent nu ingelogd in team {teamNumber}.</p>
-                  <p></p>
-                  <p>Veel plezier met de game!</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Custom CSS for animations */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes scale-in {
-          from { 
-            opacity: 0; 
-            transform: scale(0.8); 
-          }
-          to { 
-            opacity: 1; 
-            transform: scale(1); 
-          }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out;
-        }
-        
-        .animate-scale-in {
-          animation: scale-in 0.3s ease-out;
-        }
-        
-        /* Remove number input spinners */
-        .no-spinner::-webkit-outer-spin-button,
-        .no-spinner::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        
-        .no-spinner[type=number] {
-          -moz-appearance: textfield;
-        }
-      `}</style>
-
-      {/* Global styles to handle keyboard-open sticky behavior */}
-      <style jsx global>{`
-        body.keyboard-open .sticky-header { position: fixed !important; top: 0; left: 0; right: 0; }
-      `}</style>
     </div>
   );
 }
