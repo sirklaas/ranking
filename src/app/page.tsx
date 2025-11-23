@@ -14,67 +14,130 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Three Screen Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Presenter Interface */}
-          <Link href="/me/presenter" className="group">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-blue-400 transition-colors">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold mb-4">Presenter</h2>
-                <p className="text-gray-300 mb-6">
-                  Control panel for game management and monitoring
-                </p>
-                <div className="text-sm text-blue-300 font-medium">
-                  MacBook Interface →
+        {/* Ranking Game Section */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-center border-b border-white/20 pb-4">Ranking Game</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Presenter Interface */}
+            <Link href="/presenter" className="group">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-blue-400 transition-colors">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4">Presenter</h2>
+                  <p className="text-gray-300 mb-6">
+                    Control panel for game management
+                  </p>
+                  <div className="text-sm text-blue-300 font-medium">
+                    MacBook Interface →
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Player Interface */}
-          <Link href="/me/phone" className="group">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-green-400 transition-colors">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold mb-4">Phone</h2>
-                <p className="text-gray-300 mb-6">
-                  Join games and submit your rankings
-                </p>
-                <div className="text-sm text-green-300 font-medium">
-                  Mobile Interface →
+            {/* Player Interface */}
+            <Link href="/player" className="group">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-green-400 transition-colors">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4">Player</h2>
+                  <p className="text-gray-300 mb-6">
+                    Join games and submit rankings
+                  </p>
+                  <div className="text-sm text-green-300 font-medium">
+                    Mobile Interface →
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Display Interface */}
-          <Link href="/me/display" className="group">
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-purple-400 transition-colors">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold mb-4">Display</h2>
-                <p className="text-gray-300 mb-6">
-                  Live results and animated visualizations
-                </p>
-                <div className="text-sm text-purple-300 font-medium">
-                  TV/Beamer Interface →
+            {/* Display Interface */}
+            <Link href="/display" className="group">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-purple-400 transition-colors">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4">Display</h2>
+                  <p className="text-gray-300 mb-6">
+                    Live results and visualizations
+                  </p>
+                  <div className="text-sm text-purple-300 font-medium">
+                    TV/Beamer Interface →
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
+        </div>
+
+        {/* Masked Employee Section */}
+        <div>
+          <h2 className="text-3xl font-bold mb-8 text-center border-b border-white/20 pb-4">Masked Employee</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Presenter Interface */}
+            <Link href="/me/presenter" className="group">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 cursor-pointer border border-white/10">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-indigo-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-indigo-400 transition-colors">
+                    <span className="text-2xl">🎭</span>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4">ME Presenter</h2>
+                  <p className="text-gray-300 mb-6">
+                    Manage Masked Employee game
+                  </p>
+                  <div className="text-sm text-indigo-300 font-medium">
+                    /me/presenter →
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* Phone Interface */}
+            <Link href="/me/phone" className="group">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 cursor-pointer border border-white/10">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-pink-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-pink-400 transition-colors">
+                    <span className="text-2xl">📱</span>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4">ME Phone</h2>
+                  <p className="text-gray-300 mb-6">
+                    Vote for Masked Employee
+                  </p>
+                  <div className="text-sm text-pink-300 font-medium">
+                    /me/phone →
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* Display Interface */}
+            <Link href="/me/display" className="group">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 cursor-pointer border border-white/10">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-cyan-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-cyan-400 transition-colors">
+                    <span className="text-2xl">📺</span>
+                  </div>
+                  <h2 className="text-2xl font-bold mb-4">ME Display</h2>
+                  <p className="text-gray-300 mb-6">
+                    Show ME results
+                  </p>
+                  <div className="text-sm text-cyan-300 font-medium">
+                    /me/display →
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
         </div>
 
         {/* Features */}
