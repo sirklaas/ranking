@@ -1,7 +1,7 @@
 import React from 'react';
 import { EliminationState } from '@/types';
 import { motion } from 'framer-motion';
-import { BlueNeonTimer } from './BlueNeonTimer';
+import { DotsTimer } from './DotsTimer';
 
 interface EliminationDisplayProps {
     state: EliminationState;
@@ -39,11 +39,12 @@ export const EliminationDisplay: React.FC<EliminationDisplayProps> = ({ state })
                                 </div>
                             ))}
                         </div>
-                        <BlueNeonTimer
-                            duration={timerDuration || 20}
-                            startTime={timerStart}
-                            totalVotes={totalVotes}
-                        />
+                        <div className="flex justify-center">
+                            <DotsTimer
+                                duration={timerDuration || 20}
+                                startTime={timerStart}
+                            />
+                        </div>
                     </div>
                 )}
 
