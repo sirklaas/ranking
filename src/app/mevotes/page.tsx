@@ -522,12 +522,12 @@ function MeDisplayView() {
   // TEST MODE: Add keyboard shortcuts to test different states
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === '1') setState({ ...state, appState: 'IDLE' });
+      if (e.key === '1') setState(prev => ({ ...prev, appState: 'IDLE', timerActive: false }));
       if (e.key === '2') {
-        setState({ ...state, appState: 'VOTING', timerActive: true, countdown: state.timer });
+        setState(prev => ({ ...prev, appState: 'VOTING', timerActive: true, countdown: prev.timer }));
       }
-      if (e.key === '3') setState({ ...state, appState: 'RESULTS' });
-      if (e.key === '4') setState({ ...state, appState: 'REVEAL' });
+      if (e.key === '3') setState(prev => ({ ...prev, appState: 'RESULTS', timerActive: false }));
+      if (e.key === '4') setState(prev => ({ ...prev, appState: 'REVEAL', timerActive: false }));
       if (e.key === 'f' || e.key === 'F') {
         // Request fullscreen
         if (!document.fullscreenElement) {
@@ -539,7 +539,7 @@ function MeDisplayView() {
     };
     window.addEventListener('keypress', handleKeyPress);
     return () => window.removeEventListener('keypress', handleKeyPress);
-  }, [state]);
+  }, []);
 
   return (
     <div className={`h-screen w-screen bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900 text-white overflow-hidden flex flex-col ${barlowSemiCondensed.className}`} style={{ fontWeight: 400 }}>
@@ -571,12 +571,12 @@ function MeDisplayView() {
         
         {/* Timer Dots - Fixed height space to prevent layout shift */}
         <div className="h-8 flex justify-center items-center gap-2 mb-4">
-          {state.appState === 'VOTING' ? (
+          {state.appState === 'VOTING' && state.timerActive ? (
             Array.from({ length: state.timer }).map((_, i) => (
               <div
                 key={i}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  i < state.countdown ? 'bg-blue-500' : 'bg-gray-600'
+                className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                  i < state.countdown ? 'bg-blue-500 shadow-lg shadow-blue-500/50' : 'bg-gray-700'
                 }`}
               />
             ))
