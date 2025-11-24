@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PocketBase from 'pocketbase';
 import { Barlow_Semi_Condensed } from 'next/font/google';
@@ -611,7 +611,7 @@ function MeDisplayView() {
 }
 
 // Main Router Component
-export default function MeVotesPage() {
+function MeVotesRouter() {
   const searchParams = useSearchParams();
   const view = searchParams.get('view') || 'mephone';
 
@@ -624,4 +624,12 @@ export default function MeVotesPage() {
   }
   
   return <MePhoneView />;
+}
+
+export default function MeVotesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-b from-gray-900 to-blue-900 flex items-center justify-center text-white">Loading...</div>}>
+      <MeVotesRouter />
+    </Suspense>
+  );
 }
