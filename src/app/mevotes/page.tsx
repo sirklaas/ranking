@@ -65,10 +65,16 @@ function MePresenterView() {
     if (!state.timerActive) return;
     if (state.countdown <= 0) {
       // Stop timer but stay in VOTING state - wait for manual "Show results" click
-      setState(prev => ({ ...prev, timerActive: false }));
+      const newState = { ...state, timerActive: false };
+      setState(newState);
+      updatePocketBase(newState);
       return;
     }
-    const timer = setTimeout(() => setState(prev => ({ ...prev, countdown: prev.countdown - 1 })), 1000);
+    const timer = setTimeout(() => {
+      const newState = { ...state, countdown: state.countdown - 1 };
+      setState(newState);
+      updatePocketBase(newState);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [state.countdown, state.timerActive]);
 
@@ -95,16 +101,48 @@ function MePresenterView() {
     }
   }
 
+  async function updatePocketBase(newState: VotingState) {
+    try {
+      const data = {
+        session_id: SESSION_ID,
+        app_state: newState.appState,
+        round: newState.round,
+        timer: newState.timer,
+        timer_active: newState.timerActive,
+        countdown: newState.countdown,
+        votes: newState.votes,
+        eliminated: newState.eliminated
+      };
+      
+      // Try to find existing session
+      const existing = await pb.collection('voting_session').getFirstListItem(`session_id="${SESSION_ID}"`).catch(() => null);
+      
+      if (existing) {
+        await pb.collection('voting_session').update(existing.id, data);
+      } else {
+        await pb.collection('voting_session').create(data);
+      }
+    } catch (error) {
+      console.error('Failed to update PocketBase:', error);
+    }
+  }
+
   function handleStartVoting() {
-    setState({ ...state, appState: 'VOTING', timerActive: true, countdown: state.timer, votes: {} });
+    const newState = { ...state, appState: 'VOTING' as const, timerActive: true, countdown: state.timer, votes: {} };
+    setState(newState);
+    updatePocketBase(newState);
   }
 
   function handleShowResults() {
-    setState({ ...state, appState: 'RESULTS', timerActive: false });
+    const newState = { ...state, appState: 'RESULTS' as const, timerActive: false };
+    setState(newState);
+    updatePocketBase(newState);
   }
 
   function handleReveal() {
-    setState({ ...state, appState: 'REVEAL' });
+    const newState = { ...state, appState: 'REVEAL' as const };
+    setState(newState);
+    updatePocketBase(newState);
   }
 
   function handleNextRound() {
@@ -113,18 +151,22 @@ function MePresenterView() {
     const winner = voteEntries.sort((a, b) => b.count - a.count)[0];
     const newEliminated = winner ? [...state.eliminated, winner.id] : state.eliminated;
     
-    setState({ 
+    const newState = { 
       ...state, 
-      appState: 'IDLE', 
+      appState: 'IDLE' as const, 
       round: state.round + 1,
       eliminated: newEliminated,
       votes: {},
       countdown: state.timer
-    });
+    };
+    setState(newState);
+    updatePocketBase(newState);
   }
 
   function handleReset() {
-    setState({ appState: 'IDLE', round: 1, timer: 20, votes: {}, eliminated: [], timerActive: false, countdown: 20 });
+    const newState = { appState: 'IDLE' as const, round: 1, timer: 20, votes: {}, eliminated: [], timerActive: false, countdown: 20 };
+    setState(newState);
+    updatePocketBase(newState);
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
