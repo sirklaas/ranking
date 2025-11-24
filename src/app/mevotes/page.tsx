@@ -114,16 +114,21 @@ function MePresenterView() {
         eliminated: newState.eliminated
       };
       
+      console.log('PRESENTER - Updating PocketBase with:', data);
+      
       // Try to find existing session
       const existing = await pb.collection('voting_session').getFirstListItem(`session_id="${SESSION_ID}"`).catch(() => null);
       
       if (existing) {
+        console.log('PRESENTER - Updating existing record:', existing.id);
         await pb.collection('voting_session').update(existing.id, data);
       } else {
+        console.log('PRESENTER - Creating new record');
         await pb.collection('voting_session').create(data);
       }
+      console.log('PRESENTER - PocketBase update successful');
     } catch (error) {
-      console.error('Failed to update PocketBase:', error);
+      console.error('PRESENTER - Failed to update PocketBase:', error);
     }
   }
 
@@ -493,7 +498,9 @@ function MeDisplayView() {
     loadImages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // Subscribe to state changes from presenter
+    console.log('DISPLAY - Setting up PocketBase subscription for session:', SESSION_ID);
     pb.collection('voting_session').subscribe('*', (e) => {
+      console.log('DISPLAY - Received PocketBase update:', e.record);
       if (e.record.session_id === SESSION_ID) {
         const newState: VotingState = {
           appState: e.record.app_state || 'IDLE',
@@ -504,10 +511,13 @@ function MeDisplayView() {
           timerActive: e.record.timer_active || false,
           countdown: e.record.countdown || 20
         };
+        console.log('DISPLAY - Updating state to:', newState);
         setState(newState);
+      } else {
+        console.log('DISPLAY - Ignoring update for different session:', e.record.session_id);
       }
-    }).catch(() => {
-      console.log('Subscription not available');
+    }).catch((error) => {
+      console.error('DISPLAY - Subscription failed:', error);
     });
     
     return () => {
