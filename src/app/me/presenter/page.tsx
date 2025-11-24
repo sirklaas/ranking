@@ -66,8 +66,8 @@ export default function PresenterPage() {
                 className="w-full text-left p-4 bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/10 flex justify-between items-center"
               >
                 <div>
-                  <div className="font-bold text-lg">{session.gamename || 'Untitled Game'}</div>
-                  <div className="text-sm text-gray-400">{session.city} • {new Date(session.created).toLocaleDateString()}</div>
+                  <div className="font-bold text-lg">{String(session.gamename || 'Untitled Game')}</div>
+                  <div className="text-sm text-gray-400">{String(session.city || '')} • {new Date(session.created).toLocaleDateString()}</div>
                 </div>
                 <div className="text-blue-300">Select →</div>
               </button>
@@ -93,7 +93,7 @@ export default function PresenterPage() {
             ← Back
           </button>
           <div>
-            <h1 className="text-2xl font-bold">{selectedSession.gamename}</h1>
+            <h1 className="text-2xl font-bold">{String(selectedSession.gamename || 'Game')}</h1>
             <div className="text-sm text-gray-400">Masked Employee Control</div>
           </div>
         </div>
