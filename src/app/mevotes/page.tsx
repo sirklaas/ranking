@@ -558,7 +558,7 @@ function MeDisplayView() {
       <div className="container mx-auto h-full flex flex-col justify-center px-4 py-4">
         {/* Debug Info */}
         <div className="text-center mb-1 text-xs text-gray-500">
-          State: {state.appState} | Press 1=IDLE, 2=VOTING, 3=RESULTS, 4=REVEAL | Press F for fullscreen
+          State: {state.appState} | Timer: {state.timerActive ? 'ON' : 'OFF'} | Countdown: {state.countdown} | Press 1=IDLE, 2=VOTING, 3=RESULTS, 4=REVEAL | Press F for fullscreen
         </div>
 
         {/* Title */}
