@@ -438,18 +438,29 @@ function MePhoneView() {
     try {
       const response = await fetch('https://www.pinkmilk.eu/ME/get-vote-images.php');
       const data = await response.json();
+      console.log('PHONE - Images loaded:', data);
       if (data.success && data.images) {
-        setImages(data.images);
+        // Extract filename from URL as title
+        const updatedImages = data.images.map((img: { url?: string }, idx: number) => {
+          const filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Character ${idx + 1}` : `Character ${idx + 1}`;
+          return {
+            id: idx + 1,
+            url: img.url || '',
+            title: filename
+          };
+        });
+        setImages(updatedImages);
+        console.log('PHONE - Images with filenames:', updatedImages);
       } else {
         setImages([
-          { id: 1, url: 'https://via.placeholder.com/400?text=Option+1', title: 'Option 1' },
-          { id: 2, url: 'https://via.placeholder.com/400?text=Option+2', title: 'Option 2' },
-          { id: 3, url: 'https://via.placeholder.com/400?text=Option+3', title: 'Option 3' },
-          { id: 4, url: 'https://via.placeholder.com/400?text=Option+4', title: 'Option 4' },
+          { id: 1, url: 'https://via.placeholder.com/400?text=Character+1', title: 'Ariel' },
+          { id: 2, url: 'https://via.placeholder.com/400?text=Character+2', title: 'Sage' },
+          { id: 3, url: 'https://via.placeholder.com/400?text=Character+3', title: 'Character 3' },
+          { id: 4, url: 'https://via.placeholder.com/400?text=Character+4', title: 'Character 4' },
         ]);
       }
     } catch (error) {
-      console.error('Failed to load images:', error);
+      console.error('PHONE - Failed to load images:', error);
     }
   }
 
@@ -491,7 +502,7 @@ function MePhoneView() {
         
         {/* Voting Grid */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          {images.map((image, index) => (
+          {images.map((image) => (
             <button
               key={image.id}
               onClick={() => handleVote(image.id)}
@@ -504,7 +515,7 @@ function MePhoneView() {
                 <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
               </div>
               <div className="bg-gray-800/90 py-2 text-center">
-                <span className="text-sm font-semibold">Option {index + 1}</span>
+                <span className="text-sm font-semibold">{image.title}</span>
               </div>
             </button>
           ))}
@@ -660,7 +671,13 @@ function MeDisplayView() {
         </div>
 
         {/* Title */}
-        <h1 className="text-5xl font-normal text-center mb-2 tracking-wide">Eerste ronde</h1>
+        <h1 className="text-5xl font-normal text-center mb-2 tracking-wide">
+          {state.round === 1 ? 'Eerste ronde' : 
+           state.round === 2 ? 'Tweede ronde' : 
+           state.round === 3 ? 'Derde ronde' : 
+           state.round === 4 ? 'Vierde ronde' : 
+           `Ronde ${state.round}`}
+        </h1>
         
         {/* Subheading */}
         <p className="text-xl text-center text-blue-300 mb-4 font-normal">
