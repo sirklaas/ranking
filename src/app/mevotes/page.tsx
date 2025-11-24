@@ -405,9 +405,33 @@ function MePhoneView() {
   const [images, setImages] = useState<VoteImage[]>([]);
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
   const [voterId] = useState(() => `voter_${Math.random().toString(36).substring(2, 15)}`);
+  const [votingState, setVotingState] = useState<{ appState: string; round: number }>({ appState: 'IDLE', round: 1 });
 
   useEffect(() => {
     loadImages();
+    
+    // Subscribe to voting session state
+    console.log('PHONE - Setting up PocketBase subscription');
+    pb.collection('voting_session').subscribe('*', (e) => {
+      if (e.record.session_id === SESSION_ID) {
+        console.log('PHONE - Received state update:', e.record.app_state, 'Round:', e.record.round);
+        setVotingState({ appState: e.record.app_state, round: e.record.round });
+        // Reset vote when new round starts
+        if (e.record.app_state === 'IDLE') {
+          setSelectedVote(null);
+        }
+      }
+    }).catch((error) => {
+      console.error('PHONE - Subscription failed:', error);
+    });
+    
+    return () => {
+      try {
+        pb.collection('voting_session').unsubscribe('*');
+      } catch (error) {
+        // Ignore
+      }
+    };
   }, []);
 
   async function loadImages() {
@@ -431,7 +455,24 @@ function MePhoneView() {
 
   async function handleVote(imageId: number) {
     if (selectedVote) return;
-    setSelectedVote(imageId);
+    
+    try {
+      console.log('PHONE - Submitting vote:', { imageId, voterId, round: votingState.round });
+      
+      // Submit vote to PocketBase
+      await pb.collection('votes').create({
+        session_id: SESSION_ID,
+        round: votingState.round,
+        voter_id: voterId,
+        image_id: imageId
+      });
+      
+      setSelectedVote(imageId);
+      console.log('PHONE - Vote submitted successfully');
+    } catch (error) {
+      console.error('PHONE - Failed to submit vote:', error);
+      alert('Failed to submit vote. Please try again.');
+    }
   }
 
   return (
@@ -440,7 +481,12 @@ function MePhoneView() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-blue-400 mb-2">Cast Your Vote</h1>
-          <p className="text-gray-400">Round 1 will begin shortly...</p>
+          <p className="text-gray-400">
+            {votingState.appState === 'VOTING' ? `Round ${votingState.round} - Vote now!` : 
+             votingState.appState === 'RESULTS' ? 'Voting closed - Results coming...' :
+             votingState.appState === 'REVEAL' ? 'The winner is being revealed!' :
+             `Round ${votingState.round} will begin shortly...`}
+          </p>
         </div>
         
         {/* Voting Grid */}
@@ -449,10 +495,10 @@ function MePhoneView() {
             <button
               key={image.id}
               onClick={() => handleVote(image.id)}
-              disabled={!!selectedVote}
+              disabled={!!selectedVote || votingState.appState !== 'VOTING'}
               className={`relative rounded-xl overflow-hidden ${
                 selectedVote === image.id ? 'ring-4 ring-blue-400' : ''
-              } transition-all`}
+              } ${votingState.appState !== 'VOTING' ? 'opacity-50 cursor-not-allowed' : ''} transition-all`}
             >
               <div className="aspect-square bg-gray-800">
                 <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
