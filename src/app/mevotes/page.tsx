@@ -57,6 +57,7 @@ function MePresenterView() {
 
   useEffect(() => {
     loadImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Countdown timer
@@ -64,10 +65,10 @@ function MePresenterView() {
     if (!state.timerActive) return;
     if (state.countdown <= 0) {
       // Stop timer but stay in VOTING state - wait for manual "Show results" click
-      setState({ ...state, timerActive: false });
+      setState(prev => ({ ...prev, timerActive: false }));
       return;
     }
-    const timer = setTimeout(() => setState({ ...state, countdown: state.countdown - 1 }), 1000);
+    const timer = setTimeout(() => setState(prev => ({ ...prev, countdown: prev.countdown - 1 })), 1000);
     return () => clearTimeout(timer);
   }, [state.countdown, state.timerActive]);
 
@@ -78,11 +79,11 @@ function MePresenterView() {
       console.log('MEPRESENTER - Images loaded:', data);
       if (data.success && data.images) {
         // Extract filename from URL as title
-        const updatedImages = data.images.map((img: any, idx: number) => {
+        const updatedImages = data.images.map((img: { url?: string; id?: number }, idx: number) => {
           const filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Image ${idx + 1}` : images[idx]?.title || `Image ${idx + 1}`;
           return {
             id: img.id || idx + 1,
-            url: img.url,
+            url: img.url || '',
             title: filename
           };
         });
@@ -443,10 +444,12 @@ function MeDisplayView() {
     timerActive: false,
     countdown: 20
   });
-  const [animatedPercentages, setAnimatedPercentages] = useState<Record<number, number>>({});
+  // Will be used for animated percentage reveal
+  // const [animatedPercentages, setAnimatedPercentages] = useState<Record<number, number>>({});
 
   useEffect(() => {
     loadImages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     // Subscribe to state changes from presenter
     pb.collection('voting_session').subscribe('*', (e) => {
       if (e.record.session_id === SESSION_ID) {
@@ -468,16 +471,17 @@ function MeDisplayView() {
     return () => {
       try {
         pb.collection('voting_session').unsubscribe('*');
-      } catch (e) {}
+      } catch (error) {
+        // Ignore unsubscribe errors
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Countdown timer
   useEffect(() => {
     if (!state.timerActive) return;
     if (state.countdown <= 0) return;
-    const timer = setTimeout(() => setState({ ...state, countdown: state.countdown - 1 }), 1000);
+    const timer = setTimeout(() => setState(prev => ({ ...prev, countdown: prev.countdown - 1 })), 1000);
     return () => clearTimeout(timer);
   }, [state.countdown, state.timerActive]);
 
@@ -488,11 +492,11 @@ function MeDisplayView() {
       console.log('MEDISPLAY - Images loaded:', data);
       if (data.success && data.images && data.images.length > 0) {
         // Extract filename from URL as title
-        const updatedImages = data.images.map((img: any, idx: number) => {
+        const updatedImages = data.images.map((img: { url?: string }, idx: number) => {
           const filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Image ${idx + 1}` : `Image ${idx + 1}`;
           return {
             id: idx + 1,
-            url: img.url,
+            url: img.url || '',
             title: filename
           };
         });
@@ -581,7 +585,7 @@ function MeDisplayView() {
         
         {/* 2x2 Grid - Full Width */}
         <div className="grid grid-cols-2 gap-6 w-full flex-1">
-          {images.map((image, index) => (
+          {images.map((image) => (
             <div key={image.id} className="relative">
               {/* Name Label - Top Center */}
               <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-900/90 px-4 py-2 rounded-lg z-10">
