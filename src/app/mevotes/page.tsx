@@ -470,6 +470,7 @@ function MeDisplayView() {
         pb.collection('voting_session').unsubscribe('*');
       } catch (e) {}
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Countdown timer
