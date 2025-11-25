@@ -37,19 +37,22 @@ export default function FakeVotesPage() {
 
   async function loadPlayers() {
     try {
+      console.log('FAKEVOTES - Loading players from PocketBase...');
       const records = await pb.collection('players').getFullList({
         sort: 'name'
       });
+      console.log('FAKEVOTES - Loaded records:', records);
       const playerList = records.map((p) => ({
         id: p.id,
         name: (p as unknown as { name: string }).name,
         voted: false
       }));
       setPlayers(playerList);
-      setStatus(`Loaded ${playerList.length} players`);
+      setStatus(`✅ Loaded ${playerList.length} players from PocketBase`);
+      console.log('FAKEVOTES - Player list:', playerList);
     } catch (error) {
-      console.error('Failed to load players:', error);
-      setStatus('Failed to load players from PocketBase');
+      console.error('FAKEVOTES - Failed to load players:', error);
+      setStatus(`❌ Failed to load players: ${error}`);
     }
   }
 
@@ -233,23 +236,31 @@ export default function FakeVotesPage() {
         {/* Player List */}
         <div className="bg-gray-800/50 border border-purple-500/30 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Players ({players.length})</h2>
-          <div className="grid grid-cols-5 gap-2 max-h-96 overflow-y-auto">
-            {players.map((player) => (
-              <div
-                key={player.id}
-                className={`text-sm p-2 rounded ${
-                  player.voted
-                    ? 'bg-green-900/50 border border-green-500/30'
-                    : 'bg-gray-700/50 border border-gray-600/30'
-                }`}
-              >
-                <div className="font-semibold truncate">{player.name}</div>
-                {player.character && (
-                  <div className="text-xs text-green-400">{player.character}</div>
-                )}
-              </div>
-            ))}
-          </div>
+          {players.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <p className="mb-2">No players loaded</p>
+              <p className="text-sm">Make sure the &apos;players&apos; collection exists in PocketBase</p>
+              <p className="text-xs mt-2">Check browser console (F12) for errors</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-5 gap-2 max-h-96 overflow-y-auto">
+              {players.map((player) => (
+                <div
+                  key={player.id}
+                  className={`text-sm p-2 rounded ${
+                    player.voted
+                      ? 'bg-green-900/50 border border-green-500/30'
+                      : 'bg-gray-700/50 border border-gray-600/30'
+                  }`}
+                >
+                  <div className="font-semibold truncate">{player.name}</div>
+                  {player.character && (
+                    <div className="text-xs text-green-400">{player.character}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-gray-800/50 border border-purple-500/30 rounded-lg p-6 mb-6">
