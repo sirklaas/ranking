@@ -157,10 +157,12 @@ function MePresenterView() {
       });
       
       console.log('PRESENTER - Vote counts:', voteCounts);
+      console.log('PRESENTER - Total votes found:', Object.values(voteCounts).reduce((sum, count) => sum + count, 0));
       
       const newState = { ...state, appState: 'RESULTS' as const, timerActive: false, votes: voteCounts };
       setState(newState);
-      updatePocketBase(newState);
+      console.log('PRESENTER - Updating PocketBase with votes:', voteCounts);
+      await updatePocketBase(newState);
     } catch (error) {
       console.error('PRESENTER - Failed to count votes:', error);
       // Still show results even if counting fails
@@ -685,13 +687,16 @@ function MeDisplayView() {
     }
 
     // Calculate actual percentages from votes
+    console.log('DISPLAY - Animating percentages, state.votes:', state.votes);
     const totalVotes = Object.values(state.votes).reduce((sum, count) => sum + count, 0);
+    console.log('DISPLAY - Total votes:', totalVotes);
     const targetPercentages: Record<number, number> = {};
     
     images.forEach(img => {
       const voteCount = state.votes[img.id] || 0;
       targetPercentages[img.id] = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
     });
+    console.log('DISPLAY - Target percentages:', targetPercentages);
 
     // Animate from 0 to target percentage
     const duration = 2000; // 2 seconds
