@@ -37,18 +37,22 @@ export default function FakeVotesPage() {
 
   async function loadPlayers() {
     try {
-      console.log('FAKEVOTES - Loading players from PocketBase...');
-      const records = await pb.collection('players').getFullList({
-        sort: 'name'
-      });
-      console.log('FAKEVOTES - Loaded records:', records);
-      const playerList = records.map((p) => ({
-        id: p.id,
-        name: (p as unknown as { name: string }).name,
+      console.log('FAKEVOTES - Loading players from voting_session...');
+      const session = await pb.collection('voting_session')
+        .getFirstListItem(`session_id="${SESSION_ID}"`);
+      
+      console.log('FAKEVOTES - Session:', session);
+      const playersArray = (session as unknown as { players: string[] }).players || [];
+      console.log('FAKEVOTES - Players array:', playersArray);
+      
+      const playerList = playersArray.map((name, idx) => ({
+        id: `player_${idx}`,
+        name: name,
         voted: false
       }));
+      
       setPlayers(playerList);
-      setStatus(`✅ Loaded ${playerList.length} players from PocketBase`);
+      setStatus(`✅ Loaded ${playerList.length} players from voting session`);
       console.log('FAKEVOTES - Player list:', playerList);
     } catch (error) {
       console.error('FAKEVOTES - Failed to load players:', error);
@@ -239,7 +243,7 @@ export default function FakeVotesPage() {
           {players.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <p className="mb-2">No players loaded</p>
-              <p className="text-sm">Make sure the &apos;players&apos; collection exists in PocketBase</p>
+              <p className="text-sm">Make sure players are imported in voting_session</p>
               <p className="text-xs mt-2">Check browser console (F12) for errors</p>
             </div>
           ) : (
