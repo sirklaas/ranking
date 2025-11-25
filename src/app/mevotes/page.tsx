@@ -140,10 +140,35 @@ function MePresenterView() {
     updatePocketBase(newState);
   }
 
-  function handleShowResults() {
-    const newState = { ...state, appState: 'RESULTS' as const, timerActive: false };
-    setState(newState);
-    updatePocketBase(newState);
+  async function handleShowResults() {
+    try {
+      // Count votes from PocketBase
+      console.log('PRESENTER - Counting votes for round', state.round);
+      const allVotes = await pb.collection('votes').getFullList({
+        filter: `session_id="${SESSION_ID}" && round=${state.round}`
+      });
+      
+      console.log('PRESENTER - Found votes:', allVotes);
+      
+      // Count votes per image
+      const voteCounts: Record<number, number> = {};
+      allVotes.forEach((vote: any) => {
+        const imageId = vote.image_id;
+        voteCounts[imageId] = (voteCounts[imageId] || 0) + 1;
+      });
+      
+      console.log('PRESENTER - Vote counts:', voteCounts);
+      
+      const newState = { ...state, appState: 'RESULTS' as const, timerActive: false, votes: voteCounts };
+      setState(newState);
+      updatePocketBase(newState);
+    } catch (error) {
+      console.error('PRESENTER - Failed to count votes:', error);
+      // Still show results even if counting fails
+      const newState = { ...state, appState: 'RESULTS' as const, timerActive: false };
+      setState(newState);
+      updatePocketBase(newState);
+    }
   }
 
   function handleReveal() {
@@ -541,6 +566,11 @@ function MePhoneView() {
           {subheadings[votingState.appState as keyof typeof subheadings] || subheadings.IDLE}
         </p>
 
+        {/* Debug Info */}
+        <div className="text-center mb-2 text-xs text-gray-500">
+          State: {votingState.appState} | Timer: {votingState.timerActive ? 'ON' : 'OFF'} | Countdown: {votingState.countdown}
+        </div>
+
         {/* Timer Dots - Fixed height space to prevent layout shift */}
         <div className="h-8 flex justify-center items-center gap-2 mb-6">
           {votingState.appState === 'VOTING' && votingState.timerActive ? (
@@ -766,7 +796,7 @@ function MeDisplayView() {
       <div className="container mx-auto h-full flex flex-col justify-center px-4 py-4">
         {/* Debug Info */}
         <div className="text-center mb-1 text-xs text-gray-500">
-          State: {state.appState} | Timer: {state.timerActive ? 'ON' : 'OFF'} | Countdown: {state.countdown} | Press 1=IDLE, 2=VOTING, 3=RESULTS, 4=REVEAL | Press F for fullscreen
+          State: {state.appState} | Timer: {state.timerActive ? 'ON' : 'OFF'} | Countdown: {state.countdown} | Votes: {JSON.stringify(state.votes)} | Press 1=IDLE, 2=VOTING, 3=RESULTS, 4=REVEAL | Press F for fullscreen
         </div>
 
         {/* Title */}
