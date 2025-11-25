@@ -1,16 +1,61 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PocketBase from 'pocketbase';
 
 const pb = new PocketBase('https://pinkmilk.pockethost.io');
 const SESSION_ID = 'default_session';
+
+interface VoteStats {
+  totalVotes: number;
+  votesByCharacter: Record<number, number>;
+  currentRound: number;
+}
 
 export default function FakeVotesPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [status, setStatus] = useState('');
   const [numVoters, setNumVoters] = useState(20);
   const [voteDuration, setVoteDuration] = useState(20); // seconds
+  const [stats, setStats] = useState<VoteStats>({ totalVotes: 0, votesByCharacter: {}, currentRound: 1 });
+
+  useEffect(() => {
+    loadStats();
+    // Refresh stats every 2 seconds
+    const interval = setInterval(loadStats, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadStats() {
+    try {
+      // Get current session
+      const session = await pb.collection('voting_session')
+        .getFirstListItem(`session_id="${SESSION_ID}"`)
+        .catch(() => null);
+      
+      const currentRound = session?.round || 1;
+      
+      // Get all votes for current round
+      const allVotes = await pb.collection('votes').getFullList({
+        filter: `session_id="${SESSION_ID}" && round=${currentRound}`
+      });
+      
+      // Count votes per character
+      const votesByCharacter: Record<number, number> = {};
+      allVotes.forEach((vote: any) => {
+        const imageId = vote.image_id;
+        votesByCharacter[imageId] = (votesByCharacter[imageId] || 0) + 1;
+      });
+      
+      setStats({
+        totalVotes: allVotes.length,
+        votesByCharacter,
+        currentRound
+      });
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    }
+  }
 
   async function generateFakeVotes() {
     setIsGenerating(true);
@@ -67,6 +112,7 @@ export default function FakeVotesPage() {
       }
 
       setStatus(`✅ Successfully created ${successCount} fake votes for round ${currentRound}!`);
+      loadStats(); // Refresh stats
     } catch (error) {
       console.error('Error generating fake votes:', error);
       setStatus(`❌ Error: ${error}`);
@@ -97,6 +143,7 @@ export default function FakeVotesPage() {
       }
 
       setStatus(`✅ Deleted ${deletedCount} votes!`);
+      loadStats(); // Refresh stats
     } catch (error) {
       console.error('Error clearing votes:', error);
       setStatus(`❌ Error: ${error}`);
@@ -105,9 +152,35 @@ export default function FakeVotesPage() {
     }
   }
 
+  const characterNames = ['Ariel', 'Sage', 'Cherry', 'Pandora'];
+  const totalVotes = stats.totalVotes;
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white p-8">
       <div className="max-w-2xl mx-auto">
+        {/* Stats Header */}
+        <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-bold text-purple-300 mb-4">Ronde {stats.currentRound} - Stemmen</h2>
+          <div className="text-3xl font-bold mb-4">
+            Aantal stemmen: {stats.totalVotes}/{numVoters}
+          </div>
+          
+          {/* Character Percentages */}
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((id) => {
+              const votes = stats.votesByCharacter[id] || 0;
+              const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+              return (
+                <div key={id} className="bg-gray-800/50 rounded-lg p-4">
+                  <div className="text-sm text-gray-400">{characterNames[id - 1]}</div>
+                  <div className="text-2xl font-bold text-purple-300">{percentage}%</div>
+                  <div className="text-xs text-gray-500">{votes} {votes === 1 ? 'stem' : 'stemmen'}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         <h1 className="text-4xl font-bold text-purple-400 mb-2">Fake Votes Generator</h1>
         <p className="text-gray-400 mb-8">Generate realistic fake votes for testing</p>
 
