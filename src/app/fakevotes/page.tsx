@@ -6,12 +6,6 @@ import PocketBase from 'pocketbase';
 const pb = new PocketBase('https://pinkmilk.pockethost.io');
 const SESSION_ID = 'default_session';
 
-interface VoteStats {
-  totalVotes: number;
-  votesByCharacter: Record<number, number>;
-  currentRound: number;
-}
-
 interface Player {
   id: string;
   name: string;
@@ -23,29 +17,11 @@ export default function FakeVotesPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [status, setStatus] = useState('');
   const [players, setPlayers] = useState<Player[]>([]);
-  const [voteDuration, setVoteDuration] = useState(20); // seconds
-  const [stats, setStats] = useState<VoteStats>({ totalVotes: 0, votesByCharacter: {}, currentRound: 1 });
   const [votingProgress, setVotingProgress] = useState(0);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const init = async () => {
-      if (mounted) await loadPlayers();
-      if (mounted) await loadStats();
-    };
-    
-    init();
-    
-    // Refresh stats every 5 seconds (reduce API calls)
-    const interval = setInterval(() => {
-      if (mounted) loadStats();
-    }, 5000);
-    
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
+    // Just load players once on mount
+    loadPlayers();
   }, []);
 
   async function loadPlayers() {
@@ -68,41 +44,17 @@ export default function FakeVotesPage() {
       setStatus(`✅ Loaded ${playerList.length} players from voting session`);
       console.log('FAKEVOTES - Player list:', playerList);
     } catch (error) {
-      console.error('FAKEVOTES - Failed to load players:', error);
-      setStatus(`❌ Failed to load players: ${error}`);
+      const err = error as { status?: number };
+      if (err.status === 429) {
+        console.error('FAKEVOTES - Rate limited! Wait a few minutes before trying again.');
+        setStatus(`⏰ Rate limited - wait 5 minutes and refresh the page`);
+      } else {
+        console.error('FAKEVOTES - Failed to load players:', error);
+        setStatus(`❌ Failed to load players: ${error}`);
+      }
     }
   }
 
-  async function loadStats() {
-    try {
-      // Get current session
-      const session = await pb.collection('voting_session')
-        .getFirstListItem(`session_id="${SESSION_ID}"`)
-        .catch(() => null);
-      
-      const currentRound = session?.round || 1;
-      
-      // Get all votes for current round
-      const allVotes = await pb.collection('votes').getFullList({
-        filter: `session_id="${SESSION_ID}" && round=${currentRound}`
-      });
-      
-      // Count votes per character
-      const votesByCharacter: Record<number, number> = {};
-      allVotes.forEach((vote) => {
-        const imageId = (vote as unknown as { image_id: number }).image_id;
-        votesByCharacter[imageId] = (votesByCharacter[imageId] || 0) + 1;
-      });
-      
-      setStats({
-        totalVotes: allVotes.length,
-        votesByCharacter,
-        currentRound
-      });
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  }
 
   async function generateFakeVotes() {
     if (players.length === 0) {
@@ -189,7 +141,6 @@ export default function FakeVotesPage() {
       console.log(`FAKEVOTES - Completed: ${successCount}/${shuffledPlayers.length} votes created`);
 
       setStatus(`✅ Successfully created ${successCount} fake votes for round ${currentRound}!`);
-      loadStats(); // Refresh stats
     } catch (error) {
       console.error('Error generating fake votes:', error);
       setStatus(`❌ Error: ${error}`);
@@ -224,8 +175,6 @@ export default function FakeVotesPage() {
       // Reset player voted status
       setPlayers(prev => prev.map(p => ({ ...p, voted: false, character: undefined })));
       setVotingProgress(0);
-      
-      loadStats(); // Refresh stats
     } catch (error) {
       console.error('Error clearing votes:', error);
       setStatus(`❌ Error: ${error}`);
@@ -234,35 +183,21 @@ export default function FakeVotesPage() {
     }
   }
 
-  const characterNames = ['Ariel', 'Sage', 'Cherry', 'Pandora'];
-  const totalVotes = stats.totalVotes;
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-5xl font-bold text-purple-400 mb-8 text-center">Fakevotes</h1>
         
-        {/* Stats Header */}
-        <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-bold text-purple-300 mb-4">Ronde {stats.currentRound} - Stemmen</h2>
-          <div className="text-3xl font-bold mb-4">
-            {players.length} players / {votingProgress} votes registered
+        {/* Simple Status */}
+        <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-6 mb-6 text-center">
+          <div className="text-2xl font-bold mb-2">
+            {players.length} players loaded
           </div>
-          
-          {/* Character Percentages */}
-          <div className="grid grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((id) => {
-              const votes = stats.votesByCharacter[id] || 0;
-              const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
-              return (
-                <div key={id} className="bg-gray-800/50 rounded-lg p-4">
-                  <div className="text-sm text-gray-400">{characterNames[id - 1]}</div>
-                  <div className="text-2xl font-bold text-purple-300">{percentage}%</div>
-                  <div className="text-xs text-gray-500">{votes} {votes === 1 ? 'stem' : 'stemmen'}</div>
-                </div>
-              );
-            })}
-          </div>
+          {votingProgress > 0 && (
+            <div className="text-xl text-green-400">
+              {votingProgress} votes created
+            </div>
+          )}
         </div>
 
         {/* Player List */}
@@ -296,20 +231,10 @@ export default function FakeVotesPage() {
         </div>
 
         <div className="bg-gray-800/50 border border-purple-500/30 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Settings</h2>
-
-          <div className="mb-6">
-            <label className="block text-sm text-gray-400 mb-2">Vote Duration (seconds)</label>
-            <input
-              type="number"
-              value={voteDuration}
-              onChange={(e) => setVoteDuration(parseInt(e.target.value))}
-              min="1"
-              max="300"
-              className="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-white"
-            />
-            <p className="text-xs text-gray-500 mt-1">Votes will be spread evenly across this duration</p>
-          </div>
+          <h2 className="text-xl font-semibold mb-4">Actions</h2>
+          <p className="text-sm text-gray-400 mb-6">
+            Votes will use the timer duration set in the presenter
+          </p>
 
           <div className="flex gap-4">
             <button
