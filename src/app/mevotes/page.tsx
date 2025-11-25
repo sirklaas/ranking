@@ -552,8 +552,7 @@ function MeDisplayView() {
     timerActive: false,
     countdown: 20
   });
-  // Will be used for animated percentage reveal
-  // const [animatedPercentages, setAnimatedPercentages] = useState<Record<number, number>>({});
+  const [animatedPercentages, setAnimatedPercentages] = useState<Record<number, number>>({});
 
   useEffect(() => {
     loadImages();
@@ -597,6 +596,49 @@ function MeDisplayView() {
     const timer = setTimeout(() => setState(prev => ({ ...prev, countdown: prev.countdown - 1 })), 1000);
     return () => clearTimeout(timer);
   }, [state.countdown, state.timerActive]);
+
+  // Animate percentages when entering RESULTS state
+  useEffect(() => {
+    if (state.appState !== 'RESULTS') {
+      setAnimatedPercentages({});
+      return;
+    }
+
+    // Calculate actual percentages from votes
+    const totalVotes = Object.values(state.votes).reduce((sum, count) => sum + count, 0);
+    const targetPercentages: Record<number, number> = {};
+    
+    images.forEach(img => {
+      const voteCount = state.votes[img.id] || 0;
+      targetPercentages[img.id] = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+    });
+
+    // Animate from 0 to target percentage
+    const duration = 2000; // 2 seconds
+    const steps = 60;
+    const stepDuration = duration / steps;
+    let currentStep = 0;
+
+    const interval = setInterval(() => {
+      currentStep++;
+      const progress = currentStep / steps;
+      
+      const newPercentages: Record<number, number> = {};
+      images.forEach(img => {
+        const target = targetPercentages[img.id] || 0;
+        newPercentages[img.id] = Math.round(target * progress);
+      });
+      
+      setAnimatedPercentages(newPercentages);
+
+      if (currentStep >= steps) {
+        clearInterval(interval);
+        setAnimatedPercentages(targetPercentages);
+      }
+    }, stepDuration);
+
+    return () => clearInterval(interval);
+  }, [state.appState, state.votes, images]);
 
   async function loadImages() {
     try {
@@ -714,12 +756,26 @@ function MeDisplayView() {
               </div>
               
               {/* Image Container */}
-              <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50 bg-gradient-to-br from-blue-900 to-gray-900">
+              <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50 bg-gradient-to-br from-blue-900 to-gray-900 relative">
                 {image.url ? (
                   <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center text-gray-400">
                     {image.title}
+                  </div>
+                )}
+                
+                {/* Percentage Overlay - Only show in RESULTS state */}
+                {state.appState === 'RESULTS' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="text-center">
+                      <div className="text-9xl font-bold text-white mb-2 drop-shadow-2xl animate-pulse">
+                        {animatedPercentages[image.id] || 0}%
+                      </div>
+                      <div className="text-2xl text-blue-300 font-semibold">
+                        {state.votes[image.id] || 0} {(state.votes[image.id] || 0) === 1 ? 'stem' : 'stemmen'}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
