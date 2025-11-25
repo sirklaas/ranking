@@ -144,16 +144,15 @@ function MePresenterView() {
     try {
       // Count votes from PocketBase
       console.log('PRESENTER - Counting votes for round', state.round);
-      const allVotes = await pb.collection('votes').getFullList({
-        filter: `session_id="${SESSION_ID}" && round=${state.round}`
-      });
+      const filter = `session_id=\\"${SESSION_ID}\\" && round=${state.round}`;
+      const allVotes = await pb.collection('votes').getFullList({ filter });
       
       console.log('PRESENTER - Found votes:', allVotes);
       
       // Count votes per image
       const voteCounts: Record<number, number> = {};
-      allVotes.forEach((vote: any) => {
-        const imageId = vote.image_id;
+      allVotes.forEach((vote) => {
+        const imageId = (vote as unknown as { image_id: number }).image_id;
         voteCounts[imageId] = (voteCounts[imageId] || 0) + 1;
       });
       
@@ -473,7 +472,7 @@ function MePhoneView() {
     return () => {
       try {
         pb.collection('voting_session').unsubscribe('*');
-      } catch (error) {
+      } catch {
         // Ignore
       }
     };
@@ -531,10 +530,11 @@ function MePhoneView() {
       
       setSelectedVote(imageId);
       console.log('PHONE - Vote submitted successfully');
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { response?: { message?: string }; message?: string };
       console.error('PHONE - Failed to submit vote:', error);
-      console.error('PHONE - Error details:', error.response || error.message);
-      alert(`Stem mislukt: ${error.response?.message || error.message || 'Probeer opnieuw'}`);
+      console.error('PHONE - Error details:', err.response || err.message);
+      alert(`Stem mislukt: ${err.response?.message || err.message || 'Probeer opnieuw'}`);
     }
   }
 
@@ -664,7 +664,7 @@ function MeDisplayView() {
     return () => {
       try {
         pb.collection('voting_session').unsubscribe('*');
-      } catch (error) {
+      } catch {
         // Ignore unsubscribe errors
       }
     };
