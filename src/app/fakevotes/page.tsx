@@ -37,10 +37,10 @@ export default function FakeVotesPage() {
     
     init();
     
-    // Refresh stats every 2 seconds
+    // Refresh stats every 5 seconds (reduce API calls)
     const interval = setInterval(() => {
       if (mounted) loadStats();
-    }, 2000);
+    }, 5000);
     
     return () => {
       mounted = false;
@@ -142,6 +142,9 @@ export default function FakeVotesPage() {
 
       let successCount = 0;
       
+      // Add delay to avoid rate limiting
+      const delayBetweenVotes = 100; // 100ms delay = max 10 votes/second
+      
       for (let i = 0; i < shuffledPlayers.length; i++) {
         const player = shuffledPlayers[i];
         
@@ -171,10 +174,19 @@ export default function FakeVotesPage() {
           
           setVotingProgress(successCount);
           setStatus(`${successCount}/${shuffledPlayers.length} votes submitted...`);
+          
+          // Delay to avoid rate limiting (except for last vote)
+          if (i < shuffledPlayers.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, delayBetweenVotes));
+          }
         } catch (error) {
-          console.error('Failed to create vote:', error);
+          console.error(`Failed to create vote for ${player.name}:`, error);
+          console.error('Vote data:', vote);
+          // Continue with next player even if this one fails
         }
       }
+      
+      console.log(`FAKEVOTES - Completed: ${successCount}/${shuffledPlayers.length} votes created`);
 
       setStatus(`✅ Successfully created ${successCount} fake votes for round ${currentRound}!`);
       loadStats(); // Refresh stats
