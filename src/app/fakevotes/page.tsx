@@ -71,7 +71,7 @@ export default function FakeVotesPage() {
       
       // Get all votes for current round
       const allVotes = await pb.collection('votes').getFullList({
-        filter: `session_id=\\"${SESSION_ID}\\" && round=${currentRound}`
+        filter: `session_id="${SESSION_ID}" && round=${currentRound}`
       });
       
       // Count votes per character

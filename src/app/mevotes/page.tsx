@@ -144,7 +144,7 @@ function MePresenterView() {
     try {
       // Count votes from PocketBase
       console.log('PRESENTER - Counting votes for round', state.round);
-      const filter = `session_id=\\"${SESSION_ID}\\" && round=${state.round}`;
+      const filter = `session_id="${SESSION_ID}" && round=${state.round}`;
       const allVotes = await pb.collection('votes').getFullList({ filter });
       
       console.log('PRESENTER - Found votes:', allVotes);
