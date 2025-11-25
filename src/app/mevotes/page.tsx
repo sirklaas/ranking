@@ -440,9 +440,11 @@ function MePhoneView() {
       const data = await response.json();
       console.log('PHONE - Images loaded:', data);
       if (data.success && data.images) {
-        // Extract filename from URL as title
+        // Extract filename from URL as title and clean it up
         const updatedImages = data.images.map((img: { url?: string }, idx: number) => {
-          const filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Character ${idx + 1}` : `Character ${idx + 1}`;
+          let filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Character ${idx + 1}` : `Character ${idx + 1}`;
+          // Remove number prefix (e.g., "1_Ariel" -> "Ariel")
+          filename = filename.replace(/^\d+_/, '');
           return {
             id: idx + 1,
             url: img.url || '',
@@ -491,12 +493,12 @@ function MePhoneView() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-400 mb-2">Cast Your Vote</h1>
+          <h1 className="text-4xl font-bold text-blue-400 mb-2">Stem op jouw favoriet</h1>
           <p className="text-gray-400">
-            {votingState.appState === 'VOTING' ? `Round ${votingState.round} - Vote now!` : 
-             votingState.appState === 'RESULTS' ? 'Voting closed - Results coming...' :
-             votingState.appState === 'REVEAL' ? 'The winner is being revealed!' :
-             `Round ${votingState.round} will begin shortly...`}
+            {votingState.appState === 'VOTING' ? `Ronde ${votingState.round} - Stem nu!` : 
+             votingState.appState === 'RESULTS' ? 'Stemmen gesloten - Resultaten komen...' :
+             votingState.appState === 'REVEAL' ? 'De winnaar wordt onthuld!' :
+             `Ronde ${votingState.round} begint zo...`}
           </p>
         </div>
         
@@ -523,7 +525,7 @@ function MePhoneView() {
 
         {selectedVote && (
           <div className="text-center text-green-400 text-lg font-semibold animate-pulse">
-            ✓ Vote submitted!
+            ✓ Stem verzonden!
           </div>
         )}
       </div>
