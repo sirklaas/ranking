@@ -84,9 +84,11 @@ function MePresenterView() {
       const data = await response.json();
       console.log('MEPRESENTER - Images loaded:', data);
       if (data.success && data.images) {
-        // Extract filename from URL as title
+        // Extract filename from URL as title and clean it up
         const updatedImages = data.images.map((img: { url?: string; id?: number }, idx: number) => {
-          const filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Image ${idx + 1}` : images[idx]?.title || `Image ${idx + 1}`;
+          let filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Image ${idx + 1}` : images[idx]?.title || `Image ${idx + 1}`;
+          // Remove number prefix (e.g., "1_Ariel" -> "Ariel")
+          filename = filename.replace(/^\d+_/, '');
           return {
             id: img.id || idx + 1,
             url: img.url || '',
@@ -602,9 +604,11 @@ function MeDisplayView() {
       const data = await response.json();
       console.log('MEDISPLAY - Images loaded:', data);
       if (data.success && data.images && data.images.length > 0) {
-        // Extract filename from URL as title
+        // Extract filename from URL as title and clean it up
         const updatedImages = data.images.map((img: { url?: string }, idx: number) => {
-          const filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Image ${idx + 1}` : `Image ${idx + 1}`;
+          let filename = img.url ? img.url.split('/').pop()?.split('.')[0] || `Image ${idx + 1}` : `Image ${idx + 1}`;
+          // Remove number prefix (e.g., "1_Ariel" -> "Ariel")
+          filename = filename.replace(/^\d+_/, '');
           return {
             id: idx + 1,
             url: img.url || '',
