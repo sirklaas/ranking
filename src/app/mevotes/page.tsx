@@ -493,18 +493,23 @@ function MePhoneView() {
       console.log('PHONE - Submitting vote:', { imageId, voterId, round: votingState.round });
       
       // Submit vote to PocketBase
-      await pb.collection('votes').create({
+      const voteData = {
         session_id: SESSION_ID,
         round: votingState.round,
         voter_id: voterId,
         image_id: imageId
-      });
+      };
+      
+      console.log('PHONE - Vote data:', voteData);
+      const result = await pb.collection('votes').create(voteData);
+      console.log('PHONE - Vote created:', result);
       
       setSelectedVote(imageId);
       console.log('PHONE - Vote submitted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('PHONE - Failed to submit vote:', error);
-      alert('Failed to submit vote. Please try again.');
+      console.error('PHONE - Error details:', error.response || error.message);
+      alert(`Stem mislukt: ${error.response?.message || error.message || 'Probeer opnieuw'}`);
     }
   }
 
