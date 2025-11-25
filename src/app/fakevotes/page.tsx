@@ -28,11 +28,24 @@ export default function FakeVotesPage() {
   const [votingProgress, setVotingProgress] = useState(0);
 
   useEffect(() => {
-    loadPlayers();
-    loadStats();
+    let mounted = true;
+    
+    const init = async () => {
+      if (mounted) await loadPlayers();
+      if (mounted) await loadStats();
+    };
+    
+    init();
+    
     // Refresh stats every 2 seconds
-    const interval = setInterval(loadStats, 2000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (mounted) loadStats();
+    }, 2000);
+    
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   async function loadPlayers() {
