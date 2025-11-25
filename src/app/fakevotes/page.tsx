@@ -12,19 +12,46 @@ interface VoteStats {
   currentRound: number;
 }
 
+interface Player {
+  id: string;
+  name: string;
+  voted: boolean;
+  character?: string;
+}
+
 export default function FakeVotesPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [status, setStatus] = useState('');
-  const [numVoters, setNumVoters] = useState(20);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [voteDuration, setVoteDuration] = useState(20); // seconds
   const [stats, setStats] = useState<VoteStats>({ totalVotes: 0, votesByCharacter: {}, currentRound: 1 });
+  const [votingProgress, setVotingProgress] = useState(0);
 
   useEffect(() => {
+    loadPlayers();
     loadStats();
     // Refresh stats every 2 seconds
     const interval = setInterval(loadStats, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  async function loadPlayers() {
+    try {
+      const records = await pb.collection('players').getFullList({
+        sort: 'name'
+      });
+      const playerList = records.map((p) => ({
+        id: p.id,
+        name: (p as unknown as { name: string }).name,
+        voted: false
+      }));
+      setPlayers(playerList);
+      setStatus(`Loaded ${playerList.length} players`);
+    } catch (error) {
+      console.error('Failed to load players:', error);
+      setStatus('Failed to load players from PocketBase');
+    }
+  }
 
   async function loadStats() {
     try {
@@ -58,8 +85,14 @@ export default function FakeVotesPage() {
   }
 
   async function generateFakeVotes() {
+    if (players.length === 0) {
+      setStatus('Error: No players loaded!');
+      return;
+    }
+
     setIsGenerating(true);
-    setStatus('Generating fake votes...');
+    setVotingProgress(0);
+    setStatus('Starting fake voting...');
 
     try {
       // Get current session state
@@ -73,39 +106,48 @@ export default function FakeVotesPage() {
         return;
       }
 
-      const currentRound = session.round;
+      const currentRound = (session as unknown as { round: number }).round;
       const characterIds = [1, 2, 3, 4]; // 4 characters
+      const characterNames = ['Ariel', 'Sage', 'Cherry', 'Pandora'];
 
-      setStatus(`Creating ${numVoters} fake votes for round ${currentRound}...`);
-
-      // Generate votes spread over the voting duration
-      const votes = [];
-      const now = Date.now();
+      // Shuffle players
+      const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
       
-      for (let i = 0; i < numVoters; i++) {
+      // Calculate time interval between votes
+      const intervalMs = (voteDuration * 1000) / shuffledPlayers.length;
+      const now = Date.now();
+
+      let successCount = 0;
+      
+      for (let i = 0; i < shuffledPlayers.length; i++) {
+        const player = shuffledPlayers[i];
+        
         // Random character choice
         const randomCharacter = characterIds[Math.floor(Math.random() * characterIds.length)];
+        const characterName = characterNames[randomCharacter - 1];
         
-        // Random timestamp within voting duration
-        const randomDelay = Math.random() * voteDuration * 1000;
-        const voteTime = new Date(now - randomDelay);
+        // Spread votes over time
+        const voteTime = new Date(now - (intervalMs * (shuffledPlayers.length - i)));
         
-        votes.push({
+        const vote = {
           session_id: SESSION_ID,
           round: currentRound,
-          voter_id: `fake_voter_${i}_${Date.now()}`,
+          voter_id: player.id,
           image_id: randomCharacter,
           created: voteTime.toISOString()
-        });
-      }
+        };
 
-      // Submit all votes
-      let successCount = 0;
-      for (const vote of votes) {
         try {
           await pb.collection('votes').create(vote);
           successCount++;
-          setStatus(`Submitted ${successCount}/${numVoters} votes...`);
+          
+          // Update player status
+          setPlayers(prev => prev.map(p => 
+            p.id === player.id ? { ...p, voted: true, character: characterName } : p
+          ));
+          
+          setVotingProgress(successCount);
+          setStatus(`${successCount}/${shuffledPlayers.length} votes submitted...`);
         } catch (error) {
           console.error('Failed to create vote:', error);
         }
@@ -143,6 +185,11 @@ export default function FakeVotesPage() {
       }
 
       setStatus(`✅ Deleted ${deletedCount} votes!`);
+      
+      // Reset player voted status
+      setPlayers(prev => prev.map(p => ({ ...p, voted: false, character: undefined })));
+      setVotingProgress(0);
+      
       loadStats(); // Refresh stats
     } catch (error) {
       console.error('Error clearing votes:', error);
@@ -157,12 +204,14 @@ export default function FakeVotesPage() {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white p-8">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-5xl font-bold text-purple-400 mb-8 text-center">Fakevotes</h1>
+        
         {/* Stats Header */}
         <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-6 mb-6">
           <h2 className="text-2xl font-bold text-purple-300 mb-4">Ronde {stats.currentRound} - Stemmen</h2>
           <div className="text-3xl font-bold mb-4">
-            Aantal stemmen: {stats.totalVotes}/{numVoters}
+            {players.length} players / {votingProgress} votes registered
           </div>
           
           {/* Character Percentages */}
@@ -181,23 +230,30 @@ export default function FakeVotesPage() {
           </div>
         </div>
 
-        <h1 className="text-4xl font-bold text-purple-400 mb-2">Fake Votes Generator</h1>
-        <p className="text-gray-400 mb-8">Generate realistic fake votes for testing</p>
+        {/* Player List */}
+        <div className="bg-gray-800/50 border border-purple-500/30 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Players ({players.length})</h2>
+          <div className="grid grid-cols-5 gap-2 max-h-96 overflow-y-auto">
+            {players.map((player) => (
+              <div
+                key={player.id}
+                className={`text-sm p-2 rounded ${
+                  player.voted
+                    ? 'bg-green-900/50 border border-green-500/30'
+                    : 'bg-gray-700/50 border border-gray-600/30'
+                }`}
+              >
+                <div className="font-semibold truncate">{player.name}</div>
+                {player.character && (
+                  <div className="text-xs text-green-400">{player.character}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="bg-gray-800/50 border border-purple-500/30 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Settings</h2>
-          
-          <div className="mb-4">
-            <label className="block text-sm text-gray-400 mb-2">Number of Voters</label>
-            <input
-              type="number"
-              value={numVoters}
-              onChange={(e) => setNumVoters(parseInt(e.target.value))}
-              min="1"
-              max="1000"
-              className="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-white"
-            />
-          </div>
 
           <div className="mb-6">
             <label className="block text-sm text-gray-400 mb-2">Vote Duration (seconds)</label>
@@ -209,7 +265,7 @@ export default function FakeVotesPage() {
               max="300"
               className="w-full bg-gray-700 border border-gray-600 rounded px-4 py-2 text-white"
             />
-            <p className="text-xs text-gray-500 mt-1">Votes will be spread randomly across this duration</p>
+            <p className="text-xs text-gray-500 mt-1">Votes will be spread evenly across this duration</p>
           </div>
 
           <div className="flex gap-4">
