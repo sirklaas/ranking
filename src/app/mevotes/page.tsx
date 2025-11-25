@@ -407,7 +407,19 @@ function MePhoneView() {
   const [images, setImages] = useState<VoteImage[]>([]);
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
   const [voterId] = useState(() => `voter_${Math.random().toString(36).substring(2, 15)}`);
-  const [votingState, setVotingState] = useState<{ appState: string; round: number }>({ appState: 'IDLE', round: 1 });
+  const [votingState, setVotingState] = useState<{ 
+    appState: string; 
+    round: number; 
+    timer: number; 
+    timerActive: boolean; 
+    countdown: number;
+  }>({ 
+    appState: 'IDLE', 
+    round: 1, 
+    timer: 20, 
+    timerActive: false, 
+    countdown: 20 
+  });
 
   useEffect(() => {
     loadImages();
@@ -417,7 +429,13 @@ function MePhoneView() {
     pb.collection('voting_session').subscribe('*', (e) => {
       if (e.record.session_id === SESSION_ID) {
         console.log('PHONE - Received state update:', e.record.app_state, 'Round:', e.record.round);
-        setVotingState({ appState: e.record.app_state, round: e.record.round });
+        setVotingState({ 
+          appState: e.record.app_state || 'IDLE',
+          round: e.record.round || 1,
+          timer: e.record.timer || 20,
+          timerActive: e.record.timer_active || false,
+          countdown: e.record.countdown || 20
+        });
         // Reset vote when new round starts
         if (e.record.app_state === 'IDLE') {
           setSelectedVote(null);
@@ -490,18 +508,46 @@ function MePhoneView() {
     }
   }
 
+  // Subheadings matching display view
+  const subheadings = {
+    'IDLE': 'We gaan zo stemmen wie we gaan ontmaskeren',
+    'VOTING': 'Je kan nu stemmen op je telefoon',
+    'RESULTS': 'Hier komen de resultaten',
+    'REVEAL': 'Dit karakter wordt ontmaskerd'
+  };
+
+  // Round title matching display view
+  const getRoundTitle = () => {
+    if (votingState.round === 1) return 'Eerste ronde';
+    if (votingState.round === 2) return 'Tweede ronde';
+    if (votingState.round === 3) return 'Derde ronde';
+    if (votingState.round === 4) return 'Vierde ronde';
+    return `Ronde ${votingState.round}`;
+  };
+
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-gray-900 to-blue-900 text-white flex flex-col items-center justify-center p-6 ${barlowSemiCondensed.className}`}>
+    <div className={`min-h-screen bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900 text-white flex flex-col items-center justify-center p-6 ${barlowSemiCondensed.className}`}>
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-400 mb-2">Stem op jouw favoriet</h1>
-          <p className="text-gray-400">
-            {votingState.appState === 'VOTING' ? `Ronde ${votingState.round} - Stem nu!` : 
-             votingState.appState === 'RESULTS' ? 'Stemmen gesloten - Resultaten komen...' :
-             votingState.appState === 'REVEAL' ? 'De winnaar wordt onthuld!' :
-             `Ronde ${votingState.round} begint zo...`}
-          </p>
+        {/* Title */}
+        <h1 className="text-4xl font-normal text-center mb-2 tracking-wide">{getRoundTitle()}</h1>
+        
+        {/* Subheading */}
+        <p className="text-lg text-center text-blue-300 mb-4 font-normal">
+          {subheadings[votingState.appState as keyof typeof subheadings] || subheadings.IDLE}
+        </p>
+
+        {/* Timer Dots - Fixed height space to prevent layout shift */}
+        <div className="h-8 flex justify-center items-center gap-2 mb-6">
+          {votingState.appState === 'VOTING' && votingState.timerActive ? (
+            Array.from({ length: votingState.timer }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-4 h-4 rounded-full transition-all duration-300 ${
+                  i < votingState.countdown ? 'bg-blue-500 shadow-lg shadow-blue-500/50' : 'bg-gray-700'
+                }`}
+              />
+            ))
+          ) : null}
         </div>
         
         {/* Voting Grid */}
