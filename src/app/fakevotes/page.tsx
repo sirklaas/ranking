@@ -244,7 +244,7 @@ export default function FakeVotesPage() {
             <li>• Each voter randomly picks one of the 4 characters</li>
             <li>• Vote timestamps are spread across the duration</li>
             <li>• Simulates realistic voting patterns</li>
-            <li>• Use "Clear All Votes" to reset before testing</li>
+            <li>• Use &quot;Clear All Votes&quot; to reset before testing</li>
           </ul>
         </div>
 

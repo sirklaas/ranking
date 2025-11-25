@@ -637,7 +637,6 @@ function MeDisplayView() {
 
   useEffect(() => {
     loadImages();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // Subscribe to state changes from presenter
     console.log('DISPLAY - Setting up PocketBase subscription for session:', SESSION_ID);
     pb.collection('voting_session').subscribe('*', (e) => {
