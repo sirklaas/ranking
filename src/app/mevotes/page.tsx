@@ -157,12 +157,19 @@ function MePresenterView() {
       });
       
       console.log('PRESENTER - Vote counts:', voteCounts);
-      console.log('PRESENTER - Total votes found:', Object.values(voteCounts).reduce((sum, count) => sum + count, 0));
+      const totalVotesFound = Object.values(voteCounts).reduce((sum, count) => sum + count, 0);
+      console.log('PRESENTER - Total votes found:', totalVotesFound);
+      
+      if (totalVotesFound === 0) {
+        console.warn('PRESENTER - No votes found! Check if votes were submitted correctly.');
+      }
       
       const newState = { ...state, appState: 'RESULTS' as const, timerActive: false, votes: voteCounts };
       setState(newState);
+      console.log('PRESENTER - New state with votes:', newState);
       console.log('PRESENTER - Updating PocketBase with votes:', voteCounts);
       await updatePocketBase(newState);
+      console.log('PRESENTER - PocketBase updated successfully');
     } catch (error) {
       console.error('PRESENTER - Failed to count votes:', error);
       // Still show results even if counting fails

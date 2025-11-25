@@ -127,15 +127,18 @@ export default function FakeVotesPage() {
       }
 
       const currentRound = (session as unknown as { round: number }).round;
+      const sessionTimer = (session as unknown as { timer: number }).timer || 20;
       const characterIds = [1, 2, 3, 4]; // 4 characters
       const characterNames = ['Ariel', 'Sage', 'Cherry', 'Pandora'];
 
       // Shuffle players
       const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
       
-      // Calculate time interval between votes
-      const intervalMs = (voteDuration * 1000) / shuffledPlayers.length;
+      // Use session timer, not local voteDuration
+      const intervalMs = (sessionTimer * 1000) / shuffledPlayers.length;
       const now = Date.now();
+      
+      setStatus(`Generating ${shuffledPlayers.length} votes over ${sessionTimer} seconds...`);
 
       let successCount = 0;
       
