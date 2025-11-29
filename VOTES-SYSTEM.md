@@ -31,9 +31,9 @@ When talking to me, use these clear names:
 
 | What We Call It | Current URL | Device | Purpose |
 |-----------------|-------------|--------|---------|
-| **CONTROL** | `?view=presenter` | Laptop | Control panel with buttons |
-| **VOTER** | `?view=voter&session=X` | Phones | Voting interface |
-| **SCREEN** | `?view=display&session=X` | TV | Results display |
+| *MEPRESENTER** | `?view=presenter` | Laptop | Control panel with buttons |
+| **MEPHONE** | `?view=voter&session=X` | Phones | Voting interface |
+| **MEDISPLAY** | `?view=display&session=X` | TV | Results display |
 
 ## Full URLs
 
@@ -72,9 +72,9 @@ When talking to me, use these clear names:
 ## Communication Examples
 
 ✅ **Good:**
-- "The CONTROL panel needs a new button"
-- "VOTER screen should show bigger images"
-- "SCREEN should display the timer"
+- "MEPRESENTER panel needs a new button"
+- "MEPHONE screen should show bigger images"
+- "MEDISPLAY should display the timer"
 
 ❌ **Confusing:**
 - "The presenter" (which one? VOTES control or RANKING presenter?)

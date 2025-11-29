@@ -446,12 +446,14 @@ function MePhoneView() {
     timer: number; 
     timerActive: boolean; 
     countdown: number;
+    eliminated: number[];
   }>({ 
     appState: 'IDLE', 
     round: 1, 
     timer: 20, 
     timerActive: false, 
-    countdown: 20 
+    countdown: 20,
+    eliminated: []
   });
 
   useEffect(() => {
@@ -467,7 +469,8 @@ function MePhoneView() {
           round: e.record.round || 1,
           timer: e.record.timer || 20,
           timerActive: e.record.timer_active || false,
-          countdown: e.record.countdown || 20
+          countdown: e.record.countdown || 20,
+          eliminated: e.record.eliminated || []
         });
         // Reset vote when new round starts
         if (e.record.app_state === 'IDLE') {
@@ -555,6 +558,9 @@ function MePhoneView() {
     'REVEAL': 'Dit karakter wordt ontmaskerd'
   };
 
+  // Filter out eliminated characters
+  const activeImages = images.filter(img => !votingState.eliminated.includes(img.id));
+
   // Round title matching display view
   const getRoundTitle = () => {
     if (votingState.round === 1) return 'Eerste ronde';
@@ -596,7 +602,7 @@ function MePhoneView() {
         
         {/* Voting Grid */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          {images.map((image) => (
+          {activeImages.map((image) => (
             <button
               key={image.id}
               onClick={() => handleVote(image.id)}
@@ -643,6 +649,8 @@ function MeDisplayView() {
     countdown: 20
   });
   const [animatedPercentages, setAnimatedPercentages] = useState<Record<number, number>>({});
+  const [revealPhase, setRevealPhase] = useState<'shrinking' | 'winner' | null>(null);
+  const [winnerId, setWinnerId] = useState<number | null>(null);
 
   useEffect(() => {
     loadImages();
@@ -685,6 +693,26 @@ function MeDisplayView() {
     const timer = setTimeout(() => setState(prev => ({ ...prev, countdown: prev.countdown - 1 })), 1000);
     return () => clearTimeout(timer);
   }, [state.countdown, state.timerActive]);
+
+  // Handle REVEAL phase animation
+  useEffect(() => {
+    if (state.appState === 'REVEAL') {
+      // Find the winner (highest votes)
+      const voteEntries = Object.entries(state.votes).map(([id, count]) => ({ id: parseInt(id), count }));
+      const winner = voteEntries.sort((a, b) => b.count - a.count)[0];
+      if (winner) {
+        setWinnerId(winner.id);
+        setRevealPhase('shrinking');
+        // After shrinking animation, show winner fullscreen
+        setTimeout(() => {
+          setRevealPhase('winner');
+        }, 1500);
+      }
+    } else {
+      setRevealPhase(null);
+      setWinnerId(null);
+    }
+  }, [state.appState, state.votes]);
 
   // Animate percentages when entering RESULTS state
   useEffect(() => {
@@ -756,6 +784,9 @@ function MeDisplayView() {
       console.error('MEDISPLAY - Failed to load images:', error);
     }
   }
+
+  // Filter out eliminated characters
+  const activeImages = images.filter(img => !state.eliminated.includes(img.id));
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const qrUrl = `${baseUrl}/mevotes?view=mephone&session=${SESSION_ID}`;
@@ -838,43 +869,186 @@ function MeDisplayView() {
           ) : null}
         </div>
         
-        {/* 2x2 Grid - Full Width */}
-        <div className="grid grid-cols-2 gap-6 w-full flex-1">
-          {images.map((image) => (
-            <div key={image.id} className="relative">
-              {/* Name Label - Top Center */}
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-900/90 px-4 py-2 rounded-lg z-10">
-                <span className="text-2xl font-normal">{image.title}</span>
-              </div>
-              
-              {/* Image Container */}
-              <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50 bg-gradient-to-br from-blue-900 to-gray-900 relative">
-                {image.url ? (
-                  <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center text-gray-400">
-                    {image.title}
-                  </div>
-                )}
-                
-                {/* Percentage Overlay - Only show in RESULTS state */}
-                {state.appState === 'RESULTS' && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="text-center">
-                      <div className="text-9xl font-bold text-white mb-2 drop-shadow-2xl animate-pulse">
-                        {animatedPercentages[image.id] || 0}%
-                      </div>
-                      <div className="text-2xl text-blue-300 font-semibold">
-                        {state.votes[image.id] || 0} {(state.votes[image.id] || 0) === 1 ? 'stem' : 'stemmen'}
+        {/* REVEAL STATE - Winner takes over screen */}
+        {state.appState === 'REVEAL' && winnerId && (
+          <div className="fixed inset-0 z-50 bg-black">
+            {/* Other characters fading out */}
+            {revealPhase === 'shrinking' && (
+              <div className="grid grid-cols-2 gap-6 w-full h-full p-8">
+                {activeImages.map((image) => {
+                  const isWinner = image.id === winnerId;
+                  return (
+                    <div 
+                      key={image.id} 
+                      className={`relative transition-all duration-1000 ease-in-out ${
+                        isWinner 
+                          ? 'scale-100 opacity-100 z-10' 
+                          : 'scale-50 opacity-0 blur-xl'
+                      }`}
+                    >
+                      <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50">
+                        {image.url ? (
+                          <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center text-gray-400">
+                            {image.title}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+            
+            {/* Winner fullscreen with celebration */}
+            {revealPhase === 'winner' && (
+              <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-blue-900 via-purple-900 to-black">
+                {/* Animated background particles */}
+                <div className="absolute inset-0 overflow-hidden">
+                  {Array.from({ length: 30 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute rounded-full bg-white/20 animate-ping"
+                      style={{
+                        width: `${Math.random() * 20 + 10}px`,
+                        height: `${Math.random() * 20 + 10}px`,
+                        left: `${Math.random() * 100}%`,
+                        top: `${Math.random() * 100}%`,
+                        animationDelay: `${Math.random() * 2}s`,
+                        animationDuration: `${Math.random() * 2 + 1}s`
+                      }}
+                    />
+                  ))}
+                </div>
+                
+                {/* Spotlight glow effect */}
+                <div className="absolute inset-0">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vh] bg-gradient-radial from-blue-500/30 via-purple-500/10 to-transparent animate-pulse" />
+                </div>
+                
+                {/* Winner content */}
+                <div className="relative z-10 text-center">
+                  {/* Winner image - large and centered */}
+                  <div className="relative mb-8 animate-[scaleIn_0.8s_ease-out]">
+                    {images.find(img => img.id === winnerId)?.url ? (
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-purple-600/50 to-transparent rounded-3xl blur-2xl scale-110" />
+                        <img 
+                          src={images.find(img => img.id === winnerId)?.url} 
+                          alt="Winner" 
+                          className="w-[70vw] max-w-3xl h-auto rounded-3xl shadow-[0_0_100px_rgba(147,51,234,0.5)] border-4 border-white/30"
+                        />
+                        {/* Glowing border effect */}
+                        <div className="absolute inset-0 rounded-3xl border-4 border-white/50 animate-pulse" />
+                      </div>
+                    ) : (
+                      <div className="w-[70vw] max-w-3xl aspect-video bg-gradient-to-br from-purple-900 to-blue-900 rounded-3xl flex items-center justify-center">
+                        <span className="text-6xl text-white/50">🎭</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* "ONTMASKERD!" text with glow */}
+                  <div className="relative">
+                    <h1 className="text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-yellow-300 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] animate-pulse mb-4">
+                      ONTMASKERD!
+                    </h1>
+                    {/* Winner name */}
+                    <h2 className="text-6xl font-bold text-white drop-shadow-[0_0_20px_rgba(147,51,234,0.8)]">
+                      {images.find(img => img.id === winnerId)?.title}
+                    </h2>
+                    {/* Vote count */}
+                    <p className="text-3xl text-blue-300 mt-4 font-light">
+                      {state.votes[winnerId] || 0} stemmen
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Confetti-like elements */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {Array.from({ length: 50 }).map((_, i) => (
+                    <div
+                      key={`confetti-${i}`}
+                      className="absolute w-3 h-3 rounded-full"
+                      style={{
+                        backgroundColor: ['#FFD700', '#FF69B4', '#00BFFF', '#32CD32', '#FF6347', '#9370DB'][i % 6],
+                        left: `${Math.random() * 100}%`,
+                        top: '-10%',
+                        animation: `confettiFall ${Math.random() * 3 + 2}s linear infinite`,
+                        animationDelay: `${Math.random() * 3}s`
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* 2x2 Grid - Full Width (Hidden during REVEAL) */}
+        {state.appState !== 'REVEAL' && (
+          <div className={`grid gap-6 w-full flex-1 ${activeImages.length <= 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+            {activeImages.map((image) => (
+              <div key={image.id} className="relative">
+                {/* Name Label - Top Center */}
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-900/90 px-4 py-2 rounded-lg z-10">
+                  <span className="text-2xl font-normal">{image.title}</span>
+                </div>
+                
+                {/* Image Container */}
+                <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50 bg-gradient-to-br from-blue-900 to-gray-900 relative">
+                  {image.url ? (
+                    <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center text-gray-400">
+                      {image.title}
+                    </div>
+                  )}
+                  
+                  {/* Percentage Overlay - Only show in RESULTS state */}
+                  {state.appState === 'RESULTS' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                      <div className="text-center">
+                        <div className="text-9xl font-bold text-white mb-2 drop-shadow-2xl animate-pulse">
+                          {animatedPercentages[image.id] || 0}%
+                        </div>
+                        <div className="text-2xl text-blue-300 font-semibold">
+                          {state.votes[image.id] || 0} {(state.votes[image.id] || 0) === 1 ? 'stem' : 'stemmen'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+      
+      {/* Add keyframes for confetti animation */}
+      <style jsx global>{`
+        @keyframes confettiFall {
+          0% {
+            transform: translateY(-10vh) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(110vh) rotate(720deg);
+            opacity: 0;
+          }
+        }
+        @keyframes scaleIn {
+          0% {
+            transform: scale(0.5);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }
