@@ -203,7 +203,18 @@ function MePresenterView() {
     updatePocketBase(newState);
   }
 
-  function handleReset() {
+  async function handleReset() {
+    // Delete all votes for this session from PocketBase
+    try {
+      const allVotes = await pb.collection('votes').getFullList({ filter: `session_id="${SESSION_ID}"` });
+      for (const vote of allVotes) {
+        await pb.collection('votes').delete(vote.id);
+      }
+      console.log('PRESENTER - Deleted', allVotes.length, 'old votes');
+    } catch (error) {
+      console.error('PRESENTER - Failed to delete old votes:', error);
+    }
+    
     const newState = { appState: 'IDLE' as const, round: 1, timer: 20, votes: {}, eliminated: [], timerActive: false, countdown: 20 };
     setState(newState);
     updatePocketBase(newState);
@@ -555,7 +566,7 @@ function MePhoneView() {
     'IDLE': 'We gaan zo stemmen wie we gaan ontmaskeren',
     'VOTING': 'Je kan nu stemmen op je telefoon',
     'RESULTS': 'Hier komen de resultaten',
-    'REVEAL': 'Dit karakter wordt ontmaskerd'
+    'REVEAL': 'Deze gaan we ontmaskeren!'
   };
 
   // Filter out eliminated characters
@@ -586,9 +597,9 @@ function MePhoneView() {
           State: {votingState.appState} | Timer: {votingState.timerActive ? 'ON' : 'OFF'} | Countdown: {votingState.countdown}
         </div>
 
-        {/* Timer Dots - Fixed height space to prevent layout shift */}
+        {/* Timer Dots - Only show during active voting with countdown > 0 */}
         <div className="h-8 flex justify-center items-center gap-2 mb-6">
-          {votingState.appState === 'VOTING' && votingState.timerActive ? (
+          {votingState.appState === 'VOTING' && votingState.timerActive && votingState.countdown > 0 ? (
             Array.from({ length: votingState.timer }).map((_, i) => (
               <div
                 key={i}
@@ -796,7 +807,7 @@ function MeDisplayView() {
     'IDLE': 'We gaan zo stemmen wie we gaan ontmaskeren',
     'VOTING': 'Je kan nu stemmen op je telefoon',
     'RESULTS': 'Hier komen de resultaten',
-    'REVEAL': 'Dit karakter wordt ontmaskerd'
+    'REVEAL': 'Deze gaan we ontmaskeren!'
   };
 
   // TEST MODE: Add keyboard shortcuts to test different states
@@ -823,16 +834,16 @@ function MeDisplayView() {
 
   return (
     <div className={`h-screen w-screen bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900 text-white overflow-hidden flex flex-col ${barlowSemiCondensed.className}`} style={{ fontWeight: 400 }}>
-      {/* QR Code - Top Right */}
-      <div className="absolute top-4 right-4 bg-white p-2 rounded-lg shadow-xl z-10">
-        <div className="w-28 h-28 bg-white flex items-center justify-center">
+      {/* QR Code - Top Right (1.5x bigger) */}
+      <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-xl z-10">
+        <div className="w-44 h-44 bg-white flex items-center justify-center">
           <img 
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(qrUrl)}`}
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`}
             alt="QR Code"
             className="w-full h-full"
           />
         </div>
-        <div className="text-xs text-center text-gray-800 mt-2 font-normal">Scan om te stemmen</div>
+        <div className="text-sm text-center text-gray-800 mt-2 font-normal">Scan om te stemmen</div>
       </div>
 
       <div className="container mx-auto h-full flex flex-col justify-center px-4 py-4">
@@ -855,9 +866,9 @@ function MeDisplayView() {
           {subheadings[state.appState as keyof typeof subheadings] || subheadings.IDLE}
         </p>
         
-        {/* Timer Dots - Fixed height space to prevent layout shift */}
+        {/* Timer Dots - Only show during active voting with countdown > 0 */}
         <div className="h-8 flex justify-center items-center gap-2 mb-4">
-          {state.appState === 'VOTING' && state.timerActive ? (
+          {state.appState === 'VOTING' && state.timerActive && state.countdown > 0 ? (
             Array.from({ length: state.timer }).map((_, i) => (
               <div
                 key={i}
@@ -871,7 +882,7 @@ function MeDisplayView() {
         
         {/* REVEAL STATE - Winner takes over screen */}
         {state.appState === 'REVEAL' && winnerId && (
-          <div className="fixed inset-0 z-50 bg-black">
+          <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 transition-all duration-500">
             {/* Other characters fading out */}
             {revealPhase === 'shrinking' && (
               <div className="grid grid-cols-2 gap-6 w-full h-full p-8">
@@ -882,8 +893,8 @@ function MeDisplayView() {
                       key={image.id} 
                       className={`relative transition-all duration-1000 ease-in-out ${
                         isWinner 
-                          ? 'scale-100 opacity-100 z-10' 
-                          : 'scale-50 opacity-0 blur-xl'
+                          ? 'scale-110 opacity-100 z-10 ring-4 ring-yellow-400 rounded-2xl' 
+                          : 'scale-75 opacity-30 blur-sm grayscale'
                       }`}
                     >
                       <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50">
@@ -895,6 +906,12 @@ function MeDisplayView() {
                           </div>
                         )}
                       </div>
+                      {/* Show name under winner during shrinking phase */}
+                      {isWinner && (
+                        <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-center">
+                          <span className="text-3xl font-bold text-yellow-300 drop-shadow-lg">{image.title}</span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -951,8 +968,8 @@ function MeDisplayView() {
                   
                   {/* "ONTMASKERD!" text with glow */}
                   <div className="relative">
-                    <h1 className="text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-yellow-300 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] animate-pulse mb-4">
-                      ONTMASKERD!
+                    <h1 className="text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-yellow-300 drop-shadow-[0_0_30px_rgba(255,255,255,0.8)] animate-pulse mb-4">
+                      Deze gaan we ontmaskeren!
                     </h1>
                     {/* Winner name */}
                     <h2 className="text-6xl font-bold text-white drop-shadow-[0_0_20px_rgba(147,51,234,0.8)]">

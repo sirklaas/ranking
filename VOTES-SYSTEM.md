@@ -1,68 +1,51 @@
-# VOTES System Reference
+# MEVOTES System Reference
 
-## ⚠️ IMPORTANT: Only work on VOTES system, DO NOT touch Ranking!
+## ⚠️ IMPORTANT: Only work on MEVOTES system, DO NOT touch Ranking!
 
-## The Problem
-The VOTES system has confusing URL parameter names that don't match their actual function.
+## The 3 Views
 
-## Current URLs (Confusing Names)
-
-### What Works
-- **Control Panel** (for presenter): `?view=presenter`
-  - Has buttons: "1 ronde", "Start voting", "Results"
-  - Controls the voting rounds
-  - Uses dots timer (replaced blue line)
-  
-- **Voter Screen** (for audience phones): `?view=voter&session=SESSION_ID`
-  - Shows 4 AI-generated character images
-  - Allows voting by clicking on a character
-  
-- **Display Screen** (for TV/beamer): `?view=display&session=SESSION_ID`
-  - Shows voting results to audience
-  - Shows which character is winning
-
-### The Confusion
-The URL says `view=presenter` but it's actually the **control panel**.
-The URL says `view=display` but it's actually the **results display**.
-
-## Better Names (for our communication)
-
-When talking to me, use these clear names:
-
-| What We Call It | Current URL | Device | Purpose |
-|-----------------|-------------|--------|---------|
-| *MEPRESENTER** | `?view=presenter` | Laptop | Control panel with buttons |
-| **MEPHONE** | `?view=voter&session=X` | Phones | Voting interface |
-| **MEDISPLAY** | `?view=display&session=X` | TV | Results display |
+| View | Device | Purpose |
+|------|--------|---------|
+| **MEPRESENTER** | Laptop | Control panel - start voting, show results, next round |
+| **MEPHONE** | Phones | Voting interface - tap on a character to vote |
+| **MEDISPLAY** | TV/Beamer | Results display - shows voting results to audience |
 
 ## Full URLs
 
-### Production (ranking.pinkmilk.eu)
-- **CONTROL**: `https://ranking.pinkmilk.eu/votes?view=presenter`
-- **VOTER**: `https://ranking.pinkmilk.eu/votes?view=voter&session=SESSION_ID`
-- **SCREEN**: `https://ranking.pinkmilk.eu/votes?view=display&session=SESSION_ID`
+### Production (ranking.pinkmilk.eu) ✅ WORKING
+- **MEPRESENTER**: `https://ranking.pinkmilk.eu/mevotes?view=mepresenter`
+- **MEPHONE**: `https://ranking.pinkmilk.eu/mevotes?view=mephone&session=default_session`
+- **MEDISPLAY**: `https://ranking.pinkmilk.eu/mevotes?view=medisplay`
 
 ### Localhost
-- **CONTROL**: `http://localhost:3000/votes?view=presenter`
-- **VOTER**: `http://localhost:3000/votes?view=voter&session=SESSION_ID`
-- **SCREEN**: `http://localhost:3000/votes?view=display&session=SESSION_ID`
+- **MEPRESENTER**: `http://localhost:3000/mevotes?view=mepresenter`
+- **MEPHONE**: `http://localhost:3000/mevotes?view=mephone&session=default_session`
+- **MEDISPLAY**: `http://localhost:3000/mevotes?view=medisplay`
 
 ## Current Status
 
-### What's Working
-✅ CONTROL panel with buttons (1 ronde, start voting, results)
-✅ VOTER screen with 4 character images
-✅ SCREEN showing results
-✅ Dots timer (replaced blue line)
-✅ PocketBase integration
+### What's Working ✅
+- MEPRESENTER: Control panel with timer, start voting, show results, next round
+- MEPHONE: Vote on 4 character images 
+- MEDISPLAY: Shows voting results with animated percentages
+- Timer dots animation
+- PocketBase real-time sync between all views
+- Character names extracted from image filenames
 
-### What Needs Work
-❓ Tell me what's broken or what you want to change
+### Images
+Images are loaded from: `https://www.pinkmilk.eu/ME/vote_images/`
+- Filename format: `1_Character Name.webp`, `2_Another Name.webp`, etc.
+- The number prefix (1_, 2_, etc.) determines the order
+- The name after the prefix becomes the display title
 
 ## File Location
-- All VOTES code: `/public/votes/`
-- Main HTML: `/public/votes/index.html`
-- JavaScript: `/public/votes/assets/*.js` (compiled React app)
+- **Source code**: `/src/app/mevotes/page.tsx` (all 3 views in one file!)
+- MePresenterView() - line ~40
+- MePhoneView() - line ~438
+- MeDisplayView() - line ~635
+
+### Old/Broken (DO NOT USE)
+- `/public/votes/` - old standalone app, missing display view
 
 ## DO NOT TOUCH
 - `/src/app/presenter/` - This is RANKING, not VOTES
