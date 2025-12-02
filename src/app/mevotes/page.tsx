@@ -60,20 +60,22 @@ function MePresenterView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Countdown timer
+  // Countdown timer - only runs in MEPRESENTER
   useEffect(() => {
     if (!state.timerActive) return;
     if (state.countdown <= 0) {
-      // Stop timer but stay in VOTING state - wait for manual "Show results" click
-      const newState = { ...state, timerActive: false };
+      // Stop timer and explicitly set countdown to 0
+      const newState = { ...state, timerActive: false, countdown: 0 };
       setState(newState);
       updatePocketBase(newState);
       return;
     }
     const timer = setTimeout(() => {
-      const newState = { ...state, countdown: state.countdown - 1 };
-      setState(newState);
-      updatePocketBase(newState);
+      setState(prev => {
+        const newState = { ...prev, countdown: prev.countdown - 1 };
+        updatePocketBase(newState);
+        return newState;
+      });
     }, 1000);
     return () => clearTimeout(timer);
   }, [state.countdown, state.timerActive]);
