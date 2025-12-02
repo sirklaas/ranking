@@ -134,7 +134,18 @@ function MePresenterView() {
     }
   }
 
-  function handleStartVoting() {
+  async function handleStartVoting() {
+    // Delete votes for this round before starting
+    try {
+      const oldVotes = await pb.collection('votes').getFullList({ filter: `session_id="${SESSION_ID}" && round=${state.round}` });
+      for (const vote of oldVotes) {
+        await pb.collection('votes').delete(vote.id);
+      }
+      console.log('PRESENTER - Deleted', oldVotes.length, 'old votes for round', state.round);
+    } catch (error) {
+      console.error('PRESENTER - Failed to delete old votes:', error);
+    }
+    
     const newState = { ...state, appState: 'VOTING' as const, timerActive: true, countdown: state.timer, votes: {} };
     setState(newState);
     updatePocketBase(newState);
@@ -660,7 +671,7 @@ function MeDisplayView() {
     countdown: 20
   });
   const [animatedPercentages, setAnimatedPercentages] = useState<Record<number, number>>({});
-  const [revealPhase, setRevealPhase] = useState<'shrinking' | 'winner' | null>(null);
+  const [revealPhase, setRevealPhase] = useState<'fading' | 'winner' | null>(null);
   const [winnerId, setWinnerId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -697,13 +708,8 @@ function MeDisplayView() {
     };
   }, []);
 
-  // Countdown timer
-  useEffect(() => {
-    if (!state.timerActive) return;
-    if (state.countdown <= 0) return;
-    const timer = setTimeout(() => setState(prev => ({ ...prev, countdown: prev.countdown - 1 })), 1000);
-    return () => clearTimeout(timer);
-  }, [state.countdown, state.timerActive]);
+  // NOTE: No local countdown timer here - MEDISPLAY gets countdown from PocketBase subscription only
+  // This prevents the "double timer" issue where dots would run twice
 
   // Handle REVEAL phase animation
   useEffect(() => {
@@ -713,8 +719,9 @@ function MeDisplayView() {
       const winner = voteEntries.sort((a, b) => b.count - a.count)[0];
       if (winner) {
         setWinnerId(winner.id);
-        setRevealPhase('shrinking');
-        // After shrinking animation, show winner fullscreen
+        // Phase 1: All characters fade out
+        setRevealPhase('fading');
+        // Phase 2: After fading, show winner
         setTimeout(() => {
           setRevealPhase('winner');
         }, 1500);
@@ -834,16 +841,15 @@ function MeDisplayView() {
 
   return (
     <div className={`h-screen w-screen bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900 text-white overflow-hidden flex flex-col ${barlowSemiCondensed.className}`} style={{ fontWeight: 400 }}>
-      {/* QR Code - Top Right (1.5x bigger) */}
-      <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-xl z-10">
-        <div className="w-44 h-44 bg-white flex items-center justify-center">
+      {/* QR Code - Top Right, aligned with images */}
+      <div className="absolute top-[calc(50%-45vh)] right-4 bg-white p-2 rounded-lg shadow-xl z-10">
+        <div className="w-52 h-52 bg-white flex items-center justify-center">
           <img 
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`}
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrUrl)}`}
             alt="QR Code"
             className="w-full h-full"
           />
         </div>
-        <div className="text-sm text-center text-gray-800 mt-2 font-normal">Scan om te stemmen</div>
       </div>
 
       <div className="container mx-auto h-full flex flex-col justify-center px-4 py-4">
@@ -883,38 +889,25 @@ function MeDisplayView() {
         {/* REVEAL STATE - Winner takes over screen */}
         {state.appState === 'REVEAL' && winnerId && (
           <div className="fixed inset-0 z-50 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 transition-all duration-500">
-            {/* Other characters fading out */}
-            {revealPhase === 'shrinking' && (
+            {/* Phase 1: All characters fade to 0% opacity */}
+            {revealPhase === 'fading' && (
               <div className="grid grid-cols-2 gap-6 w-full h-full p-8">
-                {activeImages.map((image) => {
-                  const isWinner = image.id === winnerId;
-                  return (
-                    <div 
-                      key={image.id} 
-                      className={`relative transition-all duration-1000 ease-in-out ${
-                        isWinner 
-                          ? 'scale-110 opacity-100 z-10 ring-4 ring-yellow-400 rounded-2xl' 
-                          : 'scale-75 opacity-30 blur-sm grayscale'
-                      }`}
-                    >
-                      <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50">
-                        {image.url ? (
-                          <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center text-gray-400">
-                            {image.title}
-                          </div>
-                        )}
-                      </div>
-                      {/* Show name under winner during shrinking phase */}
-                      {isWinner && (
-                        <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-center">
-                          <span className="text-3xl font-bold text-yellow-300 drop-shadow-lg">{image.title}</span>
+                {activeImages.map((image) => (
+                  <div 
+                    key={image.id} 
+                    className="relative transition-all duration-1000 ease-out opacity-0 scale-95"
+                  >
+                    <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-gray-700/50">
+                      {image.url ? (
+                        <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center text-gray-400">
+                          {image.title}
                         </div>
                       )}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
             
