@@ -121,30 +121,6 @@ export default function DisplayPage() {
 
     loadSessionData();
 
-    // Preload motherfile and capture meta for reliable media URLs
-    void (async () => {
-      try {
-        const res = await fetch('/api/pb-motherfile', { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          const collection = json?.meta?.collection || 'motherfile';
-          const recordId = json?.meta?.recordId;
-          const baseUrl = json?.meta?.baseUrl || (window.location?.protocol === 'https:' ? 'https://pinkmilk.pockethost.io' : 'http://127.0.0.1:8090');
-          if (collection && recordId && baseUrl) {
-            setMotherMeta({ collection, recordId, baseUrl });
-            // also set in service for other callers
-            motherfileService.setRecordId(recordId);
-          } else {
-            console.warn('[Display] motherfile meta missing', json?.meta);
-          }
-        } else {
-          console.warn('[Display] motherfile GET failed', res.status);
-        }
-      } catch (e) {
-        console.warn('[Display] motherfile GET error', e);
-      }
-    })();
-
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' || e.key === 'F') {
@@ -153,7 +129,6 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
-      // Removed M to toggle mute/unmute
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -277,18 +252,12 @@ export default function DisplayPage() {
     const item = headings[faseKey];
     const fileName = item?.image?.trim();
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_PB_URL ||
-      process.env.NEXT_PUBLIC_POCKETBASE_URL ||
-      (typeof window !== 'undefined' && window.location?.protocol === 'https:'
-        ? 'https://pinkmilk.pockethost.io'
-        : 'http://127.0.0.1:8090');
+    const PINKMILK_BASE = 'https://www.pinkmilk.eu/RankingNW';
 
-    // Helper: prefer Ranking collection file, then local assets, then Motherfile fallback
-    const resolveFromRanking = (name: string) => {
+    // Helper: resolve media filename to pinkmilk.eu URL
+    const resolveMedia = (name: string) => {
       if (/^https?:\/\//i.test(name)) return name; // absolute URL
-      if (!currentSession?.id) return '';
-      return `${baseUrl}/api/files/ranking/${currentSession.id}/${encodeURIComponent(name)}`;
+      return `${PINKMILK_BASE}/${encodeURIComponent(name)}`;
     };
 
     const resolveFromLocal = (name: string) => {
@@ -297,56 +266,31 @@ export default function DisplayPage() {
     };
 
     if (!fileName) {
-      // No media in ranking headings → Motherfile fallback
-      const keys = Object.keys(headings);
-      console.log('[Display] No media for fase', faseKey, 'item:', item, 'Available keys:', keys);
-      void (async () => {
-        try {
-          const mother = await motherfileService.get();
-          const mfItem = mother?.fases?.[faseKey];
-          const mfFileName = mfItem?.image?.trim();
-          if (!mfFileName) {
-            console.log('[Display] Motherfile also missing media for', faseKey, 'mfItem:', mfItem);
-            setCurrentMedia(null);
-            return;
-          }
-          // We only use Motherfile to discover the filename; then resolve from ranking or local
-          const isVideoMf = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(mfFileName);
-          const rankingUrlMf = resolveFromRanking(mfFileName);
-          const localUrlMf = resolveFromLocal(mfFileName);
-          const chosenUrlMf = rankingUrlMf || localUrlMf;
-          console.log('[Display] Resolved media via Motherfile filename (ranking/local URL)', { faseKey, mfFileName, isVideoMf, rankingUrlMf, localUrlMf });
-          setCurrentMedia({ url: chosenUrlMf, name: mfFileName, type: isVideoMf ? 'video' : 'image', fallbackLocalUrl: localUrlMf });
-        } catch (e) {
-          console.log('[Display] Motherfile fallback failed', e);
-          setCurrentMedia(null);
-        }
-      })();
+      // No media in ranking headings → skip (no motherfile fallback needed)
+      console.log('[Display] No media for fase', faseKey);
+      setCurrentMedia(null);
       return;
     }
 
     const isVideo = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(fileName);
-    // Primary: Ranking collection file URL
-    const rankingUrl = resolveFromRanking(fileName);
+    const mediaUrl = resolveMedia(fileName);
     const localUrl = resolveFromLocal(fileName);
 
-    // Optimistic set with ranking URL; video/image elements will log error events if truly 404
-    const chosenUrl = rankingUrl || localUrl;
-    console.log('[Display] Resolved media (ranking first)', { faseKey, fileName, isVideo, rankingUrl, localUrl });
-    setCurrentMedia({ url: chosenUrl, name: fileName, type: isVideo ? 'video' : 'image', fallbackLocalUrl: localUrl });
+    console.log('[Display] Resolved media from pinkmilk.eu', { faseKey, fileName, isVideo, mediaUrl });
+    setCurrentMedia({ url: mediaUrl, name: fileName, type: isVideo ? 'video' : 'image', fallbackLocalUrl: localUrl });
 
     // Add a light-weight preload hint for smoother start
     try {
       const link = document.createElement('link');
       link.rel = 'preload';
       link.as = isVideo ? 'video' : 'image';
-      link.href = chosenUrl;
+      link.href = mediaUrl;
       document.head.appendChild(link);
       setTimeout(() => {
         try { document.head.removeChild(link); } catch { }
       }, 5000);
     } catch { }
-  }, [currentSession, motherMeta]);
+  }, [currentSession]);
 
   // Removed mute state syncing; videos play with sound by default
 

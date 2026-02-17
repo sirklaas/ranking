@@ -61,16 +61,8 @@ export const motherfileService = {
   fileUrl(fileName: string) {
     if (!fileName) return '';
     if (/^https?:\/\//i.test(fileName)) return fileName;
-    const fallback = (typeof window !== 'undefined' && window.location?.protocol === 'https:')
-      ? 'https://pinkmilk.pockethost.io'
-      : 'http://127.0.0.1:8090';
-    const baseUrl = process.env.NEXT_PUBLIC_PB_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
-    const collection = (process.env.NEXT_PUBLIC_PB_MOTHERFILE_COLLECTION || 'motherfile').trim();
-    if (motherfileRecordId) {
-      return `${baseUrl}/api/files/${collection}/${motherfileRecordId}/${encodeURIComponent(fileName)}`;
-    }
-    // If record id unknown, return the bare filename to avoid broken URL; UI can still render name/placeholder
-    return fileName;
+    // Resolve from pinkmilk.eu/RankingNW
+    return `https://www.pinkmilk.eu/RankingNW/${encodeURIComponent(fileName)}`;
   }
 };
 
