@@ -6,8 +6,8 @@ const FTP_HOST = process.env.FTP_HOST || '103.214.6.202';
 const FTP_USER = process.env.FTP_USER || 'dukowaeu';
 const FTP_PASS = process.env.FTP_PASS || 'tTO4rf9h*ZD8!9';
 const FTP_PORT = parseInt(process.env.FTP_PORT || '21', 10);
-const FTP_REMOTE_DIR = process.env.FTP_REMOTE_DIR || '/domains/pinkmilk.eu/public_html/public/rankingNW';
-const PUBLIC_BASE_URL = process.env.FTP_PUBLIC_URL || 'https://www.pinkmilk.eu/public/rankingNW';
+const FTP_REMOTE_DIR = process.env.FTP_REMOTE_DIR || '/domains/pinkmilk.eu/public_html/RankingNW';
+const PUBLIC_BASE_URL = process.env.FTP_PUBLIC_URL || 'https://www.pinkmilk.eu/RankingNW';
 
 export async function POST(req: NextRequest) {
     const client = new Client();

@@ -61,8 +61,8 @@ export const motherfileService = {
   fileUrl(fileName: string) {
     if (!fileName) return '';
     if (/^https?:\/\//i.test(fileName)) return fileName;
-    // Resolve from pinkmilk.eu/public/rankingNW
-    return `https://www.pinkmilk.eu/public/rankingNW/${encodeURIComponent(fileName)}`;
+    // Resolve from pinkmilk.eu/RankingNW
+    return `https://www.pinkmilk.eu/RankingNW/${encodeURIComponent(fileName)}`;
   }
 };
 
