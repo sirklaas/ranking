@@ -33,6 +33,7 @@ export default function PresenterPage() {
   const [top10State, setTop10State] = useState<Top10State>(top10Logic.getInitialState());
   const [stagedFiles, setStagedFiles] = useState<Record<string, File>>({});
   const [uploadingFase, setUploadingFase] = useState<string | null>(null);
+  const [uploadResults, setUploadResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
 
   // Sync krakende state from session
   useEffect(() => {
@@ -127,10 +128,18 @@ export default function PresenterPage() {
         return next;
       });
 
+      // Per-row feedback
+      setUploadResults(prev => ({ ...prev, [fase]: { ok: true, msg: `✓ ${file.name} uploaded` } }));
+      setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 5000);
+
       setSaveBanner(`Media "${file.name}" uploaded to pinkmilk.eu ✓`);
       setTimeout(() => setSaveBanner(null), 3000);
     } catch (err: any) {
       console.error('Upload failed:', err);
+      // Per-row feedback
+      setUploadResults(prev => ({ ...prev, [fase]: { ok: false, msg: `✗ ${err.message}` } }));
+      setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 8000);
+
       setSaveBanner(`Upload failed: ${err.message}`);
       setTimeout(() => setSaveBanner(null), 5000);
     } finally {
@@ -1039,6 +1048,11 @@ export default function PresenterPage() {
                       {stagedFiles[fase] && (
                         <div className="text-[10px] text-blue-600 font-semibold animate-pulse">
                           Ready to upload: {stagedFiles[fase].name}
+                        </div>
+                      )}
+                      {uploadResults[fase] && (
+                        <div className={`text-xs font-bold ${uploadResults[fase].ok ? 'text-green-600' : 'text-red-600'}`}>
+                          {uploadResults[fase].msg}
                         </div>
                       )}
                     </div>
