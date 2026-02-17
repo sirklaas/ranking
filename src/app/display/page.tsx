@@ -560,15 +560,6 @@ export default function DisplayPage() {
         <p>Press &apos;R&apos; to refresh</p>
       </div>
 
-      {/* Fullscreen Button */}
-      <button
-        onClick={toggleFullScreen}
-        className="fixed bottom-6 right-6 z-20 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center justify-center transition-all group"
-        title="Toggle Fullscreen (F)"
-      >
-        <span className="text-xl font-bold group-hover:scale-110 transition-transform">F</span>
-      </button>
-
       {/* Intro-screen sound enable button (only before 01/04 and when no overlay) */}
       {!allowMediaOverlay && (
         <button
@@ -586,7 +577,7 @@ export default function DisplayPage() {
               }
             } catch { }
           }}
-          className="fixed bottom-20 right-6 z-20 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
+          className="fixed bottom-6 right-6 z-20 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
           style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
         >
           Enable sound
