@@ -320,10 +320,13 @@ export const teamService = {
 
 // Fases Management Helper Functions
 export const faseService = {
-  // Parse headings JSON from PocketBase
-  parseHeadings: (headingsJson: string): Record<string, { heading: string; image?: string }> => {
+  // Parse headings JSON from PocketBase (handles both object and string)
+  parseHeadings: (headingsInput: string | Record<string, any>): Record<string, { heading: string; image?: string }> => {
     try {
-      return JSON.parse(headingsJson) || {};
+      if (typeof headingsInput === 'object' && headingsInput !== null) {
+        return headingsInput as Record<string, { heading: string; image?: string }>;
+      }
+      return JSON.parse(headingsInput as string) || {};
     } catch {
       return {};
     }
