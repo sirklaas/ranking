@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Masked Employee - Ranking Game Show",
+  title: "Ranking the Starzzz",
   description: "Interactive voting and ranking game show platform",
 };
 

@@ -433,7 +433,7 @@ export default function DisplayPage() {
 
       {/* Horizontal Band with Background + Overlaid Text and Logo */}
       <div
-        className="relative z-10 w-full h-48 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8"
+        className="relative z-10 w-full h-48 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6"
         style={{
           backgroundImage: 'url(/assets/band.webp)',
           marginTop: '50px'
@@ -555,10 +555,19 @@ export default function DisplayPage() {
       </div>
 
       {/* Keyboard hints */}
-      <div className="absolute bottom-4 left-4 text-white/60 text-sm">
+      <div className="fixed bottom-6 left-6 z-20 text-white/40 text-xs space-y-1 pointer-events-none">
         <p>Press &apos;F&apos; for fullscreen</p>
         <p>Press &apos;R&apos; to refresh</p>
       </div>
+
+      {/* Fullscreen Button */}
+      <button
+        onClick={toggleFullScreen}
+        className="fixed bottom-6 right-6 z-20 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center justify-center transition-all group"
+        title="Toggle Fullscreen (F)"
+      >
+        <span className="text-xl font-bold group-hover:scale-110 transition-transform">F</span>
+      </button>
 
       {/* Intro-screen sound enable button (only before 01/04 and when no overlay) */}
       {!allowMediaOverlay && (
@@ -577,7 +586,7 @@ export default function DisplayPage() {
               }
             } catch { }
           }}
-          className="fixed bottom-4 right-4 z-20 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
+          className="fixed bottom-20 right-6 z-20 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
           style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
         >
           Enable sound
