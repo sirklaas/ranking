@@ -2,14 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'basic-ftp';
 import { Readable } from 'stream';
 
-// Allow large file uploads (default is ~4MB)
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
-// Next.js App Router: increase body size limit to 50MB
 export const maxDuration = 60; // seconds
 export const dynamic = 'force-dynamic';
 
@@ -25,16 +17,18 @@ export async function POST(req: NextRequest) {
     client.ftp.verbose = false;
 
     try {
-        const formData = await req.formData();
-        const file = formData.get('file') as File | null;
-        const filename = (formData.get('filename') as string) || file?.name;
-
-        if (!file || !filename) {
-            return NextResponse.json({ error: 'Missing file or filename' }, { status: 400 });
+        // Get filename from query param (raw binary body, no FormData)
+        const filename = req.nextUrl.searchParams.get('filename');
+        if (!filename) {
+            return NextResponse.json({ error: 'Missing filename query parameter' }, { status: 400 });
         }
 
-        // Convert File to Buffer -> Readable stream
-        const arrayBuffer = await file.arrayBuffer();
+        // Read the raw body as ArrayBuffer (bypasses FormData size limit)
+        const arrayBuffer = await req.arrayBuffer();
+        if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+            return NextResponse.json({ error: 'Empty file body' }, { status: 400 });
+        }
+
         const buffer = Buffer.from(arrayBuffer);
         const stream = Readable.from(buffer);
 
@@ -47,20 +41,14 @@ export async function POST(req: NextRequest) {
             secure: false,
         });
 
-        // Log home directory to understand FTP root
-        const homePwd = await client.pwd();
-
         // Navigate to the target directory
         await client.ensureDir(FTP_REMOTE_DIR);
-
-        const targetPwd = await client.pwd();
-        console.log(`[FTP Upload] Home: ${homePwd}, Target: ${targetPwd}`);
 
         // Upload
         await client.uploadFrom(stream, filename);
 
         const publicUrl = `${PUBLIC_BASE_URL}/${encodeURIComponent(filename)}`;
-        console.log(`[FTP Upload] Uploaded ${filename} → ${publicUrl}`);
+        console.log(`[FTP Upload] Uploaded ${filename} (${(buffer.length / 1024 / 1024).toFixed(1)}MB) → ${publicUrl}`);
 
         return NextResponse.json({
             success: true,
