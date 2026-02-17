@@ -80,10 +80,18 @@ export default function PresenterPage() {
       }
 
       // Update the image field with the filename (used to resolve the public URL)
-      setEditingHeadings(prev => ({
-        ...prev,
-        [fase]: { heading: prev[fase]?.heading || '', image: file.name }
-      }));
+      const updatedHeadings = {
+        ...editingHeadings,
+        [fase]: { heading: editingHeadings[fase]?.heading || '', image: file.name }
+      };
+      setEditingHeadings(updatedHeadings);
+
+      // Auto-save to PocketBase so the filename persists across page reloads
+      if (selectedSession) {
+        const headingsJson = JSON.stringify(updatedHeadings);
+        await rankingService.updateSession(selectedSession.id, { headings: headingsJson });
+        setSelectedSession(prev => prev ? { ...prev, headings: headingsJson } : null);
+      }
 
       // Clear staged file
       setStagedFiles(prev => {
@@ -93,10 +101,10 @@ export default function PresenterPage() {
       });
 
       // Per-row feedback
-      setUploadResults(prev => ({ ...prev, [fase]: { ok: true, msg: `✓ ${file.name} uploaded` } }));
+      setUploadResults(prev => ({ ...prev, [fase]: { ok: true, msg: `✓ ${file.name} uploaded & saved` } }));
       setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 5000);
 
-      setSaveBanner(`Media "${file.name}" uploaded to pinkmilk.eu ✓`);
+      setSaveBanner(`Media "${file.name}" uploaded & saved ✓`);
       setTimeout(() => setSaveBanner(null), 3000);
     } catch (err: any) {
       console.error('Upload failed:', err);
