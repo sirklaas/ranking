@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Client } from 'basic-ftp';
 import { Readable } from 'stream';
 
+// Allow large file uploads (default is ~4MB)
+export const config = {
+    api: {
+        bodyParser: false,
+    },
+};
+
+// Next.js App Router: increase body size limit to 50MB
+export const maxDuration = 60; // seconds
+export const dynamic = 'force-dynamic';
+
 const FTP_HOST = process.env.FTP_HOST || '103.214.6.202';
 const FTP_USER = process.env.FTP_USER || 'dukowaeu';
 const FTP_PASS = process.env.FTP_PASS || 'tTO4rf9h*ZD8!9';
