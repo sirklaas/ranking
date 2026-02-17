@@ -158,25 +158,27 @@ export default function PlayerPage() {
     loadSessionData();
   }, []);
 
-  // Load headings motherfile ONCE from PocketBase singleton
+  // Load headings from session data (motherfile API was removed)
   useEffect(() => {
-    const loadMotherfile = async () => {
-      try {
-        const record = await motherfileService.get();
-        const mf = record.fases || {};
-        setMotherfile(mf);
-      } catch (err) {
-        console.error('Error loading motherfile from PocketBase:', err);
-        // Minimal fallback
-        setMotherfile({
-          '01/01': { heading: 'In welk team zit je?' },
-          '01/02': { heading: "Heb je 'n PhotoCircle account?" },
-          '01/03': { heading: 'Wat is jouw naam?' }
-        });
+    if (!currentSession) return;
+    try {
+      const headingsJson = (currentSession.headings as string) || '{}';
+      const parsed = faseService.parseHeadings(headingsJson);
+      if (Object.keys(parsed).length > 0) {
+        setMotherfile(parsed);
+      } else {
+        // Fallback to built-in defaults
+        setMotherfile(faseService.parseHeadings(faseService.createDefaultHeadings()));
       }
-    };
-    loadMotherfile();
-  }, []);
+    } catch (err) {
+      console.error('Error parsing session headings:', err);
+      setMotherfile({
+        '01/01': { heading: 'In welk team zit je?' },
+        '01/02': { heading: "Heb je 'n PhotoCircle account?" },
+        '01/03': { heading: 'Wat is jouw naam?' }
+      });
+    }
+  }, [currentSession]);
 
   // Track which heading keys have animated, so we never animate the same content twice
   const animatedKeysRef = useRef<Set<string>>(new Set());
@@ -327,12 +329,15 @@ export default function PlayerPage() {
     const mod = findFaseModule(currentSession.current_fase);
     if (mod?.PlayerView && (!mod.stateField || moduleStates[mod.stateField])) {
       const allPlayerNames = teamService.parsePlayerNames(currentSession.playernames as string);
+      const headingsJson = currentSession.headings as string || '{}';
+      const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
       return (
         <mod.PlayerView
           faseKey={currentSession.current_fase}
           sessionId={currentSession.id}
           moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
           onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
+          heading={heading}
           playerInfo={{
             playerId: selectedPlayerName || `anon_${teamNumber}`,
             playerName: selectedPlayerName || 'Speler',

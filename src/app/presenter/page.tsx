@@ -235,12 +235,11 @@ export default function PresenterPage() {
   };
 
   const loadMasterTemplate = async () => {
+    // Use built-in default headings (motherfile API was removed)
     try {
-      const record = await motherfileService.get();
-      const masterTemplate: MotherfileFases = record.fases || {};
-      return masterTemplate;
+      return faseService.parseHeadings(faseService.createDefaultHeadings());
     } catch (error) {
-      console.log('Could not load master template from PocketBase, using defaults', error);
+      console.log('Could not load master template, using defaults', error);
       return null;
     }
   };
@@ -940,72 +939,79 @@ export default function PresenterPage() {
           </div>
 
           <div className="space-y-2">
-            {getFilteredFases().map((fase) => (
-              <div key={fase} className="bg-white rounded-lg p-3 border">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div className="md:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      {fase} - Heading Text:
-                    </label>
-                    <input
-                      type="text"
-                      value={editingHeadings[fase]?.heading || ''}
-                      onChange={(e) => handleHeadingUpdate(fase, e.target.value, editingHeadings[fase]?.image)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
-                      placeholder="Enter heading text"
-                    />
-                  </div>
-                  <div className="md:col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      Media:
-                    </label>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingHeadings[fase]?.image || ''}
-                          onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
-                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
-                          placeholder="video.mp4 or image.jpg"
-                        />
-                        <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm cursor-pointer hover:bg-gray-300 border border-gray-300 transition-colors" title="Browse for file">
-                          Browse
+            {getFilteredFases().map((fase) => {
+              // Detect if this is the first fase of a group (trailer slot) — groups 2+ only
+              const groupPrefix = fase.split('/')[0];
+              const isFirstInGroup = fase.endsWith('/01') && groupPrefix !== '01';
+              const mediaLabel = isFirstInGroup ? '🎬 Trailer:' : 'Media:';
+
+              return (
+                <div key={fase} className={`bg-white rounded-lg p-3 border ${isFirstInGroup ? 'border-purple-300 bg-purple-50' : ''}`}>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="md:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                        {fase} - Heading Text:
+                      </label>
+                      <input
+                        type="text"
+                        value={editingHeadings[fase]?.heading || ''}
+                        onChange={(e) => handleHeadingUpdate(fase, e.target.value, editingHeadings[fase]?.image)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
+                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
+                        placeholder="Enter heading text"
+                      />
+                    </div>
+                    <div className="md:col-span-1">
+                      <label className={`block text-sm font-medium mb-1 ${isFirstInGroup ? 'text-purple-700 font-bold' : 'text-gray-700'}`} style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                        {mediaLabel}
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
                           <input
-                            type="file"
-                            accept="image/*,video/*"
-                            className="hidden"
-                            onChange={(e) => handleStageFile(fase, e.target.files)}
+                            type="text"
+                            value={editingHeadings[fase]?.image || ''}
+                            onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
+                            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
+                            placeholder={isFirstInGroup ? 'trailer.mp4' : 'video.mp4 or image.jpg'}
                           />
-                        </label>
-                        <button
-                          onClick={() => handleUploadPictureForFase(fase)}
-                          disabled={!stagedFiles[fase] || uploadingFase === fase}
-                          className={`shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded text-white text-sm font-semibold transition-all ${stagedFiles[fase] && uploadingFase !== fase
-                            ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
-                            : 'bg-gray-400 cursor-not-allowed'
-                            }`}
-                          title="Upload selected file to pinkmilk.eu"
-                        >
-                          {uploadingFase === fase ? '...' : 'Upload'}
-                        </button>
+                          <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm cursor-pointer hover:bg-gray-300 border border-gray-300 transition-colors" title="Browse for file">
+                            Browse
+                            <input
+                              type="file"
+                              accept="image/*,video/*"
+                              className="hidden"
+                              onChange={(e) => handleStageFile(fase, e.target.files)}
+                            />
+                          </label>
+                          <button
+                            onClick={() => handleUploadPictureForFase(fase)}
+                            disabled={!stagedFiles[fase] || uploadingFase === fase}
+                            className={`shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded text-white text-sm font-semibold transition-all ${stagedFiles[fase] && uploadingFase !== fase
+                              ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
+                              : 'bg-gray-400 cursor-not-allowed'
+                              }`}
+                            title="Upload selected file to pinkmilk.eu"
+                          >
+                            {uploadingFase === fase ? '...' : 'Upload'}
+                          </button>
+                        </div>
+                        {stagedFiles[fase] && (
+                          <div className="text-[10px] text-blue-600 font-semibold animate-pulse">
+                            Ready to upload: {stagedFiles[fase].name}
+                          </div>
+                        )}
+                        {uploadResults[fase] && (
+                          <div className={`text-xs font-bold ${uploadResults[fase].ok ? 'text-green-600' : 'text-red-600'}`}>
+                            {uploadResults[fase].msg}
+                          </div>
+                        )}
                       </div>
-                      {stagedFiles[fase] && (
-                        <div className="text-[10px] text-blue-600 font-semibold animate-pulse">
-                          Ready to upload: {stagedFiles[fase].name}
-                        </div>
-                      )}
-                      {uploadResults[fase] && (
-                        <div className={`text-xs font-bold ${uploadResults[fase].ok ? 'text-green-600' : 'text-red-600'}`}>
-                          {uploadResults[fase].msg}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

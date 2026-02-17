@@ -506,6 +506,7 @@ export default function DisplayPage() {
       <div className="fixed bottom-6 left-6 z-20 text-white/40 text-xs space-y-1 pointer-events-none">
         <p>Press &apos;F&apos; for fullscreen</p>
         <p>Press &apos;R&apos; to refresh</p>
+        <p>Press &apos;→&apos; / &apos;←&apos; to navigate fases</p>
       </div>
 
       {/* Intro-screen sound enable button (only before 01/04 and when no overlay) */}
