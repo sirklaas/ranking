@@ -67,9 +67,9 @@ export default function PresenterPage() {
               >
                 <div>
                   <div className="font-bold text-lg">{String(session.gamename || 'Untitled Game')}</div>
-                  <div className="text-sm text-gray-400">{String(session.city || '')} • {new Date(session.created).toLocaleDateString()}</div>
+                  <div className="text-sm text-gray-400">{String(session.city || '')} &bull; {new Date(session.created).toLocaleDateString()}</div>
                 </div>
-                <div className="text-blue-300">Select →</div>
+                <div className="text-blue-300">Select &rarr;</div>
               </button>
             ))}
             {sessions.length === 0 && (
@@ -90,7 +90,7 @@ export default function PresenterPage() {
             onClick={handleBackToSessions}
             className="text-gray-400 hover:text-white transition-colors"
           >
-            ← Back
+            &larr; Back
           </button>
           <div>
             <h1 className="text-2xl font-bold">{String(selectedSession.gamename || 'Game')}</h1>
@@ -105,17 +105,14 @@ export default function PresenterPage() {
 
       {/* Main Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
         {/* Left Column: Game Controls */}
         <div className="lg:col-span-8 space-y-6">
-
           {/* Status Bar */}
           <div className="bg-blue-900/40 border border-blue-800 rounded-xl p-6 flex justify-between items-center">
             <div>
               <h2 className="text-3xl font-bold mb-1">Round {eliminationState.round}</h2>
               <div className="text-blue-300 uppercase tracking-wider text-sm font-bold">Status: {eliminationState.status}</div>
             </div>
-
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <div className="text-xs text-gray-400 mb-1">Timer Duration</div>
@@ -144,42 +141,39 @@ export default function PresenterPage() {
                 setEliminationState(newState);
               }}
               className={`p-4 rounded-xl font-bold text-lg transition-all shadow-lg ${eliminationState.status === 'voting'
-                  ? 'bg-blue-900/50 text-blue-500 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/50'
-                }`}
+                ? 'bg-blue-900/50 text-blue-500 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/50'
+              }`}
               disabled={eliminationState.status === 'voting'}
             >
-              ▶ Start Voting
+              Start Voting
             </button>
-
             <button
               onClick={async () => {
                 const newState = await eliminationLogic.showResults(selectedSession.id, eliminationState);
                 setEliminationState(newState);
               }}
               className={`p-4 rounded-xl font-bold text-lg transition-all shadow-lg ${eliminationState.status !== 'voting'
-                  ? 'bg-teal-900/50 text-teal-700 cursor-not-allowed'
-                  : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-900/50'
-                }`}
+                ? 'bg-teal-900/50 text-teal-700 cursor-not-allowed'
+                : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-900/50'
+              }`}
               disabled={eliminationState.status !== 'voting'}
             >
-              📊 Show Results
+              Show Results
             </button>
-
             <button
               onClick={async () => {
                 const newState = await eliminationLogic.nextRound(selectedSession.id, eliminationState);
                 setEliminationState(newState);
               }}
               className={`p-4 rounded-xl font-bold text-lg transition-all shadow-lg ${eliminationState.status !== 'reveal'
-                  ? 'bg-purple-900/50 text-purple-700 cursor-not-allowed'
-                  : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/50'
-                }`}
+                ? 'bg-purple-900/50 text-purple-700 cursor-not-allowed'
+                : 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-900/50'
+              }`}
               disabled={eliminationState.status !== 'reveal'}
             >
-              ⏭ Next Round
+              Next Round
             </button>
-
             <button
               onClick={async () => {
                 if (confirm('Are you sure you want to reset the game? This cannot be undone.')) {
@@ -192,7 +186,7 @@ export default function PresenterPage() {
               }}
               className="p-4 rounded-xl font-bold text-lg bg-gray-700 hover:bg-gray-600 text-white transition-all shadow-lg"
             >
-              ↺ Reset Game
+              Reset Game
             </button>
           </div>
 
@@ -209,23 +203,19 @@ export default function PresenterPage() {
         <div className="lg:col-span-4 space-y-4">
           <h3 className="text-xl font-bold text-gray-300">Options Status</h3>
           <div className="space-y-3">
-            {eliminationState.options.map(opt => (
+            {eliminationState.options.map((opt) => (
               <div
                 key={opt.id}
                 className={`relative overflow-hidden rounded-lg border transition-all ${opt.eliminated
-                    ? 'bg-red-900/20 border-red-900/50 opacity-70'
-                    : 'bg-white/5 border-white/10'
-                  }`}
+                  ? 'bg-red-900/20 border-red-900/50 opacity-70'
+                  : 'bg-white/5 border-white/10'
+                }`}
               >
                 <div className="p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-bold text-lg">{opt.label}</span>
-                    <span className="font-mono bg-black/30 px-2 py-1 rounded text-sm">
-                      {opt.votes} votes
-                    </span>
+                    <span className="font-mono bg-black/30 px-2 py-1 rounded text-sm">{opt.votes} votes</span>
                   </div>
-
-                  {/* Vote Bar */}
                   <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full transition-all duration-500 ${opt.eliminated ? 'bg-red-500' : 'bg-blue-500'}`}
@@ -233,7 +223,6 @@ export default function PresenterPage() {
                     />
                   </div>
                 </div>
-
                 {opt.eliminated && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px]">
                     <span className="text-red-500 font-bold uppercase tracking-widest border-2 border-red-500 px-4 py-1 -rotate-12">
@@ -245,7 +234,6 @@ export default function PresenterPage() {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );

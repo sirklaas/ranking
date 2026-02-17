@@ -19,15 +19,12 @@ export interface RankingSession extends PocketBaseRecord {
   headings: string; // JSON string for fase headings {"01/00": {"heading": "Text", "image": "pic.jpg"}}
   current_fase: string; // Current fase (e.g., "01/00")
   elimination_state?: string; // JSON string of EliminationState
+  krakende_state?: string; // JSON string of KrakendeState
+  top3_state?: string; // JSON string of Top3State
+  top10_state?: string; // JSON string of Top10State
   submissions?: unknown[]; // JSON field
 }
 
-export interface EliminationSubmission {
-  playerId: string;
-  optionId: string;
-  round: number;
-  timestamp: number;
-}
 
 // Parsed types for easier handling
 export interface ParsedRankingSession extends Omit<RankingSession, 'playernames'> {
@@ -191,7 +188,7 @@ export type GameCode = string; // 4-6 character code
 export type PlayerId = string;
 export type GameId = string;
 
-// Elimination Game Types
+// Elimination Game Types (used by me/ Masked Employee pages)
 export interface EliminationOption {
   id: string;
   label: string;
@@ -201,10 +198,18 @@ export interface EliminationOption {
 }
 
 export interface EliminationState {
-  round: number; // 1, 2, 3
+  round: number;
   options: EliminationOption[];
   status: 'waiting' | 'voting' | 'results' | 'reveal';
   totalVotes: number;
-  timerStart?: number; // timestamp
-  timerDuration?: number; // seconds
+  timerStart?: number;
+  timerDuration?: number;
 }
+
+export interface EliminationSubmission {
+  playerId: string;
+  optionId: string;
+  round: number;
+  timestamp: number;
+}
+

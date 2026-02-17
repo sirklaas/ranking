@@ -1,0 +1,221 @@
+import { KrakendeState, KrakendePhase, KrakendeLanguage, KrakendeSubmission, KrakendeTrait } from './types';
+import { DEFAULT_POSITIVE_TRAITS, DEFAULT_NEGATIVE_TRAITS } from './defaults';
+import { rankingService } from '@/lib/pocketbase';
+
+export const getInitialState = (): KrakendeState => ({
+  phase: 'positive-voting',
+  language: 'nl',
+  positiveTraits: DEFAULT_POSITIVE_TRAITS,
+  negativeTraits: DEFAULT_NEGATIVE_TRAITS,
+  submissions: [],
+  revealedIndex: 0,
+});
+
+// Get the display label for a trait based on current language
+export const getTraitLabel = (trait: KrakendeTrait, lang: KrakendeLanguage): string => {
+  return lang === 'nl' ? trait.nl : trait.en;
+};
+
+// Shuffle traits into random order (for display reveal)
+export const shuffleTraits = (traits: KrakendeTrait[]): KrakendeTrait[] => {
+  const shuffled = [...traits];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+// Toggle language
+export const toggleLanguage = async (
+  sessionId: string,
+  currentState: KrakendeState
+): Promise<KrakendeState> => {
+  const newLang: KrakendeLanguage = currentState.language === 'nl' ? 'en' : 'nl';
+  const newState: KrakendeState = { ...currentState, language: newLang };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
+// Advance to the next phase (presenter arrow-right)
+export const nextPhase = async (
+  sessionId: string,
+  currentState: KrakendeState
+): Promise<KrakendeState> => {
+  const order: KrakendePhase[] = [
+    'positive-voting',
+    'negative-voting',
+    'positive-results',
+    'negative-results',
+  ];
+  const idx = order.indexOf(currentState.phase);
+  const nextIdx = Math.min(idx + 1, order.length - 1);
+
+  const newState: KrakendeState = {
+    ...currentState,
+    phase: order[nextIdx],
+    revealedIndex: 0, // reset reveal counter for new phase
+  };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
+// Go to previous phase (presenter arrow-left)
+export const prevPhase = async (
+  sessionId: string,
+  currentState: KrakendeState
+): Promise<KrakendeState> => {
+  const order: KrakendePhase[] = [
+    'positive-voting',
+    'negative-voting',
+    'positive-results',
+    'negative-results',
+  ];
+  const idx = order.indexOf(currentState.phase);
+  const prevIdx = Math.max(idx - 1, 0);
+
+  const newState: KrakendeState = {
+    ...currentState,
+    phase: order[prevIdx],
+    revealedIndex: 0,
+  };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
+// Reveal next trait on display (one by one)
+export const revealNextTrait = async (
+  sessionId: string,
+  currentState: KrakendeState
+): Promise<KrakendeState> => {
+  const maxTraits =
+    currentState.phase === 'positive-voting' || currentState.phase === 'positive-results'
+      ? currentState.positiveTraits.length
+      : currentState.negativeTraits.length;
+
+  const newIndex = Math.min(currentState.revealedIndex + 1, maxTraits);
+  const newState: KrakendeState = { ...currentState, revealedIndex: newIndex };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
+// Player submits their choice
+export const submitChoice = async (
+  sessionId: string,
+  currentState: KrakendeState,
+  playerId: string,
+  playerName: string,
+  teamNumber: number,
+  traitId: string
+): Promise<KrakendeState> => {
+  const isPositive =
+    currentState.phase === 'positive-voting' || currentState.phase === 'positive-results';
+
+  // Find existing submission or create new
+  const existingIdx = currentState.submissions.findIndex(
+    (s) => s.playerId === playerId
+  );
+
+  let updatedSubmissions: KrakendeSubmission[];
+  if (existingIdx >= 0) {
+    updatedSubmissions = [...currentState.submissions];
+    if (isPositive) {
+      updatedSubmissions[existingIdx] = {
+        ...updatedSubmissions[existingIdx],
+        positiveTrait: traitId,
+        timestamp: Date.now(),
+      };
+    } else {
+      updatedSubmissions[existingIdx] = {
+        ...updatedSubmissions[existingIdx],
+        negativeTrait: traitId,
+        timestamp: Date.now(),
+      };
+    }
+  } else {
+    const newSub: KrakendeSubmission = {
+      playerId,
+      playerName,
+      teamNumber,
+      timestamp: Date.now(),
+      ...(isPositive ? { positiveTrait: traitId } : { negativeTrait: traitId }),
+    };
+    updatedSubmissions = [...currentState.submissions, newSub];
+  }
+
+  const newState: KrakendeState = {
+    ...currentState,
+    submissions: updatedSubmissions,
+  };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
+// Update traits from the dashboard
+export const updateTraits = async (
+  sessionId: string,
+  currentState: KrakendeState,
+  positiveTraits: KrakendeTrait[],
+  negativeTraits: KrakendeTrait[]
+): Promise<KrakendeState> => {
+  const newState: KrakendeState = {
+    ...currentState,
+    positiveTraits,
+    negativeTraits,
+  };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
+// Set phase explicitly
+export const setPhase = async (
+  sessionId: string,
+  currentState: KrakendeState,
+  phase: KrakendePhase
+): Promise<KrakendeState> => {
+  const newState: KrakendeState = {
+    ...currentState,
+    phase,
+    revealedIndex: 0,
+  };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
+// Parse krakende state from session JSON string
+export const parseState = (json: string | undefined): KrakendeState | null => {
+  if (!json) return null;
+  try {
+    return JSON.parse(json) as KrakendeState;
+  } catch {
+    return null;
+  }
+};

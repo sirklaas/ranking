@@ -3,10 +3,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { rankingService, teamService, motherfileService, faseService } from '@/lib/pocketbase';
-import { RankingSession, EliminationState } from '@/types';
+import { RankingSession } from '@/types';
 import '@/modules/fases/auto-register';
-import { DotsTimer } from '@/components/elimination/DotsTimer';
-import { EliminationDisplay } from '@/components/elimination/EliminationDisplay';
+import { KrakendeState } from '@/modules/krakende-karakters/types';
+import * as krakendeLogic from '@/modules/krakende-karakters/logic';
+import KrakendeDisplay from '@/components/krakende-karakters/KrakendeDisplay';
+import { Top3State } from '@/modules/top3/types';
+import * as top3Logic from '@/modules/top3/logic';
+import Top3Display from '@/components/top3/Top3Display';
+import { Top10State } from '@/modules/top10/types';
+import * as top10Logic from '@/modules/top10/logic';
+import Top10Display from '@/components/top10/Top10Display';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -26,7 +33,9 @@ export default function DisplayPage() {
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
-  const [eliminationState, setEliminationState] = useState<EliminationState | null>(null);
+  const [krakendeState, setKrakendeState] = useState<KrakendeState | null>(null);
+  const [top3State, setTop3State] = useState<Top3State | null>(null);
+  const [top10State, setTop10State] = useState<Top10State | null>(null);
 
   // Generate a random 4-digit game code
   const generateGameCode = () => {
@@ -202,12 +211,30 @@ export default function DisplayPage() {
         });
         if (!same) return;
 
-        // Parse elimination_state if present
-        if (rec.elimination_state) {
+        // Parse krakende_state if present
+        if (rec.krakende_state) {
           try {
-            setEliminationState(JSON.parse(rec.elimination_state as string));
+            setKrakendeState(JSON.parse(rec.krakende_state as string));
           } catch (e) {
-            console.error('[Display] Failed to parse elimination_state', e);
+            console.error('[Display] Failed to parse krakende_state', e);
+          }
+        }
+
+        // Parse top3_state if present
+        if (rec.top3_state) {
+          try {
+            setTop3State(JSON.parse(rec.top3_state as string));
+          } catch (e) {
+            console.error('[Display] Failed to parse top3_state', e);
+          }
+        }
+
+        // Parse top10_state if present
+        if (rec.top10_state) {
+          try {
+            setTop10State(JSON.parse(rec.top10_state as string));
+          } catch (e) {
+            console.error('[Display] Failed to parse top10_state', e);
           }
         }
 
@@ -364,40 +391,23 @@ export default function DisplayPage() {
     );
   }
 
-  // Render Elimination Game View if current fase starts with '02'
-  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
-    return (
-      <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
-        {/* Top Section: Logo and DotsTimer */}
-        <div className="bg-[#0A1752] border-b border-blue-900 shadow-lg">
-          <div className="flex justify-center p-4">
-            <Image
-              src="/assets/ranking_logo.webp"
-              alt="Ranking Logo"
-              width={240}
-              height={120}
-              className="h-24 w-auto object-contain"
-              priority
-            />
-          </div>
+  // Render Krakende Karakters View if current fase starts with '13/' (except 13/01 trailer)
+  if (currentSession?.current_fase?.startsWith('13/') && currentSession.current_fase !== '13/01' && krakendeState) {
+    return <KrakendeDisplay state={krakendeState} />;
+  }
 
-          {/* DOTS TIMER - FULL WIDTH AT TOP */}
-          <div className="px-8 pb-4">
-            <DotsTimer
-              duration={eliminationState.timerDuration || 20}
-              startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
-            />
-          </div>
-        </div>
+  // Render Top 3 View if current fase starts with '10/' (except 10/01 trailer)
+  if (currentSession?.current_fase?.startsWith('10/') && currentSession.current_fase !== '10/01' && top3State) {
+    const headingsJson = currentSession.headings || '{}';
+    const currentHeading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
+    return <Top3Display state={top3State} heading={currentHeading} />;
+  }
 
-        {/* Main Content: Elimination Display */}
-        <div className="flex-1 flex items-center justify-center p-8">
-          <EliminationDisplay
-            state={eliminationState}
-          />
-        </div>
-      </div>
-    );
+  // Render Top 10 View if current fase starts with '17/' (except 17/01 trailer)
+  if (currentSession?.current_fase?.startsWith('17/') && currentSession.current_fase !== '17/01' && top10State) {
+    const headingsJson = currentSession.headings || '{}';
+    const currentHeading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
+    return <Top10Display state={top10State} heading={currentHeading} />;
   }
 
   return (

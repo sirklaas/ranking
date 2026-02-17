@@ -3,10 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { rankingService, teamService, faseService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
-import { DotsTimer } from '@/components/elimination/DotsTimer';
-import { EliminationVoting } from '@/components/elimination/EliminationVoting';
-import { EliminationState } from '@/types';
-import * as eliminationLogic from '@/modules/elimination/logic';
+import { KrakendeState } from '@/modules/krakende-karakters/types';
+import * as krakendeLogic from '@/modules/krakende-karakters/logic';
+import KrakendePlayer from '@/components/krakende-karakters/KrakendePlayer';
+import { Top3State } from '@/modules/top3/types';
+import * as top3Logic from '@/modules/top3/logic';
+import Top3Player from '@/components/top3/Top3Player';
+import { Top10State } from '@/modules/top10/types';
+import * as top10Logic from '@/modules/top10/logic';
+import Top10Player from '@/components/top10/Top10Player';
 
 interface RankingSession {
   id: string;
@@ -18,7 +23,9 @@ interface RankingSession {
   photocircle: string;
   headings: string; // JSON string for fase headings
   current_fase: string; // Current fase (e.g., "01/00")
-  elimination_state?: string;
+  krakende_state?: string;
+  top3_state?: string;
+  top10_state?: string;
 }
 
 // Extracted TypewriterHeading to avoid re-definition on every render
@@ -120,62 +127,6 @@ const MemoTypewriterHeading = React.memo(
   )
 );
 
-// Extracted Elimination Game View
-const EliminationGameView = ({
-  eliminationState,
-  hasVoted,
-  currentSession,
-  selectedPlayerName,
-  setHasVoted
-}: {
-  eliminationState: EliminationState,
-  hasVoted: boolean,
-  currentSession: RankingSession,
-  selectedPlayerName: string,
-  setHasVoted: (v: boolean) => void
-}) => {
-  return (
-    <div className="min-h-screen bg-[#0A1752] text-white flex flex-col">
-      {/* Sticky Header with Logo and DotsTimer */}
-      <div className="sticky top-0 z-50 bg-[#0A1752] border-b border-blue-900 shadow-lg">
-        <div className="flex justify-center p-2">
-          <Image
-            src="/assets/ranking_logo.webp"
-            alt="Ranking Logo"
-            width={120}
-            height={60}
-            className="h-12 w-auto object-contain"
-          />
-        </div>
-
-        {/* DOTS TIMER - STICKY */}
-        <div className="px-4 pb-2">
-          <DotsTimer
-            duration={eliminationState.timerDuration || 20}
-            startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
-          />
-        </div>
-      </div>
-
-      {/* Main Voting Content */}
-      <div className="flex-1 p-4">
-        <EliminationVoting
-          options={eliminationState.options.filter(opt => !opt.eliminated)}
-          isVotingOpen={eliminationState.status === 'voting'}
-          hasVoted={hasVoted}
-          onVote={async (optionId) => {
-            if (currentSession && !hasVoted) {
-              setHasVoted(true);
-              const playerId = selectedPlayerName || `anon_${Date.now()}`;
-              await eliminationLogic.submitVote(currentSession.id, eliminationState, optionId, playerId);
-            }
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
 export default function PlayerPage() {
   const [teamNumber, setTeamNumber] = useState('');
   const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
@@ -197,9 +148,12 @@ export default function PlayerPage() {
   const [motherfile, setMotherfile] = useState<MotherfileFases | null>(null);
   const fadeDurationMs = 1000; // 1s fade for heading transitions
 
-  // Elimination Game State
-  const [eliminationState, setEliminationState] = useState<EliminationState | null>(null);
-  const [hasVoted, setHasVoted] = useState(false);
+  // Krakende Karakters State
+  const [krakendeState, setKrakendeState] = useState<KrakendeState | null>(null);
+  // Top 3 State
+  const [top3State, setTop3State] = useState<Top3State | null>(null);
+  // Top 10 State
+  const [top10State, setTop10State] = useState<Top10State | null>(null);
 
   // Load PocketBase session ONCE (for team members and links) - no polling
   useEffect(() => {
@@ -293,31 +247,57 @@ export default function PlayerPage() {
     setIsLoading(false);
   };
 
-  // Subscribe to session updates for Elimination Game
+  // Subscribe to session updates
   useEffect(() => {
     if (!currentSession) return;
 
-    // Initial parse
-    if (currentSession.elimination_state) {
+    // Initial parse krakende
+    if (currentSession.krakende_state) {
       try {
-        setEliminationState(JSON.parse(currentSession.elimination_state));
+        setKrakendeState(JSON.parse(currentSession.krakende_state));
       } catch (e) {
-        console.error("Failed to parse elimination state", e);
+        console.error("Failed to parse krakende state", e);
+      }
+    }
+
+    // Initial parse top3
+    if (currentSession.top3_state) {
+      try {
+        setTop3State(JSON.parse(currentSession.top3_state));
+      } catch (e) {
+        console.error("Failed to parse top3 state", e);
+      }
+    }
+
+    // Initial parse top10
+    if (currentSession.top10_state) {
+      try {
+        setTop10State(JSON.parse(currentSession.top10_state));
+      } catch (e) {
+        console.error("Failed to parse top10 state", e);
       }
     }
 
     const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
-      if (data.elimination_state) {
+      if (data.krakende_state) {
         try {
-          const newState = JSON.parse(data.elimination_state as string);
-          setEliminationState(newState);
-
-          // Reset hasVoted when starting a new round or new voting session
-          if (newState.status === 'waiting') {
-            setHasVoted(false);
-          }
+          setKrakendeState(JSON.parse(data.krakende_state as string));
         } catch (e) {
-          console.error("Failed to parse elimination state update", e);
+          console.error("Failed to parse krakende state update", e);
+        }
+      }
+      if (data.top3_state) {
+        try {
+          setTop3State(JSON.parse(data.top3_state as string));
+        } catch (e) {
+          console.error("Failed to parse top3 state update", e);
+        }
+      }
+      if (data.top10_state) {
+        try {
+          setTop10State(JSON.parse(data.top10_state as string));
+        } catch (e) {
+          console.error("Failed to parse top10 state update", e);
         }
       }
       // Also update current fase if changed
@@ -380,15 +360,79 @@ export default function PlayerPage() {
     setShowTeamInfo(true);
   };
 
-  // Render Elimination Game View if current fase starts with '02'
-  if (currentSession?.current_fase?.startsWith('02') && eliminationState) {
+  // Render Krakende Karakters View if current fase starts with '13/' (except trailer)
+  if (currentSession?.current_fase?.startsWith('13/') && currentSession.current_fase !== '13/01' && krakendeState) {
     return (
-      <EliminationGameView
-        eliminationState={eliminationState}
-        hasVoted={hasVoted}
-        currentSession={currentSession}
-        selectedPlayerName={selectedPlayerName}
-        setHasVoted={setHasVoted}
+      <KrakendePlayer
+        state={krakendeState}
+        playerId={selectedPlayerName || `anon_${teamNumber}`}
+        playerName={selectedPlayerName || 'Speler'}
+        teamNumber={parseInt(teamNumber) || 0}
+        onSubmitChoice={async (traitId) => {
+          if (currentSession) {
+            const newState = await krakendeLogic.submitChoice(
+              currentSession.id,
+              krakendeState,
+              selectedPlayerName || `anon_${teamNumber}`,
+              selectedPlayerName || 'Speler',
+              parseInt(teamNumber) || 0,
+              traitId
+            );
+            setKrakendeState(newState);
+          }
+        }}
+      />
+    );
+  }
+
+  // Render Top 3 View if current fase starts with '10/' (except 10/01 trailer)
+  if (currentSession?.current_fase?.startsWith('10/') && currentSession.current_fase !== '10/01' && top3State) {
+    return (
+      <Top3Player
+        state={top3State}
+        playerId={selectedPlayerName || `anon_${teamNumber}`}
+        playerName={selectedPlayerName || 'Speler'}
+        teamNumber={parseInt(teamNumber) || 0}
+        onVote={async (chosenPlayerId, chosenPlayerName) => {
+          if (currentSession) {
+            const newState = await top3Logic.submitVote(
+              currentSession.id,
+              top3State,
+              selectedPlayerName || `anon_${teamNumber}`,
+              selectedPlayerName || 'Speler',
+              parseInt(teamNumber) || 0,
+              chosenPlayerId,
+              chosenPlayerName
+            );
+            setTop3State(newState);
+          }
+        }}
+      />
+    );
+  }
+
+  // Render Top 10 View if current fase starts with '17/' (except 17/01 trailer)
+  if (currentSession?.current_fase?.startsWith('17/') && currentSession.current_fase !== '17/01' && top10State) {
+    return (
+      <Top10Player
+        state={top10State}
+        playerId={selectedPlayerName || `anon_${teamNumber}`}
+        playerName={selectedPlayerName || 'Speler'}
+        teamNumber={parseInt(teamNumber) || 0}
+        onVote={async (chosenPlayerId, chosenPlayerName) => {
+          if (currentSession) {
+            const newState = await top10Logic.submitVote(
+              currentSession.id,
+              top10State,
+              selectedPlayerName || `anon_${teamNumber}`,
+              selectedPlayerName || 'Speler',
+              parseInt(teamNumber) || 0,
+              chosenPlayerId,
+              chosenPlayerName
+            );
+            setTop10State(newState);
+          }
+        }}
       />
     );
   }

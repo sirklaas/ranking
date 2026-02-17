@@ -6,9 +6,15 @@ import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
 import { teamService, faseService, rankingService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
 import '@/modules/fases/auto-register';
-import { EliminationState } from '@/types';
-import * as eliminationLogic from '@/modules/elimination/logic';
-import { DotsTimer } from '@/components/elimination/DotsTimer';
+import { KrakendeState } from '@/modules/krakende-karakters/types';
+import * as krakendeLogic from '@/modules/krakende-karakters/logic';
+import KrakendePresenter from '@/components/krakende-karakters/KrakendePresenter';
+import { Top3State } from '@/modules/top3/types';
+import * as top3Logic from '@/modules/top3/logic';
+import Top3Presenter from '@/components/top3/Top3Presenter';
+import { Top10State } from '@/modules/top10/types';
+import * as top10Logic from '@/modules/top10/logic';
+import Top10Presenter from '@/components/top10/Top10Presenter';
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -22,64 +28,113 @@ export default function PresenterPage() {
   const [gameTime, setGameTime] = useState('00:00');
   const [isClient, setIsClient] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
-  const [eliminationState, setEliminationState] = useState<EliminationState>(eliminationLogic.getInitialState());
+  const [krakendeState, setKrakendeState] = useState<KrakendeState>(krakendeLogic.getInitialState());
+  const [top3State, setTop3State] = useState<Top3State>(top3Logic.getInitialState());
+  const [top10State, setTop10State] = useState<Top10State>(top10Logic.getInitialState());
+  const [stagedFiles, setStagedFiles] = useState<Record<string, File>>({});
+  const [uploadingFase, setUploadingFase] = useState<string | null>(null);
 
-  // Sync elimination state from session
+  // Sync krakende state from session
   useEffect(() => {
-    if (selectedSession?.elimination_state) {
+    if (selectedSession?.krakende_state) {
       try {
-        const parsed = JSON.parse(selectedSession.elimination_state);
-        // Only update if different to avoid loops, or just trust the server state
-        setEliminationState(parsed);
+        const parsed = JSON.parse(selectedSession.krakende_state as string);
+        setKrakendeState(parsed);
       } catch (e) {
-        console.error("Failed to parse elimination state", e);
+        console.error("Failed to parse krakende state", e);
       }
     }
   }, [selectedSession]);
 
+  // Sync top3 state from session
+  useEffect(() => {
+    if (selectedSession?.top3_state) {
+      try {
+        const parsed = JSON.parse(selectedSession.top3_state as string);
+        setTop3State(parsed);
+      } catch (e) {
+        console.error("Failed to parse top3 state", e);
+      }
+    } else if (selectedSession) {
+      // Initialize with player names
+      const playerNames = teamService.parsePlayerNames(selectedSession.playernames);
+      setTop3State(top3Logic.getInitialState(playerNames));
+    }
+  }, [selectedSession]);
 
-  // Upload a single media file and assign it to a specific fase's Picture field
-  const handleUploadPictureForFase = async (fase: string, files: FileList | null) => {
+  // Sync top10 state from session
+  useEffect(() => {
+    if (selectedSession?.top10_state) {
+      try {
+        const parsed = JSON.parse(selectedSession.top10_state as string);
+        setTop10State(parsed);
+      } catch (e) {
+        console.error("Failed to parse top10 state", e);
+      }
+    } else if (selectedSession) {
+      const playerNames = teamService.parsePlayerNames(selectedSession.playernames);
+      setTop10State(top10Logic.getInitialState(playerNames));
+    }
+  }, [selectedSession]);
+
+
+  // Stage a file locally before upload
+  const handleStageFile = (fase: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
+    const file = files[0];
+    setStagedFiles(prev => ({ ...prev, [fase]: file }));
+    // Also update the text field to show the name immediately
+    setEditingHeadings(prev => ({
+      ...prev,
+      [fase]: { heading: prev[fase]?.heading || '', image: file.name }
+    }));
+  };
+
+  // Upload a single media file via FTP to pinkmilk.eu/RankingNW
+  const handleUploadPictureForFase = async (fase: string) => {
+    const file = stagedFiles[fase];
+    if (!file) return;
+
+    setUploadingFase(fase);
     try {
-      const file = files[0];
       const form = new FormData();
-      form.append('media', file);
-      const res = await fetch('/api/pb-motherfile', { method: 'POST', body: form });
-      let json: unknown = null;
+      form.append('file', file);
+      form.append('filename', file.name);
+
+      const res = await fetch('/api/ftp-upload', { method: 'POST', body: form });
+      let json: any = null;
       try {
         json = await res.json();
       } catch {
         throw new Error('Upload response was not JSON');
       }
-      const isOk = typeof json === 'object' && json !== null && (json as { success?: boolean }).success === true;
-      if (!isOk) {
-        const errMsg = (typeof json === 'object' && json && (json as { error?: string }).error) || `Upload failed (${res.status})`;
-        throw new Error(errMsg as string);
+
+      if (!res.ok || !json.success) {
+        const errMsg = json.error || `Upload failed (${res.status})`;
+        throw new Error(errMsg);
       }
 
-      // After upload, refresh motherfile to cache recordId
-      try {
-        const resAfter = await fetch('/api/pb-motherfile', { cache: 'no-store' });
-        const jsonAfter = await resAfter.json();
-        const rid = jsonAfter?.meta?.recordId as string | undefined;
-        if (rid) motherfileService.setRecordId(rid);
-      } catch { }
-
-      // Set the fase image to the uploaded file name (URL built via motherfileService.fileUrl at render time)
+      // Update the image field with the filename (used to resolve the public URL)
       setEditingHeadings(prev => ({
         ...prev,
         [fase]: { heading: prev[fase]?.heading || '', image: file.name }
       }));
 
-      setSaveBanner('Picture uploaded and linked to this fase');
+      // Clear staged file
+      setStagedFiles(prev => {
+        const next = { ...prev };
+        delete next[fase];
+        return next;
+      });
+
+      setSaveBanner(`Media "${file.name}" uploaded to pinkmilk.eu ✓`);
       setTimeout(() => setSaveBanner(null), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload failed:', err);
-      setSaveBanner('Failed to upload picture');
-      setTimeout(() => setSaveBanner(null), 4000);
+      setSaveBanner(`Upload failed: ${err.message}`);
+      setTimeout(() => setSaveBanner(null), 5000);
     } finally {
-      // no-op
+      setUploadingFase(null);
     }
   };
 
@@ -181,7 +236,7 @@ export default function PresenterPage() {
     '4': { name: 'Guilty Pleasures', fases: ['04/01', '04/02'] },
     '7': { name: 'Zitten en Staan', fases: ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'] },
     '10': { name: 'De Top 3', fases: ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'] },
-    '13': { name: 'Krakende Karakters', fases: ['13/01', '13/02', '13/03', '13/06'] },
+    '13': { name: 'Krakende Karakters', fases: ['13/01', '13/02', '13/03', '13/04', '13/05', '13/06'] },
     '17': { name: 'Top 10', fases: ['17/01', '17/02', '17/05', '17/06', '17/07', '17/08', '17/09', '17/10', '17/11', '17/12', '17/13', '17/14'] },
     '20': { name: 'De Finale', fases: ['20/01'] }
   };
@@ -380,7 +435,9 @@ export default function PresenterPage() {
           '13/01': { heading: 'Krakende Karakters', image: 'trailerkrakende' },
           '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
           '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
-          '13/06': { heading: 'Misschien iets Minder goede Eigenschappen', image: '' },
+          '13/04': { heading: 'Minder goede Eigenschappen', image: '' },
+          '13/05': { heading: 'Resultaten Positief', image: '' },
+          '13/06': { heading: 'Resultaten Negatief', image: '' },
           '17/01': { heading: 'De Top 10', image: 'trailertop10' },
           '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
           '17/05': { heading: 'Een pijnlijke pukkel op je bil waar je niet bij kan. Wie mag hem voor je uitknijpen?', image: '' },
@@ -606,171 +663,6 @@ export default function PresenterPage() {
 
   // No Space shortcut in presentation mode
 
-  const renderEliminationControls = () => {
-    if (!currentFase.startsWith('02')) return null;
-
-    return (
-      <div className="flex flex-col gap-6 mt-4">
-        {/* Top Bar: Ronde 1 & Controls */}
-        <div className="bg-[#0A1752] p-4 rounded-lg text-white shadow-lg border border-blue-800 flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <div>
-              <h3 className="text-2xl font-bold text-white mb-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Ronde {eliminationState.round}</h3>
-              <div className="text-blue-300 text-xs">Status: {eliminationState.status}</div>
-            </div>
-
-            <div className="flex items-center gap-2 bg-blue-900/50 px-3 py-1 rounded border border-blue-800">
-              <span className="text-sm text-blue-200">Timer (sec)</span>
-              <input
-                type="number"
-                value={eliminationState.timerDuration || 20}
-                onChange={(e) => setEliminationState({ ...eliminationState, timerDuration: parseInt(e.target.value) || 20 })}
-                className="w-12 bg-gray-800 border border-blue-700 rounded px-1 py-0.5 text-center text-white text-sm"
-              />
-            </div>
-
-            {/* Mini Timer Preview */}
-            <div className="w-16">
-              <div className="text-xl font-mono text-cyan-300 font-bold">
-                {eliminationState.timerStart && eliminationState.status === 'voting'
-                  ? Math.max(0, Math.ceil((eliminationState.timerDuration || 20) - (Date.now() - eliminationState.timerStart) / 1000)) + 's'
-                  : (eliminationState.timerDuration || 20) + 's'}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={async () => {
-                if (selectedSession) {
-                  const newState = await eliminationLogic.startVoting(selectedSession.id, eliminationState);
-                  setEliminationState(newState);
-                }
-              }}
-              className={`px-4 py-2 rounded font-bold text-sm transition-all ${eliminationState.status === 'voting' ? 'bg-blue-800 text-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]'}`}
-              disabled={eliminationState.status === 'voting'}
-            >
-              Start voting
-            </button>
-
-            <button
-              onClick={async () => {
-                if (selectedSession) {
-                  const newState = await eliminationLogic.showResults(selectedSession.id, eliminationState);
-                  setEliminationState(newState);
-                }
-              }}
-              className={`px-4 py-2 rounded font-bold text-sm transition-all ${eliminationState.status !== 'voting' ? 'bg-teal-900/50 text-teal-700 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-600 text-white'}`}
-              disabled={eliminationState.status !== 'voting'}
-            >
-              Show results
-            </button>
-
-            <button
-              onClick={async () => {
-                if (selectedSession) {
-                  const newState = await eliminationLogic.nextRound(selectedSession.id, eliminationState);
-                  setEliminationState(newState);
-                }
-              }}
-              className={`px-4 py-2 rounded font-bold text-sm transition-all ${eliminationState.status !== 'reveal' ? 'bg-purple-900/50 text-purple-700 cursor-not-allowed' : 'bg-purple-700 hover:bg-purple-600 text-white'}`}
-              disabled={eliminationState.status !== 'reveal'}
-            >
-              Next round
-            </button>
-
-            <button
-              onClick={async () => {
-                const newState = eliminationLogic.getInitialState();
-                setEliminationState(newState);
-                if (selectedSession) {
-                  await rankingService.updateSession(selectedSession.id, {
-                    elimination_state: JSON.stringify(newState)
-                  });
-                }
-              }}
-              className="px-4 py-2 rounded font-bold text-sm bg-gray-600 hover:bg-gray-500 text-white"
-            >
-              Reset game
-            </button>
-          </div>
-        </div>
-
-
-
-        {/* THE DOTS TIMER */}
-        <div className="w-full py-2">
-          <DotsTimer
-            duration={eliminationState.timerDuration || 20}
-            startTime={eliminationState.status === 'voting' ? eliminationState.timerStart : undefined}
-          />
-        </div>
-
-        {/* Bottom Section: Two Columns */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Column: Importeer spelers (Placeholder based on screenshot) */}
-          <div className="col-span-4 bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-            <h4 className="text-green-400 font-bold text-lg mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Importeer spelers</h4>
-            <p className="text-gray-500 text-xs mb-4">Excel (.xlsx) met namen in kolom A</p>
-
-            <div className="flex items-center gap-2 mb-4">
-              <button className="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors">
-                Choose File
-              </button>
-              <span className="text-gray-600 text-xs">no file selected</span>
-            </div>
-
-            <div className="bg-[#131c33] rounded border border-gray-800 p-3 h-64 overflow-y-auto">
-              <div className="text-white text-sm font-bold mb-2">{selectedSession?.nr_players || 0} spelers</div>
-              <ul className="space-y-1">
-                {teamService.parsePlayerNames(selectedSession?.playernames || '').map((name, i) => (
-                  <li key={i} className="text-gray-400 text-xs flex items-center gap-2">
-                    <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                    {name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Right Column: Configureer opties */}
-          <div className="col-span-8 bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-            <h4 className="text-green-400 font-bold text-lg mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Configureer opties</h4>
-
-            <div className="grid grid-cols-2 gap-4">
-              {eliminationState.options.map(opt => (
-                <div key={opt.id} className={`relative bg-[#131c33] rounded-lg overflow-hidden border ${opt.eliminated ? 'border-red-900 opacity-60' : 'border-gray-700'}`}>
-                  {/* Image Placeholder */}
-                  <div className="h-32 bg-gray-800 relative">
-                    {opt.id === '1' && <img src="/assets/ariel.webp" className="w-full h-full object-cover" alt="Ariel" onError={(e) => e.currentTarget.style.display = 'none'} />}
-                    {opt.id === '2' && <img src="/assets/sage.webp" className="w-full h-full object-cover" alt="Sage" onError={(e) => e.currentTarget.style.display = 'none'} />}
-                    {opt.eliminated && <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-red-500 font-bold uppercase tracking-widest rotate-12 border-2 border-red-500 m-4">Eliminated</div>}
-                  </div>
-
-                  <div className="p-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white font-medium">{opt.id} {opt.label}</span>
-                      <span className="text-blue-400 font-mono">{opt.votes} votes</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${eliminationState.totalVotes > 0 ? (opt.votes / eliminationState.totalVotes) * 100 : 0}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 flex justify-center">
-              <button className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded transition-colors">
-                Save namen
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderGameInterface = () => {
     console.log('renderGameInterface called', { selectedSession, currentView });
     if (!selectedSession) {
@@ -811,7 +703,32 @@ export default function PresenterPage() {
             </div>
           </div>
 
-          {renderEliminationControls()}
+          {/* Krakende Karakters controls */}
+          {currentFase.startsWith('13/') && selectedSession && (
+            <KrakendePresenter
+              sessionId={selectedSession.id}
+              state={krakendeState}
+              onStateChange={setKrakendeState}
+            />
+          )}
+
+          {/* Top 3 controls */}
+          {currentFase.startsWith('10/') && selectedSession && (
+            <Top3Presenter
+              sessionId={selectedSession.id}
+              state={top3State}
+              onStateChange={setTop3State}
+            />
+          )}
+
+          {/* Top 10 controls */}
+          {currentFase.startsWith('17/') && selectedSession && (
+            <Top10Presenter
+              sessionId={selectedSession.id}
+              state={top10State}
+              onStateChange={setTop10State}
+            />
+          )}
           {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
           <div
             className="grid mt-4 gap-4 pr-6"
@@ -1097,26 +1014,44 @@ export default function PresenterPage() {
                   </div>
                   <div className="md:col-span-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      Picture:
+                      Media:
                     </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={editingHeadings[fase]?.image || ''}
-                        onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
-                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
-                        placeholder="image.jpg"
-                      />
-                      <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-[#0A1752] text-white text-sm cursor-pointer hover:bg-[#0A1752]/90" title="Upload and set picture">
-                        Upload
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
                         <input
-                          type="file"
-                          accept="image/*,video/*"
-                          className="hidden"
-                          onChange={(e) => handleUploadPictureForFase(fase, e.target.files)}
+                          type="text"
+                          value={editingHeadings[fase]?.image || ''}
+                          onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
+                          className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
+                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
+                          placeholder="video.mp4 or image.jpg"
                         />
-                      </label>
+                        <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm cursor-pointer hover:bg-gray-300 border border-gray-300 transition-colors" title="Browse for file">
+                          Browse
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={(e) => handleStageFile(fase, e.target.files)}
+                          />
+                        </label>
+                        <button
+                          onClick={() => handleUploadPictureForFase(fase)}
+                          disabled={!stagedFiles[fase] || uploadingFase === fase}
+                          className={`shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded text-white text-sm font-semibold transition-all ${stagedFiles[fase] && uploadingFase !== fase
+                            ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
+                            : 'bg-gray-400 cursor-not-allowed'
+                            }`}
+                          title="Upload selected file to pinkmilk.eu"
+                        >
+                          {uploadingFase === fase ? '...' : 'Upload'}
+                        </button>
+                      </div>
+                      {stagedFiles[fase] && (
+                        <div className="text-[10px] text-blue-600 font-semibold animate-pulse">
+                          Ready to upload: {stagedFiles[fase].name}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
