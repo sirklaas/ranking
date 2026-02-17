@@ -66,10 +66,12 @@ export default function PresenterPage() {
 
       const res = await fetch('/api/ftp-upload', { method: 'POST', body: form });
       let json: any = null;
+      const rawText = await res.text();
       try {
-        json = await res.json();
+        json = JSON.parse(rawText);
       } catch {
-        throw new Error('Upload response was not JSON');
+        console.error('[Upload] Non-JSON response:', res.status, rawText.slice(0, 500));
+        throw new Error(`Upload failed (${res.status}): server returned non-JSON response`);
       }
 
       if (!res.ok || !json.success) {

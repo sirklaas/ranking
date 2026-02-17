@@ -21,6 +21,31 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
     return () => clearTimeout(timer);
   }, [faseKey]);
 
+  // Inject keyframe animations once
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const id = 'zs-keyframes';
+    if (document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = `
+      @keyframes zsPopIn {
+        0%   { transform: scale(0); opacity: 0; }
+        60%  { transform: scale(1.15); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes zsFadeUp {
+        0%   { opacity: 0; transform: translateY(30px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes zsPulse {
+        0%, 100% { opacity: 0.4; }
+        50%      { opacity: 0.8; }
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
   // ── Full-screen colour after pressing ──
   if (choice) {
     const bg = choice === 'red'
@@ -38,13 +63,6 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
           </div>
           <div className="text-white/60 text-lg mt-4">Wacht op de volgende vraag…</div>
         </div>
-        <style jsx>{`
-          @keyframes zsPopIn {
-            0%   { transform: scale(0); opacity: 0; }
-            60%  { transform: scale(1.15); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-        `}</style>
       </div>
     );
   }
@@ -131,17 +149,6 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
           </div>
         )}
       </div>
-
-      <style jsx>{`
-        @keyframes zsFadeUp {
-          0%   { opacity: 0; transform: translateY(30px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes zsPulse {
-          0%, 100% { opacity: 0.4; }
-          50%      { opacity: 0.8; }
-        }
-      `}</style>
     </div>
   );
 };
