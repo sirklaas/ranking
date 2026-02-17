@@ -472,20 +472,9 @@ export default function PresenterPage() {
     }));
   };
 
-  const updateMasterTemplate = async (headings: Record<string, { heading: string; image?: string }>) => {
-    try {
-      const res = await fetch('/api/pb-motherfile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fases: headings })
-      });
-      const json = await res.json();
-      if (!json?.success) throw new Error(json?.error || 'Unknown error');
-      return { success: true, message: 'Motherfile updated in PocketBase' };
-    } catch (error) {
-      console.error('Error updating PocketBase motherfile:', error);
-      return { success: false, message: 'Failed to update PocketBase motherfile' };
-    }
+  const updateMasterTemplate = async (_headings: Record<string, { heading: string; image?: string }>) => {
+    // No-op: media is now served from pinkmilk.eu, headings are saved per-session
+    return { success: true, message: 'Headings saved to session (pinkmilk.eu for media)' };
   };
 
   const saveHeadings = async (options?: { updateMotherfile?: boolean }) => {
