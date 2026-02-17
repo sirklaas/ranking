@@ -5,15 +5,7 @@ import Image from 'next/image';
 import { rankingService, teamService, motherfileService, faseService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
 import '@/modules/fases/auto-register';
-import { KrakendeState } from '@/modules/krakende-karakters/types';
-import * as krakendeLogic from '@/modules/krakende-karakters/logic';
-import KrakendeDisplay from '@/components/krakende-karakters/KrakendeDisplay';
-import { Top3State } from '@/modules/top3/types';
-import * as top3Logic from '@/modules/top3/logic';
-import Top3Display from '@/components/top3/Top3Display';
-import { Top10State } from '@/modules/top10/types';
-import * as top10Logic from '@/modules/top10/logic';
-import Top10Display from '@/components/top10/Top10Display';
+import { FASES, findFaseModule } from '@/modules/fases';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -33,9 +25,7 @@ export default function DisplayPage() {
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
-  const [krakendeState, setKrakendeState] = useState<KrakendeState | null>(null);
-  const [top3State, setTop3State] = useState<Top3State | null>(null);
-  const [top10State, setTop10State] = useState<Top10State | null>(null);
+  const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
 
   // Generate a random 4-digit game code
   const generateGameCode = () => {
@@ -186,32 +176,17 @@ export default function DisplayPage() {
         });
         if (!same) return;
 
-        // Parse krakende_state if present
-        if (rec.krakende_state) {
-          try {
-            setKrakendeState(JSON.parse(rec.krakende_state as string));
-          } catch (e) {
-            console.error('[Display] Failed to parse krakende_state', e);
+        // Parse all registered module states generically
+        Object.values(FASES).forEach((mod) => {
+          if (mod.stateField && rec[mod.stateField]) {
+            try {
+              const json = rec[mod.stateField] as string;
+              setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json }));
+            } catch (e) {
+              console.error(`[Display] Failed to parse ${mod.stateField}`, e);
+            }
           }
-        }
-
-        // Parse top3_state if present
-        if (rec.top3_state) {
-          try {
-            setTop3State(JSON.parse(rec.top3_state as string));
-          } catch (e) {
-            console.error('[Display] Failed to parse top3_state', e);
-          }
-        }
-
-        // Parse top10_state if present
-        if (rec.top10_state) {
-          try {
-            setTop10State(JSON.parse(rec.top10_state as string));
-          } catch (e) {
-            console.error('[Display] Failed to parse top10_state', e);
-          }
-        }
+        });
 
         // If PocketBase event doesn't include current_fase, fetch the full record to get the latest value
         if (typeof rec.current_fase === 'undefined') {
@@ -335,23 +310,20 @@ export default function DisplayPage() {
     );
   }
 
-  // Render Krakende Karakters View if current fase starts with '13/' (except 13/01 trailer)
-  if (currentSession?.current_fase?.startsWith('13/') && currentSession.current_fase !== '13/01' && krakendeState) {
-    return <KrakendeDisplay state={krakendeState} />;
-  }
-
-  // Render Top 3 View if current fase starts with '10/' (except 10/01 trailer)
-  if (currentSession?.current_fase?.startsWith('10/') && currentSession.current_fase !== '10/01' && top3State) {
-    const headingsJson = currentSession.headings || '{}';
-    const currentHeading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
-    return <Top3Display state={top3State} heading={currentHeading} />;
-  }
-
-  // Render Top 10 View if current fase starts with '17/' (except 17/01 trailer)
-  if (currentSession?.current_fase?.startsWith('17/') && currentSession.current_fase !== '17/01' && top10State) {
-    const headingsJson = currentSession.headings || '{}';
-    const currentHeading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
-    return <Top10Display state={top10State} heading={currentHeading} />;
+  // Render module DisplayView if a registered fase module matches the current fase
+  if (currentSession?.current_fase) {
+    const mod = findFaseModule(currentSession.current_fase);
+    if (mod && (!mod.stateField || moduleStates[mod.stateField])) {
+      const headingsJson = currentSession.headings || '{}';
+      const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
+      return (
+        <mod.DisplayView
+          faseKey={currentSession.current_fase}
+          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+          heading={heading}
+        />
+      );
+    }
   }
 
   return (

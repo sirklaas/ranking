@@ -6,15 +6,7 @@ import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
 import { teamService, faseService, rankingService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
 import '@/modules/fases/auto-register';
-import { KrakendeState } from '@/modules/krakende-karakters/types';
-import * as krakendeLogic from '@/modules/krakende-karakters/logic';
-import KrakendePresenter from '@/components/krakende-karakters/KrakendePresenter';
-import { Top3State } from '@/modules/top3/types';
-import * as top3Logic from '@/modules/top3/logic';
-import Top3Presenter from '@/components/top3/Top3Presenter';
-import { Top10State } from '@/modules/top10/types';
-import * as top10Logic from '@/modules/top10/logic';
-import Top10Presenter from '@/components/top10/Top10Presenter';
+import { FASES, findFaseModule } from '@/modules/fases';
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -28,54 +20,24 @@ export default function PresenterPage() {
   const [gameTime, setGameTime] = useState('00:00');
   const [isClient, setIsClient] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
-  const [krakendeState, setKrakendeState] = useState<KrakendeState>(krakendeLogic.getInitialState());
-  const [top3State, setTop3State] = useState<Top3State>(top3Logic.getInitialState());
-  const [top10State, setTop10State] = useState<Top10State>(top10Logic.getInitialState());
+  const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
   const [stagedFiles, setStagedFiles] = useState<Record<string, File>>({});
   const [uploadingFase, setUploadingFase] = useState<string | null>(null);
   const [uploadResults, setUploadResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
 
-  // Sync krakende state from session
+  // Sync all module states from session (generic)
   useEffect(() => {
-    if (selectedSession?.krakende_state) {
-      try {
-        const parsed = JSON.parse(selectedSession.krakende_state as string);
-        setKrakendeState(parsed);
-      } catch (e) {
-        console.error("Failed to parse krakende state", e);
+    if (!selectedSession) return;
+    const newStates: Record<string, string> = {};
+    Object.values(FASES).forEach((mod) => {
+      if (mod.stateField) {
+        const json = (selectedSession as Record<string, unknown>)[mod.stateField];
+        if (typeof json === 'string' && json) {
+          newStates[mod.stateField] = json;
+        }
       }
-    }
-  }, [selectedSession]);
-
-  // Sync top3 state from session
-  useEffect(() => {
-    if (selectedSession?.top3_state) {
-      try {
-        const parsed = JSON.parse(selectedSession.top3_state as string);
-        setTop3State(parsed);
-      } catch (e) {
-        console.error("Failed to parse top3 state", e);
-      }
-    } else if (selectedSession) {
-      // Initialize with player names
-      const playerNames = teamService.parsePlayerNames(selectedSession.playernames);
-      setTop3State(top3Logic.getInitialState(playerNames));
-    }
-  }, [selectedSession]);
-
-  // Sync top10 state from session
-  useEffect(() => {
-    if (selectedSession?.top10_state) {
-      try {
-        const parsed = JSON.parse(selectedSession.top10_state as string);
-        setTop10State(parsed);
-      } catch (e) {
-        console.error("Failed to parse top10 state", e);
-      }
-    } else if (selectedSession) {
-      const playerNames = teamService.parsePlayerNames(selectedSession.playernames);
-      setTop10State(top10Logic.getInitialState(playerNames));
-    }
+    });
+    setModuleStates((prev) => ({ ...prev, ...newStates }));
   }, [selectedSession]);
 
 
@@ -701,32 +663,21 @@ export default function PresenterPage() {
             </div>
           </div>
 
-          {/* Krakende Karakters controls */}
-          {currentFase.startsWith('13/') && selectedSession && (
-            <KrakendePresenter
-              sessionId={selectedSession.id}
-              state={krakendeState}
-              onStateChange={setKrakendeState}
-            />
-          )}
-
-          {/* Top 3 controls */}
-          {currentFase.startsWith('10/') && selectedSession && (
-            <Top3Presenter
-              sessionId={selectedSession.id}
-              state={top3State}
-              onStateChange={setTop3State}
-            />
-          )}
-
-          {/* Top 10 controls */}
-          {currentFase.startsWith('17/') && selectedSession && (
-            <Top10Presenter
-              sessionId={selectedSession.id}
-              state={top10State}
-              onStateChange={setTop10State}
-            />
-          )}
+          {/* Module-specific controls (resolved from fase registry) */}
+          {(() => {
+            const mod = findFaseModule(currentFase);
+            if (!mod || !selectedSession) return null;
+            const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
+            return (
+              <mod.PresenterView
+                faseKey={currentFase}
+                sessionId={selectedSession.id}
+                moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+                onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
+                allPlayerNames={allPlayerNames}
+              />
+            );
+          })()}
           {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
           <div
             className="grid mt-4 gap-4 pr-6"

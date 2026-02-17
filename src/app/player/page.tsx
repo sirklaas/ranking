@@ -3,15 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { rankingService, teamService, faseService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
-import { KrakendeState } from '@/modules/krakende-karakters/types';
-import * as krakendeLogic from '@/modules/krakende-karakters/logic';
-import KrakendePlayer from '@/components/krakende-karakters/KrakendePlayer';
-import { Top3State } from '@/modules/top3/types';
-import * as top3Logic from '@/modules/top3/logic';
-import Top3Player from '@/components/top3/Top3Player';
-import { Top10State } from '@/modules/top10/types';
-import * as top10Logic from '@/modules/top10/logic';
-import Top10Player from '@/components/top10/Top10Player';
+import '@/modules/fases/auto-register';
+import { FASES, findFaseModule } from '@/modules/fases';
 
 interface RankingSession {
   id: string;
@@ -23,9 +16,7 @@ interface RankingSession {
   photocircle: string;
   headings: string; // JSON string for fase headings
   current_fase: string; // Current fase (e.g., "01/00")
-  krakende_state?: string;
-  top3_state?: string;
-  top10_state?: string;
+  [key: string]: unknown;
 }
 
 // Extracted TypewriterHeading to avoid re-definition on every render
@@ -148,12 +139,8 @@ export default function PlayerPage() {
   const [motherfile, setMotherfile] = useState<MotherfileFases | null>(null);
   const fadeDurationMs = 1000; // 1s fade for heading transitions
 
-  // Krakende Karakters State
-  const [krakendeState, setKrakendeState] = useState<KrakendeState | null>(null);
-  // Top 3 State
-  const [top3State, setTop3State] = useState<Top3State | null>(null);
-  // Top 10 State
-  const [top10State, setTop10State] = useState<Top10State | null>(null);
+  // Generic module states (keyed by stateField name)
+  const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
 
   // Load PocketBase session ONCE (for team members and links) - no polling
   useEffect(() => {
@@ -251,55 +238,30 @@ export default function PlayerPage() {
   useEffect(() => {
     if (!currentSession) return;
 
-    // Initial parse krakende
-    if (currentSession.krakende_state) {
-      try {
-        setKrakendeState(JSON.parse(currentSession.krakende_state));
-      } catch (e) {
-        console.error("Failed to parse krakende state", e);
+    // Initial parse of all registered module states
+    Object.values(FASES).forEach((mod) => {
+      const sf = mod.stateField;
+      if (sf && currentSession[sf]) {
+        try {
+          setModuleStates((prev) => ({ ...prev, [sf]: currentSession[sf] as string }));
+        } catch (e) {
+          console.error(`Failed to parse ${sf}`, e);
+        }
       }
-    }
-
-    // Initial parse top3
-    if (currentSession.top3_state) {
-      try {
-        setTop3State(JSON.parse(currentSession.top3_state));
-      } catch (e) {
-        console.error("Failed to parse top3 state", e);
-      }
-    }
-
-    // Initial parse top10
-    if (currentSession.top10_state) {
-      try {
-        setTop10State(JSON.parse(currentSession.top10_state));
-      } catch (e) {
-        console.error("Failed to parse top10 state", e);
-      }
-    }
+    });
 
     const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
-      if (data.krakende_state) {
-        try {
-          setKrakendeState(JSON.parse(data.krakende_state as string));
-        } catch (e) {
-          console.error("Failed to parse krakende state update", e);
+      // Update all registered module states generically
+      Object.values(FASES).forEach((mod) => {
+        const sf = mod.stateField;
+        if (sf && data[sf]) {
+          try {
+            setModuleStates((prev) => ({ ...prev, [sf]: data[sf] as string }));
+          } catch (e) {
+            console.error(`Failed to parse ${sf} update`, e);
+          }
         }
-      }
-      if (data.top3_state) {
-        try {
-          setTop3State(JSON.parse(data.top3_state as string));
-        } catch (e) {
-          console.error("Failed to parse top3 state update", e);
-        }
-      }
-      if (data.top10_state) {
-        try {
-          setTop10State(JSON.parse(data.top10_state as string));
-        } catch (e) {
-          console.error("Failed to parse top10 state update", e);
-        }
-      }
+      });
       // Also update current fase if changed
       if (data.current_fase) {
         setCurrentSession((prev: RankingSession | null) => prev ? { ...prev, current_fase: data.current_fase as string } : null);
@@ -360,81 +322,26 @@ export default function PlayerPage() {
     setShowTeamInfo(true);
   };
 
-  // Render Krakende Karakters View if current fase starts with '13/' (except trailer)
-  if (currentSession?.current_fase?.startsWith('13/') && currentSession.current_fase !== '13/01' && krakendeState) {
-    return (
-      <KrakendePlayer
-        state={krakendeState}
-        playerId={selectedPlayerName || `anon_${teamNumber}`}
-        playerName={selectedPlayerName || 'Speler'}
-        teamNumber={parseInt(teamNumber) || 0}
-        onSubmitChoice={async (traitId) => {
-          if (currentSession) {
-            const newState = await krakendeLogic.submitChoice(
-              currentSession.id,
-              krakendeState,
-              selectedPlayerName || `anon_${teamNumber}`,
-              selectedPlayerName || 'Speler',
-              parseInt(teamNumber) || 0,
-              traitId
-            );
-            setKrakendeState(newState);
-          }
-        }}
-      />
-    );
-  }
-
-  // Render Top 3 View if current fase starts with '10/' (except 10/01 trailer)
-  if (currentSession?.current_fase?.startsWith('10/') && currentSession.current_fase !== '10/01' && top3State) {
-    return (
-      <Top3Player
-        state={top3State}
-        playerId={selectedPlayerName || `anon_${teamNumber}`}
-        playerName={selectedPlayerName || 'Speler'}
-        teamNumber={parseInt(teamNumber) || 0}
-        onVote={async (chosenPlayerId, chosenPlayerName) => {
-          if (currentSession) {
-            const newState = await top3Logic.submitVote(
-              currentSession.id,
-              top3State,
-              selectedPlayerName || `anon_${teamNumber}`,
-              selectedPlayerName || 'Speler',
-              parseInt(teamNumber) || 0,
-              chosenPlayerId,
-              chosenPlayerName
-            );
-            setTop3State(newState);
-          }
-        }}
-      />
-    );
-  }
-
-  // Render Top 10 View if current fase starts with '17/' (except 17/01 trailer)
-  if (currentSession?.current_fase?.startsWith('17/') && currentSession.current_fase !== '17/01' && top10State) {
-    return (
-      <Top10Player
-        state={top10State}
-        playerId={selectedPlayerName || `anon_${teamNumber}`}
-        playerName={selectedPlayerName || 'Speler'}
-        teamNumber={parseInt(teamNumber) || 0}
-        onVote={async (chosenPlayerId, chosenPlayerName) => {
-          if (currentSession) {
-            const newState = await top10Logic.submitVote(
-              currentSession.id,
-              top10State,
-              selectedPlayerName || `anon_${teamNumber}`,
-              selectedPlayerName || 'Speler',
-              parseInt(teamNumber) || 0,
-              chosenPlayerId,
-              chosenPlayerName
-            );
-            setTop10State(newState);
-          }
-        }}
-      />
-    );
+  // Render module PlayerView if a registered fase module matches the current fase
+  if (currentSession?.current_fase) {
+    const mod = findFaseModule(currentSession.current_fase);
+    if (mod?.PlayerView && (!mod.stateField || moduleStates[mod.stateField])) {
+      const allPlayerNames = teamService.parsePlayerNames(currentSession.playernames as string);
+      return (
+        <mod.PlayerView
+          faseKey={currentSession.current_fase}
+          sessionId={currentSession.id}
+          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+          onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
+          playerInfo={{
+            playerId: selectedPlayerName || `anon_${teamNumber}`,
+            playerName: selectedPlayerName || 'Speler',
+            teamNumber: parseInt(teamNumber) || 0,
+          }}
+          allPlayerNames={allPlayerNames}
+        />
+      );
+    }
   }
 
   return (

@@ -36,8 +36,14 @@ export async function POST(req: NextRequest) {
             secure: false,
         });
 
+        // Log home directory to understand FTP root
+        const homePwd = await client.pwd();
+
         // Navigate to the target directory
         await client.ensureDir(FTP_REMOTE_DIR);
+
+        const targetPwd = await client.pwd();
+        console.log(`[FTP Upload] Home: ${homePwd}, Target: ${targetPwd}`);
 
         // Upload
         await client.uploadFrom(stream, filename);
