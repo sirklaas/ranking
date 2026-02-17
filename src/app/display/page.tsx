@@ -249,7 +249,7 @@ export default function DisplayPage() {
     const item = headings[faseKey];
     const fileName = item?.image?.trim();
 
-    const PINKMILK_BASE = 'https://www.pinkmilk.eu/RankingNW';
+    const PINKMILK_BASE = 'https://www.pinkmilk.eu/public/rankingNW';
 
     // Helper: resolve media filename to pinkmilk.eu URL
     const resolveMedia = (name: string) => {

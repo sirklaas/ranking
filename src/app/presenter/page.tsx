@@ -53,7 +53,7 @@ export default function PresenterPage() {
     }));
   };
 
-  // Upload a single media file via FTP to pinkmilk.eu/RankingNW
+  // Upload a single media file via FTP to pinkmilk.eu/public/rankingNW
   const handleUploadPictureForFase = async (fase: string) => {
     const file = stagedFiles[fase];
     if (!file) return;
