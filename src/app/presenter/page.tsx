@@ -780,7 +780,6 @@ export default function PresenterPage() {
 
     const phaseButtons = [
       { label: '1', name: 'Intro', fases: faseGroups['1'].fases },
-      { label: 'F1', name: 'Elimination', fases: ['02/01'] },
       { label: '2', name: 'Guilty Pleasures', fases: faseGroups['4'].fases },
       { label: '3', name: 'Zitten en Staan', fases: faseGroups['7'].fases },
       { label: '4', name: 'De Top 3', fases: faseGroups['10'].fases },
@@ -815,7 +814,7 @@ export default function PresenterPage() {
           {renderEliminationControls()}
           {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
           <div
-            className="grid mt-4 gap-4"
+            className="grid mt-4 gap-4 pr-6"
             style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
           >
             {/* Current Display (43%) */}
