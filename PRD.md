@@ -4,9 +4,24 @@
 
 **Product Name**: Ranking Gameshow Platform  
 **Domain**: ranking.pinkmilk.eu  
-**Target Users**: Event presenters 
-**Core Value**: Enable interactive ranking games with real-time audience participation and display of ranking in the form of charts an
+**Target Users**: Event presenter 
+**Core Value**: Enable interactive ranking games 
+with real-time audience participation 
+and display of ranking in the form of charts
 
+i used to work in apple keynote for my presentations.
+Now i want to move from that to a next.js setup 
+
+A presenter screen 
+A current screen and a next screen [ showing the next side ]
+with control with arrow right and left -> key to goto the next 'slide
+
+on a large display we see the 'current slide' 
+an image and an heading 
+
+On the phone we see the same image and heading
+
+-> moves all to the next slide
 
 ## User Stories
 

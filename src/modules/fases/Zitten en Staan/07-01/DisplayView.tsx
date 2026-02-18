@@ -1,22 +1,49 @@
 "use client";
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import type { FaseCommonProps } from '@/types/fases';
 
 const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, heading, mediaUrl }) => {
   const headingText = heading || 'Zitten en Staan';
-  const isVideo = mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
+  const isVideo = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
+
+  // Play video once it has loaded enough data
+  useEffect(() => {
+    setVideoReady(false);
+    const v = videoRef.current;
+    if (!v) return;
+
+    const handleCanPlay = () => {
+      setVideoReady(true);
+      v.muted = false;
+      v.volume = 1;
+      v.play().catch(() => {
+        // If unmuted play fails, retry muted
+        v.muted = true;
+        v.play().catch(() => console.log('[DisplayView] autoplay fully blocked'));
+      });
+    };
+
+    v.addEventListener('canplay', handleCanPlay);
+    // In case it's already ready
+    if (v.readyState >= 3) handleCanPlay();
+
+    return () => v.removeEventListener('canplay', handleCanPlay);
+  }, [mediaUrl, faseKey]);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
       {/* Full-screen media */}
       {mediaUrl && isVideo ? (
         <video
-          key={mediaUrl}
+          key={`${faseKey}-${mediaUrl}`}
+          ref={videoRef}
           src={mediaUrl}
           className="absolute inset-0 w-full h-full object-contain"
-          autoPlay
-          muted={false}
+          style={{ opacity: videoReady ? 1 : 0, transition: 'opacity 0.3s' }}
           playsInline
+          preload="auto"
         />
       ) : mediaUrl ? (
         <img src={mediaUrl} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
