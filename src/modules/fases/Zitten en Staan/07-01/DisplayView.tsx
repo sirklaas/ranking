@@ -1,13 +1,10 @@
 "use client";
 import React from 'react';
 import type { FaseCommonProps } from '@/types/fases';
-import { useHeading, useMediaUrl } from '@/lib/fases/hooks';
 
-const DisplayView: React.FC<FaseCommonProps> = ({ faseKey }) => {
-  const { data } = useHeading(faseKey);
-  const mediaUrl = useMediaUrl(data?.image);
-  const isVideo = data?.image && /\.(mp4|mov|avi|m4v|webm)$/i.test(data.image);
-  const headingText = data?.heading || 'Zitten en Staan';
+const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, heading, mediaUrl }) => {
+  const headingText = heading || 'Zitten en Staan';
+  const isVideo = mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>

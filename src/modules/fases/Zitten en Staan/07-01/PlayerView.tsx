@@ -2,18 +2,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import type { FaseCommonProps } from '@/types/fases';
-import { useHeading, useMediaUrl } from '@/lib/fases/hooks';
 
 const DELAY_MS = 3000; // wait for display video to finish
 
-const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
+const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading, mediaUrl }) => {
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [buttonsReady, setButtonsReady] = useState(false);
   const prevFaseRef = useRef(faseKey);
-  const { data } = useHeading(faseKey);
-  const mediaUrl = useMediaUrl(data?.image);
-  const isVideo = data?.image && /\.(mp4|mov|avi|m4v|webm)$/i.test(data.image);
-  const headingText = heading || data?.heading || 'Zitten en Staan';
+  const isVideo = mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
+  const headingText = heading || 'Zitten en Staan';
 
   // Reset choice + delay when faseKey changes (next question)
   useEffect(() => {

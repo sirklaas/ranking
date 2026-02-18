@@ -338,11 +338,14 @@ export default function DisplayPage() {
     if (mod && (!mod.stateField || moduleStates[mod.stateField])) {
       const headingsJson = currentSession.headings || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
+      const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
+      const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
       return (
         <mod.DisplayView
           faseKey={currentSession.current_fase}
           moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
           heading={heading}
+          mediaUrl={mediaUrl}
         />
       );
     }

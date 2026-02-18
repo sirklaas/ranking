@@ -331,6 +331,8 @@ export default function PlayerPage() {
       const allPlayerNames = teamService.parsePlayerNames(currentSession.playernames as string);
       const headingsJson = currentSession.headings as string || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
+      const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
+      const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
       return (
         <mod.PlayerView
           faseKey={currentSession.current_fase}
@@ -338,6 +340,7 @@ export default function PlayerPage() {
           moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
           onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
           heading={heading}
+          mediaUrl={mediaUrl}
           playerInfo={{
             playerId: selectedPlayerName || `anon_${teamNumber}`,
             playerName: selectedPlayerName || 'Speler',

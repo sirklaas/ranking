@@ -8,6 +8,7 @@ export interface FaseCommonProps {
   moduleStateJson?: string;           // raw JSON of the module's state from PocketBase
   onModuleStateJson?: (json: string) => void; // callback to update module state locally
   heading?: string;                   // current heading text for this fase
+  mediaUrl?: string;                  // resolved media URL for this fase
   allPlayerNames?: string[];          // all player names from session
   playerInfo?: {                      // current player info (for PlayerView)
     playerId: string;
