@@ -1,35 +1,33 @@
 "use client";
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { FaseCommonProps } from '@/types/fases';
 
 const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, heading, mediaUrl }) => {
   const headingText = heading || 'Zitten en Staan';
   const isVideo = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [videoReady, setVideoReady] = useState(false);
 
-  // Play video once it has loaded enough data
+  // Play video with sound once loaded
   useEffect(() => {
-    setVideoReady(false);
     const v = videoRef.current;
     if (!v) return;
 
-    const handleCanPlay = () => {
-      setVideoReady(true);
+    const tryPlay = () => {
       v.muted = false;
       v.volume = 1;
       v.play().catch(() => {
-        // If unmuted play fails, retry muted
         v.muted = true;
-        v.play().catch(() => console.log('[DisplayView] autoplay fully blocked'));
+        v.play().catch(() => console.log('[DisplayView] autoplay blocked'));
       });
     };
 
-    v.addEventListener('canplay', handleCanPlay);
-    // In case it's already ready
-    if (v.readyState >= 3) handleCanPlay();
+    if (v.readyState >= 3) {
+      tryPlay();
+    } else {
+      v.addEventListener('canplay', tryPlay, { once: true });
+    }
 
-    return () => v.removeEventListener('canplay', handleCanPlay);
+    return () => v.removeEventListener('canplay', tryPlay);
   }, [mediaUrl, faseKey]);
 
   return (
@@ -41,7 +39,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, heading, mediaUrl }) 
           ref={videoRef}
           src={mediaUrl}
           className="absolute inset-0 w-full h-full object-contain"
-          style={{ opacity: videoReady ? 1 : 0, transition: 'opacity 0.3s' }}
           playsInline
           preload="auto"
         />
