@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Top3State } from '@/modules/top3/types';
 import { hasPlayerVoted } from '@/modules/top3/logic';
 
@@ -9,7 +10,23 @@ interface Top3PlayerProps {
   playerId: string;
   playerName: string;
   teamNumber: number;
+  heading?: string;
+  mediaUrl?: string;
   onVote: (chosenPlayerId: string, chosenPlayerName: string) => void;
+}
+
+// Inject keyframes once
+if (typeof document !== 'undefined' && !document.getElementById('top3p-kf')) {
+  const s = document.createElement('style');
+  s.id = 'top3p-kf';
+  s.textContent = `
+    @keyframes top3PopIn {
+      0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+      60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(s);
 }
 
 export default function Top3Player({
@@ -17,6 +34,8 @@ export default function Top3Player({
   playerId,
   playerName,
   teamNumber,
+  heading,
+  mediaUrl,
   onVote,
 }: Top3PlayerProps) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -43,7 +62,6 @@ export default function Top3Player({
 
   // Already voted or just submitted
   if (alreadyVoted || submitted) {
-    const chosenName = selected || state.currentQuestion.votes.find((v) => v.voterId === playerId)?.chosenPlayerName || '';
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center p-6"
@@ -57,22 +75,9 @@ export default function Top3Player({
           style={{ animation: 'top3PopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
         >
           <div className="text-6xl mb-4">✅</div>
-          <p className="text-white text-lg opacity-70 mb-2">Je hebt gekozen voor:</p>
-          <div className="rounded-2xl px-8 py-6 mx-auto inline-block shadow-2xl mb-4 bg-white/15 border border-white/20">
-            <span className="text-3xl font-bold text-white">
-              {chosenName}
-            </span>
-          </div>
+          <p className="text-white text-3xl font-bold">Je hebt gestemd.</p>
           <p className="text-white/50 text-sm mt-4">Wacht op de resultaten...</p>
         </div>
-
-        <style jsx>{`
-          @keyframes top3PopIn {
-            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-            60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-          }
-        `}</style>
       </div>
     );
   }
@@ -95,21 +100,48 @@ export default function Top3Player({
     );
   }
 
-  // Waiting for voting to start
+  // Waiting for voting to start — show branded intro with image + heading
   if (!isVoting) {
+    const isVideoMedia = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6"
+        className="min-h-screen flex flex-col overflow-hidden"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
+          background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
         }}
       >
-        <div className="text-white text-center">
-          <div className="text-5xl mb-4">🎯</div>
-          <h2 className="text-3xl font-bold mb-2">Top 3</h2>
-          <p className="text-lg opacity-60">Wacht tot het stemmen begint...</p>
+        {/* Logo band */}
+        <div
+          className="relative bg-cover bg-center bg-no-repeat shrink-0"
+          style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Image src="/assets/ranking_logo.webp" alt="Ranking Logo" width={256} height={128} className="h-full max-h-28 w-auto object-contain p-2" priority />
+          </div>
         </div>
+
+        {/* Heading (two lines) */}
+        {heading && (
+          <div className="text-center px-6 pt-6 pb-2">
+            <h1 className="text-white text-2xl leading-snug whitespace-pre-line" style={{ fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+              {heading}
+            </h1>
+          </div>
+        )}
+
+        {/* Media image */}
+        {mediaUrl && !isVideoMedia && (
+          <div className="flex-1 flex items-center justify-center px-6 py-4">
+            <img src={mediaUrl} alt={heading || 'Top 3'} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" />
+          </div>
+        )}
+
+        {!mediaUrl && (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-white/60 text-lg">Wacht tot het stemmen begint...</p>
+          </div>
+        )}
       </div>
     );
   }

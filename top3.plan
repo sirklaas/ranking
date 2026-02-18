@@ -1,0 +1,43 @@
+# Top 3 — Redesign Plan
+
+## Current State
+- Types, logic, state management, PocketBase persistence all in place
+- Presenter has V/→ keyboard shortcuts and buttons for voting/results/next
+- Display has NameWall (names fade when voted) + AnimatedDonut results
+- Player has radio-button list, confirmation, waiting screens
+
+## Required Changes
+
+### 1. Display — Intro phase
+- Make heading much bigger (text-7xl+) and animate it in (fade + scale)
+- Full-screen dark gradient background
+
+### 2. Phone — Intro phase
+- Show the fase media image (from mediaUrl prop) + heading in two lines
+- Branded layout (logo band, gradient background) like Zitten en Staan
+
+### 3. Display — Voting phase (name wall)
+- Add staggered entrance animation for player names appearing
+- Names already fade out when players vote — keep that
+
+### 4. Phone — Voting phase
+- Scrollable list with radio buttons (already exists)
+- Filter out self (already done via localStorage playerName)
+- After vote: change popup to say "Je hebt gestemd." (not "Je hebt gekozen voor: X")
+
+### 5. Presenter — Controls
+- Remove "Volgende Vraag" button
+- Results button: put 'R' badge in it (like V button has V badge)
+- Add 'R' keyboard shortcut to show results
+- → arrow key advances to next fase (handled by display page already)
+
+### 6. Display — Results phase
+- Donut chart already exists with animation
+- Shows percentages + top 3 names — keep as is
+
+## Files to modify
+- src/components/top3/Top3Display.tsx (heading size, name animation)
+- src/components/top3/Top3Player.tsx (voted popup text, intro with image)
+- src/components/top3/Top3Presenter.tsx (button layout, R shortcut)
+- src/modules/fases/Top 3/PlayerView.tsx (pass mediaUrl)
+- src/modules/fases/Top 3/DisplayView.tsx (pass mediaUrl if needed)

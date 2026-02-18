@@ -5,7 +5,7 @@ import { Top3State } from '@/modules/top3/types';
 import * as top3Logic from '@/modules/top3/logic';
 import Top3Player from '@/components/top3/Top3Player';
 
-const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, playerInfo, allPlayerNames }) => {
+const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, playerInfo, allPlayerNames, heading, mediaUrl }) => {
   if (!sessionId || !moduleStateJson || !playerInfo) return null;
 
   const state: Top3State = JSON.parse(moduleStateJson);
@@ -16,6 +16,8 @@ const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onM
       playerId={playerInfo.playerId}
       playerName={playerInfo.playerName}
       teamNumber={playerInfo.teamNumber}
+      heading={heading}
+      mediaUrl={mediaUrl}
       onVote={async (chosenPlayerId, chosenPlayerName) => {
         const newState = await top3Logic.submitVote(
           sessionId,

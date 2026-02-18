@@ -4,6 +4,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Top3State, Top3Result } from '@/modules/top3/types';
 import { getVoterNames } from '@/modules/top3/logic';
 
+// Inject keyframe animations once
+if (typeof document !== 'undefined' && !document.getElementById('top3-kf')) {
+  const s = document.createElement('style');
+  s.id = 'top3-kf';
+  s.textContent = `
+    @keyframes top3HeadIn {
+      0%   { opacity:0; transform: scale(0.6) translateY(20px); }
+      100% { opacity:1; transform: scale(1) translateY(0); }
+    }
+    @keyframes top3NameIn {
+      0%   { opacity:0; transform: translateY(16px) scale(0.9); }
+      100% { opacity:1; transform: translateY(0) scale(1); }
+    }
+  `;
+  document.head.appendChild(s);
+}
+
 interface Top3DisplayProps {
   state: Top3State;
   heading?: string;
@@ -109,7 +126,7 @@ function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: st
 
   return (
     <div className="flex flex-wrap gap-3 justify-center p-8">
-      {allNames.map((name) => {
+      {allNames.map((name, i) => {
         const hasVoted = votedSet.has(name);
         return (
           <div
@@ -121,6 +138,7 @@ function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: st
               color: hasVoted ? 'rgba(255,255,255,0.1)' : 'white',
               transform: hasVoted ? 'scale(0.8)' : 'scale(1)',
               border: hasVoted ? '2px solid transparent' : '2px solid rgba(255,255,255,0.2)',
+              animation: `top3NameIn 0.4s ease-out ${i * 40}ms both`,
             }}
           >
             {name}
@@ -212,10 +230,17 @@ export default function Top3Display({ state, heading }: Top3DisplayProps) {
         background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
       }}
     >
-      {/* Heading */}
+      {/* Heading — large, animated entrance */}
       {heading && (
         <div className="text-center pt-8 pb-4">
-          <h1 className="text-white text-5xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+          <h1
+            className="text-white text-7xl font-bold"
+            style={{
+              fontFamily: 'Barlow Semi Condensed, sans-serif',
+              textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+              animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
+            }}
+          >
             {heading}
           </h1>
         </div>

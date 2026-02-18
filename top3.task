@@ -1,0 +1,9 @@
+# Top 3 — Task Checklist
+
+- [ ] 1. Presenter: Remove "Volgende Vraag" button, add R badge to results button, add R keyboard shortcut
+- [ ] 2. Display intro: Bigger animated heading
+- [ ] 3. Display voting: Staggered entrance animation for name wall
+- [ ] 4. Phone intro: Show image + heading (branded layout)
+- [ ] 5. Phone voted: Change popup to "Je hebt gestemd."
+- [ ] 6. Pass mediaUrl through fase wrappers
+- [ ] 7. Build + push

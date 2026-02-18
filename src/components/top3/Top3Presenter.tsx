@@ -41,15 +41,15 @@ export default function Top3Presenter({ sessionId, state, onStateChange }: Top3P
         e.preventDefault();
         handleStartVoting();
       }
-      if (e.key === 'ArrowRight' && phase === 'results') {
+      if ((e.key === 'r' || e.key === 'R') && phase === 'voting') {
         e.preventDefault();
-        handleNextQuestion();
+        handleShowResults();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [phase, handleStartVoting, handleNextQuestion]);
+  }, [phase, handleStartVoting, handleShowResults]);
 
   const PHASE_LABELS = {
     intro: 'Intro',
@@ -92,31 +92,18 @@ export default function Top3Presenter({ sessionId, state, onStateChange }: Top3P
             Start Stemmen
           </button>
 
-          {/* Show results */}
+          {/* Show results (R) */}
           <button
             onClick={handleShowResults}
             disabled={phase !== 'voting'}
-            className={`px-6 py-3 rounded font-bold text-lg transition-all ${
+            className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${
               phase !== 'voting'
                 ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                 : 'bg-indigo-600 hover:bg-indigo-500 text-white'
             }`}
           >
+            <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">R</span>
             Toon Resultaten
-          </button>
-
-          {/* Next question (arrow right) */}
-          <button
-            onClick={handleNextQuestion}
-            disabled={phase !== 'results'}
-            className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${
-              phase !== 'results'
-                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-500 text-white'
-            }`}
-          >
-            Volgende Vraag
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">&rarr;</span>
           </button>
         </div>
       </div>
