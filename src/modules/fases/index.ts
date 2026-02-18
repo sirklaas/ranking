@@ -13,10 +13,13 @@ export function registerFase(module: FaseModule) {
 export function findFaseModule(faseKey: string): FaseModule | undefined {
   // Exact key match
   if (FASES[faseKey]) return FASES[faseKey];
-  // Group prefix match
-  const group = faseKey.split('/')[0];
+  // Group prefix match — only match fases at or after the module's registered key
+  const [group, subStr] = faseKey.split('/');
+  const subNum = parseInt(subStr, 10);
   const mod = Object.values(FASES).find((m) => m.group === group);
   if (!mod) return undefined;
   if (mod.skipTrailer && faseKey === `${group}/01`) return undefined;
+  const modSub = parseInt(mod.key.split('/')[1], 10);
+  if (subNum < modSub) return undefined; // earlier fases use normal media overlay
   return mod;
 }

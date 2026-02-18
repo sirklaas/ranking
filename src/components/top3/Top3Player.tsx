@@ -15,20 +15,6 @@ interface Top3PlayerProps {
   onVote: (chosenPlayerId: string, chosenPlayerName: string) => void;
 }
 
-// Inject keyframes once
-if (typeof document !== 'undefined' && !document.getElementById('top3p-kf')) {
-  const s = document.createElement('style');
-  s.id = 'top3p-kf';
-  s.textContent = `
-    @keyframes top3PopIn {
-      0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-      60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
-    }
-  `;
-  document.head.appendChild(s);
-}
-
 export default function Top3Player({
   state,
   playerId,
@@ -41,6 +27,21 @@ export default function Top3Player({
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const alreadyVoted = hasPlayerVoted(state, playerId);
+
+  // Inject keyframes once
+  useEffect(() => {
+    if (document.getElementById('top3p-kf')) return;
+    const s = document.createElement('style');
+    s.id = 'top3p-kf';
+    s.textContent = `
+      @keyframes top3PopIn {
+        0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+        60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(s);
+  }, []);
   const isVoting = state.currentQuestion.phase === 'voting';
   const isResults = state.currentQuestion.phase === 'results';
 

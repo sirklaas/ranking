@@ -4,23 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Top3State, Top3Result } from '@/modules/top3/types';
 import { getVoterNames } from '@/modules/top3/logic';
 
-// Inject keyframe animations once
-if (typeof document !== 'undefined' && !document.getElementById('top3-kf')) {
-  const s = document.createElement('style');
-  s.id = 'top3-kf';
-  s.textContent = `
-    @keyframes top3HeadIn {
-      0%   { opacity:0; transform: scale(0.6) translateY(20px); }
-      100% { opacity:1; transform: scale(1) translateY(0); }
-    }
-    @keyframes top3NameIn {
-      0%   { opacity:0; transform: translateY(16px) scale(0.9); }
-      100% { opacity:1; transform: translateY(0) scale(1); }
-    }
-  `;
-  document.head.appendChild(s);
-}
-
 interface Top3DisplayProps {
   state: Top3State;
   heading?: string;
@@ -212,6 +195,24 @@ export default function Top3Display({ state, heading }: Top3DisplayProps) {
   const phase = state.currentQuestion.phase;
   const votedNames = getVoterNames(state);
   const [animateResults, setAnimateResults] = useState(false);
+
+  // Inject keyframe animations once
+  useEffect(() => {
+    if (document.getElementById('top3-kf')) return;
+    const s = document.createElement('style');
+    s.id = 'top3-kf';
+    s.textContent = `
+      @keyframes top3HeadIn {
+        0%   { opacity:0; transform: scale(0.6) translateY(20px); }
+        100% { opacity:1; transform: scale(1) translateY(0); }
+      }
+      @keyframes top3NameIn {
+        0%   { opacity:0; transform: translateY(16px) scale(0.9); }
+        100% { opacity:1; transform: translateY(0) scale(1); }
+      }
+    `;
+    document.head.appendChild(s);
+  }, []);
 
   // Trigger animation when results phase starts
   const prevPhaseRef = useRef(phase);
