@@ -27,6 +27,21 @@ export default function DisplayPage() {
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
 
+  // Sync module states from session on load / session change
+  useEffect(() => {
+    if (!currentSession) return;
+    const newStates: Record<string, string> = {};
+    Object.values(FASES).forEach((mod) => {
+      if (mod.stateField) {
+        const json = (currentSession as Record<string, unknown>)[mod.stateField];
+        if (typeof json === 'string' && json) {
+          newStates[mod.stateField] = json;
+        }
+      }
+    });
+    setModuleStates((prev) => ({ ...prev, ...newStates }));
+  }, [currentSession]);
+
   // Generate a random 4-digit game code
   const generateGameCode = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();

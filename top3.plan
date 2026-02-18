@@ -1,43 +1,72 @@
 # Top 3 — Redesign Plan
 
-## Current State
-- Types, logic, state management, PocketBase persistence all in place
-- Presenter has V/→ keyboard shortcuts and buttons for voting/results/next
-- Display has NameWall (names fade when voted) + AnimatedDonut results
-- Player has radio-button list, confirmation, waiting screens
+## Architecture
 
-## Required Changes
+### Module registration (findFaseModule)
+- Top 3 key: `10/05`, group: `10`, skipTrailer: true
+- findFaseModule only matches fases >= module key (10/05+)
+- Fases 10/01 (trailer) and 10/02-10/04 use normal media overlay
+- DisplayView is optional in FaseModule — modules without one use normal overlay
 
-### 1. Display — Intro phase
-- Make heading much bigger (text-7xl+) and animate it in (fade + scale)
-- Full-screen dark gradient background
+### State lifecycle
+1. Presenter navigates to 10/05 → PresenterView auto-persists initial state (phase: 'intro') to PB
+2. Display + phone receive top3_state via PB subscription → module views render
+3. V pressed → phase: 'voting' → display shows NameWall, phone shows voting list
+4. R pressed → phase: 'results' → display shows donut chart
 
-### 2. Phone — Intro phase
-- Show the fase media image (from mediaUrl prop) + heading in two lines
-- Branded layout (logo band, gradient background) like Zitten en Staan
+### Display rendering order
+1. Check findFaseModule for current_fase
+2. If module has DisplayView + stateField is set → check phase
+3. If phase === 'intro' → skip module, let normal media overlay play video/image
+4. If phase !== 'intro' → render module DisplayView
+5. Otherwise → normal media overlay (trailers, images, videos)
 
-### 3. Display — Voting phase (name wall)
-- Add staggered entrance animation for player names appearing
-- Names already fade out when players vote — keep that
+### Module state sync
+- Display page: syncs moduleStates from currentSession on load + PB subscription
+- Player page: syncs moduleStates from currentSession on load + PB subscription
+- Presenter page: syncs moduleStates from selectedSession on load + PB subscription
 
-### 4. Phone — Voting phase
-- Scrollable list with radio buttons (already exists)
-- Filter out self (already done via localStorage playerName)
-- After vote: change popup to say "Je hebt gestemd." (not "Je hebt gekozen voor: X")
+## Completed Changes
 
-### 5. Presenter — Controls
-- Remove "Volgende Vraag" button
-- Results button: put 'R' badge in it (like V button has V badge)
-- Add 'R' keyboard shortcut to show results
-- → arrow key advances to next fase (handled by display page already)
+### Display (Top3Display.tsx)
+- [x] Heading: text-7xl, animated entrance (scale + fade)
+- [x] NameWall: staggered entrance (40ms delay per name)
+- [x] CSS keyframes injected via useEffect (not module scope)
 
-### 6. Display — Results phase
-- Donut chart already exists with animation
-- Shows percentages + top 3 names — keep as is
+### Phone (Top3Player.tsx)
+- [x] Intro: branded layout (logo band, gradient, heading, media image)
+- [x] Voted popup: "Je hebt gestemd."
+- [x] CSS keyframes injected via useEffect
 
-## Files to modify
-- src/components/top3/Top3Display.tsx (heading size, name animation)
-- src/components/top3/Top3Player.tsx (voted popup text, intro with image)
-- src/components/top3/Top3Presenter.tsx (button layout, R shortcut)
-- src/modules/fases/Top 3/PlayerView.tsx (pass mediaUrl)
-- src/modules/fases/Top 3/DisplayView.tsx (pass mediaUrl if needed)
+### Presenter (Top3Presenter.tsx)
+- [x] Removed "Volgende Vraag" button
+- [x] R badge + R keyboard shortcut for results
+- [x] V badge + V keyboard shortcut for voting
+
+### Wiring
+- [x] PlayerView wrapper passes heading + mediaUrl
+- [x] PresenterView auto-persists initial state to PB
+- [x] persistState exported from logic.ts
+- [x] DisplayView optional in FaseModule type
+- [x] ZS module: removed DisplayView (uses normal overlay)
+
+## Bugs fixed
+- findFaseModule was too greedy (matched all group fases)
+- ZS DisplayView intercepted all 07/05+ fases (no stateField)
+- Top 3 DisplayView intercepted intro phase (blocked normal overlay)
+- Display page never loaded module states on startup
+- PresenterView didn't persist initial state → phone/display couldn't render module
+- CSS keyframes at module scope unreliable with SSR
+
+## Files modified
+- src/modules/fases/index.ts (findFaseModule logic)
+- src/types/fases.ts (DisplayView optional, mediaUrl added)
+- src/components/top3/Top3Display.tsx
+- src/components/top3/Top3Player.tsx
+- src/components/top3/Top3Presenter.tsx
+- src/modules/fases/Top 3/PresenterView.tsx
+- src/modules/fases/Top 3/PlayerView.tsx
+- src/modules/fases/Top 3/DisplayView.tsx
+- src/modules/fases/Zitten en Staan/07-01/index.ts
+- src/modules/top3/logic.ts (persistState exported)
+- src/app/display/page.tsx (module state init, intro phase check)

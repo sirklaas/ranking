@@ -1,9 +1,19 @@
 # Top 3 — Task Checklist
 
-- [ ] 1. Presenter: Remove "Volgende Vraag" button, add R badge to results button, add R keyboard shortcut
-- [ ] 2. Display intro: Bigger animated heading
-- [ ] 3. Display voting: Staggered entrance animation for name wall
-- [ ] 4. Phone intro: Show image + heading (branded layout)
-- [ ] 5. Phone voted: Change popup to "Je hebt gestemd."
-- [ ] 6. Pass mediaUrl through fase wrappers
-- [ ] 7. Build + push
+- [x] 1. Presenter: Remove "Volgende Vraag" button, add R badge to results button, add R keyboard shortcut
+- [x] 2. Display intro: Bigger animated heading (text-7xl, scale+fade animation)
+- [x] 3. Display voting: Staggered entrance animation for name wall (40ms delay)
+- [x] 4. Phone intro: Show image + heading (branded layout with logo band)
+- [x] 5. Phone voted: Change popup to "Je hebt gestemd."
+- [x] 6. Pass mediaUrl + heading through fase wrappers
+- [x] 7. Build + push
+
+## Bugs found & fixed
+- [x] 8. findFaseModule too greedy — now only matches fases >= module key
+- [x] 9. ZS DisplayView intercepted display — removed from module (uses normal overlay)
+- [x] 10. Top 3 DisplayView blocked intro overlay — display skips module during intro phase
+- [x] 11. Display page never loaded module states on startup — added useEffect sync
+- [x] 12. PresenterView didn't persist initial state — phone/display couldn't render module
+- [x] 13. CSS keyframes at module scope unreliable — moved to useEffect
+- [x] 14. DisplayView made optional in FaseModule type
+- [ ] 15. Verify: phone heading/image depends on headings JSON having entries for 10/05+
