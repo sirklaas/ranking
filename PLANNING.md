@@ -71,14 +71,14 @@ Create an interactive ranking gameshow platform that supports live audience part
 ## Core Features
 
 ### Game Management
-- Create and configure ranking games
+- Create and configure ranking game
 - Pre-loaded content with customization options
 - Single session games (no pause/resume)
 - Manual scoreboard control
 - Real-time player monitoring
 
 ### Player Experience
-- Simple join process (game code)
+- Simple join process (qr code)
 - Intuitive ranking interface
 - Real-time feedback
 - Mobile-optimized design
@@ -86,7 +86,7 @@ Create an interactive ranking gameshow platform that supports live audience part
 
 ### Visualization Engine
 - Animated chart reveals
-- Multiple chart types (word clouds, donut, bar)
+- Multiple chart types (word cloud, donut)
 - Smooth 60fps animations
 - Large display optimization
 - Responsive design
@@ -119,7 +119,6 @@ Create an interactive ranking gameshow platform that supports live audience part
 - Error handling
 - Deployment automation
 - Documentation
-- User onboarding
 
 ## Performance Requirements
 

@@ -335,19 +335,30 @@ export default function DisplayPage() {
   // Render module DisplayView if a registered fase module matches the current fase
   if (currentSession?.current_fase) {
     const mod = findFaseModule(currentSession.current_fase);
-    if (mod && (!mod.stateField || moduleStates[mod.stateField])) {
-      const headingsJson = currentSession.headings || '{}';
-      const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
-      const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
-      const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
-      return (
-        <mod.DisplayView
-          faseKey={currentSession.current_fase}
-          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-          heading={heading}
-          mediaUrl={mediaUrl}
-        />
-      );
+    if (mod?.DisplayView && (!mod.stateField || moduleStates[mod.stateField])) {
+      // Check if module state indicates intro phase — if so, skip module and let normal overlay handle it
+      let moduleWantsDisplay = true;
+      if (mod.stateField && moduleStates[mod.stateField]) {
+        try {
+          const parsed = JSON.parse(moduleStates[mod.stateField]);
+          if (parsed?.currentQuestion?.phase === 'intro') moduleWantsDisplay = false;
+        } catch { /* use module view */ }
+      }
+      if (moduleWantsDisplay) {
+        const headingsJson = currentSession.headings || '{}';
+        const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
+        const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
+        const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
+        const ModDisplay = mod.DisplayView;
+        return (
+          <ModDisplay
+            faseKey={currentSession.current_fase}
+            moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+            heading={heading}
+            mediaUrl={mediaUrl}
+          />
+        );
+      }
     }
   }
 

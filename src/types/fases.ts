@@ -25,7 +25,7 @@ export interface FaseModule {
   stateField?: string;     // PocketBase session field, e.g. 'krakende_state'
   skipTrailer?: boolean;   // if true, fase XX/01 won't activate this module's views
   PresenterView: FC<FaseCommonProps>;
-  DisplayView: FC<FaseCommonProps>;
+  DisplayView?: FC<FaseCommonProps>;
   PlayerView?: FC<FaseCommonProps>;
 }
 
