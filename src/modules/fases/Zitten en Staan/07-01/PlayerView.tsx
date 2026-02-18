@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import type { FaseCommonProps } from '@/types/fases';
+import { useHeading, useMediaUrl } from '@/lib/fases/hooks';
 
 const DELAY_MS = 3000; // wait for display video to finish
 
@@ -9,6 +10,9 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [buttonsReady, setButtonsReady] = useState(false);
   const prevFaseRef = useRef(faseKey);
+  const { data } = useHeading(faseKey);
+  const mediaUrl = useMediaUrl(data?.image);
+  const isVideo = data?.image && /\.(mp4|mov|avi|m4v|webm)$/i.test(data.image);
 
   // Reset choice + delay when faseKey changes (next question)
   useEffect(() => {
@@ -67,87 +71,111 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
     );
   }
 
-  // ── Normal view: logo + heading + buttons ──
+  // ── Normal view: media background + heading + buttons ──
   return (
     <div
       className="min-h-screen relative overflow-hidden flex flex-col"
-      style={{
-        fontFamily: 'Barlow Semi Condensed, sans-serif',
-        background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
-      }}
+      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
     >
-      {/* Logo band */}
-      <div
-        className="relative bg-cover bg-center bg-no-repeat shrink-0"
-        style={{
-          backgroundImage: 'url(/assets/band.webp)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          height: '14vh',
-        }}
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Image
-            src="/assets/ranking_logo.webp"
-            alt="Ranking Logo"
-            width={256}
-            height={128}
-            className="h-full max-h-28 w-auto object-contain p-2"
-            priority
-          />
-        </div>
-      </div>
+      {/* Full-screen media background */}
+      {mediaUrl && isVideo ? (
+        <video
+          key={mediaUrl}
+          src={mediaUrl}
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          muted
+          playsInline
+          loop
+        />
+      ) : mediaUrl ? (
+        <img src={mediaUrl} alt={heading || ''} className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
+        /* Fallback gradient when no media */
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)' }}
+        />
+      )}
 
-      {/* Heading */}
-      <div className="text-center px-6 pt-6 pb-2">
-        <h1
-          className="text-white text-2xl font-bold leading-snug"
-          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Content on top of media */}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Logo band */}
+        <div
+          className="relative bg-cover bg-center bg-no-repeat shrink-0"
+          style={{
+            backgroundImage: 'url(/assets/band.webp)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            height: '14vh',
+          }}
         >
-          {heading || 'Zitten of Staan?'}
-        </h1>
-      </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Image
+              src="/assets/ranking_logo.webp"
+              alt="Ranking Logo"
+              width={256}
+              height={128}
+              className="h-full max-h-28 w-auto object-contain p-2"
+              priority
+            />
+          </div>
+        </div>
 
-      {/* Buttons area */}
-      <div className="flex-1 flex items-center justify-center px-6">
-        {buttonsReady ? (
-          <div
-            className="flex gap-6 w-full max-w-md"
-            style={{ animation: 'zsFadeUp 0.5s ease-out both' }}
+        {/* Heading in top area */}
+        <div className="text-center px-6 pt-6 pb-2">
+          <h1
+            className="text-white text-2xl font-bold leading-snug"
+            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
           >
-            {/* RED button */}
-            <button
-              onClick={() => setChoice('red')}
-              className="flex-1 aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-              style={{
-                background: 'linear-gradient(145deg, #e53e3e, #c53030)',
-                border: '4px solid rgba(255,255,255,0.3)',
-              }}
-            >
-              <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
-                🔴
-              </span>
-            </button>
+            {heading || 'Zitten of Staan?'}
+          </h1>
+        </div>
 
-            {/* BLUE button */}
-            <button
-              onClick={() => setChoice('blue')}
-              className="flex-1 aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-              style={{
-                background: 'linear-gradient(145deg, #3182ce, #2b6cb0)',
-                border: '4px solid rgba(255,255,255,0.3)',
-              }}
+        {/* Buttons area */}
+        <div className="flex-1 flex items-center justify-center px-6">
+          {buttonsReady ? (
+            <div
+              className="flex gap-6 w-full max-w-md"
+              style={{ animation: 'zsFadeUp 0.5s ease-out both' }}
             >
-              <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
-                🔵
-              </span>
-            </button>
-          </div>
-        ) : (
-          <div className="text-white/60 text-lg text-center" style={{ animation: 'zsPulse 1.5s ease-in-out infinite' }}>
-            Kijk naar het scherm…
-          </div>
-        )}
+              {/* RED button */}
+              <button
+                onClick={() => setChoice('red')}
+                className="flex-1 aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                style={{
+                  background: 'linear-gradient(145deg, #e53e3e, #c53030)',
+                  border: '4px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
+                  🔴
+                </span>
+              </button>
+
+              {/* BLUE button */}
+              <button
+                onClick={() => setChoice('blue')}
+                className="flex-1 aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                style={{
+                  background: 'linear-gradient(145deg, #3182ce, #2b6cb0)',
+                  border: '4px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
+                  🔵
+                </span>
+              </button>
+            </div>
+          ) : (
+            <div className="text-white/60 text-lg text-center" style={{ animation: 'zsPulse 1.5s ease-in-out infinite' }}>
+              Kijk naar het scherm…
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

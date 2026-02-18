@@ -350,30 +350,47 @@ export default function DisplayPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      {/* Media overlay: plays current fase video when available */}
-      {currentMedia?.type === 'video' && currentMedia.url && allowMediaOverlay && (
+      {/* Media overlay: plays current fase video/image when available */}
+      {currentMedia && currentMedia.url && allowMediaOverlay && (
         <div className="fixed inset-0 z-50 bg-black">
-          <video
-            key={currentMedia.url}
-            ref={videoRef}
-            src={currentMedia.url}
-            className="w-full h-full object-contain"
-            autoPlay
-            muted={false}
-            playsInline
-            onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
-            onPlay={() => console.log('[Display] video play', currentMedia)}
-            onError={(e) => {
-              console.log('[Display] video error', e);
-              setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
-            }}
-            onEnded={() => { console.log('[Display] video ended'); setCurrentMedia(null); }}
-          />
-          {/* Removed in-video needsInteraction button; sound enable is provided on intro screen */}
-          <div className="absolute top-2 left-3 text-white text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            Fase {currentSession?.current_fase} — {currentMedia.name}
-          </div>
-          {/* Removed local-fallback badge and sound toggle */}
+          {currentMedia.type === 'video' ? (
+            <video
+              key={currentMedia.url}
+              ref={videoRef}
+              src={currentMedia.url}
+              className="w-full h-full object-contain"
+              autoPlay
+              muted={false}
+              playsInline
+              onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
+              onPlay={() => console.log('[Display] video play', currentMedia)}
+              onError={(e) => {
+                console.log('[Display] video error', e);
+                setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
+              }}
+              onEnded={() => { console.log('[Display] video ended'); setCurrentMedia(null); }}
+            />
+          ) : (
+            <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />
+          )}
+          {/* Heading overlay in top 1/3 */}
+          {(() => {
+            const headings = faseService.parseHeadings(currentSession?.headings || '{}');
+            const headingText = headings[currentSession?.current_fase || '']?.heading || '';
+            return headingText ? (
+              <div
+                className="absolute top-0 left-0 right-0 flex items-center justify-center px-8 text-center"
+                style={{ height: '33%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}
+              >
+                <h1
+                  className="text-white text-5xl font-light whitespace-pre-line"
+                  style={{ textShadow: '0 3px 16px rgba(0,0,0,0.8)', fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}
+                >
+                  {headingText}
+                </h1>
+              </div>
+            ) : null;
+          })()}
         </div>
       )}
       {/* Animated background */}

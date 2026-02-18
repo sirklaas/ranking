@@ -60,77 +60,106 @@ export default function PresenterPage() {
 
     setUploadingFase(fase);
     try {
-    // Send raw binary (bypasses FormData size limit that causes 413)
-    const res = await fetch(`/api/ftp-upload?filename=${encodeURIComponent(file.name)}`, {
-      method: 'POST',
-      body: file,
-      headers: { 'Content-Type': 'application/octet-stream' },
-    });
-    let json: any = null;
-    const rawText = await res.text();
-    try {
-      json = JSON.parse(rawText);
-    } catch {
-      console.error('[Upload] Non-JSON response:', res.status, rawText.slice(0, 500));
-      throw new Error(`Upload failed (${res.status}): server returned non-JSON response`);
+      // Send raw binary (bypasses FormData size limit that causes 413)
+      const res = await fetch(`/api/ftp-upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+        headers: { 'Content-Type': 'application/octet-stream' },
+      });
+      let json: any = null;
+      const rawText = await res.text();
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        console.error('[Upload] Non-JSON response:', res.status, rawText.slice(0, 500));
+        throw new Error(`Upload failed (${res.status}): server returned non-JSON response`);
+      }
+
+      if (!res.ok || !json.success) {
+        const errMsg = json.error || `Upload failed (${res.status})`;
+        throw new Error(errMsg);
+      }
+
+      // Update the image field with the filename (used to resolve the public URL)
+      const updatedHeadings = {
+        ...editingHeadings,
+        [fase]: { heading: editingHeadings[fase]?.heading || '', image: file.name }
+      };
+      setEditingHeadings(updatedHeadings);
+
+      // Auto-save to PocketBase so the filename persists across page reloads
+      if (selectedSession) {
+        const headingsJson = JSON.stringify(updatedHeadings);
+        await rankingService.updateSession(selectedSession.id, { headings: headingsJson });
+        setSelectedSession(prev => prev ? { ...prev, headings: headingsJson } : null);
+      }
+
+      // Clear staged file
+      setStagedFiles(prev => {
+        const next = { ...prev };
+        delete next[fase];
+        return next;
+      });
+
+      // Per-row feedback
+      setUploadResults(prev => ({ ...prev, [fase]: { ok: true, msg: `✓ ${file.name} uploaded & saved` } }));
+      setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 5000);
+
+      setSaveBanner(`Media "${file.name}" uploaded & saved ✓`);
+      setTimeout(() => setSaveBanner(null), 3000);
+    } catch (err: any) {
+      console.error('Upload failed:', err);
+      // Per-row feedback
+      setUploadResults(prev => ({ ...prev, [fase]: { ok: false, msg: `✗ ${err.message}` } }));
+      setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 8000);
+
+      setSaveBanner(`Upload failed: ${err.message}`);
+      setTimeout(() => setSaveBanner(null), 5000);
+    } finally {
+      setUploadingFase(null);
     }
+  };
 
-    if (!res.ok || !json.success) {
-      const errMsg = json.error || `Upload failed (${res.status})`;
-      throw new Error(errMsg);
+  // Simplified preview for the Next panel (no upload UI, no file path)
+  const renderNextPreview = (media: { type: 'video' | 'image', path: string, name: string, heading?: string, fase?: string } | null) => {
+    if (!media) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center text-white">
+          <div className="text-4xl mb-2">⏭️</div>
+          <div className="text-sm opacity-80">No upcoming media</div>
+        </div>
+      );
     }
-
-    // Update the image field with the filename (used to resolve the public URL)
-    const updatedHeadings = {
-      ...editingHeadings,
-      [fase]: { heading: editingHeadings[fase]?.heading || '', image: file.name }
-    };
-    setEditingHeadings(updatedHeadings);
-
-    // Auto-save to PocketBase so the filename persists across page reloads
-    if (selectedSession) {
-      const headingsJson = JSON.stringify(updatedHeadings);
-      await rankingService.updateSession(selectedSession.id, { headings: headingsJson });
-      setSelectedSession(prev => prev ? { ...prev, headings: headingsJson } : null);
+    if (media.type === 'video') {
+      return (
+        <div className="w-full h-full flex flex-col">
+          {media.heading && (
+            <div className="text-center py-2 px-4 bg-black/30 rounded-t text-white">
+              <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '22px', lineHeight: 1.2 }}>
+                {media.heading}
+              </div>
+              {media.fase && (
+                <div className="text-xs opacity-70">Fase {media.fase}</div>
+              )}
+            </div>
+          )}
+          <div className="flex-1 rounded-b flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#F5B800' }}>
+            <video
+              src={media.path}
+              className="w-full h-full object-cover"
+              muted
+              preload="metadata"
+              playsInline
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget; v.currentTime = 0.1;
+              }}
+              onError={() => { /* silent */ }}
+            />
+            <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-0.5 rounded text-[10px] tracking-wide">VIDEO</div>
+          </div>
+        </div>
+      );
     }
-
-    // Clear staged file
-    setStagedFiles(prev => {
-      const next = { ...prev };
-      delete next[fase];
-      return next;
-    });
-
-    // Per-row feedback
-    setUploadResults(prev => ({ ...prev, [fase]: { ok: true, msg: `✓ ${file.name} uploaded & saved` } }));
-    setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 5000);
-
-    setSaveBanner(`Media "${file.name}" uploaded & saved ✓`);
-    setTimeout(() => setSaveBanner(null), 3000);
-  } catch (err: any) {
-    console.error('Upload failed:', err);
-    // Per-row feedback
-    setUploadResults(prev => ({ ...prev, [fase]: { ok: false, msg: `✗ ${err.message}` } }));
-    setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 8000);
-
-    setSaveBanner(`Upload failed: ${err.message}`);
-    setTimeout(() => setSaveBanner(null), 5000);
-  } finally {
-    setUploadingFase(null);
-  }
-};
-
-// Simplified preview for the Next panel (no upload UI, no file path)
-const renderNextPreview = (media: { type: 'video' | 'image', path: string, name: string, heading?: string, fase?: string } | null) => {
-  if (!media) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center text-white">
-        <div className="text-4xl mb-2">⏭️</div>
-        <div className="text-sm opacity-80">No upcoming media</div>
-      </div>
-    );
-  }
-  if (media.type === 'video') {
     return (
       <div className="w-full h-full flex flex-col">
         {media.heading && (
@@ -144,187 +173,181 @@ const renderNextPreview = (media: { type: 'video' | 'image', path: string, name:
           </div>
         )}
         <div className="flex-1 rounded-b flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#F5B800' }}>
-          <video
-            src={media.path}
-            className="w-full h-full object-cover"
-            muted
-            preload="metadata"
-            playsInline
-            onLoadedMetadata={(e) => {
-              const v = e.currentTarget; v.currentTime = 0.1;
-            }}
-            onError={() => { /* silent */ }}
-          />
-          <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-0.5 rounded text-[10px] tracking-wide">VIDEO</div>
+          <Image src={media.path} alt={media.name} fill className="object-cover" />
         </div>
       </div>
     );
-  }
-  return (
-    <div className="w-full h-full flex flex-col">
-      {media.heading && (
-        <div className="text-center py-2 px-4 bg-black/30 rounded-t text-white">
-          <div style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '22px', lineHeight: 1.2 }}>
-            {media.heading}
-          </div>
-          {media.fase && (
-            <div className="text-xs opacity-70">Fase {media.fase}</div>
-          )}
-        </div>
-      )}
-      <div className="flex-1 rounded-b flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#F5B800' }}>
-        <Image src={media.path} alt={media.name} fill className="object-cover" />
-      </div>
-    </div>
-  );
-};
-
-// Initialize client-side state to prevent hydration errors
-useEffect(() => {
-  setIsClient(true);
-  setCurrentTime(new Date());
-}, []);
-
-// Load Google Font
-useEffect(() => {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap';
-  document.head.appendChild(link);
-  return () => {
-    document.head.removeChild(link);
   };
-}, []);
 
-// Update current time every second
-useEffect(() => {
-  const timer = setInterval(() => {
+  // Initialize client-side state to prevent hydration errors
+  useEffect(() => {
+    setIsClient(true);
     setCurrentTime(new Date());
-    if (gameStartTime) {
-      const elapsed = Math.floor((Date.now() - gameStartTime.getTime()) / 1000);
-      const minutes = Math.floor(elapsed / 60);
-      const seconds = elapsed % 60;
-      setGameTime(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-    }
-  }, 1000);
-  return () => clearInterval(timer);
-}, [gameStartTime]);
+  }, []);
 
-
-
-// Define fase groups
-const faseGroups = {
-  '1': { name: 'Intro', fases: ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'] },
-  '4': { name: 'Guilty Pleasures', fases: ['04/01', '04/02'] },
-  '7': { name: 'Zitten en Staan', fases: ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'] },
-  '10': { name: 'De Top 3', fases: ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'] },
-  '13': { name: 'Krakende Karakters', fases: ['13/01', '13/02', '13/03', '13/04', '13/05', '13/06'] },
-  '17': { name: 'Top 10', fases: ['17/01', '17/02', '17/05', '17/06', '17/07', '17/08', '17/09', '17/10', '17/11', '17/12', '17/13', '17/14'] },
-  '20': { name: 'De Finale', fases: ['20/01'] }
-};
-
-// Get current fase group
-const getCurrentFaseGroup = () => {
-  for (const [groupKey, group] of Object.entries(faseGroups)) {
-    if (group.fases.includes(currentFase)) {
-      return groupKey;
-    }
-  }
-  return '1';
-};
-
-// Get filtered fases based on current selection
-const getFilteredFases = () => {
-  const currentGroup = getCurrentFaseGroup();
-  return faseGroups[currentGroup as keyof typeof faseGroups]?.fases || [];
-};
-
-const handleSessionCreated = (session: RankingSession) => {
-  setSelectedSession(session);
-  setCurrentView('manage');
-  setRefreshTrigger(prev => prev + 1);
-};
-
-const loadMasterTemplate = async () => {
-  // Use built-in default headings (motherfile API was removed)
-  try {
-    return faseService.parseHeadings(faseService.createDefaultHeadings());
-  } catch (error) {
-    console.log('Could not load master template, using defaults', error);
-    return null;
-  }
-};
-
-
-
-const handleStartRankingGame = () => {
-  console.log('Start Ranking Game clicked!', { selectedSession, currentView });
-  if (!selectedSession) {
-    console.log('No selected session - returning');
-    return;
-  }
-
-
-  console.log('Setting game started and changing view to game');
-  setGameStarted(true);
-  setGameStartTime(new Date());
-  setCurrentView('game');
-  setCurrentFase('01/01');
-  // Persist initial fase so Display receives a defined value immediately
-  try {
-    rankingService.updateSession(selectedSession.id, { current_fase: '01/01' }).catch(() => { });
-  } catch { }
-  console.log('State updated - should show game interface now');
-};
-
-const handlePhaseNavigation = (fase: string) => {
-  setCurrentFase(fase);
-  // Update the session's current fase in the database
-  if (selectedSession) {
-    rankingService.updateSession(selectedSession.id, { current_fase: fase });
-  }
-};
-
-
-const getCurrentDisplay = () => {
-  if (!selectedSession) return 'No session selected';
-  const headings = faseService.parseHeadings(selectedSession.headings || '{}');
-  return headings[currentFase]?.heading || `Fase ${currentFase}`;
-};
-
-// Removed unused getNextDisplay
-
-const getNextMedia = () => {
-  if (!selectedSession) {
-    console.log('No selected session');
-    return null;
-  }
-
-  // Use currently edited headings as source of truth (falls back to session JSON)
-  const headings = Object.keys(editingHeadings).length
-    ? editingHeadings
-    : faseService.parseHeadings(selectedSession.headings || '{}');
-
-  // If headings are empty, use fallback data for testing
-  if (Object.keys(headings).length === 0) {
-    const fallbackHeadings = {
-      '01/01': { heading: 'Welkom', image: '' },
-      '01/02': { heading: 'In welk team zit je?', image: '' },
-      '01/03': { heading: 'Wat is jouw naam?', image: '' },
-      '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' }
+  // Load Google Font
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap';
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
     };
+  }, []);
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+      if (gameStartTime) {
+        const elapsed = Math.floor((Date.now() - gameStartTime.getTime()) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        setGameTime(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [gameStartTime]);
+
+
+
+  // Define fase groups
+  const faseGroups = {
+    '1': { name: 'Intro', fases: ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'] },
+    '4': { name: 'Guilty Pleasures', fases: ['04/01', '04/02'] },
+    '7': { name: 'Zitten en Staan', fases: ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'] },
+    '10': { name: 'De Top 3', fases: ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'] },
+    '13': { name: 'Krakende Karakters', fases: ['13/01', '13/02', '13/03', '13/04', '13/05', '13/06'] },
+    '17': { name: 'Top 10', fases: ['17/01', '17/02', '17/05', '17/06', '17/07', '17/08', '17/09', '17/10', '17/11', '17/12', '17/13', '17/14'] },
+    '20': { name: 'De Finale', fases: ['20/01'] }
+  };
+
+  // Get current fase group
+  const getCurrentFaseGroup = () => {
+    for (const [groupKey, group] of Object.entries(faseGroups)) {
+      if (group.fases.includes(currentFase)) {
+        return groupKey;
+      }
+    }
+    return '1';
+  };
+
+  // Get filtered fases based on current selection
+  const getFilteredFases = () => {
+    const currentGroup = getCurrentFaseGroup();
+    return faseGroups[currentGroup as keyof typeof faseGroups]?.fases || [];
+  };
+
+  const handleSessionCreated = (session: RankingSession) => {
+    setSelectedSession(session);
+    setCurrentView('manage');
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const loadMasterTemplate = async () => {
+    // Use built-in default headings (motherfile API was removed)
+    try {
+      return faseService.parseHeadings(faseService.createDefaultHeadings());
+    } catch (error) {
+      console.log('Could not load master template, using defaults', error);
+      return null;
+    }
+  };
+
+
+
+  const handleStartRankingGame = () => {
+    console.log('Start Ranking Game clicked!', { selectedSession, currentView });
+    if (!selectedSession) {
+      console.log('No selected session - returning');
+      return;
+    }
+
+
+    console.log('Setting game started and changing view to game');
+    setGameStarted(true);
+    setGameStartTime(new Date());
+    setCurrentView('game');
+    setCurrentFase('01/01');
+    // Persist initial fase so Display receives a defined value immediately
+    try {
+      rankingService.updateSession(selectedSession.id, { current_fase: '01/01' }).catch(() => { });
+    } catch { }
+    console.log('State updated - should show game interface now');
+  };
+
+  const handlePhaseNavigation = (fase: string) => {
+    setCurrentFase(fase);
+    // Update the session's current fase in the database
+    if (selectedSession) {
+      rankingService.updateSession(selectedSession.id, { current_fase: fase });
+    }
+  };
+
+
+  const getCurrentDisplay = () => {
+    if (!selectedSession) return 'No session selected';
+    const headings = faseService.parseHeadings(selectedSession.headings || '{}');
+    return headings[currentFase]?.heading || `Fase ${currentFase}`;
+  };
+
+  // Removed unused getNextDisplay
+
+  const getNextMedia = () => {
+    if (!selectedSession) {
+      console.log('No selected session');
+      return null;
+    }
+
+    // Use currently edited headings as source of truth (falls back to session JSON)
+    const headings = Object.keys(editingHeadings).length
+      ? editingHeadings
+      : faseService.parseHeadings(selectedSession.headings || '{}');
+
+    // If headings are empty, use fallback data for testing
+    if (Object.keys(headings).length === 0) {
+      const fallbackHeadings = {
+        '01/01': { heading: 'Welkom', image: '' },
+        '01/02': { heading: 'In welk team zit je?', image: '' },
+        '01/03': { heading: 'Wat is jouw naam?', image: '' },
+        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' }
+      };
+
+      // Find the next fase with a non-empty image/Picture field
+      const currentFaseIndex = Object.keys(fallbackHeadings).indexOf(currentFase);
+      const faseKeys = Object.keys(fallbackHeadings).slice(currentFaseIndex + 1);
+
+      for (const faseKey of faseKeys) {
+        const faseData = fallbackHeadings[faseKey as keyof typeof fallbackHeadings];
+        if (faseData?.image && faseData.image.trim() !== '') {
+          // Determine file type
+          const fileName = faseData.image;
+          const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
+          const path = fileName.startsWith('/') ? fileName : `/pics/${fileName}`;
+
+          return {
+            type: isVideo ? 'video' as const : 'image' as const,
+            path: path,
+            name: fileName,
+            heading: faseData.heading || `Fase ${faseKey}`,
+            fase: faseKey
+          };
+        }
+      }
+    }
 
     // Find the next fase with a non-empty image/Picture field
-    const currentFaseIndex = Object.keys(fallbackHeadings).indexOf(currentFase);
-    const faseKeys = Object.keys(fallbackHeadings).slice(currentFaseIndex + 1);
+    const currentFaseIndex = Object.keys(headings).indexOf(currentFase);
+    const faseKeys = Object.keys(headings).slice(currentFaseIndex + 1);
 
     for (const faseKey of faseKeys) {
-      const faseData = fallbackHeadings[faseKey as keyof typeof fallbackHeadings];
+      const faseData = headings[faseKey];
       if (faseData?.image && faseData.image.trim() !== '') {
         // Determine file type
         const fileName = faseData.image;
         const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
-        const path = fileName.startsWith('/') ? fileName : `/pics/${fileName}`;
+        const path = motherfileService.fileUrl(fileName);
 
         return {
           type: isVideo ? 'video' as const : 'image' as const,
@@ -335,735 +358,632 @@ const getNextMedia = () => {
         };
       }
     }
-  }
-
-  // Find the next fase with a non-empty image/Picture field
-  const currentFaseIndex = Object.keys(headings).indexOf(currentFase);
-  const faseKeys = Object.keys(headings).slice(currentFaseIndex + 1);
-
-  for (const faseKey of faseKeys) {
-    const faseData = headings[faseKey];
-    if (faseData?.image && faseData.image.trim() !== '') {
-      // Determine file type
-      const fileName = faseData.image;
-      const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
-      const path = motherfileService.fileUrl(fileName);
-
-      return {
-        type: isVideo ? 'video' as const : 'image' as const,
-        path: path,
-        name: fileName,
-        heading: faseData.heading || `Fase ${faseKey}`,
-        fase: faseKey
-      };
-    }
-  }
-  return null;
-};
-
-
-const handleSessionSelect = async (session: RankingSession) => {
-  setSelectedSession(session);
-  setCurrentView('manage');
-  // Load existing headings or import master template if empty
-  let headings = faseService.parseHeadings(session.headings || '{}');
-
-  // If no headings exist, load from master template
-  if (Object.keys(headings).length === 0) {
-    // Try to load from master template first
-    const masterTemplate = await loadMasterTemplate();
-    if (masterTemplate) {
-      headings = masterTemplate;
-    } else {
-      // Fallback to default structure
-      headings = {
-        '01/01': { heading: 'In welk team zit je?', image: '' },
-        '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
-        '01/03': { heading: 'Wat is jouw naam?', image: '' },
-        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'teamnaam' },
-        '01/05': { heading: 'Wat wordt jullie Teamyell? Kort maar Krachtig', image: 'teamyell' },
-        '01/06': { heading: 'Maak een Selfie Video en upload die naar PhotoCircle', image: 'selfie' },
-        '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
-        '04/01': { heading: 'Iedereen wordt wel een heel erg blij van iets dat niet algemeen als top beschouwd Wat is jouw Guilty Pleasure', image: 'trailerguilty' },
-        '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
-        '07/01': { heading: 'Blijf staan als je het met de stelling eens bent', image: 'trailerzit' },
-        '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'Super' },
-        '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'Flirt' },
-        '07/07': { heading: 'Houseparty Niks leukers dan', image: 'Houseparty' },
-        '07/08': { heading: 'Socials checken Het eerste wat ik doe', image: 'Socials' },
-        '07/09': { heading: 'Kleding Mijn hele salaris gaat op aan', image: 'Kleding' },
-        '07/10': { heading: 'In een \'all-in\' Ik zweer bij een vakantie', image: 'All-in' },
-        '07/11': { heading: 'Sauna Ik vindt dat zo vies', image: 'Sauna' },
-        '07/12': { heading: 'Met een collega Heb ik weleens wat gehad', image: 'Collega' },
-        '07/13': { heading: 'Billen Ik val echt op', image: 'Billen' },
-        '07/14': { heading: 'Gat in mijn hand Ik heb een enorm', image: 'Gat' },
-        '07/15': { heading: 'Teveel Ik drink nooit', image: 'Teveel' },
-        '10/01': { heading: 'Kies iemand uit een van de andere teams!', image: 'trailertop3' },
-        '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: '' },
-        '10/06': { heading: 'Wie is de ideale schoon- zoon of zus?', image: '' },
-        '10/07': { heading: 'Je vliegtuig stort neer in de Andes. Wie eet je als eerste op ?', image: '' },
-        '10/08': { heading: 'Wie zou je absoluut niet op je kinderen laten passen?', image: '' },
-        '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: '' },
-        '10/10': { heading: 'Wie is de grootste aansteller op het werk?', image: '' },
-        '10/11': { heading: 'Wie zou er als eerste een account aanmaken op OnlyFans?', image: '' },
-        '10/12': { heading: 'Wie vertrouw je diepste geheimen toe?', image: '' },
-        '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: '' },
-        '13/01': { heading: 'Krakende Karakters', image: 'trailerkrakende' },
-        '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
-        '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
-        '13/04': { heading: 'Minder goede Eigenschappen', image: '' },
-        '13/05': { heading: 'Resultaten Positief', image: '' },
-        '13/06': { heading: 'Resultaten Negatief', image: '' },
-        '17/01': { heading: 'De Top 10', image: 'trailertop10' },
-        '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
-        '17/05': { heading: 'Een pijnlijke pukkel op je bil waar je niet bij kan. Wie mag hem voor je uitknijpen?', image: '' },
-        '17/06': { heading: 'Wie denkt dat ie altijd gelijk heeft?', image: '' },
-        '17/07': { heading: 'Wie zou meedoen [tegen betaling uiteraard] aan de naakte fotoshoot van het Perfecte Plaatje?', image: '' },
-        '17/08': { heading: 'Wie kan er 40 dagen zonder sexs?', image: '' },
-        '17/09': { heading: 'Wie kan absoluut niet tegen zijn/haar verlies?', image: '' },
-        '17/10': { heading: 'Wie laat weleens een wind?', image: '' },
-        '17/11': { heading: 'Wie maakt de allerlelijkste Selfies ?', image: '' },
-        '17/12': { heading: 'Wie is het meest verslaafd aan Social Media?', image: '' },
-        '17/13': { heading: 'Wie krijgt de meeste bekeuringen?', image: '' },
-        '17/14': { heading: 'Jullie doen mee met Temptation Island. Wie heeft als eerste iemand tusen de lakens?', image: '' },
-        '20/01': { heading: 'De Finale', image: 'trailerfinale' }
-      };
-    }
-
-    // Auto-save the default structure to PocketBase
-    const headingsJson = JSON.stringify(headings);
-    rankingService.updateSession(session.id, {
-      headings: headingsJson
-    }).catch(error => console.error('Error auto-saving headings:', error));
-  }
-
-  setEditingHeadings(headings);
-  setCurrentFase(session.current_fase || '01/01');
-};
-
-const handleHeadingUpdate = (fase: string, heading: string, image?: string) => {
-  setEditingHeadings(prev => ({
-    ...prev,
-    [fase]: { heading, image }
-  }));
-};
-
-const updateMasterTemplate = async (_headings: Record<string, { heading: string; image?: string }>) => {
-  // No-op: media is now served from pinkmilk.eu, headings are saved per-session
-  return { success: true, message: 'Headings saved to session (pinkmilk.eu for media)' };
-};
-
-const saveHeadings = async (options?: { updateMotherfile?: boolean }) => {
-  if (!selectedSession) return;
-
-  try {
-    const headingsJson = JSON.stringify(editingHeadings);
-
-    // Save to current session
-    await rankingService.updateSession(selectedSession.id, {
-      headings: headingsJson,
-      current_fase: currentFase
-    });
-
-    // Update local session
-    setSelectedSession(prev => prev ? {
-      ...prev,
-      headings: headingsJson,
-      current_fase: currentFase
-    } : null);
-
-    // Optionally update the motherfile (global defaults)
-    if (options?.updateMotherfile) {
-      const masterResult = await updateMasterTemplate(editingHeadings);
-      if (!masterResult.success) {
-        console.warn('Motherfile update warning:', masterResult.message);
-      }
-    }
-
-    // Show subtle inline banner instead of alerts
-    setSaveBanner(options?.updateMotherfile
-      ? 'Saved. Global defaults updated.'
-      : 'Saved. This show only.');
-    setTimeout(() => setSaveBanner(null), 3500);
-  } catch (error) {
-    console.error('Error saving headings:', error);
-    setSaveBanner('Failed to save. See console for details.');
-    setTimeout(() => setSaveBanner(null), 5000);
-  }
-};
-
-// Removed unused loadNewStructure
-
-const handleBackToList = () => {
-  setCurrentView('list');
-  setSelectedSession(null);
-};
-
-// State for real display data
-// (Removed unused displayData and loadDisplayData to satisfy lint)
-// const [displayData, setDisplayData] = useState<{playersByTeam: Record<number, string[]>, gameCode: string} | null>(null);
-// const loadDisplayData = useCallback(async () => {
-//   if (!selectedSession) return;
-//   try {
-//     // Get the same team assignments as the Display page
-//     const playerNames = teamService.parsePlayerNames(selectedSession.playernames || '');
-//     const teamAssignments = teamService.generateTeamAssignments(playerNames, selectedSession.nr_teams || 1);
-//     const gameCode = Math.floor(1000 + Math.random() * 9000).toString();
-//     
-//     setDisplayData({
-//       playersByTeam: teamAssignments,
-//       gameCode: gameCode
-//     });
-//   } catch (error) {
-//     console.error('Error loading display data:', error);
-//   }
-// }, [selectedSession]);
-
-// ---------- Group flags ----------
-const isGroup07 = currentFase.startsWith('07/');
-const isGroup01 = currentFase.startsWith('01/');
-
-const getHeadingsSource = useCallback(() => {
-  if (!selectedSession) return {} as Record<string, { heading: string; image?: string }>;
-  const parsed = faseService.parseHeadings(selectedSession.headings || '{}');
-  return Object.keys(editingHeadings).length ? editingHeadings : parsed;
-}, [selectedSession, editingHeadings]);
-
-// Ordered fase keys for a group prefix like '01', '07', etc.
-const getOrderedFasesForGroup = useCallback((prefix: string) => {
-  const src = getHeadingsSource();
-  const keys = Object.keys(src).filter((k) => k.startsWith(`${prefix}/`));
-  keys.sort((a, b) => {
-    const na = parseInt(a.split('/')[1] || '0', 10);
-    const nb = parseInt(b.split('/')[1] || '0', 10);
-    return na - nb;
-  });
-  return keys;
-}, [getHeadingsSource]);
-
-// Build media descriptor for a specific fase key from headings/motherfile
-const getMediaForFase = useCallback((faseKey: string) => {
-  const headings = getHeadingsSource();
-  const item = headings[faseKey];
-  if (!item?.image || item.image.trim() === '') return null;
-  const fileName = item.image;
-  const isVideo = /\.(mp4|mov|avi)$/i.test(fileName);
-  return {
-    type: isVideo ? 'video' as const : 'image' as const,
-    path: motherfileService.fileUrl(fileName),
-    name: fileName,
-    heading: item.heading || `Fase ${faseKey}`,
-    fase: faseKey,
-  };
-}, [getHeadingsSource]);
-
-const getNextFaseInGroup = useCallback((faseKey: string, prefix: string) => {
-  const ordered = getOrderedFasesForGroup(prefix);
-  let idx = ordered.indexOf(faseKey);
-  if (idx === -1) {
-    // Fallback: compare numerically on the second component
-    const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
-    idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
-  }
-  if (idx === -1) return ordered[0] || faseKey;
-  return ordered[idx + 1] || ordered[idx] || faseKey;
-}, [getOrderedFasesForGroup]);
-
-const getPrevFaseInGroup = useCallback((faseKey: string, prefix: string) => {
-  const ordered = getOrderedFasesForGroup(prefix);
-  let idx = ordered.indexOf(faseKey);
-  if (idx === -1) {
-    // Fallback: compare numerically on the second component
-    const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
-    idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
-  }
-  if (idx === -1) return ordered[0] || faseKey;
-  return ordered[idx - 1] || ordered[idx] || faseKey;
-}, [getOrderedFasesForGroup]);
-
-const currentVideoRef = useRef<HTMLVideoElement | null>(null);
-
-const formatHeading = (text?: string) => {
-  if (!text) return '';
-  // Replace '/n' tokens with new lines
-  return text.replaceAll('/n', '\n');
-};
-
-// Generic Arrow navigation for the current group (derived from currentFase prefix)
-useEffect(() => {
-  if (currentView !== 'game') return;
-  const onKey = (e: KeyboardEvent) => {
-    // Ignore when typing in inputs/textareas/selects or contentEditable
-    const target = e.target as HTMLElement | null;
-    const tag = (target?.tagName || '').toLowerCase();
-    const isEditable = !!(target && (target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select'));
-    if (isEditable) return;
-
-    // Support Arrow keys and bracket aliases
-    const isNext = e.key === 'ArrowRight' || e.key === ']';
-    const isPrev = e.key === 'ArrowLeft' || e.key === '[';
-    if (!isNext && !isPrev) return;
-
-    e.preventDefault();
-    const prefix = (currentFase.split('/')![0] || '').padStart(2, '0');
-    if (isNext) {
-      const next = getNextFaseInGroup(currentFase, prefix);
-      setCurrentFase(next);
-      if (selectedSession) {
-        rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => { });
-      }
-    } else if (isPrev) {
-      const prev = getPrevFaseInGroup(currentFase, prefix);
-      setCurrentFase(prev);
-      if (selectedSession) {
-        rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => { });
-      }
-    }
-  };
-  window.addEventListener('keydown', onKey);
-  return () => window.removeEventListener('keydown', onKey);
-}, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
-
-// No presenter-side autoplay; Display page handles playback
-
-// No Space shortcut in presentation mode
-
-const renderGameInterface = () => {
-  console.log('renderGameInterface called', { selectedSession, currentView });
-  if (!selectedSession) {
-    console.log('renderGameInterface: No selected session');
     return null;
-  }
+  };
 
-  const phaseButtons = [
-    { label: '1', name: 'Intro', fases: faseGroups['1'].fases },
-    { label: '2', name: 'Guilty Pleasures', fases: faseGroups['4'].fases },
-    { label: '3', name: 'Zitten en Staan', fases: faseGroups['7'].fases },
-    { label: '4', name: 'De Top 3', fases: faseGroups['10'].fases },
-    { label: '5', name: 'Krakende Karakters', fases: faseGroups['13'].fases },
-    { label: '6', name: 'Top 10', fases: faseGroups['17'].fases },
-    { label: '7', name: 'De Finale', fases: faseGroups['20'].fases }
-  ];
 
-  const nextMedia = getNextMedia();
+  const handleSessionSelect = async (session: RankingSession) => {
+    setSelectedSession(session);
+    setCurrentView('manage');
+    // Load existing headings or import master template if empty
+    let headings = faseService.parseHeadings(session.headings || '{}');
 
-  return (
-    <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div style={{ margin: '0 2%' }}>
-        {/* Header with game info - with 2% side margins */}
-        <div className="bg-white shadow-md p-6">
-          <div className="flex justify-between items-center">
-            {/* Left side - Game info in one line */}
-            <div className="flex items-center gap-8">
-              <h1 className="text-3xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
-              <span className="text-xl font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
-              <span className="text-xl font-semibold text-gray-700">{gameTime} [game time]</span>
-            </div>
-            <button
-              onClick={() => setCurrentView('manage')}
-              className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
-            >
-              ← Back to Setup
-            </button>
-          </div>
-        </div>
+    // If no headings exist, load from master template
+    if (Object.keys(headings).length === 0) {
+      // Try to load from master template first
+      const masterTemplate = await loadMasterTemplate();
+      if (masterTemplate) {
+        headings = masterTemplate;
+      } else {
+        // Fallback to default structure
+        headings = {
+          '01/01': { heading: 'In welk team zit je?', image: '' },
+          '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
+          '01/03': { heading: 'Wat is jouw naam?', image: '' },
+          '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'teamnaam' },
+          '01/05': { heading: 'Wat wordt jullie Teamyell? Kort maar Krachtig', image: 'teamyell' },
+          '01/06': { heading: 'Maak een Selfie Video en upload die naar PhotoCircle', image: 'selfie' },
+          '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
+          '04/01': { heading: 'Iedereen wordt wel een heel erg blij van iets dat niet algemeen als top beschouwd Wat is jouw Guilty Pleasure', image: 'trailerguilty' },
+          '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
+          '07/01': { heading: 'Blijf staan als je het met de stelling eens bent', image: 'trailerzit' },
+          '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'Super' },
+          '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'Flirt' },
+          '07/07': { heading: 'Houseparty Niks leukers dan', image: 'Houseparty' },
+          '07/08': { heading: 'Socials checken Het eerste wat ik doe', image: 'Socials' },
+          '07/09': { heading: 'Kleding Mijn hele salaris gaat op aan', image: 'Kleding' },
+          '07/10': { heading: 'In een \'all-in\' Ik zweer bij een vakantie', image: 'All-in' },
+          '07/11': { heading: 'Sauna Ik vindt dat zo vies', image: 'Sauna' },
+          '07/12': { heading: 'Met een collega Heb ik weleens wat gehad', image: 'Collega' },
+          '07/13': { heading: 'Billen Ik val echt op', image: 'Billen' },
+          '07/14': { heading: 'Gat in mijn hand Ik heb een enorm', image: 'Gat' },
+          '07/15': { heading: 'Teveel Ik drink nooit', image: 'Teveel' },
+          '10/01': { heading: 'Kies iemand uit een van de andere teams!', image: 'trailertop3' },
+          '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: '' },
+          '10/06': { heading: 'Wie is de ideale schoon- zoon of zus?', image: '' },
+          '10/07': { heading: 'Je vliegtuig stort neer in de Andes. Wie eet je als eerste op ?', image: '' },
+          '10/08': { heading: 'Wie zou je absoluut niet op je kinderen laten passen?', image: '' },
+          '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: '' },
+          '10/10': { heading: 'Wie is de grootste aansteller op het werk?', image: '' },
+          '10/11': { heading: 'Wie zou er als eerste een account aanmaken op OnlyFans?', image: '' },
+          '10/12': { heading: 'Wie vertrouw je diepste geheimen toe?', image: '' },
+          '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: '' },
+          '13/01': { heading: 'Krakende Karakters', image: 'trailerkrakende' },
+          '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
+          '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
+          '13/04': { heading: 'Minder goede Eigenschappen', image: '' },
+          '13/05': { heading: 'Resultaten Positief', image: '' },
+          '13/06': { heading: 'Resultaten Negatief', image: '' },
+          '17/01': { heading: 'De Top 10', image: 'trailertop10' },
+          '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
+          '17/05': { heading: 'Een pijnlijke pukkel op je bil waar je niet bij kan. Wie mag hem voor je uitknijpen?', image: '' },
+          '17/06': { heading: 'Wie denkt dat ie altijd gelijk heeft?', image: '' },
+          '17/07': { heading: 'Wie zou meedoen [tegen betaling uiteraard] aan de naakte fotoshoot van het Perfecte Plaatje?', image: '' },
+          '17/08': { heading: 'Wie kan er 40 dagen zonder sexs?', image: '' },
+          '17/09': { heading: 'Wie kan absoluut niet tegen zijn/haar verlies?', image: '' },
+          '17/10': { heading: 'Wie laat weleens een wind?', image: '' },
+          '17/11': { heading: 'Wie maakt de allerlelijkste Selfies ?', image: '' },
+          '17/12': { heading: 'Wie is het meest verslaafd aan Social Media?', image: '' },
+          '17/13': { heading: 'Wie krijgt de meeste bekeuringen?', image: '' },
+          '17/14': { heading: 'Jullie doen mee met Temptation Island. Wie heeft als eerste iemand tusen de lakens?', image: '' },
+          '20/01': { heading: 'De Finale', image: 'trailerfinale' }
+        };
+      }
 
-        {/* Module-specific controls (resolved from fase registry) */}
-        {(() => {
-          const mod = findFaseModule(currentFase);
-          if (!mod || !selectedSession) return null;
-          const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
-          return (
-            <mod.PresenterView
-              faseKey={currentFase}
-              sessionId={selectedSession.id}
-              moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-              onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
-              allPlayerNames={allPlayerNames}
-            />
-          );
-        })()}
-        {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
-        <div
-          className="grid mt-4 gap-4 pr-6"
-          style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
-        >
-          {/* Current Display (43%) */}
-          <div className="flex flex-col">
-            {/* Current Display - Left screen (16:9) */}
-            <div>
-              <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
-                {isGroup07 ? (
-                  (() => {
-                    const media = getMediaForFase(currentFase);
-                    const isTrailer = /\/01$/.test(currentFase);
-                    const bg = isTrailer ? '#e5e5e5' : '#F5B800';
-                    return (
-                      <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bg }}>
-                        {media?.type === 'video' && media.path ? (
-                          <video
-                            ref={currentVideoRef}
-                            src={media.path}
-                            className="absolute inset-0 w-full h-full object-contain"
-                            preload="auto"
-                            muted
-                            playsInline
-                            onLoadedMetadata={(e) => {
-                              // ready to play quickly
-                              const v = e.currentTarget;
-                              v.currentTime = 0.01;
-                            }}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                            <div className="text-black text-3xl whitespace-pre-line">
-                              {formatHeading(getHeadingsSource()[currentFase]?.heading || `Fase ${currentFase}`)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()
-                ) : isGroup01 ? (
-                  (() => {
-                    const media = getMediaForFase(currentFase);
-                    const bg = '#F5B800';
-                    const ordered01 = getOrderedFasesForGroup('01');
-                    const idx01 = Math.max(0, ordered01.indexOf(currentFase));
-                    const nn = (idx01 + 1).toString().padStart(2, '0');
-                    const tt = ordered01.length.toString().padStart(2, '0');
-                    return (
-                      <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: bg }}>
-                        {/* Centered filename (heading should be filename-only for Phase 01) */}
-                        <div className="absolute top-2 left-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Fase {currentFase}</div>
-                        {/* NN/TT indicator */}
-                        <div className="absolute top-2 right-3 text-black text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{nn}/{tt}</div>
-                        {media?.type === 'video' && media.path ? (
-                          <video
-                            ref={currentVideoRef}
-                            src={media.path}
-                            className="absolute inset-0 w-full h-full object-contain"
-                            preload="auto"
-                            muted
-                            playsInline
-                            onLoadedMetadata={(e) => {
-                              const v = e.currentTarget; v.currentTime = 0.01;
-                            }}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                            <div className="text-black text-3xl break-words" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                              {media?.name || '—'}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()
-                ) : (
-                  // Fallback to existing simulated current display
-                  <div className="absolute inset-0 w-full h-full flex flex-col">
-                    <div className="bg-blue-900 text-white px-2 py-1 text-xs flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="text-yellow-300">★★★</div>
-                        <span>Quizmaster Klaas presenteert</span>
-                      </div>
-                      <div className="bg-white text-black px-2 py-1 rounded text-xs">Code: {'8075'}</div>
-                    </div>
-                    <div className="flex-1 p-2">
-                      <div className="text-center text-white mb-2">
-                        <div className="text-lg font-bold">{getCurrentDisplay()}</div>
-                        <div className="text-sm opacity-90">De teams van vandaag zijn:</div>
-                      </div>
-                      <div className="flex justify-center gap-2 mb-2">
-                        {Array.from({ length: selectedSession?.nr_teams || 4 }, (_, index) => {
-                          const teamNumber = index + 1;
-                          const teamPlayers: string[] = [];
-                          return (
-                            <div key={teamNumber} className="flex flex-col items-center">
-                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black font-bold border-2 border-black">
-                                {teamNumber}
-                              </div>
-                              <div className="mt-1 space-y-1">
-                                {teamPlayers.slice(0, 2).map((player: string, idx: number) => (
-                                  <div key={idx} className="bg-pink-200 text-black text-xs px-1 py-1 rounded">
-                                    {player.length > 8 ? player.substring(0, 8) + '...' : player}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="text-center text-white text-xs mt-2">
-                        Total Players: {0} | Teams: {selectedSession?.nr_teams || 4} | Location: {selectedSession?.city || 'jb'}
-                      </div>
-                    </div>
-                  </div>
-                )}
+      // Auto-save the default structure to PocketBase
+      const headingsJson = JSON.stringify(headings);
+      rankingService.updateSession(session.id, {
+        headings: headingsJson
+      }).catch(error => console.error('Error auto-saving headings:', error));
+    }
+
+    setEditingHeadings(headings);
+    setCurrentFase(session.current_fase || '01/01');
+  };
+
+  const handleHeadingUpdate = (fase: string, heading: string, image?: string) => {
+    setEditingHeadings(prev => ({
+      ...prev,
+      [fase]: { heading, image }
+    }));
+  };
+
+  const updateMasterTemplate = async (_headings: Record<string, { heading: string; image?: string }>) => {
+    // No-op: media is now served from pinkmilk.eu, headings are saved per-session
+    return { success: true, message: 'Headings saved to session (pinkmilk.eu for media)' };
+  };
+
+  const saveHeadings = async (options?: { updateMotherfile?: boolean }) => {
+    if (!selectedSession) return;
+
+    try {
+      const headingsJson = JSON.stringify(editingHeadings);
+
+      // Save to current session
+      await rankingService.updateSession(selectedSession.id, {
+        headings: headingsJson,
+        current_fase: currentFase
+      });
+
+      // Update local session
+      setSelectedSession(prev => prev ? {
+        ...prev,
+        headings: headingsJson,
+        current_fase: currentFase
+      } : null);
+
+      // Optionally update the motherfile (global defaults)
+      if (options?.updateMotherfile) {
+        const masterResult = await updateMasterTemplate(editingHeadings);
+        if (!masterResult.success) {
+          console.warn('Motherfile update warning:', masterResult.message);
+        }
+      }
+
+      // Show subtle inline banner instead of alerts
+      setSaveBanner(options?.updateMotherfile
+        ? 'Saved. Global defaults updated.'
+        : 'Saved. This show only.');
+      setTimeout(() => setSaveBanner(null), 3500);
+    } catch (error) {
+      console.error('Error saving headings:', error);
+      setSaveBanner('Failed to save. See console for details.');
+      setTimeout(() => setSaveBanner(null), 5000);
+    }
+  };
+
+  // Removed unused loadNewStructure
+
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedSession(null);
+  };
+
+  // State for real display data
+  // (Removed unused displayData and loadDisplayData to satisfy lint)
+  // const [displayData, setDisplayData] = useState<{playersByTeam: Record<number, string[]>, gameCode: string} | null>(null);
+  // const loadDisplayData = useCallback(async () => {
+  //   if (!selectedSession) return;
+  //   try {
+  //     // Get the same team assignments as the Display page
+  //     const playerNames = teamService.parsePlayerNames(selectedSession.playernames || '');
+  //     const teamAssignments = teamService.generateTeamAssignments(playerNames, selectedSession.nr_teams || 1);
+  //     const gameCode = Math.floor(1000 + Math.random() * 9000).toString();
+  //     
+  //     setDisplayData({
+  //       playersByTeam: teamAssignments,
+  //       gameCode: gameCode
+  //     });
+  //   } catch (error) {
+  //     console.error('Error loading display data:', error);
+  //   }
+  // }, [selectedSession]);
+
+
+
+  const getHeadingsSource = useCallback(() => {
+    if (!selectedSession) return {} as Record<string, { heading: string; image?: string }>;
+    const parsed = faseService.parseHeadings(selectedSession.headings || '{}');
+    return Object.keys(editingHeadings).length ? editingHeadings : parsed;
+  }, [selectedSession, editingHeadings]);
+
+  // Ordered fase keys for a group prefix like '01', '07', etc.
+  const getOrderedFasesForGroup = useCallback((prefix: string) => {
+    const src = getHeadingsSource();
+    const keys = Object.keys(src).filter((k) => k.startsWith(`${prefix}/`));
+    keys.sort((a, b) => {
+      const na = parseInt(a.split('/')[1] || '0', 10);
+      const nb = parseInt(b.split('/')[1] || '0', 10);
+      return na - nb;
+    });
+    return keys;
+  }, [getHeadingsSource]);
+
+  // Build media descriptor for a specific fase key from headings/motherfile
+  const getMediaForFase = useCallback((faseKey: string) => {
+    const headings = getHeadingsSource();
+    const item = headings[faseKey];
+    if (!item?.image || item.image.trim() === '') return null;
+    const fileName = item.image;
+    const isVideo = /\.(mp4|mov|avi)$/i.test(fileName);
+    return {
+      type: isVideo ? 'video' as const : 'image' as const,
+      path: motherfileService.fileUrl(fileName),
+      name: fileName,
+      heading: item.heading || `Fase ${faseKey}`,
+      fase: faseKey,
+    };
+  }, [getHeadingsSource]);
+
+  const getNextFaseInGroup = useCallback((faseKey: string, prefix: string) => {
+    const ordered = getOrderedFasesForGroup(prefix);
+    let idx = ordered.indexOf(faseKey);
+    if (idx === -1) {
+      // Fallback: compare numerically on the second component
+      const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
+      idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
+    }
+    if (idx === -1) return ordered[0] || faseKey;
+    return ordered[idx + 1] || ordered[idx] || faseKey;
+  }, [getOrderedFasesForGroup]);
+
+  const getPrevFaseInGroup = useCallback((faseKey: string, prefix: string) => {
+    const ordered = getOrderedFasesForGroup(prefix);
+    let idx = ordered.indexOf(faseKey);
+    if (idx === -1) {
+      // Fallback: compare numerically on the second component
+      const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
+      idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
+    }
+    if (idx === -1) return ordered[0] || faseKey;
+    return ordered[idx - 1] || ordered[idx] || faseKey;
+  }, [getOrderedFasesForGroup]);
+
+  const currentVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const formatHeading = (text?: string) => {
+    if (!text) return '';
+    // Replace '/n' tokens with new lines
+    return text.replaceAll('/n', '\n');
+  };
+
+  // Generic Arrow navigation for the current group (derived from currentFase prefix)
+  useEffect(() => {
+    if (currentView !== 'game') return;
+    const onKey = (e: KeyboardEvent) => {
+      // Ignore when typing in inputs/textareas/selects or contentEditable
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || '').toLowerCase();
+      const isEditable = !!(target && (target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select'));
+      if (isEditable) return;
+
+      // Support Arrow keys and bracket aliases
+      const isNext = e.key === 'ArrowRight' || e.key === ']';
+      const isPrev = e.key === 'ArrowLeft' || e.key === '[';
+      if (!isNext && !isPrev) return;
+
+      e.preventDefault();
+      const prefix = (currentFase.split('/')![0] || '').padStart(2, '0');
+      if (isNext) {
+        const next = getNextFaseInGroup(currentFase, prefix);
+        setCurrentFase(next);
+        if (selectedSession) {
+          rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => { });
+        }
+      } else if (isPrev) {
+        const prev = getPrevFaseInGroup(currentFase, prefix);
+        setCurrentFase(prev);
+        if (selectedSession) {
+          rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => { });
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
+
+  // No presenter-side autoplay; Display page handles playback
+
+  // No Space shortcut in presentation mode
+
+  const renderGameInterface = () => {
+    console.log('renderGameInterface called', { selectedSession, currentView });
+    if (!selectedSession) {
+      console.log('renderGameInterface: No selected session');
+      return null;
+    }
+
+    const phaseButtons = [
+      { label: '1', name: 'Intro', fases: faseGroups['1'].fases },
+      { label: '2', name: 'Guilty Pleasures', fases: faseGroups['4'].fases },
+      { label: '3', name: 'Zitten en Staan', fases: faseGroups['7'].fases },
+      { label: '4', name: 'De Top 3', fases: faseGroups['10'].fases },
+      { label: '5', name: 'Krakende Karakters', fases: faseGroups['13'].fases },
+      { label: '6', name: 'Top 10', fases: faseGroups['17'].fases },
+      { label: '7', name: 'De Finale', fases: faseGroups['20'].fases }
+    ];
+
+    const nextMedia = getNextMedia();
+
+    return (
+      <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        <div style={{ margin: '0 2%' }}>
+          {/* Header with game info - with 2% side margins */}
+          <div className="bg-white shadow-md p-6">
+            <div className="flex justify-between items-center">
+              {/* Left side - Game info in one line */}
+              <div className="flex items-center gap-8">
+                <h1 className="text-3xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
+                <span className="text-xl font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
+                <span className="text-xl font-semibold text-gray-700">{gameTime} [game time]</span>
               </div>
-              <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
-            </div>
-          </div>
-
-          {/* Next Display (43%) */}
-          <div className="flex flex-col">
-            <div>
-              <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
-                {renderNextPreview(nextMedia)}
-              </div>
-              <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
-            </div>
-          </div>
-
-          {/* Fases (8%) */}
-          <div className="space-y-3 flex flex-col">
-            {phaseButtons.map((phase) => (
               <button
-                key={phase.label}
-                onClick={() => handlePhaseNavigation(phase.fases[0])}
-                className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
-                  ? 'bg-orange-600 shadow-lg'
-                  : 'bg-orange-400 hover:bg-orange-500'
-                  }`}
+                onClick={() => setCurrentView('manage')}
+                className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
               >
-                <div>{phase.label}</div>
-                <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
+                ← Back to Setup
               </button>
-            ))}
+            </div>
+          </div>
+
+          {/* Module-specific controls (resolved from fase registry) */}
+          {(() => {
+            const mod = findFaseModule(currentFase);
+            if (!mod || !selectedSession) return null;
+            const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
+            return (
+              <mod.PresenterView
+                faseKey={currentFase}
+                sessionId={selectedSession.id}
+                moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+                onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
+                allPlayerNames={allPlayerNames}
+              />
+            );
+          })()}
+          {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
+          <div
+            className="grid mt-4 gap-4 pr-6"
+            style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
+          >
+            {/* Current Display (43%) */}
+            <div className="flex flex-col">
+              {/* Current Display - Left screen (16:9) */}
+              <div>
+                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
+                  {(() => {
+                    const media = getMediaForFase(currentFase);
+                    const headingText = getHeadingsSource()[currentFase]?.heading || `Fase ${currentFase}`;
+                    return (
+                      <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#1a1a2e' }}>
+                        {/* Media: video or image */}
+                        {media?.type === 'video' && media.path ? (
+                          <video
+                            ref={currentVideoRef}
+                            src={media.path}
+                            className="absolute inset-0 w-full h-full object-contain"
+                            preload="auto"
+                            muted
+                            playsInline
+                            onLoadedMetadata={(e) => { e.currentTarget.currentTime = 0.01; }}
+                          />
+                        ) : media?.type === 'image' && media.path ? (
+                          <img src={media.path} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
+                        ) : null}
+                        {/* Heading overlay in top 1/3 */}
+                        <div className="absolute top-0 left-0 right-0 flex items-center justify-center px-4 text-center" style={{ height: '33%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}>
+                          <div className="text-white text-xl whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
+                            {formatHeading(headingText)}
+                          </div>
+                        </div>
+                        {/* Fase indicator */}
+                        <div className="absolute bottom-1 right-2 text-white/50 text-xs" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{currentFase}</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
+              </div>
+            </div>
+
+            {/* Next Display (43%) */}
+            <div className="flex flex-col">
+              <div>
+                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
+                  {renderNextPreview(nextMedia)}
+                </div>
+                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
+              </div>
+            </div>
+
+            {/* Fases (8%) */}
+            <div className="space-y-3 flex flex-col">
+              {phaseButtons.map((phase) => (
+                <button
+                  key={phase.label}
+                  onClick={() => handlePhaseNavigation(phase.fases[0])}
+                  className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
+                    ? 'bg-orange-600 shadow-lg'
+                    : 'bg-orange-400 hover:bg-orange-500'
+                    }`}
+                >
+                  <div>{phase.label}</div>
+                  <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-const renderSessionDetails = () => {
-  if (!selectedSession) return null;
+  const renderSessionDetails = () => {
+    if (!selectedSession) return null;
 
-  const playerNames = teamService.parsePlayerNames(selectedSession.playernames);
+    const playerNames = teamService.parsePlayerNames(selectedSession.playernames);
 
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-2xl font-medium text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{selectedSession.showname || 'Game Session'} - {selectedSession.city || 'City'}</h2>
-        </div>
-        <div className="flex gap-4">
-          <button
-            onClick={handleStartRankingGame}
-            className="bg-[#0A1752] text-white px-6 py-3 rounded-lg hover:bg-[#0A1752]/90 transition-colors font-bold text-lg"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-          >
-            Start Ranking game
-          </button>
-          <button
-            onClick={handleBackToList}
-            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-          >
-            ← Back to List
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#0A1752]/10 rounded-lg p-2 text-center">
-          <div className="text-2xl font-bold text-[#0A1752]" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_players}</div>
-          <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Players</div>
-        </div>
-        <div className="bg-[#0A1752]/10 rounded-lg p-2 text-center">
-          <div className="text-2xl font-bold text-[#0A1752]" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_teams}</div>
-          <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Teams</div>
-        </div>
-        <div className="bg-purple-50 rounded-lg p-2 text-center">
-          <div className="text-2xl font-bold text-purple-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{playerNames.length}</div>
-          <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Named Players</div>
-        </div>
-        <div className="bg-pink-50 rounded-lg p-2 text-center">
-          <div className="text-2xl font-bold text-pink-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Active</div>
-          <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Status</div>
-        </div>
-      </div>
-
-      {selectedSession.teamname && (
-        <div className="mb-4">
-          <h3 className="font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Team Name</h3>
-          <p className="text-gray-700 bg-gray-50 rounded-lg p-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.teamname}</p>
-        </div>
-      )}
-
-
-
-
-
-      {/* JSON Heading Editor */}
-      <div className="mb-6 bg-gray-50 rounded-lg p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>JSON Heading Dashboard</h3>
-          <div className="flex items-center gap-2">
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h2 className="text-2xl font-medium text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{selectedSession.showname || 'Game Session'} - {selectedSession.city || 'City'}</h2>
+          </div>
+          <div className="flex gap-4">
             <button
-              onClick={() => saveHeadings({ updateMotherfile: false })}
-              className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              onClick={handleStartRankingGame}
+              className="bg-[#0A1752] text-white px-6 py-3 rounded-lg hover:bg-[#0A1752]/90 transition-colors font-bold text-lg"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              title="Save only to this show (PocketBase)"
             >
-              Save This Show Only
+              Start Ranking game
             </button>
             <button
-              onClick={() => saveHeadings({ updateMotherfile: true })}
-              className="bg-[#0A1752] text-white px-4 py-2 rounded-lg hover:bg-[#0A1752]/90 transition-colors"
+              onClick={handleBackToList}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              title="Save to this show and update global motherfile"
             >
-              Save Global (Motherfile)
+              ← Back to List
             </button>
           </div>
         </div>
 
-        {saveBanner && (
-          <div className="mb-3 rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            {saveBanner}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-[#0A1752]/10 rounded-lg p-2 text-center">
+            <div className="text-2xl font-bold text-[#0A1752]" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_players}</div>
+            <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Players</div>
+          </div>
+          <div className="bg-[#0A1752]/10 rounded-lg p-2 text-center">
+            <div className="text-2xl font-bold text-[#0A1752]" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.nr_teams}</div>
+            <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Teams</div>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-2 text-center">
+            <div className="text-2xl font-bold text-purple-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{playerNames.length}</div>
+            <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Named Players</div>
+          </div>
+          <div className="bg-pink-50 rounded-lg p-2 text-center">
+            <div className="text-2xl font-bold text-pink-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Active</div>
+            <div className="text-sm text-gray-600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Status</div>
+          </div>
+        </div>
+
+        {selectedSession.teamname && (
+          <div className="mb-4">
+            <h3 className="font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>Team Name</h3>
+            <p className="text-gray-700 bg-gray-50 rounded-lg p-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{selectedSession.teamname}</p>
           </div>
         )}
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            Current Fase Group:
-          </label>
-          <select
-            value={getCurrentFaseGroup()}
-            onChange={(e) => {
-              const selectedGroup = e.target.value;
-              const firstFase = faseGroups[selectedGroup as keyof typeof faseGroups]?.fases[0] || '01/01';
-              setCurrentFase(firstFase);
-            }}
-            className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-gray-900"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
-          >
-            {Object.entries(faseGroups).map(([key, group]) => (
-              <option key={key} value={key}>
-                Fase {key} - {group.name}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        <div className="space-y-2">
-          {getFilteredFases().map((fase) => {
-            // Detect if this is the first fase of a group (trailer slot) — groups 2+ only
-            const groupPrefix = fase.split('/')[0];
-            const isFirstInGroup = fase.endsWith('/01') && groupPrefix !== '01';
-            const mediaLabel = isFirstInGroup ? '🎬 Trailer:' : 'Media:';
 
-            return (
-              <div key={fase} className={`bg-white rounded-lg p-3 border ${isFirstInGroup ? 'border-purple-300 bg-purple-50' : ''}`}>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div className="md:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      {fase} - Heading Text:
-                    </label>
-                    <input
-                      type="text"
-                      value={editingHeadings[fase]?.heading || ''}
-                      onChange={(e) => handleHeadingUpdate(fase, e.target.value, editingHeadings[fase]?.image)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
-                      placeholder="Enter heading text"
-                    />
-                  </div>
-                  <div className="md:col-span-1">
-                    <label className={`block text-sm font-medium mb-1 ${isFirstInGroup ? 'text-purple-700 font-bold' : 'text-gray-700'}`} style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      {mediaLabel}
-                    </label>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingHeadings[fase]?.image || ''}
-                          onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
-                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
-                          placeholder={isFirstInGroup ? 'trailer.mp4' : 'video.mp4 or image.jpg'}
-                        />
-                        <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm cursor-pointer hover:bg-gray-300 border border-gray-300 transition-colors" title="Browse for file">
-                          Browse
+
+
+        {/* JSON Heading Editor */}
+        <div className="mb-6 bg-gray-50 rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>JSON Heading Dashboard</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => saveHeadings({ updateMotherfile: false })}
+                className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                title="Save only to this show (PocketBase)"
+              >
+                Save This Show Only
+              </button>
+              <button
+                onClick={() => saveHeadings({ updateMotherfile: true })}
+                className="bg-[#0A1752] text-white px-4 py-2 rounded-lg hover:bg-[#0A1752]/90 transition-colors"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                title="Save to this show and update global motherfile"
+              >
+                Save Global (Motherfile)
+              </button>
+            </div>
+          </div>
+
+          {saveBanner && (
+            <div className="mb-3 rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              {saveBanner}
+            </div>
+          )}
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              Current Fase Group:
+            </label>
+            <select
+              value={getCurrentFaseGroup()}
+              onChange={(e) => {
+                const selectedGroup = e.target.value;
+                const firstFase = faseGroups[selectedGroup as keyof typeof faseGroups]?.fases[0] || '01/01';
+                setCurrentFase(firstFase);
+              }}
+              className="w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-gray-900"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
+            >
+              {Object.entries(faseGroups).map(([key, group]) => (
+                <option key={key} value={key}>
+                  Fase {key} - {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            {getFilteredFases().map((fase) => {
+              // Detect if this is the first fase of a group (trailer slot) — groups 2+ only
+              const groupPrefix = fase.split('/')[0];
+              const isFirstInGroup = fase.endsWith('/01') && groupPrefix !== '01';
+              const mediaLabel = isFirstInGroup ? '🎬 Trailer:' : 'Media:';
+
+              return (
+                <div key={fase} className={`bg-white rounded-lg p-3 border ${isFirstInGroup ? 'border-purple-300 bg-purple-50' : ''}`}>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="md:col-span-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                        {fase} - Heading Text:
+                      </label>
+                      <input
+                        type="text"
+                        value={editingHeadings[fase]?.heading || ''}
+                        onChange={(e) => handleHeadingUpdate(fase, e.target.value, editingHeadings[fase]?.image)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
+                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
+                        placeholder="Enter heading text"
+                      />
+                    </div>
+                    <div className="md:col-span-1">
+                      <label className={`block text-sm font-medium mb-1 ${isFirstInGroup ? 'text-purple-700 font-bold' : 'text-gray-700'}`} style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                        {mediaLabel}
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
                           <input
-                            type="file"
-                            accept="image/*,video/*"
-                            className="hidden"
-                            onChange={(e) => handleStageFile(fase, e.target.files)}
+                            type="text"
+                            value={editingHeadings[fase]?.image || ''}
+                            onChange={(e) => handleHeadingUpdate(fase, editingHeadings[fase]?.heading || '', e.target.value)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] text-sm text-gray-900"
+                            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
+                            placeholder={isFirstInGroup ? 'trailer.mp4' : 'video.mp4 or image.jpg'}
                           />
-                        </label>
-                        <button
-                          onClick={() => handleUploadPictureForFase(fase)}
-                          disabled={!stagedFiles[fase] || uploadingFase === fase}
-                          className={`shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded text-white text-sm font-semibold transition-all ${stagedFiles[fase] && uploadingFase !== fase
-                            ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
-                            : 'bg-gray-400 cursor-not-allowed'
-                            }`}
-                          title="Upload selected file to pinkmilk.eu"
-                        >
-                          {uploadingFase === fase ? '...' : 'Upload'}
-                        </button>
+                          <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm cursor-pointer hover:bg-gray-300 border border-gray-300 transition-colors" title="Browse for file">
+                            Browse
+                            <input
+                              type="file"
+                              accept="image/*,video/*"
+                              className="hidden"
+                              onChange={(e) => handleStageFile(fase, e.target.files)}
+                            />
+                          </label>
+                          <button
+                            onClick={() => handleUploadPictureForFase(fase)}
+                            disabled={!stagedFiles[fase] || uploadingFase === fase}
+                            className={`shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded text-white text-sm font-semibold transition-all ${stagedFiles[fase] && uploadingFase !== fase
+                              ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
+                              : 'bg-gray-400 cursor-not-allowed'
+                              }`}
+                            title="Upload selected file to pinkmilk.eu"
+                          >
+                            {uploadingFase === fase ? '...' : 'Upload'}
+                          </button>
+                        </div>
+                        {stagedFiles[fase] && (
+                          <div className="text-[10px] text-blue-600 font-semibold animate-pulse">
+                            Ready to upload: {stagedFiles[fase].name}
+                          </div>
+                        )}
+                        {uploadResults[fase] && (
+                          <div className={`text-xs font-bold ${uploadResults[fase].ok ? 'text-green-600' : 'text-red-600'}`}>
+                            {uploadResults[fase].msg}
+                          </div>
+                        )}
                       </div>
-                      {stagedFiles[fase] && (
-                        <div className="text-[10px] text-blue-600 font-semibold animate-pulse">
-                          Ready to upload: {stagedFiles[fase].name}
-                        </div>
-                      )}
-                      {uploadResults[fase] && (
-                        <div className={`text-xs font-bold ${uploadResults[fase].ok ? 'text-green-600' : 'text-red-600'}`}>
-                          {uploadResults[fase].msg}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
+
+
       </div>
+    );
+  };
 
+  return (
+    <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      <div className="w-full">
+        {currentView === 'list' && (
+          <div className="flex justify-end mb-8">
+            <button
+              onClick={() => setCurrentView('create')}
+              className="bg-[#0A1752] text-white px-6 py-3 rounded-lg hover:bg-[#0A1752]/90 transition-colors font-semibold"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              + Create New Session
+            </button>
+          </div>
+        )}
 
+        {currentView === 'list' && (
+          <RankingSessionList
+            onSessionSelect={handleSessionSelect}
+            refreshTrigger={refreshTrigger}
+          />
+        )}
+
+        {currentView === 'create' && (
+          <RankingSessionForm
+            onSessionCreated={handleSessionCreated}
+            onCancel={() => setCurrentView('list')}
+          />
+        )}
+
+        {currentView === 'manage' && renderSessionDetails()}
+
+        {currentView === 'game' && isClient && renderGameInterface()}
+      </div>
     </div>
   );
-};
-
-return (
-  <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-    <div className="w-full">
-      {currentView === 'list' && (
-        <div className="flex justify-end mb-8">
-          <button
-            onClick={() => setCurrentView('create')}
-            className="bg-[#0A1752] text-white px-6 py-3 rounded-lg hover:bg-[#0A1752]/90 transition-colors font-semibold"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-          >
-            + Create New Session
-          </button>
-        </div>
-      )}
-
-      {currentView === 'list' && (
-        <RankingSessionList
-          onSessionSelect={handleSessionSelect}
-          refreshTrigger={refreshTrigger}
-        />
-      )}
-
-      {currentView === 'create' && (
-        <RankingSessionForm
-          onSessionCreated={handleSessionCreated}
-          onCancel={() => setCurrentView('list')}
-        />
-      )}
-
-      {currentView === 'manage' && renderSessionDetails()}
-
-      {currentView === 'game' && isClient && renderGameInterface()}
-    </div>
-  </div>
-);
 }
