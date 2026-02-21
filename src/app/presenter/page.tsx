@@ -21,9 +21,7 @@ export default function PresenterPage() {
   const [isClient, setIsClient] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
-  const [stagedFiles, setStagedFiles] = useState<Record<string, File>>({});
-  const [uploadingFase, setUploadingFase] = useState<string | null>(null);
-  const [uploadResults, setUploadResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
+
 
   // Sync all module states from session (generic)
   useEffect(() => {
@@ -50,86 +48,6 @@ export default function PresenterPage() {
     });
     setModuleStates((prev) => ({ ...prev, ...newStates }));
   }, [selectedSession]);
-
-
-  // Stage a file locally before upload
-  const handleStageFile = (fase: string, files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const file = files[0];
-    setStagedFiles(prev => ({ ...prev, [fase]: file }));
-    // Also update the text field to show the name immediately
-    setEditingHeadings(prev => ({
-      ...prev,
-      [fase]: { heading: prev[fase]?.heading || '', image: file.name }
-    }));
-  };
-
-  // Upload a single media file via FTP to pinkmilk.eu/RankingNW
-  const handleUploadPictureForFase = async (fase: string) => {
-    const file = stagedFiles[fase];
-    if (!file) return;
-
-    setUploadingFase(fase);
-    try {
-      // Send raw binary (bypasses FormData size limit that causes 413)
-      const res = await fetch(`/api/ftp-upload?filename=${encodeURIComponent(file.name)}`, {
-        method: 'POST',
-        body: file,
-        headers: { 'Content-Type': 'application/octet-stream' },
-      });
-      let json: any = null;
-      const rawText = await res.text();
-      try {
-        json = JSON.parse(rawText);
-      } catch {
-        console.error('[Upload] Non-JSON response:', res.status, rawText.slice(0, 500));
-        throw new Error(`Upload failed (${res.status}): server returned non-JSON response`);
-      }
-
-      if (!res.ok || !json.success) {
-        const errMsg = json.error || `Upload failed (${res.status})`;
-        throw new Error(errMsg);
-      }
-
-      // Update the image field with the filename (used to resolve the public URL)
-      const updatedHeadings = {
-        ...editingHeadings,
-        [fase]: { heading: editingHeadings[fase]?.heading || '', image: file.name }
-      };
-      setEditingHeadings(updatedHeadings);
-
-      // Auto-save to PocketBase so the filename persists across page reloads
-      if (selectedSession) {
-        const headingsJson = JSON.stringify(updatedHeadings);
-        await rankingService.updateSession(selectedSession.id, { headings: headingsJson });
-        setSelectedSession(prev => prev ? { ...prev, headings: headingsJson } : null);
-      }
-
-      // Clear staged file
-      setStagedFiles(prev => {
-        const next = { ...prev };
-        delete next[fase];
-        return next;
-      });
-
-      // Per-row feedback
-      setUploadResults(prev => ({ ...prev, [fase]: { ok: true, msg: `✓ ${file.name} uploaded & saved` } }));
-      setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 5000);
-
-      setSaveBanner(`Media "${file.name}" uploaded & saved ✓`);
-      setTimeout(() => setSaveBanner(null), 3000);
-    } catch (err: any) {
-      console.error('Upload failed:', err);
-      // Per-row feedback
-      setUploadResults(prev => ({ ...prev, [fase]: { ok: false, msg: `✗ ${err.message}` } }));
-      setTimeout(() => setUploadResults(prev => { const n = { ...prev }; delete n[fase]; return n; }), 8000);
-
-      setSaveBanner(`Upload failed: ${err.message}`);
-      setTimeout(() => setSaveBanner(null), 5000);
-    } finally {
-      setUploadingFase(null);
-    }
-  };
 
   // Simplified preview for the Next panel (no upload UI, no file path)
   const renderNextPreview = (media: { type: 'video' | 'image', path: string, name: string, heading?: string, fase?: string } | null) => {
@@ -847,37 +765,7 @@ export default function PresenterPage() {
                             style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', color: '#111827' }}
                             placeholder={isFirstInGroup ? 'trailer.mp4' : 'video.mp4 or image.jpg'}
                           />
-                          <label className="shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm cursor-pointer hover:bg-gray-300 border border-gray-300 transition-colors" title="Browse for file">
-                            Browse
-                            <input
-                              type="file"
-                              accept="image/*,video/*"
-                              className="hidden"
-                              onChange={(e) => handleStageFile(fase, e.target.files)}
-                            />
-                          </label>
-                          <button
-                            onClick={() => handleUploadPictureForFase(fase)}
-                            disabled={!stagedFiles[fase] || uploadingFase === fase}
-                            className={`shrink-0 inline-flex items-center justify-center px-3 py-1.5 rounded text-white text-sm font-semibold transition-all ${stagedFiles[fase] && uploadingFase !== fase
-                              ? 'bg-blue-600 hover:bg-blue-700 shadow-md'
-                              : 'bg-gray-400 cursor-not-allowed'
-                              }`}
-                            title="Upload selected file to pinkmilk.eu"
-                          >
-                            {uploadingFase === fase ? '...' : 'Upload'}
-                          </button>
                         </div>
-                        {stagedFiles[fase] && (
-                          <div className="text-[10px] text-blue-600 font-semibold animate-pulse">
-                            Ready to upload: {stagedFiles[fase].name}
-                          </div>
-                        )}
-                        {uploadResults[fase] && (
-                          <div className={`text-xs font-bold ${uploadResults[fase].ok ? 'text-green-600' : 'text-red-600'}`}>
-                            {uploadResults[fase].msg}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
