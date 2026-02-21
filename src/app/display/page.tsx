@@ -32,11 +32,22 @@ export default function DisplayPage() {
     if (!currentSession) return;
     const newStates: Record<string, string> = {};
     Object.values(FASES).forEach((mod) => {
-      if (mod.stateField) {
-        const json = (currentSession as Record<string, unknown>)[mod.stateField];
-        if (typeof json === 'string' && json) {
-          newStates[mod.stateField] = json;
-        }
+      const sf = mod.stateField;
+      if (!sf) return;
+
+      let json = (currentSession as Record<string, unknown>)[sf];
+
+      if (!json && currentSession.headings) {
+        try {
+          const hObj = typeof currentSession.headings === 'string' ? JSON.parse(currentSession.headings) : currentSession.headings;
+          if (hObj[sf]) {
+            json = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
+          }
+        } catch (e) { }
+      }
+
+      if (typeof json === 'string' && json) {
+        newStates[sf] = json;
       }
     });
     setModuleStates((prev) => ({ ...prev, ...newStates }));
@@ -188,7 +199,15 @@ export default function DisplayPage() {
       v.volume = 1;
       const p = v.play();
       if (p && typeof (p as Promise<void>).then === 'function') {
-        (p as Promise<void>).then(() => {/* ok */ }).catch(() => {/* blocked if not userEnabledSound */ });
+        (p as Promise<void>).then(() => {/* ok */ }).catch(() => {
+          // Fallback logic for Safari/iOS:
+          // If unmuted autoplay throws a NotAllowedError,
+          // mute it and play again instantly to at least show the video.
+          v.muted = true;
+          v.play().catch(() => {
+            console.log('[Display] Genuine autoplay failure (even muted)');
+          });
+        });
       }
     } catch {
       // ignore; overlay is on intro screen only
