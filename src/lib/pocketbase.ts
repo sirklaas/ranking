@@ -438,8 +438,31 @@ export const faseService = {
       }
       // ONLY overwrite the default image if the DB explicitly gives a strictly non-empty string.
       // (This inherently fixes old databases where images were accidentally empty/broken strings)
-      if (val.image && typeof val.image === 'string' && val.image.trim() !== '') {
-        merged[key].image = val.image;
+      if (val.image !== undefined && typeof val.image === 'string') {
+        let fixedImage = val.image.trim();
+
+        // Recover explicit defaults that were saved without extensions
+        const defaultImage = DEFAULT_HEADINGS[key]?.image;
+        if (defaultImage && typeof defaultImage === 'string') {
+          const dropExt = (f: string) => f.replace(/\.[^/.]+$/, '').toLowerCase();
+          if (dropExt(fixedImage) === dropExt(defaultImage)) {
+            fixedImage = defaultImage;
+          }
+        }
+
+        // Auto-fix other specific legacy mapping names previously saved to DB
+        const extraMappings: Record<string, string> = {
+          'trailerzitten': 'TrailerZitten.mp4',
+          'trailertop3': 'TrailerTop3.mp4',
+          'trailerkrakende': 'KrakendeKarakters.mp4',
+          'trailertop10': 'Top10.mp4'
+        };
+        if (extraMappings[fixedImage.toLowerCase()]) {
+          fixedImage = extraMappings[fixedImage.toLowerCase()];
+        }
+
+        // If the user explicitly cleared it or provided a value, respect it.
+        merged[key].image = fixedImage;
       }
     }
 
