@@ -7,6 +7,7 @@ import { getVoterNames } from '@/modules/top3/logic';
 interface Top3DisplayProps {
   state: Top3State;
   heading?: string;
+  mediaUrl?: string;
 }
 
 // Donut chart colors for top 3
@@ -114,14 +115,15 @@ function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: st
         return (
           <div
             key={name}
-            className="px-5 py-3 rounded-xl text-lg font-bold transition-all duration-700"
+            className="px-5 py-3 rounded-xl text-lg font-bold transition-all duration-700 pointer-events-none"
             style={{
               fontFamily: 'Barlow Semi Condensed, sans-serif',
-              backgroundColor: hasVoted ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.15)',
-              color: hasVoted ? 'rgba(255,255,255,0.1)' : 'white',
-              transform: hasVoted ? 'scale(0.8)' : 'scale(1)',
-              border: hasVoted ? '2px solid transparent' : '2px solid rgba(255,255,255,0.2)',
-              animation: `top3NameIn 0.4s ease-out ${i * 40}ms both`,
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              opacity: hasVoted ? 0 : 1,
+              transform: hasVoted ? 'scale(0)' : 'scale(1)',
+              border: '2px solid rgba(255,255,255,0.2)',
+              animation: hasVoted ? 'none' : `top3NameIn 0.4s ease-out ${i * 40}ms both`,
             }}
           >
             {name}
@@ -191,7 +193,7 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   );
 }
 
-export default function Top3Display({ state, heading }: Top3DisplayProps) {
+export default function Top3Display({ state, heading, mediaUrl }: Top3DisplayProps) {
   const phase = state.currentQuestion.phase;
   const votedNames = getVoterNames(state);
   const [animateResults, setAnimateResults] = useState(false);
@@ -249,7 +251,25 @@ export default function Top3Display({ state, heading }: Top3DisplayProps) {
 
       {/* Main content */}
       <div className="flex-1 flex items-center justify-center p-8">
-        {phase === 'results' ? (
+        {phase === 'intro' ? (
+          <div className="flex flex-col items-center justify-center w-full">
+            {mediaUrl && (
+              <div
+                className="rounded-2xl shadow-2xl overflow-hidden"
+                style={{
+                  animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
+                  animationDelay: '0.2s',
+                }}
+              >
+                {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
+                  <video src={mediaUrl} className="max-w-full max-h-[50vh] object-contain" autoPlay muted loop playsInline />
+                ) : (
+                  <img src={mediaUrl} alt="Intro Media" className="max-w-full max-h-[50vh] object-contain" />
+                )}
+              </div>
+            )}
+          </div>
+        ) : phase === 'results' ? (
           <ResultsView results={state.currentQuestion.results} animate={animateResults} />
         ) : (
           <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />

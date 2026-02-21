@@ -9,6 +9,8 @@ interface Top10PlayerProps {
     playerId: string;
     playerName: string;
     teamNumber: number;
+    heading?: string;
+    mediaUrl?: string;
     onVote: (chosenPlayerId: string, chosenPlayerName: string) => void;
 }
 
@@ -17,6 +19,8 @@ export default function Top10Player({
     playerId,
     playerName,
     teamNumber,
+    heading,
+    mediaUrl,
     onVote,
 }: Top10PlayerProps) {
     const [query, setQuery] = useState('');
@@ -144,22 +148,53 @@ export default function Top10Player({
 
     // Waiting for voting to start
     if (!isVoting) {
+        const isVideoMedia = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
         return (
             <div
-                className="min-h-screen flex flex-col items-center justify-center p-6"
+                className="min-h-screen flex flex-col items-center justify-center overflow-hidden"
                 style={{
                     fontFamily: 'Barlow Semi Condensed, sans-serif',
                     background:
-                        'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
+                        'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
                 }}
             >
-                <div className="text-white text-center">
-                    <div className="text-5xl mb-4">🏆</div>
-                    <h2 className="text-3xl font-bold mb-2">Top 10</h2>
-                    <p className="text-lg opacity-60">
-                        Wacht tot het stemmen begint...
-                    </p>
+                {/* Logo band */}
+                <div
+                    className="relative w-full bg-cover bg-center bg-no-repeat shrink-0 top-0 left-0"
+                    style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
+                >
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-full max-h-28 w-auto object-contain p-2" />
+                    </div>
                 </div>
+
+                {/* Heading */}
+                {heading && (
+                    <div className="text-center px-6 pt-6 pb-2 w-full">
+                        <h1 className="text-white text-2xl leading-snug whitespace-pre-line" style={{ fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+                            {heading}
+                        </h1>
+                    </div>
+                )}
+
+                {/* Media image or video */}
+                {mediaUrl && !isVideoMedia && (
+                    <div className="flex-1 flex w-full items-center justify-center px-6 py-4">
+                        <img src={mediaUrl} alt={heading || 'Top 10'} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" />
+                    </div>
+                )}
+
+                {mediaUrl && isVideoMedia && (
+                    <div className="flex-1 flex w-full items-center justify-center px-6 py-4">
+                        <video src={mediaUrl} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" autoPlay muted playsInline loop />
+                    </div>
+                )}
+
+                {!mediaUrl && (
+                    <div className="flex-1 flex items-center justify-center">
+                        <p className="text-white/60 text-lg">Wacht tot het stemmen begint...</p>
+                    </div>
+                )}
             </div>
         );
     }

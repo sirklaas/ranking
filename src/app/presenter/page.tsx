@@ -30,11 +30,22 @@ export default function PresenterPage() {
     if (!selectedSession) return;
     const newStates: Record<string, string> = {};
     Object.values(FASES).forEach((mod) => {
-      if (mod.stateField) {
-        const json = (selectedSession as Record<string, unknown>)[mod.stateField];
-        if (typeof json === 'string' && json) {
-          newStates[mod.stateField] = json;
-        }
+      const sf = mod.stateField;
+      if (!sf) return;
+
+      let json = (selectedSession as Record<string, unknown>)[sf];
+
+      if (!json && selectedSession.headings) {
+        try {
+          const hObj = JSON.parse(selectedSession.headings);
+          if (hObj[sf]) {
+            json = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
+          }
+        } catch (e) { }
+      }
+
+      if (typeof json === 'string' && json) {
+        newStates[sf] = json;
       }
     });
     setModuleStates((prev) => ({ ...prev, ...newStates }));
@@ -368,74 +379,7 @@ export default function PresenterPage() {
     // Load existing headings or import master template if empty
     let headings = faseService.parseHeadings(session.headings || '{}');
 
-    // If no headings exist, load from master template
-    if (Object.keys(headings).length === 0) {
-      // Try to load from master template first
-      const masterTemplate = await loadMasterTemplate();
-      if (masterTemplate) {
-        headings = masterTemplate;
-      } else {
-        // Fallback to default structure
-        headings = {
-          '01/01': { heading: 'In welk team zit je?', image: '' },
-          '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
-          '01/03': { heading: 'Wat is jouw naam?', image: '' },
-          '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'teamnaam' },
-          '01/05': { heading: 'Wat wordt jullie Teamyell? Kort maar Krachtig', image: 'teamyell' },
-          '01/06': { heading: 'Maak een Selfie Video en upload die naar PhotoCircle', image: 'selfie' },
-          '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
-          '04/01': { heading: 'Iedereen wordt wel een heel erg blij van iets dat niet algemeen als top beschouwd Wat is jouw Guilty Pleasure', image: 'trailerguilty' },
-          '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
-          '07/01': { heading: 'Blijf staan als je het met de stelling eens bent', image: 'trailerzit' },
-          '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'Super' },
-          '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'Flirt' },
-          '07/07': { heading: 'Houseparty Niks leukers dan', image: 'Houseparty' },
-          '07/08': { heading: 'Socials checken Het eerste wat ik doe', image: 'Socials' },
-          '07/09': { heading: 'Kleding Mijn hele salaris gaat op aan', image: 'Kleding' },
-          '07/10': { heading: 'In een \'all-in\' Ik zweer bij een vakantie', image: 'All-in' },
-          '07/11': { heading: 'Sauna Ik vindt dat zo vies', image: 'Sauna' },
-          '07/12': { heading: 'Met een collega Heb ik weleens wat gehad', image: 'Collega' },
-          '07/13': { heading: 'Billen Ik val echt op', image: 'Billen' },
-          '07/14': { heading: 'Gat in mijn hand Ik heb een enorm', image: 'Gat' },
-          '07/15': { heading: 'Teveel Ik drink nooit', image: 'Teveel' },
-          '10/01': { heading: 'Kies iemand uit een van de andere teams!', image: 'trailertop3' },
-          '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: '' },
-          '10/06': { heading: 'Wie is de ideale schoon- zoon of zus?', image: '' },
-          '10/07': { heading: 'Je vliegtuig stort neer in de Andes. Wie eet je als eerste op ?', image: '' },
-          '10/08': { heading: 'Wie zou je absoluut niet op je kinderen laten passen?', image: '' },
-          '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: '' },
-          '10/10': { heading: 'Wie is de grootste aansteller op het werk?', image: '' },
-          '10/11': { heading: 'Wie zou er als eerste een account aanmaken op OnlyFans?', image: '' },
-          '10/12': { heading: 'Wie vertrouw je diepste geheimen toe?', image: '' },
-          '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: '' },
-          '13/01': { heading: 'Krakende Karakters', image: 'trailerkrakende' },
-          '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
-          '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
-          '13/04': { heading: 'Minder goede Eigenschappen', image: '' },
-          '13/05': { heading: 'Resultaten Positief', image: '' },
-          '13/06': { heading: 'Resultaten Negatief', image: '' },
-          '17/01': { heading: 'De Top 10', image: 'trailertop10' },
-          '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
-          '17/05': { heading: 'Een pijnlijke pukkel op je bil waar je niet bij kan. Wie mag hem voor je uitknijpen?', image: '' },
-          '17/06': { heading: 'Wie denkt dat ie altijd gelijk heeft?', image: '' },
-          '17/07': { heading: 'Wie zou meedoen [tegen betaling uiteraard] aan de naakte fotoshoot van het Perfecte Plaatje?', image: '' },
-          '17/08': { heading: 'Wie kan er 40 dagen zonder sexs?', image: '' },
-          '17/09': { heading: 'Wie kan absoluut niet tegen zijn/haar verlies?', image: '' },
-          '17/10': { heading: 'Wie laat weleens een wind?', image: '' },
-          '17/11': { heading: 'Wie maakt de allerlelijkste Selfies ?', image: '' },
-          '17/12': { heading: 'Wie is het meest verslaafd aan Social Media?', image: '' },
-          '17/13': { heading: 'Wie krijgt de meeste bekeuringen?', image: '' },
-          '17/14': { heading: 'Jullie doen mee met Temptation Island. Wie heeft als eerste iemand tusen de lakens?', image: '' },
-          '20/01': { heading: 'De Finale', image: 'trailerfinale' }
-        };
-      }
 
-      // Auto-save the default structure to PocketBase
-      const headingsJson = JSON.stringify(headings);
-      rankingService.updateSession(session.id, {
-        headings: headingsJson
-      }).catch(error => console.error('Error auto-saving headings:', error));
-    }
 
     setEditingHeadings(headings);
     setCurrentFase(session.current_fase || '01/01');
@@ -527,25 +471,35 @@ export default function PresenterPage() {
     return Object.keys(editingHeadings).length ? editingHeadings : parsed;
   }, [selectedSession, editingHeadings]);
 
-  // Ordered fase keys for a group prefix like '01', '07', etc.
-  const getOrderedFasesForGroup = useCallback((prefix: string) => {
-    const src = getHeadingsSource();
-    const keys = Object.keys(src).filter((k) => k.startsWith(`${prefix}/`));
-    keys.sort((a, b) => {
-      const na = parseInt(a.split('/')[1] || '0', 10);
-      const nb = parseInt(b.split('/')[1] || '0', 10);
-      return na - nb;
+  // Ordered fase keys globally across explicitly configured groups
+  const getOrderedFasesGlobal = useCallback(() => {
+    const fg = {
+      '1': ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'],
+      '4': ['04/01', '04/02'],
+      '7': ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'],
+      '10': ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'],
+      '13': ['13/01', '13/02', '13/03', '13/04', '13/05', '13/06'],
+      '17': ['17/01', '17/02', '17/05', '17/06', '17/07', '17/08', '17/09', '17/10', '17/11', '17/12', '17/13', '17/14'],
+      '20': ['20/01']
+    };
+    const keys: string[] = [];
+    const orderedGroups = ['1', '4', '7', '10', '13', '17', '20'];
+    orderedGroups.forEach(g => {
+      keys.push(...(fg[g as keyof typeof fg] || []));
     });
     return keys;
-  }, [getHeadingsSource]);
+  }, []);
 
   // Build media descriptor for a specific fase key from headings/motherfile
   const getMediaForFase = useCallback((faseKey: string) => {
     const headings = getHeadingsSource();
     const item = headings[faseKey];
     if (!item?.image || item.image.trim() === '') return null;
-    const fileName = item.image;
-    const isVideo = /\.(mp4|mov|avi)$/i.test(fileName);
+    let fileName = item.image;
+
+
+
+    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(fileName);
     return {
       type: isVideo ? 'video' as const : 'image' as const,
       path: motherfileService.fileUrl(fileName),
@@ -555,29 +509,19 @@ export default function PresenterPage() {
     };
   }, [getHeadingsSource]);
 
-  const getNextFaseInGroup = useCallback((faseKey: string, prefix: string) => {
-    const ordered = getOrderedFasesForGroup(prefix);
-    let idx = ordered.indexOf(faseKey);
-    if (idx === -1) {
-      // Fallback: compare numerically on the second component
-      const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
-      idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
-    }
-    if (idx === -1) return ordered[0] || faseKey;
-    return ordered[idx + 1] || ordered[idx] || faseKey;
-  }, [getOrderedFasesForGroup]);
+  const getNextFaseGlobal = useCallback((faseKey: string) => {
+    const ordered = getOrderedFasesGlobal();
+    const idx = ordered.indexOf(faseKey);
+    if (idx === -1 || idx === ordered.length - 1) return faseKey;
+    return ordered[idx + 1];
+  }, [getOrderedFasesGlobal]);
 
-  const getPrevFaseInGroup = useCallback((faseKey: string, prefix: string) => {
-    const ordered = getOrderedFasesForGroup(prefix);
-    let idx = ordered.indexOf(faseKey);
-    if (idx === -1) {
-      // Fallback: compare numerically on the second component
-      const targetN = parseInt(faseKey.split('/')[1] || '0', 10);
-      idx = ordered.findIndex(k => parseInt(k.split('/')[1] || '0', 10) === targetN);
-    }
-    if (idx === -1) return ordered[0] || faseKey;
-    return ordered[idx - 1] || ordered[idx] || faseKey;
-  }, [getOrderedFasesForGroup]);
+  const getPrevFaseGlobal = useCallback((faseKey: string) => {
+    const ordered = getOrderedFasesGlobal();
+    const idx = ordered.indexOf(faseKey);
+    if (idx === -1 || idx === 0) return faseKey;
+    return ordered[idx - 1];
+  }, [getOrderedFasesGlobal]);
 
   const currentVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -586,8 +530,7 @@ export default function PresenterPage() {
     // Replace '/n' tokens with new lines
     return text.replaceAll('/n', '\n');
   };
-
-  // Generic Arrow navigation for the current group (derived from currentFase prefix)
+  // Generic Arrow navigation globally
   useEffect(() => {
     if (currentView !== 'game') return;
     const onKey = (e: KeyboardEvent) => {
@@ -597,21 +540,19 @@ export default function PresenterPage() {
       const isEditable = !!(target && (target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select'));
       if (isEditable) return;
 
-      // Support Arrow keys and bracket aliases
       const isNext = e.key === 'ArrowRight' || e.key === ']';
       const isPrev = e.key === 'ArrowLeft' || e.key === '[';
       if (!isNext && !isPrev) return;
 
       e.preventDefault();
-      const prefix = (currentFase.split('/')![0] || '').padStart(2, '0');
       if (isNext) {
-        const next = getNextFaseInGroup(currentFase, prefix);
+        const next = getNextFaseGlobal(currentFase);
         setCurrentFase(next);
         if (selectedSession) {
           rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => { });
         }
       } else if (isPrev) {
-        const prev = getPrevFaseInGroup(currentFase, prefix);
+        const prev = getPrevFaseGlobal(currentFase);
         setCurrentFase(prev);
         if (selectedSession) {
           rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => { });
@@ -620,7 +561,7 @@ export default function PresenterPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [currentView, currentFase, selectedSession, getNextFaseInGroup, getPrevFaseInGroup]);
+  }, [currentView, currentFase, selectedSession, getNextFaseGlobal, getPrevFaseGlobal]);
 
   // No presenter-side autoplay; Display page handles playback
 

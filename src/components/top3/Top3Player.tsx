@@ -39,6 +39,10 @@ export default function Top3Player({
         60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
         100% { transform: scale(1) rotate(0deg); opacity: 1; }
       }
+      @keyframes top3HeadIn {
+        0%   { opacity:0; transform: scale(0.6) translateY(20px); }
+        100% { opacity:1; transform: scale(1) translateY(0); }
+      }
     `;
     document.head.appendChild(s);
   }, []);
@@ -61,23 +65,25 @@ export default function Top3Player({
     setSubmitted(true);
   };
 
-  // Already voted or just submitted
+  // Already voted or just submitted (Show popup)
   if (alreadyVoted || submitted) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6"
+        className="min-h-screen flex flex-col p-4"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
           background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
         }}
       >
-        <div
-          className="text-center"
-          style={{ animation: 'top3PopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-        >
-          <div className="text-6xl mb-4">✅</div>
-          <p className="text-white text-3xl font-bold">Je hebt gestemd.</p>
-          <p className="text-white/50 text-sm mt-4">Wacht op de resultaten...</p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div
+            className="bg-white/10 border border-white/20 rounded-2xl p-8 text-center max-w-sm w-full shadow-2xl"
+            style={{ animation: 'top3PopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+          >
+            <div className="text-6xl mb-4">✅</div>
+            <p className="text-white text-3xl font-bold mb-2">Je hebt gestemd!</p>
+            <p className="text-white/70 text-sm">Wacht op de volgende slide.</p>
+          </div>
         </div>
       </div>
     );
@@ -125,16 +131,22 @@ export default function Top3Player({
         {/* Heading (two lines) */}
         {heading && (
           <div className="text-center px-6 pt-6 pb-2">
-            <h1 className="text-white text-2xl leading-snug whitespace-pre-line" style={{ fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
+            <h1 className="text-white text-2xl leading-snug whitespace-pre-line" style={{ fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)', animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both' }}>
               {heading}
             </h1>
           </div>
         )}
 
-        {/* Media image */}
+        {/* Media image or video */}
         {mediaUrl && !isVideoMedia && (
-          <div className="flex-1 flex items-center justify-center px-6 py-4">
+          <div className="flex-1 flex items-center justify-center px-6 py-4" style={{ animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
             <img src={mediaUrl} alt={heading || 'Top 3'} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" />
+          </div>
+        )}
+
+        {mediaUrl && isVideoMedia && (
+          <div className="flex-1 flex items-center justify-center px-6 py-4" style={{ animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
+            <video src={mediaUrl} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" autoPlay muted playsInline loop />
           </div>
         )}
 
@@ -164,43 +176,54 @@ export default function Top3Player({
         </p>
       </div>
 
-      {/* Player list with radio buttons */}
-      <div className="flex-1 overflow-y-auto pb-24 space-y-2">
-        {otherPlayers.map((name) => {
-          const isSelected = selected === name;
-          return (
-            <button
-              key={name}
-              onClick={() => handleSelect(name)}
-              className="w-full flex items-center gap-4 px-5 py-4 rounded-xl transition-all active:scale-[0.98]"
-              style={{
-                backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)',
-                border: isSelected ? '2px solid rgba(255,255,255,0.5)' : '2px solid transparent',
-              }}
-            >
-              {/* Radio button */}
-              <div
-                className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+      {/* Player list with radio buttons (Grid/Row layout) */}
+      <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex flex-col gap-3 max-w-md mx-auto">
+          {otherPlayers.map((name) => {
+            const isSelected = selected === name;
+            return (
+              <label
+                key={name}
+                className="flex items-center gap-3 p-3 rounded-xl transition-all select-none cursor-pointer"
                 style={{
-                  borderColor: isSelected ? '#4ECDC4' : 'rgba(255,255,255,0.3)',
-                  backgroundColor: isSelected ? '#4ECDC4' : 'transparent',
+                  backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)',
+                  border: isSelected ? '2px solid rgba(255,255,255,0.5)' : '2px solid transparent',
                 }}
               >
-                {isSelected && (
-                  <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                )}
-              </div>
+                {/* Real radio button visually hidden but accessible */}
+                <input
+                  type="radio"
+                  name="top3vote"
+                  value={name}
+                  checked={isSelected}
+                  onChange={() => handleSelect(name)}
+                  className="hidden"
+                />
 
-              {/* Player name */}
-              <span
-                className="text-lg font-medium"
-                style={{ color: isSelected ? 'white' : 'rgba(255,255,255,0.8)' }}
-              >
-                {name}
-              </span>
-            </button>
-          );
-        })}
+                {/* Custom radio circle */}
+                <div
+                  className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                  style={{
+                    borderColor: isSelected ? '#4ECDC4' : 'rgba(255,255,255,0.3)',
+                    backgroundColor: isSelected ? '#4ECDC4' : 'transparent',
+                  }}
+                >
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-white" />
+                  )}
+                </div>
+
+                {/* Player name */}
+                <span
+                  className="text-base font-medium truncate"
+                  style={{ color: isSelected ? 'white' : 'rgba(255,255,255,0.8)' }}
+                >
+                  {name}
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       {/* Confirm button — fixed at bottom */}

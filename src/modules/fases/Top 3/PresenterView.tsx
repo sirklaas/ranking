@@ -5,7 +5,7 @@ import { Top3State } from '@/modules/top3/types';
 import * as top3Logic from '@/modules/top3/logic';
 import Top3Presenter from '@/components/top3/Top3Presenter';
 
-const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, allPlayerNames }) => {
+const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, allPlayerNames, heading, mediaUrl }) => {
   const state: Top3State = moduleStateJson
     ? JSON.parse(moduleStateJson)
     : top3Logic.getInitialState(allPlayerNames || []);
@@ -17,7 +17,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     didInit.current = true;
     const json = JSON.stringify(state);
     onModuleStateJson?.(json);
-    top3Logic.persistState(sessionId, state).catch(() => {});
+    top3Logic.persistState(sessionId, state).catch(() => { });
   }, [moduleStateJson, sessionId, state, onModuleStateJson]);
 
   if (!sessionId) return null;
@@ -26,6 +26,8 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     <Top3Presenter
       sessionId={sessionId}
       state={state}
+      heading={heading}
+      mediaUrl={mediaUrl}
       onStateChange={(newState) => onModuleStateJson?.(JSON.stringify(newState))}
     />
   );

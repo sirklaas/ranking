@@ -243,9 +243,22 @@ export default function PlayerPage() {
     // Initial parse of all registered module states
     Object.values(FASES).forEach((mod) => {
       const sf = mod.stateField;
-      if (sf && currentSession[sf]) {
+      if (!sf) return;
+
+      let jsonStr = currentSession[sf] as string | undefined;
+
+      if (!jsonStr && currentSession.headings) {
         try {
-          setModuleStates((prev) => ({ ...prev, [sf]: currentSession[sf] as string }));
+          const hObj = JSON.parse(currentSession.headings as string);
+          if (hObj[sf]) {
+            jsonStr = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
+          }
+        } catch (e) { }
+      }
+
+      if (jsonStr) {
+        try {
+          setModuleStates((prev) => ({ ...prev, [sf]: jsonStr! }));
         } catch (e) {
           console.error(`Failed to parse ${sf}`, e);
         }
@@ -256,9 +269,22 @@ export default function PlayerPage() {
       // Update all registered module states generically
       Object.values(FASES).forEach((mod) => {
         const sf = mod.stateField;
-        if (sf && data[sf]) {
+        if (!sf) return;
+
+        let jsonStr = data[sf] as string | undefined;
+
+        if (!jsonStr && data.headings) {
           try {
-            setModuleStates((prev) => ({ ...prev, [sf]: data[sf] as string }));
+            const hObj = typeof data.headings === 'string' ? JSON.parse(data.headings) : data.headings as any;
+            if (hObj[sf]) {
+              jsonStr = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
+            }
+          } catch (e) { }
+        }
+
+        if (jsonStr) {
+          try {
+            setModuleStates((prev) => ({ ...prev, [sf]: jsonStr! }));
           } catch (e) {
             console.error(`Failed to parse ${sf} update`, e);
           }
@@ -273,7 +299,7 @@ export default function PlayerPage() {
     return () => {
       unsubscribe.then((unsub: () => void) => unsub());
     };
-  }, [currentSession]);
+  }, [currentSession?.id]);
 
   const closePopup = () => {
     // Fade out popup, then start fase 01/02
@@ -327,11 +353,14 @@ export default function PlayerPage() {
   // Render module PlayerView if a registered fase module matches the current fase
   if (currentSession?.current_fase) {
     const mod = findFaseModule(currentSession.current_fase);
-    if (mod?.PlayerView && (!mod.stateField || moduleStates[mod.stateField])) {
+    if (mod?.PlayerView) {
       const allPlayerNames = teamService.parsePlayerNames(currentSession.playernames as string);
       const headingsJson = currentSession.headings as string || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
-      const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
+      let imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
+
+
+
       const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
       return (
         <mod.PlayerView

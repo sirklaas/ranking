@@ -8,6 +8,7 @@ const DELAY_MS = 3000; // wait for display video to finish
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [buttonsReady, setButtonsReady] = useState(false);
+  const [headingReady, setHeadingReady] = useState(false);
   const prevFaseRef = useRef(faseKey);
   const headingText = heading || 'Zitten en Staan';
 
@@ -16,10 +17,15 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
     if (faseKey !== prevFaseRef.current) {
       setChoice(null);
       setButtonsReady(false);
+      setHeadingReady(false);
       prevFaseRef.current = faseKey;
     }
-    const timer = setTimeout(() => setButtonsReady(true), DELAY_MS);
-    return () => clearTimeout(timer);
+    const btnTimer = setTimeout(() => setButtonsReady(true), DELAY_MS);
+    const headingTimer = setTimeout(() => setHeadingReady(true), 4000);
+    return () => {
+      clearTimeout(btnTimer);
+      clearTimeout(headingTimer);
+    };
   }, [faseKey]);
 
   // Inject keyframe animations once
@@ -100,9 +106,12 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
       </div>
 
       {/* Heading */}
-      <div className="text-center px-6 pt-6 pb-2">
+      <div
+        className="text-center px-6 pt-6 pb-2 transition-opacity duration-1000"
+        style={{ opacity: headingReady ? 1 : 0 }}
+      >
         <h1
-          className="text-white text-2xl leading-snug"
+          className="text-white text-3xl leading-snug"
           style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
         >
           {headingText}
@@ -116,31 +125,47 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
             className="flex gap-6 w-full max-w-md"
             style={{ animation: 'zsFadeUp 0.5s ease-out both' }}
           >
-            <button
-              onClick={() => setChoice('red')}
-              className="flex-1 aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-              style={{
-                background: 'linear-gradient(145deg, #e53e3e, #c53030)',
-                border: '4px solid rgba(255,255,255,0.3)',
-              }}
-            >
-              <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
-                🔴
-              </span>
-            </button>
+            <div className="flex-1 flex flex-col items-center gap-3">
+              <button
+                onClick={() => setChoice('red')}
+                className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                style={{
+                  background: 'linear-gradient(145deg, #e53e3e, #c53030)',
+                  border: '4px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
+                  🔴
+                </span>
+              </button>
+              <div
+                className="text-white font-bold text-2xl tracking-wide uppercase"
+                style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                Oneens
+              </div>
+            </div>
 
-            <button
-              onClick={() => setChoice('blue')}
-              className="flex-1 aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-              style={{
-                background: 'linear-gradient(145deg, #3182ce, #2b6cb0)',
-                border: '4px solid rgba(255,255,255,0.3)',
-              }}
-            >
-              <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
-                🔵
-              </span>
-            </button>
+            <div className="flex-1 flex flex-col items-center gap-3">
+              <button
+                onClick={() => setChoice('blue')}
+                className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                style={{
+                  background: 'linear-gradient(145deg, #3182ce, #2b6cb0)',
+                  border: '4px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
+                  🔵
+                </span>
+              </button>
+              <div
+                className="text-white font-bold text-2xl tracking-wide uppercase"
+                style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                Eens
+              </div>
+            </div>
           </div>
         ) : (
           <div className="text-white/60 text-lg text-center" style={{ animation: 'zsPulse 1.5s ease-in-out infinite' }}>

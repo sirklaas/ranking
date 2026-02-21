@@ -215,12 +215,26 @@ export default function DisplayPage() {
 
         // Parse all registered module states generically
         Object.values(FASES).forEach((mod) => {
-          if (mod.stateField && rec[mod.stateField]) {
+          const sf = mod.stateField;
+          if (!sf) return;
+
+          let jsonStr = rec[sf] as string | undefined;
+
+          // Fallback: If PB dropped it, unpack from 'headings'
+          if (!jsonStr && rec.headings) {
             try {
-              const json = rec[mod.stateField] as string;
-              setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json }));
+              const hObj = JSON.parse(rec.headings);
+              if (hObj[sf]) {
+                jsonStr = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
+              }
+            } catch (e) { }
+          }
+
+          if (jsonStr) {
+            try {
+              setModuleStates((prev) => ({ ...prev, [sf]: jsonStr! }));
             } catch (e) {
-              console.error(`[Display] Failed to parse ${mod.stateField}`, e);
+              console.error(`[Display] Failed to parse ${sf}`, e);
             }
           }
         });
@@ -250,7 +264,7 @@ export default function DisplayPage() {
         // ignore
       }
     };
-  }, [currentSession]);
+  }, [currentSession?.id]);
 
   // Compute current media whenever session/current_fase or motherMeta changes
   useEffect(() => {
@@ -262,19 +276,14 @@ export default function DisplayPage() {
       return;
     }
     const item = headings[faseKey];
-    const fileName = item?.image?.trim();
+    let fileName = item?.image?.trim() || '';
 
-    const PINKMILK_BASE = 'https://www.pinkmilk.eu/RankingNW';
 
-    // Helper: resolve media filename to pinkmilk.eu URL
+
     const resolveMedia = (name: string) => {
-      if (/^https?:\/\//i.test(name)) return name; // absolute URL
-      return `${PINKMILK_BASE}/${encodeURIComponent(name)}`;
-    };
-
-    const resolveFromLocal = (name: string) => {
       if (!name) return '';
-      return `/pics/${name}`; // requires file to exist under public/pics
+      if (/^https?:\/\//i.test(name)) return name; // absolute URL
+      return `/pics/${encodeURIComponent(name)}`;
     };
 
     if (!fileName) {
@@ -286,10 +295,9 @@ export default function DisplayPage() {
 
     const isVideo = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(fileName);
     const mediaUrl = resolveMedia(fileName);
-    const localUrl = resolveFromLocal(fileName);
 
-    console.log('[Display] Resolved media from pinkmilk.eu', { faseKey, fileName, isVideo, mediaUrl });
-    setCurrentMedia({ url: mediaUrl, name: fileName, type: isVideo ? 'video' : 'image', fallbackLocalUrl: localUrl });
+    console.log('[Display] Resolved media from local pics folder', { faseKey, fileName, isVideo, mediaUrl });
+    setCurrentMedia({ url: mediaUrl, name: fileName, type: isVideo ? 'video' : 'image', fallbackLocalUrl: mediaUrl });
 
     // Add a light-weight preload hint for smoother start
     try {
@@ -349,31 +357,35 @@ export default function DisplayPage() {
 
   // Render module DisplayView if a registered fase module matches the current fase
   if (currentSession?.current_fase) {
-    const mod = findFaseModule(currentSession.current_fase);
+    let mod = findFaseModule(currentSession.current_fase);
+
+    // Display explicitly skips rendering early phases or trailers if configured
+    if (mod && currentSession.current_fase) {
+      const [group, subStr] = currentSession.current_fase.split('/');
+      const subNum = parseInt(subStr, 10);
+      const modSub = parseInt(mod.key.split('/')[1], 10);
+
+      if (mod.skipTrailer && subNum === 1) {
+        mod = undefined;
+      } else if (subNum < modSub) {
+        mod = undefined;
+      }
+    }
+
     if (mod?.DisplayView && (!mod.stateField || moduleStates[mod.stateField])) {
-      // Check if module state indicates intro phase — if so, skip module and let normal overlay handle it
-      let moduleWantsDisplay = true;
-      if (mod.stateField && moduleStates[mod.stateField]) {
-        try {
-          const parsed = JSON.parse(moduleStates[mod.stateField]);
-          if (parsed?.currentQuestion?.phase === 'intro') moduleWantsDisplay = false;
-        } catch { /* use module view */ }
-      }
-      if (moduleWantsDisplay) {
-        const headingsJson = currentSession.headings || '{}';
-        const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
-        const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
-        const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
-        const ModDisplay = mod.DisplayView;
-        return (
-          <ModDisplay
-            faseKey={currentSession.current_fase}
-            moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-            heading={heading}
-            mediaUrl={mediaUrl}
-          />
-        );
-      }
+      const headingsJson = currentSession.headings || '{}';
+      const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
+      const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
+      const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
+      const ModDisplay = mod.DisplayView;
+      return (
+        <ModDisplay
+          faseKey={currentSession.current_fase}
+          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+          heading={heading}
+          mediaUrl={mediaUrl}
+        />
+      );
     }
   }
 
@@ -394,16 +406,26 @@ export default function DisplayPage() {
               onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
               onPlay={() => console.log('[Display] video play', currentMedia)}
               onError={(e) => {
-                console.log('[Display] video error', e);
+                console.log('[Display] video error encountered, falling back');
                 setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
               }}
-              onEnded={() => { console.log('[Display] video ended'); setCurrentMedia(null); }}
+              onTimeUpdate={(e) => {
+                const vid = e.currentTarget;
+                // Pause just before the end to prevent native black transitions on some encodings
+                if (vid.duration - vid.currentTime < 0.1 && !vid.paused) {
+                  vid.pause();
+                }
+              }}
+              onEnded={() => { console.log('[Display] video ended'); }}
             />
           ) : (
             <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />
           )}
           {/* Heading overlay in top 1/3 */}
           {(() => {
+            // "Zitten en staan" = groep 07, no headings here per request.
+            if (currentSession?.current_fase?.startsWith('07/')) return null;
+
             const headings = faseService.parseHeadings(currentSession?.headings || '{}');
             const headingText = headings[currentSession?.current_fase || '']?.heading || '';
             return headingText ? (
@@ -422,131 +444,136 @@ export default function DisplayPage() {
           })()}
         </div>
       )}
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
 
-      {/* Horizontal Band with Background + Overlaid Text and Logo */}
-      <div
-        className="relative z-10 w-full h-48 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6"
-        style={{
-          backgroundImage: 'url(/assets/band.webp)',
-          marginTop: '50px'
-        }}
-      >
-        {/* Logo - Left side of band - Much Larger */}
-        <div className="flex items-center">
-          <Image
-            src="/assets/ranking_logo.webp"
-            alt="Ranking Logo"
-            width={320}
-            height={160}
-            className="h-40 w-auto object-contain"
-            priority
-          />
-        </div>
+      {currentSession?.current_fase?.startsWith('01/') && (
+        <>
+          {/* Animated background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
 
-        {/* Centered Text Overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            Quizmaster Klaas presenteert
-          </p>
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            {currentSession.showname} - {currentSession.city}
-          </h1>
-          <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-            De teams van vandaag zijn:
-          </p>
-        </div>
+          {/* Horizontal Band with Background + Overlaid Text and Logo */}
+          <div
+            className="relative z-10 w-full h-48 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6"
+            style={{
+              backgroundImage: 'url(/assets/band.webp)',
+              marginTop: '50px'
+            }}
+          >
+            {/* Logo - Left side of band - Much Larger */}
+            <div className="flex items-center">
+              <Image
+                src="/assets/ranking_logo.webp"
+                alt="Ranking Logo"
+                width={320}
+                height={160}
+                className="h-40 w-auto object-contain"
+                priority
+              />
+            </div>
 
-        {/* QR Code - Right side of band (bigger) */}
-        <div className="bg-white p-2 rounded-lg shadow-lg">
-          <Image
-            src={qrCodeUrl}
-            alt="Join Game QR Code"
-            width={160}
-            height={160}
-            className="w-40 h-40"
-            unoptimized
-          />
-        </div>
-      </div>
+            {/* Centered Text Overlay */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+                Quizmaster Klaas presenteert
+              </p>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+                {currentSession.showname} - {currentSession.city}
+              </h1>
+              <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+                De teams van vandaag zijn:
+              </p>
+            </div>
 
-      <div className="relative z-10 w-full px-4 py-8">
+            {/* QR Code - Right side of band (bigger) */}
+            <div className="bg-white p-2 rounded-lg shadow-lg">
+              <Image
+                src={qrCodeUrl}
+                alt="Join Game QR Code"
+                width={160}
+                height={160}
+                className="w-40 h-40"
+                unoptimized
+              />
+            </div>
+          </div>
 
-        {/* Teams Display - Single Row Layout */}
-        <div className="flex justify-center items-start overflow-hidden w-full px-2">
-          {Array.from({ length: currentSession.nr_teams }, (_, index) => {
-            const teamNumber = index + 1;
-            const teamPlayers = playersByTeam[teamNumber] || [];
+          <div className="relative z-10 w-full px-4 py-8">
 
-            return (
-              <div
-                key={teamNumber}
-                className="flex flex-col items-center flex-shrink-0"
-                style={{
-                  width: `calc((100vw - 2rem) / ${currentSession.nr_teams})`,
-                  maxWidth: 'none',
-                  padding: '0 4px'
-                }}
-              >
-                {/* Team Circle with 15px outline */}
-                <div
-                  className="bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
-                  style={{
-                    width: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
-                    height: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
-                    border: '12px solid black',
-                    minWidth: '80px',
-                    minHeight: '80px'
-                  }}
-                >
-                  <span
-                    className="font-bold text-black text-2xl"
+            {/* Teams Display - Single Row Layout */}
+            <div className="flex justify-center items-start overflow-hidden w-full px-2">
+              {Array.from({ length: currentSession.nr_teams }, (_, index) => {
+                const teamNumber = index + 1;
+                const teamPlayers = playersByTeam[teamNumber] || [];
+
+                return (
+                  <div
+                    key={teamNumber}
+                    className="flex flex-col items-center flex-shrink-0"
                     style={{
-                      fontSize: `min(3rem, calc((100vw - 12rem) / ${currentSession.nr_teams} * 0.35))`
+                      width: `calc((100vw - 2rem) / ${currentSession.nr_teams})`,
+                      maxWidth: 'none',
+                      padding: '0 4px'
                     }}
                   >
-                    {teamNumber}
-                  </span>
-                </div>
-
-                {/* Player Names */}
-                <div className="flex flex-col gap-1 w-full px-1">
-                  {teamPlayers.map((player, playerIndex) => (
+                    {/* Team Circle with 15px outline */}
                     <div
-                      key={playerIndex}
-                      className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden"
+                      className="bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
                       style={{
-                        fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontWeight: 500,
-                        fontSize: '1.125rem' // 1.5x bigger than text-sm (0.875rem * 1.5 ≈ 1.125rem)
+                        width: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
+                        height: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
+                        border: '12px solid black',
+                        minWidth: '80px',
+                        minHeight: '80px'
                       }}
                     >
-                      <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{player}</span>
+                      <span
+                        className="font-bold text-black text-2xl"
+                        style={{
+                          fontSize: `min(3rem, calc((100vw - 12rem) / ${currentSession.nr_teams} * 0.35))`
+                        }}
+                      >
+                        {teamNumber}
+                      </span>
                     </div>
-                  ))}
 
-                  {/* Empty slots if team has fewer players */}
-                  {teamPlayers.length === 0 && (
-                    <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                      No players yet
+                    {/* Player Names */}
+                    <div className="flex flex-col gap-1 w-full px-1">
+                      {teamPlayers.map((player, playerIndex) => (
+                        <div
+                          key={playerIndex}
+                          className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden"
+                          style={{
+                            fontFamily: 'Barlow Semi Condensed, sans-serif',
+                            fontWeight: 500,
+                            fontSize: '1.125rem' // 1.5x bigger than text-sm (0.875rem * 1.5 ≈ 1.125rem)
+                          }}
+                        >
+                          <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{player}</span>
+                        </div>
+                      ))}
+
+                      {/* Empty slots if team has fewer players */}
+                      {teamPlayers.length === 0 && (
+                        <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                          No players yet
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                  </div>
+                );
+              })}
+            </div>
 
-        {/* Footer Info */}
-        <div className="text-center mt-16 text-white/80">
-          <p className="text-lg">
-            Total Players: {Object.values(playersByTeam).flat().length} |
-            Teams: {currentSession.nr_teams} |
-            Location: {currentSession.city}
-          </p>
-        </div>
-      </div>
+            {/* Footer Info */}
+            <div className="text-center mt-16 text-white/80">
+              <p className="text-lg">
+                Total Players: {Object.values(playersByTeam).flat().length} |
+                Teams: {currentSession.nr_teams} |
+                Location: {currentSession.city}
+              </p>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Keyboard hints */}
       <div className="fixed bottom-6 left-6 z-20 text-white/40 text-xs space-y-1 pointer-events-none">

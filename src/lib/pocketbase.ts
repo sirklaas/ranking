@@ -61,8 +61,8 @@ export const motherfileService = {
   fileUrl(fileName: string) {
     if (!fileName) return '';
     if (/^https?:\/\//i.test(fileName)) return fileName;
-    // Resolve from pinkmilk.eu/RankingNW
-    return `https://www.pinkmilk.eu/RankingNW/${encodeURIComponent(fileName)}`;
+    // Resolve locally mapped directory (via public/pics)
+    return `/pics/${encodeURIComponent(fileName)}`;
   }
 };
 
@@ -184,6 +184,30 @@ export const rankingService = {
   async updateSession(id: string, data: Record<string, unknown>) {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
+
+    // Hack: PB schema might reject top3_state, top10_state, krakende_state.
+    // Pack them into the `headings` document before updating.
+    const customFields = ['top3_state', 'top10_state', 'krakende_state'];
+    const hasCustom = customFields.some(f => data[f] !== undefined);
+
+    if (hasCustom) {
+      try {
+        const rec = await pb.collection('ranking').getOne(id);
+        let headingsObj: Record<string, any> = {};
+        try { headingsObj = JSON.parse(rec.headings || '{}'); } catch (e) { }
+
+        customFields.forEach(f => {
+          if (data[f] !== undefined) {
+            headingsObj[f] = data[f];
+            delete data[f];
+          }
+        });
+        data.headings = JSON.stringify(headingsObj);
+      } catch (e) {
+        console.warn('Failed to intercept and pack custom states:', e);
+      }
+    }
+
     return await pb.collection('ranking').update(id, data);
   },
 
@@ -318,18 +342,108 @@ export const teamService = {
   }
 };
 
+// Predefined Source of Truth for frontend configurations.
+// Any keys missing from the database (or having an empty image) will seamlessly fall back to these default values.
+export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string | null }> = {
+  '01/00': { heading: 'In welk team zit je?', image: null },
+  '01/01': { heading: 'Klaar voor de\neerste vraag?', image: null },
+  '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
+  '01/03': { heading: 'Wat is jouw naam?', image: '' },
+  '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' },
+  '01/05': { heading: 'Wat wordt jullie Teamyell?', image: 'RankingKreet.mp4' },
+  '01/06': { heading: 'Maak een Selfie Video', image: 'RankingSelfie.mp4' },
+  '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
+  '02/00': { heading: 'Tijd voor\nronde 2!', image: null },
+  '04/01': { heading: 'Guilty Pleasures', image: 'GuiltyPleasure.mp4' },
+  '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
+  '07/01': { heading: 'Blijf staan als je het eens bent', image: 'TrailerZitten.mp4' },
+  '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'RankingSuperfoods.m4v' },
+  '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'RankingFlirt.m4v' },
+  '07/07': { heading: 'Houseparty Niks leukers dan', image: 'RankingHouseparty.m4v' },
+  '07/08': { heading: 'Socials checken Het eerste wat ik doe', image: 'RankingSocials.m4v' },
+  '07/09': { heading: 'Kleding Mijn hele salaris gaat op aan', image: 'RankingKleding.m4v' },
+  '07/10': { heading: 'In een \'all-in\' vakantie', image: 'All-In.m4v' },
+  '07/11': { heading: 'Sauna Ik vindt dat zo vies', image: 'RankingSauna.m4v' },
+  '07/12': { heading: 'Met een collega Heb ik weleens wat gehad', image: 'RankingCollega.m4v' },
+  '07/13': { heading: 'Billen Ik val echt op', image: 'RankingBillen.m4v' },
+  '07/14': { heading: 'Gat in mijn hand Ik heb een enorm', image: 'RankingGat.m4v' },
+  '07/15': { heading: 'Teveel Ik drink nooit', image: 'RankingDrink.m4v' },
+  '10/01': { heading: 'Kies iemand uit een ander team!', image: 'TrailerTop3.mp4' },
+  '10/05': { heading: 'Wie wordt er heel snel verliefd', image: '' },
+  '10/06': { heading: 'Wie is de ideale schoonzoon of zus?', image: '' },
+  '10/07': { heading: 'Vliegtuig neer in de Andes. Wie eet je eerst op?', image: '' },
+  '10/08': { heading: 'Wie zou je niet op je kinderen laten passen?', image: '' },
+  '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: '' },
+  '10/10': { heading: 'Wie is de grootste aansteller op het werk?', image: '' },
+  '10/11': { heading: 'Wie maakt als eerste een OnlyFans account?', image: '' },
+  '10/12': { heading: 'Wie vertrouw je diepste geheimen toe?', image: '' },
+  '10/13': { heading: 'Wie neem je mee naar een parenclub?', image: '' },
+  '13/01': { heading: 'Krakende Karakters', image: 'KrakendeKarakters.mp4' },
+  '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
+  '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
+  '13/04': { heading: 'Minder goede Eigenschappen', image: '' },
+  '13/05': { heading: 'Resultaten Positief', image: '' },
+  '13/06': { heading: 'Resultaten Negatief', image: '' },
+  '17/01': { heading: 'De Top 10', image: 'Top10.mp4' },
+  '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
+  '17/05': { heading: 'Wie mag een pukkel op je bil uitknijpen?', image: '' },
+  '17/06': { heading: 'Wie denkt altijd gelijk te hebben?', image: '' },
+  '17/07': { heading: 'Wie doet mee aan naakte fotoshoot?', image: '' },
+  '17/08': { heading: 'Wie kan 40 dagen zonder sex?', image: '' },
+  '17/09': { heading: 'Wie kan niet tegen verlies?', image: '' },
+  '17/10': { heading: 'Wie laat weleens een wind?', image: '' },
+  '17/11': { heading: 'Wie maakt de lelijkste Selfies?', image: '' },
+  '17/12': { heading: 'Wie is meest verslaafd aan Social Media?', image: '' },
+  '17/13': { heading: 'Wie heeft de grootste mond?', image: '' },
+  '17/14': { heading: 'Wie is de grootste drama queen?', image: '' },
+  '20/01': { heading: 'De Finale', image: 'TrailerFinale.mp4' }
+};
+
 // Fases Management Helper Functions
 export const faseService = {
-  // Parse headings JSON from PocketBase (handles both object and string)
+  // Parse DB headings and gracefully fall back to DEFAULT_HEADINGS if keys or images are empty
   parseHeadings: (headingsInput: string | Record<string, any>): Record<string, { heading: string; image?: string }> => {
+    let rawDb: Record<string, any> = {};
     try {
       if (typeof headingsInput === 'object' && headingsInput !== null) {
-        return headingsInput as Record<string, { heading: string; image?: string }>;
+        rawDb = headingsInput;
+      } else {
+        rawDb = JSON.parse(headingsInput as string) || {};
       }
-      return JSON.parse(headingsInput as string) || {};
     } catch {
-      return {};
+      rawDb = {};
     }
+
+    // Merge the static defaults with the database overrides
+    const merged: Record<string, { heading: string; image?: string }> = {};
+
+    // 1. Copy over all the defaults
+    for (const [key, val] of Object.entries(DEFAULT_HEADINGS)) {
+      merged[key] = { heading: val.heading, image: val.image || '' };
+    }
+
+    // 2. Override with DB values ONLY if they actually hold user alterations
+    for (const [key, val] of Object.entries(rawDb)) {
+      if (!val || typeof val !== 'object') continue;
+
+      // If the DB has an entry, initialize if missing
+      if (!merged[key]) {
+        merged[key] = { heading: val.heading || '', image: val.image || '' };
+        continue;
+      }
+
+      // Explicit overrides
+      if (val.heading !== undefined) {
+        merged[key].heading = val.heading;
+      }
+      // ONLY overwrite the default image if the DB explicitly gives a strictly non-empty string.
+      // (This inherently fixes old databases where images were accidentally empty/broken strings)
+      if (val.image && typeof val.image === 'string' && val.image.trim() !== '') {
+        merged[key].image = val.image;
+      }
+    }
+
+    return merged;
   },
 
   // Get heading text for current fase
@@ -373,62 +487,8 @@ export const faseService = {
     return `${nextPhase.toString().padStart(2, '0')}/00`;
   },
 
-  // Create default headings JSON for a new session
+  // We no longer inject huge schemas into the DB cleanly
   createDefaultHeadings: (): string => {
-    const defaultHeadings = {
-      '01/00': { heading: 'In welk team zit je?', image: null },
-      '01/01': { heading: 'Klaar voor de\neerste vraag?', image: null },
-      '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
-      '01/03': { heading: 'Wat is jouw naam?', image: '' },
-      '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' },
-      '01/05': { heading: 'Wat wordt jullie Teamyell?', image: 'RankingKreet.mp4' },
-      '01/06': { heading: 'Maak een Selfie Video', image: 'RankingSelfie.mp4' },
-      '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
-      '02/00': { heading: 'Tijd voor\nronde 2!', image: null },
-      '04/01': { heading: 'Guilty Pleasures', image: 'trailerguilty' },
-      '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
-      '07/01': { heading: 'Blijf staan als je het eens bent', image: 'trailerzit' },
-      '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'Super' },
-      '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'Flirt' },
-      '07/07': { heading: 'Houseparty Niks leukers dan', image: 'Houseparty' },
-      '07/08': { heading: 'Socials checken Het eerste wat ik doe', image: 'Socials' },
-      '07/09': { heading: 'Kleding Mijn hele salaris gaat op aan', image: 'Kleding' },
-      '07/10': { heading: 'In een \'all-in\' vakantie', image: 'All-in' },
-      '07/11': { heading: 'Sauna Ik vindt dat zo vies', image: 'Sauna' },
-      '07/12': { heading: 'Met een collega Heb ik weleens wat gehad', image: 'Collega' },
-      '07/13': { heading: 'Billen Ik val echt op', image: 'Billen' },
-      '07/14': { heading: 'Gat in mijn hand Ik heb een enorm', image: 'Gat' },
-      '07/15': { heading: 'Teveel Ik drink nooit', image: 'Teveel' },
-      '10/01': { heading: 'Kies iemand uit een ander team!', image: 'trailertop3' },
-      '10/05': { heading: 'Wie wordt er heel snel verliefd', image: '' },
-      '10/06': { heading: 'Wie is de ideale schoonzoon of zus?', image: '' },
-      '10/07': { heading: 'Vliegtuig neer in de Andes. Wie eet je eerst op?', image: '' },
-      '10/08': { heading: 'Wie zou je niet op je kinderen laten passen?', image: '' },
-      '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: '' },
-      '10/10': { heading: 'Wie is de grootste aansteller op het werk?', image: '' },
-      '10/11': { heading: 'Wie maakt als eerste een OnlyFans account?', image: '' },
-      '10/12': { heading: 'Wie vertrouw je diepste geheimen toe?', image: '' },
-      '10/13': { heading: 'Wie neem je mee naar een parenclub?', image: '' },
-      '13/01': { heading: 'Krakende Karakters', image: 'trailerkrakende' },
-      '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
-      '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
-      '13/04': { heading: 'Minder goede Eigenschappen', image: '' },
-      '13/05': { heading: 'Resultaten Positief', image: '' },
-      '13/06': { heading: 'Resultaten Negatief', image: '' },
-      '17/01': { heading: 'De Top 10', image: 'trailertop10' },
-      '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
-      '17/05': { heading: 'Wie mag een pukkel op je bil uitknijpen?', image: '' },
-      '17/06': { heading: 'Wie denkt altijd gelijk te hebben?', image: '' },
-      '17/07': { heading: 'Wie doet mee aan naakte fotoshoot?', image: '' },
-      '17/08': { heading: 'Wie kan 40 dagen zonder sex?', image: '' },
-      '17/09': { heading: 'Wie kan niet tegen verlies?', image: '' },
-      '17/10': { heading: 'Wie laat weleens een wind?', image: '' },
-      '17/11': { heading: 'Wie maakt de lelijkste Selfies?', image: '' },
-      '17/12': { heading: 'Wie is meest verslaafd aan Social Media?', image: '' },
-      '17/13': { heading: 'Wie heeft de grootste mond?', image: '' },
-      '17/14': { heading: 'Wie is de grootste drama queen?', image: '' },
-      '20/01': { heading: 'De Finale', image: '' },
-    };
-    return JSON.stringify(defaultHeadings);
+    return '{}';
   }
 };
