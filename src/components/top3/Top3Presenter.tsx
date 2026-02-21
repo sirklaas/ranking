@@ -33,7 +33,7 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
     onStateChange(newState);
   }, [sessionId, state, onStateChange]);
 
-  // Keyboard shortcuts: V = start voting, ArrowRight = next question
+  // Keyboard shortcuts: V = start voting, R = show results
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input
@@ -49,8 +49,8 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [phase, handleStartVoting, handleShowResults]);
 
   const PHASE_LABELS = {
@@ -105,8 +105,8 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
               onClick={handleStartVoting}
               disabled={phase === 'voting' || phase === 'results'}
               className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${phase === 'voting' || phase === 'results'
-                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white'
+                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-500 text-white'
                 }`}
             >
               <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">V</span>
@@ -118,8 +118,8 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
               onClick={handleShowResults}
               disabled={phase !== 'voting'}
               className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${phase !== 'voting'
-                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                 }`}
             >
               <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">R</span>

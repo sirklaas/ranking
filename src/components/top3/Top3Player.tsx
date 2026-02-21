@@ -26,6 +26,13 @@ export default function Top3Player({
 }: Top3PlayerProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  // Reset local submitted state if questionIndex changes (prevents "Je hebt gestemd" lingering on next slide)
+  useEffect(() => {
+    setSubmitted(false);
+    setSelected(null);
+  }, [state.currentQuestion.questionIndex]);
+
   const alreadyVoted = hasPlayerVoted(state, playerId);
 
   // Inject keyframes once
@@ -57,11 +64,7 @@ export default function Top3Player({
   const handleSelect = (name: string) => {
     if (submitted || alreadyVoted) return;
     setSelected(name);
-  };
-
-  const handleConfirm = () => {
-    if (!selected || submitted || alreadyVoted) return;
-    onVote(selected, selected);
+    onVote(name, name);
     setSubmitted(true);
   };
 
@@ -236,23 +239,6 @@ export default function Top3Player({
             );
           })}
         </div>
-      </div>
-
-      {/* Confirm button — fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1752] via-[#0A1752]/95 to-transparent">
-        <button
-          onClick={handleConfirm}
-          disabled={!selected}
-          className="w-full py-4 rounded-xl text-xl font-bold transition-all active:scale-95"
-          style={{
-            backgroundColor: selected ? '#0A1752' : '#333',
-            color: 'white',
-            border: selected ? '2px solid white' : '2px solid #555',
-            opacity: selected ? 1 : 0.5,
-          }}
-        >
-          {selected ? `Bevestig: ${selected}` : 'Kies een persoon'}
-        </button>
       </div>
     </div>
   );

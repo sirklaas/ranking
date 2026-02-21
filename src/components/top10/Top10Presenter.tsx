@@ -31,7 +31,7 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
         onStateChange(newState);
     }, [sessionId, state, onStateChange]);
 
-    // Keyboard shortcuts: V = start voting, ArrowRight = next question
+    // Keyboard shortcuts: V = start voting, R = show results
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
@@ -40,15 +40,15 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                 e.preventDefault();
                 handleStartVoting();
             }
-            if (e.key === 'ArrowRight' && phase === 'results') {
+            if ((e.key === 'r' || e.key === 'R') && phase === 'voting') {
                 e.preventDefault();
-                handleNextQuestion();
+                handleShowResults();
             }
         };
 
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [phase, handleStartVoting, handleNextQuestion]);
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [phase, handleStartVoting, handleShowResults]);
 
     const PHASE_LABELS = {
         intro: 'Intro',
@@ -82,37 +82,25 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                         onClick={handleStartVoting}
                         disabled={phase === 'voting' || phase === 'results'}
                         className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${phase === 'voting' || phase === 'results'
-                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                : 'bg-blue-600 hover:bg-blue-500 text-white'
+                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-500 text-white'
                             }`}
                     >
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">V</span>
                         Start Stemmen
                     </button>
 
-                    {/* Show results */}
+                    {/* Show results (R) */}
                     <button
                         onClick={handleShowResults}
                         disabled={phase !== 'voting'}
-                        className={`px-6 py-3 rounded font-bold text-lg transition-all ${phase !== 'voting'
-                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                        className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${phase !== 'voting'
+                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white'
                             }`}
                     >
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">R</span>
                         Toon Resultaten
-                    </button>
-
-                    {/* Next question (arrow right) */}
-                    <button
-                        onClick={handleNextQuestion}
-                        disabled={phase !== 'results'}
-                        className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${phase !== 'results'
-                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                : 'bg-blue-600 hover:bg-blue-500 text-white'
-                            }`}
-                    >
-                        Volgende Vraag
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">&rarr;</span>
                     </button>
                 </div>
             </div>
