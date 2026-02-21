@@ -20,15 +20,24 @@ export const persistState = async (sessionId: string, state: Top3State): Promise
   });
 };
 
-// Start voting phase (triggered by presenter pressing V)
 export const startVoting = async (
   sessionId: string,
   currentState: Top3State
 ): Promise<Top3State> => {
+  // Always fetch fresh state to prevent race conditions
+  let freshState = currentState;
+  try {
+    const session = await rankingService.getSessionById(sessionId);
+    if (session?.headings) {
+      const hObj = JSON.parse(session.headings);
+      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    }
+  } catch (e) { }
+
   const newState: Top3State = {
-    ...currentState,
+    ...freshState,
     currentQuestion: {
-      ...currentState.currentQuestion,
+      ...freshState.currentQuestion,
       phase: 'voting',
       votes: [],
       results: [],
@@ -48,11 +57,20 @@ export const submitVote = async (
   chosenPlayerId: string,
   chosenPlayerName: string
 ): Promise<Top3State> => {
+  let freshState = currentState;
+  try {
+    const session = await rankingService.getSessionById(sessionId);
+    if (session?.headings) {
+      const hObj = JSON.parse(session.headings);
+      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    }
+  } catch (e) { }
+
   // Prevent duplicate votes
-  const alreadyVoted = currentState.currentQuestion.votes.some(
+  const alreadyVoted = freshState.currentQuestion.votes.some(
     (v) => v.voterId === voterId
   );
-  if (alreadyVoted) return currentState;
+  if (alreadyVoted) return freshState;
 
   const newVote: Top3Vote = {
     voterId,
@@ -63,12 +81,12 @@ export const submitVote = async (
     timestamp: Date.now(),
   };
 
-  const updatedVotes = [...currentState.currentQuestion.votes, newVote];
+  const updatedVotes = [...freshState.currentQuestion.votes, newVote];
 
   const newState: Top3State = {
-    ...currentState,
+    ...freshState,
     currentQuestion: {
-      ...currentState.currentQuestion,
+      ...freshState.currentQuestion,
       votes: updatedVotes,
     },
   };
@@ -101,12 +119,21 @@ export const showResults = async (
   sessionId: string,
   currentState: Top3State
 ): Promise<Top3State> => {
-  const results = computeResults(currentState.currentQuestion.votes);
+  let freshState = currentState;
+  try {
+    const session = await rankingService.getSessionById(sessionId);
+    if (session?.headings) {
+      const hObj = JSON.parse(session.headings);
+      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    }
+  } catch (e) { }
+
+  const results = computeResults(freshState.currentQuestion.votes);
 
   const newState: Top3State = {
-    ...currentState,
+    ...freshState,
     currentQuestion: {
-      ...currentState.currentQuestion,
+      ...freshState.currentQuestion,
       phase: 'results',
       results,
     },
@@ -121,10 +148,19 @@ export const nextQuestion = async (
   sessionId: string,
   currentState: Top3State
 ): Promise<Top3State> => {
-  const nextIndex = currentState.currentQuestion.questionIndex + 1;
+  let freshState = currentState;
+  try {
+    const session = await rankingService.getSessionById(sessionId);
+    if (session?.headings) {
+      const hObj = JSON.parse(session.headings);
+      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    }
+  } catch (e) { }
+
+  const nextIndex = freshState.currentQuestion.questionIndex + 1;
 
   const newState: Top3State = {
-    ...currentState,
+    ...freshState,
     currentQuestion: createEmptyQuestion(nextIndex),
   };
 

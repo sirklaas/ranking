@@ -11,7 +11,7 @@ interface Top3DisplayProps {
 }
 
 // Donut chart colors for top 3
-const DONUT_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1'];
+const DONUT_COLORS = ['#FF1E1E', '#F5B800', '#3182CE'];
 const DONUT_BG = 'rgba(255,255,255,0.08)';
 
 interface DonutSegment {
@@ -237,7 +237,19 @@ export default function Top3Display({ state, heading, mediaUrl }: Top3DisplayPro
       {mediaUrl && (
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
-            <video src={mediaUrl} className="w-full h-full object-contain" autoPlay muted loop playsInline />
+            <video
+              src={mediaUrl}
+              className="w-full h-full object-contain"
+              autoPlay
+              muted
+              playsInline
+              onTimeUpdate={(e) => {
+                const vid = e.currentTarget;
+                if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
+                  vid.pause();
+                }
+              }}
+            />
           ) : (
             <img src={mediaUrl} alt="Media Background" className="w-full h-full object-contain" />
           )}

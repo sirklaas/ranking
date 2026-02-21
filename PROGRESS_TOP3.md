@@ -9,7 +9,10 @@
 - [x] Display: Moet *alle namen* tonen (NameWall).
 - [x] Phone: Geen oude state, toont de keuzelijst met radioknoppen, klikt op naam => direct stemmen. Géén bevestigingsbutton meer. popup "Je hebt gestemd" verschijnt.
 
-## 3. Resultaten (Einde Ronde)
+## 3. Resultaten
 - [x] Presenter: Klikt "Toon Resultaten" of typt "R".
 - [x] Display: Moet 100% zeker de geanimeerde Donut grafiek en de top 3 speler percentages tonen. (Behoudt de full frame afbeelding in de achtergrond!)
 - [x] Phone: "De resultaten worden getoond - Kijk op het grote scherm!"
+
+volgende slide 
+

@@ -431,7 +431,7 @@ export default function DisplayPage() {
               onTimeUpdate={(e) => {
                 const vid = e.currentTarget;
                 // Pause just before the end to prevent native black transitions on some encodings
-                if (vid.duration - vid.currentTime < 0.1 && !vid.paused) {
+                if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
                   vid.pause();
                 }
               }}
@@ -602,7 +602,7 @@ export default function DisplayPage() {
       </div>
 
       {/* Intro-screen sound enable button (only before 01/04 and when no overlay) */}
-      {!allowMediaOverlay && (
+      {!allowMediaOverlay && !userEnabledSound && (
         <button
           onClick={() => {
             try {
