@@ -227,62 +227,64 @@ export default function Top3Display({ state, heading, mediaUrl }: Top3DisplayPro
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col relative items-center justify-center overflow-hidden"
       style={{
         fontFamily: 'Barlow Semi Condensed, sans-serif',
         background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
       }}
     >
-      {/* Heading — large, animated entrance */}
-      {heading && (
-        <div className="text-center pt-8 pb-4">
-          <h1
-            className="text-white text-7xl font-bold"
-            style={{
-              fontFamily: 'Barlow Semi Condensed, sans-serif',
-              textShadow: '0 4px 24px rgba(0,0,0,0.5)',
-              animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
-            }}
-          >
-            {heading}
-          </h1>
+      {/* Absolute full-frame media background for all phases */}
+      {mediaUrl && (
+        <div className="absolute inset-0 z-0 flex items-center justify-center">
+          {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
+            <video src={mediaUrl} className="w-full h-full object-contain" autoPlay muted loop playsInline />
+          ) : (
+            <img src={mediaUrl} alt="Media Background" className="w-full h-full object-contain" />
+          )}
+          {/* Subtle dark gradient up from bottom so names/votes stay readable */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
         </div>
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        {phase === 'intro' ? (
-          <div className="flex flex-col items-center justify-center w-full">
-            {mediaUrl && (
-              <div
-                className="rounded-2xl shadow-2xl overflow-hidden"
-                style={{
-                  animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
-                  animationDelay: '0.2s',
-                }}
-              >
-                {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
-                  <video src={mediaUrl} className="max-w-full max-h-[50vh] object-contain" autoPlay muted loop playsInline />
-                ) : (
-                  <img src={mediaUrl} alt="Intro Media" className="max-w-full max-h-[50vh] object-contain" />
-                )}
-              </div>
-            )}
+      {/* Relative content layer */}
+      <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
+        {/* Heading — large, animated entrance */}
+        {heading && (
+          <div className="text-center pt-8 pb-4">
+            <h1
+              className="text-white text-7xl font-bold"
+              style={{
+                fontFamily: 'Barlow Semi Condensed, sans-serif',
+                fontWeight: 300,
+                textShadow: '0 4px 24px rgba(0,0,0,0.8)',
+                animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
+              }}
+            >
+              {heading}
+            </h1>
           </div>
-        ) : phase === 'results' ? (
-          <ResultsView results={state.currentQuestion.results} animate={animateResults} />
-        ) : (
-          <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
         )}
-      </div>
 
-      {/* Status bar */}
-      <div className="text-center pb-6">
-        {phase === 'voting' && (
-          <div className="text-white/50 text-lg">
-            {votedNames.length} / {state.allPlayerNames.length} hebben gestemd
-          </div>
-        )}
+        {/* Main content */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          {phase === 'intro' ? (
+            // Since media is now full frame in the background, intro phase just shows the heading + background
+            <div className="flex flex-col items-center justify-center w-full"></div>
+          ) : phase === 'results' ? (
+            <ResultsView results={state.currentQuestion.results} animate={animateResults} />
+          ) : (
+            <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
+          )}
+        </div>
+
+        {/* Status bar */}
+        <div className="text-center pb-6">
+          {phase === 'voting' && (
+            <div className="text-white/80 text-xl font-medium" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+              {votedNames.length} / {state.allPlayerNames.length} hebben gestemd
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

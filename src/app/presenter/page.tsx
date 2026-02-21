@@ -23,6 +23,23 @@ export default function PresenterPage() {
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
 
 
+  // Subscribe to PB real-time updates for the active session (to show live votes arriving)
+  useEffect(() => {
+    if (!selectedSession) return;
+    type PBEvent = { record?: Partial<RankingSession> } | Partial<RankingSession>;
+    const unsub = rankingService.subscribeToRankings(async (e: unknown) => {
+      try {
+        const evt = e as PBEvent;
+        const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
+        if (!rec || rec.id !== selectedSession.id) return;
+
+        // Merge incoming PB state directly into selectedSession
+        setSelectedSession((prev) => prev ? { ...prev, ...rec } : null);
+      } catch (err) { }
+    });
+    return () => { unsub.then(u => u()).catch(() => { }); };
+  }, [selectedSession?.id]);
+
   // Sync all module states from session (generic)
   useEffect(() => {
     if (!selectedSession) return;

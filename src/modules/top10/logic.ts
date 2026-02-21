@@ -14,7 +14,7 @@ export const getInitialState = (allPlayerNames: string[] = []): Top10State => ({
 });
 
 // Persist state to PocketBase
-const persistState = async (sessionId: string, state: Top10State): Promise<void> => {
+export const persistState = async (sessionId: string, state: Top10State): Promise<void> => {
     await rankingService.updateSession(sessionId, {
         top10_state: JSON.stringify(state),
     });

@@ -5,13 +5,15 @@ import { Top3State } from '@/modules/top3/types';
 import * as top3Logic from '@/modules/top3/logic';
 import Top3Presenter from '@/components/top3/Top3Presenter';
 
-const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, allPlayerNames, heading, mediaUrl }) => {
+const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, allPlayerNames, heading, mediaUrl, faseKey }) => {
   const state: Top3State = moduleStateJson
     ? JSON.parse(moduleStateJson)
     : top3Logic.getInitialState(allPlayerNames || []);
 
-  // Auto-persist initial state to PB so display + phone can pick it up immediately
+  const prevFaseRef = useRef(faseKey);
   const didInit = useRef(false);
+
+  // Auto-persist initial state to PB so display + phone can pick it up immediately
   useEffect(() => {
     if (!sessionId || moduleStateJson || didInit.current) return;
     didInit.current = true;
@@ -19,6 +21,26 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     onModuleStateJson?.(json);
     top3Logic.persistState(sessionId, state).catch(() => { });
   }, [moduleStateJson, sessionId, state, onModuleStateJson]);
+
+  // Advance to next question automatically when faseKey changes (Next Slide navigated globally)
+  useEffect(() => {
+    if (faseKey && prevFaseRef.current && faseKey !== prevFaseRef.current && didInit.current && sessionId) {
+      if (state.currentQuestion.phase !== 'intro' || state.currentQuestion.votes.length > 0) {
+        const nextState: Top3State = {
+          ...state,
+          currentQuestion: {
+            questionIndex: state.currentQuestion.questionIndex + 1,
+            phase: 'intro',
+            votes: [],
+            results: [],
+          },
+        };
+        onModuleStateJson?.(JSON.stringify(nextState));
+        top3Logic.persistState(sessionId, nextState).catch(() => { });
+      }
+    }
+    prevFaseRef.current = faseKey;
+  }, [faseKey, sessionId, state, onModuleStateJson]);
 
   if (!sessionId) return null;
 
