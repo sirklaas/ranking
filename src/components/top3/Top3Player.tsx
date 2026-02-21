@@ -65,6 +65,25 @@ export default function Top3Player({
     setSubmitted(true);
   };
 
+  const isVideoMedia = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
+
+  // Video phase (trailer) on phone - Never play videos or show voting lists here!
+  if (isVideoMedia) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
+        style={{
+          fontFamily: 'Barlow Semi Condensed, sans-serif',
+          background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
+        }}
+      >
+        <div className="text-5xl mb-4 animate-pulse">🍿</div>
+        <h2 className="text-white text-3xl font-bold mb-2">Kijk naar het grote scherm!</h2>
+        <p className="text-white/70 text-lg">De trailer speelt daar af.</p>
+      </div>
+    );
+  }
+
   // Already voted or just submitted (Show popup)
   if (alreadyVoted || submitted) {
     return (
@@ -109,7 +128,6 @@ export default function Top3Player({
 
   // Waiting for voting to start — show branded intro with image + heading
   if (!isVoting) {
-    const isVideoMedia = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
     return (
       <div
         className="min-h-screen flex flex-col overflow-hidden"
@@ -137,16 +155,10 @@ export default function Top3Player({
           </div>
         )}
 
-        {/* Media image or video */}
-        {mediaUrl && !isVideoMedia && (
+        {/* Media image */}
+        {mediaUrl && (
           <div className="flex-1 flex items-center justify-center px-6 py-4" style={{ animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
             <img src={mediaUrl} alt={heading || 'Top 3'} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" />
-          </div>
-        )}
-
-        {mediaUrl && isVideoMedia && (
-          <div className="flex-1 flex items-center justify-center px-6 py-4" style={{ animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
-            <video src={mediaUrl} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" autoPlay muted playsInline loop />
           </div>
         )}
 
