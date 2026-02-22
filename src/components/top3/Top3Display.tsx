@@ -18,12 +18,14 @@ interface DonutSegment {
   color: string;
   percentage: number;
   offset: number;
+  originalIndex: number;
 }
 
 function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: boolean }) {
   const [progress, setProgress] = useState(0);
   const animRef = useRef<number>(0);
   const startRef = useRef<number>(0);
+  const resultsJson = JSON.stringify(results);
 
   useEffect(() => {
     if (!animate) {
@@ -50,17 +52,21 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
     };
     animRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animRef.current);
-  }, [animate, results]);
+  }, [animate, resultsJson]);
 
-  // Build segments
+  // Build segments (reverse order so lowest is drawn first)
   const totalPercentage = results.reduce((sum, r) => sum + r.percentage, 0);
   const segments: DonutSegment[] = [];
   let offset = 0;
-  results.forEach((r, i) => {
+
+  const reversed = [...results].reverse();
+  reversed.forEach((r) => {
+    const originalIndex = results.indexOf(r);
     segments.push({
-      color: DONUT_COLORS[i % DONUT_COLORS.length],
+      color: DONUT_COLORS[originalIndex % DONUT_COLORS.length],
       percentage: r.percentage,
       offset,
+      originalIndex,
     });
     offset += r.percentage;
   });
@@ -84,7 +90,8 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
         strokeWidth={strokeWidth}
       />
       {/* Segments */}
-      {segments.map((seg, i) => {
+      {segments.map((seg) => {
+        const i = seg.originalIndex;
         // Draw sequentially based on total progress (0 to 100%)
         const currentFillPercent = Math.min(Math.max((progress * 100) - seg.offset, 0), seg.percentage);
         const segLength = (currentFillPercent / 100) * circumference;

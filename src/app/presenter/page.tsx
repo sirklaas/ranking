@@ -549,6 +549,7 @@ export default function PresenterPage() {
             const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
             return (
               <mod.PresenterView
+                key={mod.stateField || currentFase}
                 faseKey={currentFase}
                 sessionId={selectedSession.id}
                 moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
