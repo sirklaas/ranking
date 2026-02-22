@@ -111,7 +111,18 @@ export const computeResults = (votes: Top3Vote[]): Top3Result[] => {
     }))
     .sort((a, b) => b.votes - a.votes);
 
-  return sorted.slice(0, 3);
+  const top3 = sorted.slice(0, 3);
+  const otherVotes = sorted.slice(3).reduce((sum, item) => sum + item.votes, 0);
+
+  if (otherVotes > 0) {
+    top3.push({
+      playerName: 'Overige spelers',
+      votes: otherVotes,
+      percentage: totalVotes > 0 ? Math.round((otherVotes / totalVotes) * 100) : 0,
+    });
+  }
+
+  return top3;
 };
 
 // Show results (presenter triggers after all votes are in)

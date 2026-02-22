@@ -10,8 +10,8 @@ interface Top3DisplayProps {
   mediaUrl?: string;
 }
 
-// Donut chart colors for top 3
-const DONUT_COLORS = ['#FF1E1E', '#F5B800', '#3182CE'];
+// Donut chart colors for top 3 + overigen
+const DONUT_COLORS = ['#FF1E1E', '#F5B800', '#3182CE', '#718096'];
 const DONUT_BG = 'rgba(255,255,255,0.08)';
 
 interface DonutSegment {
@@ -126,10 +126,16 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
               }}
             >
               {/* Leaderboard Badge */}
-              <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 14} r={28} fill={seg.color} />
-              <text x={isRightSide ? labelX + 20 : labelX - 20} y={labelY - 4} textAnchor="middle" fill="#000" fontSize="28" fontWeight="bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                {i + 1}
-              </text>
+              {results[i].playerName !== 'Overige spelers' ? (
+                <>
+                  <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 14} r={28} fill={seg.color} />
+                  <text x={isRightSide ? labelX + 20 : labelX - 20} y={labelY - 4} textAnchor="middle" fill="#000" fontSize="28" fontWeight="bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    {i + 1}
+                  </text>
+                </>
+              ) : (
+                <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 14} r={14} fill={seg.color} />
+              )}
 
               <text
                 x={isRightSide ? labelX + 60 : labelX - 60}

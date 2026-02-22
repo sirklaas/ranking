@@ -78,6 +78,29 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
             <h2 className="text-2xl font-bold text-white whitespace-pre-line">{heading}</h2>
           </div>
         )}
+
+        {/* Results preview */}
+        {phase === 'results' && state.currentQuestion.results.length > 0 && (
+          <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
+            <h4 className="text-white font-bold text-lg mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              Top 3 Resultaten
+            </h4>
+            <div className="space-y-2">
+              {state.currentQuestion.results.map((result, i) => (
+                <div key={result.playerName} className="flex items-center gap-3 bg-gray-800/50 rounded p-3">
+                  {result.playerName !== 'Overige spelers' ? (
+                    <span className="text-2xl font-bold text-yellow-400 w-8 text-center">{i + 1}</span>
+                  ) : (
+                    <span className="w-8"></span>
+                  )}
+                  <span className="text-white font-medium flex-1">{result.playerName}</span>
+                  <span className="text-blue-300 font-bold">{result.percentage}%</span>
+                  <span className="text-gray-400 text-sm">({result.votes} stemmen)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Right column: Controls and Votes */}
@@ -145,24 +168,6 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
           </div>
         )}
 
-        {/* Results preview */}
-        {phase === 'results' && state.currentQuestion.results.length > 0 && (
-          <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-            <h4 className="text-white font-bold text-lg mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Top 3 Resultaten
-            </h4>
-            <div className="space-y-2">
-              {state.currentQuestion.results.map((result, i) => (
-                <div key={result.playerName} className="flex items-center gap-3 bg-gray-800/50 rounded p-3">
-                  <span className="text-2xl font-bold text-yellow-400 w-8 text-center">{i + 1}</span>
-                  <span className="text-white font-medium flex-1">{result.playerName}</span>
-                  <span className="text-blue-300 font-bold">{result.percentage}%</span>
-                  <span className="text-gray-400 text-sm">({result.votes} stemmen)</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
