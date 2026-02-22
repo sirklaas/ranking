@@ -289,7 +289,7 @@ export default function Top3Display({ state, heading, mediaUrl }: Top3DisplayPro
             // Since media is now full frame in the background, intro phase just shows the heading + background
             <div className="flex flex-col items-center justify-center w-full"></div>
           ) : phase === 'results' ? (
-            <ResultsView results={state.currentQuestion.results} animate={animateResults} />
+            <ResultsView results={state.currentQuestion.results || []} animate={animateResults} />
           ) : (
             <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
           )}

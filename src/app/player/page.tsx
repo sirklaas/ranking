@@ -180,7 +180,7 @@ export default function PlayerPage() {
     }
   }, [currentSession]);
 
-  // Hook for test phones auto-login
+  // Hook for test phones auto-login and real player localStorage persistence
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -191,6 +191,22 @@ export default function PlayerPage() {
         setSelectedPlayerName(testName);
         setShowTeamInfo(true);
         setCurrentPhase('complete');
+        return; // Skip localStorage for test accounts
+      }
+
+      // Load real player from localStorage
+      const savedStr = localStorage.getItem('rankingPlayerData');
+      if (savedStr) {
+        try {
+          const saved = JSON.parse(savedStr);
+          if (saved.playerName && saved.teamNumber) {
+            setTeamNumber(saved.teamNumber);
+            setSelectedPlayerName(saved.playerName);
+            setHasPhotoCircleAccount(saved.hasPhotoCircle);
+            setShowTeamInfo(true);
+            setCurrentPhase('complete');
+          }
+        } catch (e) { }
       }
     }
   }, []);
