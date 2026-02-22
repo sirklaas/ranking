@@ -29,7 +29,7 @@ export const startVoting = async (
   try {
     const session = await rankingService.getSessionById(sessionId);
     if (session?.headings) {
-      const hObj = JSON.parse(session.headings);
+      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
       if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
     }
   } catch (e) { }
@@ -61,7 +61,7 @@ export const submitVote = async (
   try {
     const session = await rankingService.getSessionById(sessionId);
     if (session?.headings) {
-      const hObj = JSON.parse(session.headings);
+      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
       if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
     }
   } catch (e) { }
@@ -123,7 +123,7 @@ export const showResults = async (
   try {
     const session = await rankingService.getSessionById(sessionId);
     if (session?.headings) {
-      const hObj = JSON.parse(session.headings);
+      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
       if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
     }
   } catch (e) { }
@@ -152,7 +152,7 @@ export const nextQuestion = async (
   try {
     const session = await rankingService.getSessionById(sessionId);
     if (session?.headings) {
-      const hObj = JSON.parse(session.headings);
+      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
       if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
     }
   } catch (e) { }

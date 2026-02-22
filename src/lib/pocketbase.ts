@@ -194,7 +194,7 @@ export const rankingService = {
       try {
         const rec = await pb.collection('ranking').getOne(id);
         let headingsObj: Record<string, any> = {};
-        try { headingsObj = JSON.parse(rec.headings || '{}'); } catch (e) { }
+        try { headingsObj = typeof rec.headings === 'string' ? JSON.parse(rec.headings || '{}') : (rec.headings || {}); } catch (e) { }
 
         customFields.forEach(f => {
           if (data[f] !== undefined) {
