@@ -65,15 +65,15 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
     offset += r.percentage;
   });
 
-  const radius = 250;
+  const radius = 350;
   const circumference = 2 * Math.PI * radius;
-  const strokeWidth = 80;
-  const center = 500; // viewBox 1000x1000
+  const strokeWidth = 120;
+  const center = 600; // viewBox 1200x1200
 
   return (
     <svg
-      viewBox="0 0 1000 1000"
-      className="w-full h-full max-w-[900px] max-h-[900px] overflow-visible transition-opacity duration-300"
+      viewBox="0 0 1200 1200"
+      className="w-full h-full max-w-[1100px] max-h-[1100px] overflow-visible transition-opacity duration-300"
       style={{ opacity: animate ? 1 : 0 }}
     >
       {/* Background circle */}
@@ -269,9 +269,9 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   }, [animate]);
 
   return (
-    <div className="flex items-center justify-center w-full max-w-7xl mx-auto pb-10">
+    <div className="flex items-center justify-center w-full max-w-7xl mx-auto pb-10 mt-10">
       {/* Donut chart - Now full width with labels embedded inside */}
-      <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '800px' }}>
+      <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '1000px' }}>
         <AnimatedDonut results={results} animate={animate} />
       </div>
 
