@@ -26,7 +26,11 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
   const startRef = useRef<number>(0);
 
   useEffect(() => {
-    if (!animate || results.length === 0) {
+    if (!animate) {
+      setProgress(0); // Instantly reset progress when hidden to prevent glitch
+      return;
+    }
+    if (results.length === 0) {
       setProgress(1);
       return;
     }
@@ -35,7 +39,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
 
     const tick = (now: number) => {
       const elapsed = now - startRef.current;
-      const duration = 2000; // 2.0s animation
+      const duration = 4000; // 4.0s animation (twice as slow)
       const p = Math.min(elapsed / duration, 1);
       // Ease out cubic
       const eased = 1 - Math.pow(1 - p, 3);
@@ -67,7 +71,11 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
   const center = 500; // viewBox 1000x1000
 
   return (
-    <svg viewBox="0 0 1000 1000" className="w-full h-full max-w-[900px] max-h-[900px] overflow-visible">
+    <svg
+      viewBox="0 0 1000 1000"
+      className="w-full h-full max-w-[900px] max-h-[900px] overflow-visible transition-opacity duration-300"
+      style={{ opacity: animate ? 1 : 0 }}
+    >
       {/* Background circle */}
       <circle
         cx={center} cy={center} r={radius}
@@ -120,42 +128,73 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
             <g
               style={{
                 opacity: labelOpacity,
-                transition: 'opacity 0.4s ease-out',
-                transform: showLabel ? 'scale(1)' : 'scale(0.8)',
+                transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+                transform: showLabel ? 'scale(1) translateX(0)' : `scale(0.9) translateX(${isRightSide ? -20 : 20}px)`,
                 transformOrigin: `${labelX}px ${labelY}px`
               }}
             >
+              {/* Technical background rectangle */}
+              {results[i].playerName !== 'Overige spelers' && (
+                <g>
+                  {/* Backdrop */}
+                  <rect
+                    x={isRightSide ? labelX + 40 : labelX - 440}
+                    y={labelY - 50}
+                    width="400"
+                    height="90"
+                    rx="8"
+                    fill="rgba(0,0,0,0.6)"
+                    stroke={seg.color}
+                    strokeWidth="2"
+                    strokeOpacity={showLabel ? 0.6 : 0}
+                    style={{
+                      transition: 'stroke-opacity 1s ease-in-out 0.2s',
+                    }}
+                  />
+                  {/* Scanning line effect */}
+                  <rect
+                    x={isRightSide ? labelX + 40 : labelX - 440}
+                    y={labelY - 50}
+                    width="400"
+                    height="90"
+                    rx="8"
+                    fill={`url(#scanline-${i})`}
+                    style={{ mixBlendMode: 'overlay', opacity: 0.5 }}
+                  />
+                </g>
+              )}
+
               {/* Leaderboard Badge */}
               {results[i].playerName !== 'Overige spelers' ? (
                 <>
-                  <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 14} r={28} fill={seg.color} />
-                  <text x={isRightSide ? labelX + 20 : labelX - 20} y={labelY - 4} textAnchor="middle" fill="#000" fontSize="28" fontWeight="bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={32} fill={seg.color} stroke="rgba(255,255,255,0.2)" strokeWidth="4" />
+                  <text x={isRightSide ? labelX + 20 : labelX - 20} y={labelY + 6} textAnchor="middle" fill="#000" fontSize="30" fontWeight="900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                     {i + 1}
                   </text>
                 </>
               ) : (
-                <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 14} r={14} fill={seg.color} />
+                <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={14} fill={seg.color} />
               )}
 
               <text
-                x={isRightSide ? labelX + 60 : labelX - 60}
-                y={labelY - 18}
+                x={isRightSide ? labelX + 70 : labelX - 70}
+                y={labelY - 10}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill="white"
                 fontSize="42"
                 fontWeight="bold"
-                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
               >
                 {results[i].playerName}
               </text>
               <text
-                x={isRightSide ? labelX + 60 : labelX - 60}
-                y={labelY + 22}
+                x={isRightSide ? labelX + 70 : labelX - 70}
+                y={labelY + 26}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill={seg.color}
-                fontSize="28"
+                fontSize="26"
                 fontWeight="600"
-                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', textShadow: '0 1px 5px rgba(0,0,0,0.8)', letterSpacing: '1px' }}
               >
                 {results[i].percentage}% ({results[i].votes} {results[i].votes === 1 ? 'stem' : 'stemmen'})
               </text>
@@ -163,13 +202,29 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
           </g>
         );
       })}
+      {/* Center text backdrop */}
+      <circle cx={center} cy={center} r={radius - strokeWidth - 10} fill="rgba(0,0,0,0.3)" />
+
       {/* Center text */}
-      <text x={center} y={center - 10} textAnchor="middle" fill="white" fontSize="40" fontWeight="600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      <text x={center} y={center - 10} textAnchor="middle" fill="white" fontSize="48" fontWeight="800" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', letterSpacing: '4px' }}>
         TOP 3
       </text>
-      <text x={center} y={center + 35} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="28" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-        {totalPercentage > 0 ? `${results.reduce((s, r) => s + r.votes, 0)} votes` : ''}
+      <text x={center} y={center + 40} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="26" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', letterSpacing: '2px' }}>
+        {totalPercentage > 0 ? `${results.reduce((s, r) => s + r.votes, 0)} STEMMEN` : ''}
       </text>
+
+      {/* Defs for animations */}
+      <defs>
+        {segments.map((_, i) => (
+          <linearGradient key={`scanline-${i}`} id={`scanline-${i}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="transparent" />
+            <stop offset="50%" stopColor="rgba(255,255,255,0.1)">
+              <animate attributeName="offset" values="-1; 2" dur="2s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%" stopColor="transparent" />
+          </linearGradient>
+        ))}
+      </defs>
     </svg>
   );
 }
