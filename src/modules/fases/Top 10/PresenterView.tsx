@@ -25,7 +25,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
   }, [moduleStateJson, sessionId, state, onModuleStateJson]);
 
   useEffect(() => {
-    if (faseKey && prevFaseRef.current && faseKey !== prevFaseRef.current && didInit.current && sessionId) {
+    if (faseKey && prevFaseRef.current && faseKey !== prevFaseRef.current && sessionId) {
       if (state.currentQuestion.phase !== 'intro' || state.currentQuestion.votes.length > 0) {
         const nextState: Top10State = {
           ...state,

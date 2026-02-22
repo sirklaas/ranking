@@ -24,7 +24,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
 
   // Advance to next question automatically when faseKey changes (Next Slide navigated globally)
   useEffect(() => {
-    if (faseKey && prevFaseRef.current && faseKey !== prevFaseRef.current && didInit.current && sessionId) {
+    if (faseKey && prevFaseRef.current && faseKey !== prevFaseRef.current && sessionId) {
       if (state.currentQuestion.phase !== 'intro' || state.currentQuestion.votes.length > 0) {
         const nextState: Top3State = {
           ...state,
