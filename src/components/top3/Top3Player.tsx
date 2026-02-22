@@ -33,6 +33,14 @@ export default function Top3Player({
     setSelected(null);
   }, [state.currentQuestion.questionIndex]);
 
+  // Also reset if the server state clears the votes (e.g. game reset / presenter starts vote phase again)
+  useEffect(() => {
+    if (state.currentQuestion.votes.length === 0) {
+      setSubmitted(false);
+      setSelected(null);
+    }
+  }, [state.currentQuestion.votes.length]);
+
   const alreadyVoted = hasPlayerVoted(state, playerId);
 
   // Inject keyframes once

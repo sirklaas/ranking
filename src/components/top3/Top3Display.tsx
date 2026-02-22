@@ -61,15 +61,16 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
     offset += r.percentage;
   });
 
-  const radius = 140;
+  const radius = 250;
   const circumference = 2 * Math.PI * radius;
-  const strokeWidth = 50;
+  const strokeWidth = 80;
+  const center = 500; // viewBox 1000x1000
 
   return (
-    <svg viewBox="0 0 400 400" className="w-full h-full max-w-[400px] max-h-[400px]">
+    <svg viewBox="0 0 1000 1000" className="w-full h-full max-w-[900px] max-h-[900px] overflow-visible">
       {/* Background circle */}
       <circle
-        cx="200" cy="200" r={radius}
+        cx={center} cy={center} r={radius}
         fill="none"
         stroke={DONUT_BG}
         strokeWidth={strokeWidth}
@@ -80,25 +81,87 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
         const currentFillPercent = Math.min(Math.max((progress * 100) - seg.offset, 0), seg.percentage);
         const segLength = (currentFillPercent / 100) * circumference;
         const segOffset = (seg.offset / 100) * circumference;
+
+        // Calculate label position based on the middle of the slice
+        // offset + (percentage/2). Scale to 2PI. Subtract PI/2 because SVG starts at 3 o'clock and we rotate -90.
+        // Actually since the group is already rotated -90 via CSS/transform, 0 percent = 12 o'clock.
+        // In the unrotated coordinate system (0 = 3 o'clock), we just compute the angle and then we can let it rotate, 
+        // OR we don't rotate the circle and just start offset at -PI/2.
+        // Let's use the transform approach: the circle is rotated -90. We will place labels OUTSIDE the rotated group,
+        // so we manually calculate absolute positions. 
+        // 0% = 12 o'clock = -PI/2.
+        const midPercent = seg.offset + (seg.percentage / 2);
+        const angle = (midPercent / 100) * Math.PI * 2 - (Math.PI / 2); // 12 o'clock start
+
+        const labelRadius = radius + strokeWidth + 40; // distance from center
+        const labelX = center + Math.cos(angle) * labelRadius;
+        const labelY = center + Math.sin(angle) * labelRadius;
+
+        // Only show label if the animation has reached the middle of this slice
+        const showLabel = (progress * 100) > midPercent;
+        const labelOpacity = showLabel ? 1 : 0;
+
+        // Anchor text based on side
+        const isRightSide = Math.cos(angle) > 0;
+
         return (
-          <circle
-            key={i}
-            cx="200" cy="200" r={radius}
-            fill="none"
-            stroke={seg.color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${segLength} ${circumference - segLength}`}
-            strokeDashoffset={-segOffset}
-            strokeLinecap="round"
-            transform="rotate(-90 200 200)"
-          />
+          <g key={i}>
+            <circle
+              cx={center} cy={center} r={radius}
+              fill="none"
+              stroke={seg.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${segLength} ${circumference - segLength}`}
+              strokeDashoffset={-segOffset}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${center} ${center})`}
+            />
+            {/* Player Label */}
+            <g
+              style={{
+                opacity: labelOpacity,
+                transition: 'opacity 0.4s ease-out',
+                transform: showLabel ? 'scale(1)' : 'scale(0.8)',
+                transformOrigin: `${labelX}px ${labelY}px`
+              }}
+            >
+              {/* Leaderboard Badge */}
+              <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 14} r={28} fill={seg.color} />
+              <text x={isRightSide ? labelX + 20 : labelX - 20} y={labelY - 4} textAnchor="middle" fill="#000" fontSize="28" fontWeight="bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                {i + 1}
+              </text>
+
+              <text
+                x={isRightSide ? labelX + 60 : labelX - 60}
+                y={labelY - 18}
+                textAnchor={isRightSide ? "start" : "end"}
+                fill="white"
+                fontSize="42"
+                fontWeight="bold"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                {results[i].playerName}
+              </text>
+              <text
+                x={isRightSide ? labelX + 60 : labelX - 60}
+                y={labelY + 22}
+                textAnchor={isRightSide ? "start" : "end"}
+                fill={seg.color}
+                fontSize="28"
+                fontWeight="600"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                {results[i].percentage}% ({results[i].votes} {results[i].votes === 1 ? 'stem' : 'stemmen'})
+              </text>
+            </g>
+          </g>
         );
       })}
       {/* Center text */}
-      <text x="200" y="195" textAnchor="middle" fill="white" fontSize="18" fontWeight="600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      <text x={center} y={center - 10} textAnchor="middle" fill="white" fontSize="40" fontWeight="600" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         TOP 3
       </text>
-      <text x="200" y="220" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="14" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      <text x={center} y={center + 35} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="28" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
         {totalPercentage > 0 ? `${results.reduce((s, r) => s + r.votes, 0)} votes` : ''}
       </text>
     </svg>
@@ -145,56 +208,17 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   }, [animate]);
 
   return (
-    <div className="flex items-center justify-center gap-16 w-full max-w-5xl mx-auto">
-      {/* Donut chart */}
-      <div className="flex-shrink-0" style={{ width: '400px', height: '400px' }}>
+    <div className="flex items-center justify-center w-full max-w-7xl mx-auto pb-10">
+      {/* Donut chart - Now full width with labels embedded inside */}
+      <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '800px' }}>
         <AnimatedDonut results={results} animate={animate} />
       </div>
 
-      {/* Results list */}
-      <div className="flex flex-col gap-6">
-        {results.map((result, i) => {
-          // Calculate offset in percentages to perfectly time the label reveal with donut slice
-          let offset = 0;
-          for (let j = 0; j < i; j++) offset += results[j].percentage;
-          // When animate is active, delay matches slice execution time + 100ms
-          const delayMs = animate ? (offset / 100) * 2000 + 100 : 0;
-
-          return (
-            <div
-              key={result.playerName}
-              className="flex items-center gap-5 transition-all duration-500 ease-out"
-              style={{
-                opacity: showLabels ? 1 : 0,
-                transform: showLabels ? 'translateX(0)' : 'translateX(30px)',
-                transitionDelay: showLabels ? `${delayMs}ms` : '0ms',
-              }}
-            >
-              {/* Rank badge */}
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-gray-900 flex-shrink-0"
-                style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
-              >
-                {i + 1}
-              </div>
-              {/* Name + percentage */}
-              <div>
-                <div className="text-white text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                  {result.playerName}
-                </div>
-                <div className="text-xl font-medium" style={{ color: DONUT_COLORS[i % DONUT_COLORS.length], fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                  {result.percentage}% ({result.votes} {result.votes === 1 ? 'stem' : 'stemmen'})
-                </div>
-              </div>
-            </div>
-          );
-        })}
-        {results.length === 0 && (
-          <div className="text-white/40 text-xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            Nog geen stemmen
-          </div>
-        )}
-      </div>
+      {results.length === 0 && (
+        <div className="absolute text-white/40 text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+          Nog geen stemmen
+        </div>
+      )}
     </div>
   );
 }
