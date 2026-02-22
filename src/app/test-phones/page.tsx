@@ -19,7 +19,7 @@ export default function TestPhonesPage() {
                             <div className="absolute top-0 inset-x-0 h-6 bg-black rounded-b-xl w-40 mx-auto z-10 pointer-events-none"></div>
 
                             <iframe
-                                src="/player"
+                                src={`/player?testName=TestSpeler${i}&testTeam=${i}`}
                                 className="w-full h-full rounded-[2.5rem] bg-white"
                                 style={{ border: 'none' }}
                                 title={`Phone ${i}`}

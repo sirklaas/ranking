@@ -11,8 +11,9 @@
 
 ## 3. Resultaten
 - [x] Presenter: Klikt "Toon Resultaten" of typt "R".
-- [x] Display: Moet 100% zeker de geanimeerde Donut grafiek en de top 3 speler percentages tonen. (Behoudt de full frame afbeelding in de achtergrond!)
+- [x] Display: Moet 100% zeker de geanimeerde Donut grafiek [3 distinct bold colours en de top 3 spelers namen plus percentages tonen. (Behoudt de full frame afbeelding in de achtergrond!) animatie start als een klein gedeelte van de donut en reveald dan steeds meer tot de volledige circel met name en percentagers zichtbaar is 
 - [x] Phone: "De resultaten worden getoond - Kijk op het grote scherm!"
 
 volgende slide 
+
 

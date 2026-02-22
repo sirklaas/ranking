@@ -180,6 +180,21 @@ export default function PlayerPage() {
     }
   }, [currentSession]);
 
+  // Hook for test phones auto-login
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const testName = params.get('testName');
+      const testTeam = params.get('testTeam');
+      if (testName && testTeam) {
+        setTeamNumber(testTeam);
+        setSelectedPlayerName(testName);
+        setShowTeamInfo(true);
+        setCurrentPhase('complete');
+      }
+    }
+  }, []);
+
   // Track which heading keys have animated, so we never animate the same content twice
   const animatedKeysRef = useRef<Set<string>>(new Set());
   const startedKeysRef = useRef<Set<string>>(new Set());

@@ -35,7 +35,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
 
     const tick = (now: number) => {
       const elapsed = now - startRef.current;
-      const duration = 1500; // 1.5s animation
+      const duration = 2000; // 2.0s animation
       const p = Math.min(elapsed / duration, 1);
       // Ease out cubic
       const eased = 1 - Math.pow(1 - p, 3);
@@ -76,8 +76,10 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
       />
       {/* Segments */}
       {segments.map((seg, i) => {
-        const segLength = (seg.percentage / 100) * circumference * progress;
-        const segOffset = (seg.offset / 100) * circumference * progress;
+        // Draw sequentially based on total progress (0 to 100%)
+        const currentFillPercent = Math.min(Math.max((progress * 100) - seg.offset, 0), seg.percentage);
+        const segLength = (currentFillPercent / 100) * circumference;
+        const segOffset = (seg.offset / 100) * circumference;
         return (
           <circle
             key={i}
@@ -89,7 +91,6 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
             strokeDashoffset={-segOffset}
             strokeLinecap="round"
             transform="rotate(-90 200 200)"
-            style={{ transition: 'stroke-dasharray 0.1s ease' }}
           />
         );
       })}
@@ -139,10 +140,7 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   const [showLabels, setShowLabels] = useState(false);
 
   useEffect(() => {
-    if (animate) {
-      const timer = setTimeout(() => setShowLabels(true), 800);
-      return () => clearTimeout(timer);
-    }
+    // Show labels immediately if animate is true, CSS transitionDelay will stagger them perfectly
     setShowLabels(true);
   }, [animate]);
 
@@ -155,34 +153,42 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
 
       {/* Results list */}
       <div className="flex flex-col gap-6">
-        {results.map((result, i) => (
-          <div
-            key={result.playerName}
-            className="flex items-center gap-5 transition-all duration-500"
-            style={{
-              opacity: showLabels ? 1 : 0,
-              transform: showLabels ? 'translateX(0)' : 'translateX(30px)',
-              transitionDelay: `${i * 200}ms`,
-            }}
-          >
-            {/* Rank badge */}
+        {results.map((result, i) => {
+          // Calculate offset in percentages to perfectly time the label reveal with donut slice
+          let offset = 0;
+          for (let j = 0; j < i; j++) offset += results[j].percentage;
+          // When animate is active, delay matches slice execution time + 100ms
+          const delayMs = animate ? (offset / 100) * 2000 + 100 : 0;
+
+          return (
             <div
-              className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-gray-900 flex-shrink-0"
-              style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
+              key={result.playerName}
+              className="flex items-center gap-5 transition-all duration-500 ease-out"
+              style={{
+                opacity: showLabels ? 1 : 0,
+                transform: showLabels ? 'translateX(0)' : 'translateX(30px)',
+                transitionDelay: showLabels ? `${delayMs}ms` : '0ms',
+              }}
             >
-              {i + 1}
-            </div>
-            {/* Name + percentage */}
-            <div>
-              <div className="text-white text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                {result.playerName}
+              {/* Rank badge */}
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold text-gray-900 flex-shrink-0"
+                style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
+              >
+                {i + 1}
               </div>
-              <div className="text-xl font-medium" style={{ color: DONUT_COLORS[i % DONUT_COLORS.length], fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                {result.percentage}% ({result.votes} {result.votes === 1 ? 'stem' : 'stemmen'})
+              {/* Name + percentage */}
+              <div>
+                <div className="text-white text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  {result.playerName}
+                </div>
+                <div className="text-xl font-medium" style={{ color: DONUT_COLORS[i % DONUT_COLORS.length], fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  {result.percentage}% ({result.votes} {result.votes === 1 ? 'stem' : 'stemmen'})
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {results.length === 0 && (
           <div className="text-white/40 text-xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Nog geen stemmen
