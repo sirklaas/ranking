@@ -177,40 +177,34 @@ export default function DisplayPage() {
     };
   }, [loadSessionData]);
 
-  // Try to start playback with sound; if blocked (Safari/iOS policy), ask for user interaction
+  // Try to start playback with sound; if user enabled sound, it works natively
   useEffect(() => {
     const v = videoRef.current;
+
     // Compute locally if media overlay is allowed for the current fase
+    // We allow media overlays on basically any fase that has a video (e.g. */01 trailers or 01/04 intro)
     const faseStr = currentSession?.current_fase || '';
     const allow = (() => {
-      const m = faseStr.match(/^01\/(\d{2})$/);
-      if (m) {
-        const n = parseInt(m[1], 10);
-        return n >= 4; // allow from 01/04 and later
-      }
-      return true; // other groups unaffected
+      // Allow video trailers to play anytime they exist
+      return true;
     })();
 
     if (!currentMedia || currentMedia.type !== 'video' || !allow || !v) {
       return;
     }
+
     try {
       v.muted = false;
       v.volume = 1;
       const p = v.play();
-      if (p && typeof (p as Promise<void>).then === 'function') {
-        (p as Promise<void>).then(() => {/* ok */ }).catch(() => {
-          // Fallback logic for Safari/iOS:
-          // If unmuted autoplay throws a NotAllowedError,
-          // mute it and play again instantly to at least show the video.
-          v.muted = true;
-          v.play().catch(() => {
-            console.log('[Display] Genuine autoplay failure (even muted)');
-          });
+      if (p && typeof p.then === 'function') {
+        p.catch((e) => {
+          console.warn('[Display] Autoplay blocked by browser. User must click "Enable sound".', e);
+          // Do not mute. We want it foolproof. It waits for the user to interact.
         });
       }
-    } catch {
-      // ignore; overlay is on intro screen only
+    } catch (e) {
+      console.error('[Display] Video play error:', e);
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 
@@ -336,16 +330,8 @@ export default function DisplayPage() {
   // Generate QR code URL for joining (bigger)
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`https://ranking.pinkmilk.eu/player?code=${gameCode}`)}`;
 
-  // Only show media overlay from fase 01/04 onwards; keep intro screen before that
-  const currentFaseStr = currentSession?.current_fase || '';
-  const allowMediaOverlay = (() => {
-    const m = currentFaseStr.match(/^01\/(\d{2})$/);
-    if (m) {
-      const n = parseInt(m[1], 10);
-      return n >= 4; // allow from 01/04 and later
-    }
-    return true; // other groups unaffected
-  })();
+  // Only show media overlay if there's a file
+  const allowMediaOverlay = true;
 
   if (isLoading) {
     return (
@@ -431,9 +417,18 @@ export default function DisplayPage() {
                 // Pause just before the end to prevent native black transitions on some encodings
                 if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
                   vid.pause();
+                  // If this is the ending trailer (20/01), redirect to the standalone ending app
+                  if (currentSession?.current_fase === '20/01') {
+                    window.location.href = 'https://end.pinkmilk.eu/display.html';
+                  }
                 }
               }}
-              onEnded={() => { console.log('[Display] video ended'); }}
+              onEnded={() => {
+                console.log('[Display] video ended');
+                if (currentSession?.current_fase === '20/01') {
+                  window.location.href = 'https://end.pinkmilk.eu/display.html';
+                }
+              }}
             />
           ) : (
             <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />

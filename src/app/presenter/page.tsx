@@ -488,10 +488,15 @@ export default function PresenterPage() {
 
       e.preventDefault();
       if (isNext) {
-        const next = getNextFaseGlobal(currentFase);
+        let next = getNextFaseGlobal(currentFase);
         setCurrentFase(next);
         if (selectedSession) {
           rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => { });
+        }
+        if (next === '20/01') {
+          setTimeout(() => {
+            window.location.href = 'https://www.end.pinkmilk.eu';
+          }, 500);
         }
       } else if (isPrev) {
         const prev = getPrevFaseGlobal(currentFase);
