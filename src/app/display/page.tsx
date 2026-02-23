@@ -414,8 +414,9 @@ export default function DisplayPage() {
               }}
               onTimeUpdate={(e) => {
                 const vid = e.currentTarget;
-                // Pause just before the end to prevent native black transitions on some encodings
-                if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
+                // Pause before the end to prevent native black transitions. Increased to 0.4s 
+                // to make sure `timeupdate` fires in time before the browser hides the frame.
+                if (vid.duration - vid.currentTime < 0.4 && !vid.paused) {
                   vid.pause();
                   // If this is the ending trailer (20/01), redirect to the standalone ending app
                   if (currentSession?.current_fase === '20/01') {
