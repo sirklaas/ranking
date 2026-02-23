@@ -27,6 +27,16 @@ export const getTraitLabel = (trait: KrakendeTrait, lang: KrakendeLanguage): str
   return lang === 'nl' ? trait.nl : trait.en;
 };
 
+// Helper: split a label into roughly two halves to force two lines
+export const splitLabelForTwoLines = (label: string): [string, string] => {
+  const words = label.trim().split(' ');
+  if (words.length <= 1) return [label, ''];
+  const mid = Math.ceil(words.length / 2);
+  const line1 = words.slice(0, mid).join(' ');
+  const line2 = words.slice(mid).join(' ');
+  return [line1, line2];
+};
+
 // Shuffle traits into random order (for display reveal)
 export const shuffleTraits = (traits: KrakendeTrait[]): KrakendeTrait[] => {
   const shuffled = [...traits];

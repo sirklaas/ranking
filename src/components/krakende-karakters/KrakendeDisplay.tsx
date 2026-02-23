@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
-import { getTraitLabel, shuffleTraits } from '@/modules/krakende-karakters/logic';
+import { getTraitLabel, shuffleTraits, splitLabelForTwoLines } from '@/modules/krakende-karakters/logic';
 
 interface KrakendeDisplayProps {
   state: KrakendeState;
@@ -81,7 +81,7 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
         playPopSound();
         return next;
       });
-    }, 1500); // 1.5 seconds between each pop
+    }, 700); // 0.7 seconds between each pop
 
     return () => clearInterval(timer);
   }, [isResults, autoRevealIndex, traits.length]);
@@ -101,7 +101,7 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
         <img src="/pics/logo.png" alt="Logo" className="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
         <h1
           className="text-center text-white mb-8 drop-shadow-lg"
-          style={{ fontSize: '3.5rem', fontWeight: 700 }}
+          style={{ fontSize: '3.5rem', fontWeight: 300 }}
         >
           {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
         </h1>
@@ -112,14 +112,22 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
             return (
               <div
                 key={trait.id}
-                className="rounded-xl p-6 flex flex-col justify-center items-center shadow-lg transform transition-transform"
+                className="rounded-xl p-4 flex flex-col justify-center items-center shadow-lg transform transition-transform"
                 style={{
                   backgroundColor: color,
                   minHeight: '120px',
                 }}
               >
-                <div className="text-2xl font-bold text-gray-900 text-center uppercase">
-                  {getTraitLabel(trait, state.language)}
+                <div className="text-center uppercase w-full flex flex-col items-center justify-center font-barlow" style={{ fontWeight: 300, color: '#111' }}>
+                  {(() => {
+                    const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
+                    return (
+                      <>
+                        <span style={{ fontSize: '2.2vw', lineHeight: '1.1' }}>{line1}</span>
+                        {line2 && <span style={{ fontSize: '2.2vw', lineHeight: '1.1' }}>{line2}</span>}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             );
@@ -145,7 +153,7 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
       <img src="/pics/logo.png" alt="Logo" className="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
       <h1
         className="text-center text-white mb-6 drop-shadow-lg"
-        style={{ fontSize: '3rem', fontWeight: 700 }}
+        style={{ fontSize: '3rem', fontWeight: 300 }}
       >
         {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
       </h1>
@@ -164,9 +172,17 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
                 minHeight: '80px',
               }}
             >
-              <span className="text-lg font-bold text-gray-900">
-                {getTraitLabel(trait, state.language)}
-              </span>
+              <div className="w-full flex justify-center items-center uppercase font-barlow text-center flex-col" style={{ fontWeight: 300, color: '#111' }}>
+                {(() => {
+                  const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
+                  return (
+                    <>
+                      <span style={{ fontSize: '1.8vw', lineHeight: '1.1' }}>{line1}</span>
+                      {line2 && <span style={{ fontSize: '1.8vw', lineHeight: '1.1' }}>{line2}</span>}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           );
         })}

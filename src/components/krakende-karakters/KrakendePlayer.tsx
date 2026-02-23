@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
-import { getTraitLabel } from '@/modules/krakende-karakters/logic';
+import { getTraitLabel, splitLabelForTwoLines } from '@/modules/krakende-karakters/logic';
 
 interface KrakendePlayerProps {
   state: KrakendeState;
@@ -39,16 +39,20 @@ export default function KrakendePlayer({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
 
-  // Reset state when phase changes
+  // Reset picked state when switching around
   useEffect(() => {
     const newChoice = isPositive || state.phase === 'positive-results'
       ? mySub?.positiveTrait
       : mySub?.negativeTrait;
     setSelected(newChoice || null);
     setSubmitted(!!newChoice);
+  }, [state.phase, mySub?.positiveTrait, mySub?.negativeTrait, isPositive]);
+
+  // Only reset popup/reveal visibility when the actual phase changes
+  useEffect(() => {
     setShowConfirmation(false);
     setShowReveal(false);
-  }, [state.phase, mySub, isPositive]);
+  }, [state.phase]);
 
   const handleSelect = (traitId: string) => {
     if (submitted) return;
@@ -82,8 +86,16 @@ export default function KrakendePlayer({
             className="text-center w-full"
             style={{ animation: 'krakendePopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
           >
-            <h2 className="text-[12vw] leading-none font-bold text-gray-900 uppercase break-words w-full px-2">
-              {getTraitLabel(chosenTrait, state.language)}
+            <h2 className="text-[12vw] leading-none text-gray-900 uppercase break-words w-full px-2 font-barlow flex flex-col items-center justify-center" style={{ fontWeight: 300 }}>
+              {(() => {
+                const [line1, line2] = splitLabelForTwoLines(getTraitLabel(chosenTrait, 'nl'));
+                return (
+                  <>
+                    <span>{line1}</span>
+                    {line2 && <span>{line2}</span>}
+                  </>
+                );
+              })()}
             </h2>
           </div>
           <style jsx>{`
@@ -192,7 +204,17 @@ export default function KrakendePlayer({
                 fontSize: '0.85rem',
               }}
             >
-              {getTraitLabel(trait, state.language)}
+              <div className="flex flex-col items-center justify-center w-full font-barlow uppercase" style={{ fontWeight: 300 }}>
+                {(() => {
+                  const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
+                  return (
+                    <>
+                      <span>{line1}</span>
+                      {line2 && <span>{line2}</span>}
+                    </>
+                  );
+                })()}
+              </div>
             </button>
           );
         })}
@@ -213,7 +235,7 @@ export default function KrakendePlayer({
             }}
           >
             {selected
-              ? `Bevestig: ${getTraitLabel(traits.find((t) => t.id === selected)!, state.language)}`
+              ? `Bevestig: ${getTraitLabel(traits.find((t) => t.id === selected)!, 'nl')}`
               : 'Kies een eigenschap'}
           </button>
         </div>
