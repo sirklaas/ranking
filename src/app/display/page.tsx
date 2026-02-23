@@ -199,8 +199,9 @@ export default function DisplayPage() {
       const p = v.play();
       if (p && typeof p.then === 'function') {
         p.catch((e) => {
-          console.warn('[Display] Autoplay blocked by browser. User must click "Enable sound".', e);
-          // Do not mute. We want it foolproof. It waits for the user to interact.
+          console.warn('[Display] Autoplay blocked by browser. Falling back to muted.', e);
+          v.muted = true;
+          v.play().catch((err) => console.error('[Display] Even muted autoplay blocked:', err));
         });
       }
     } catch (e) {
@@ -595,28 +596,32 @@ export default function DisplayPage() {
         <p>Press &apos;→&apos; / &apos;←&apos; to navigate fases</p>
       </div>
 
-      {/* Intro-screen sound enable button (only before 01/04 and when no overlay) */}
-      {!allowMediaOverlay && !userEnabledSound && (
-        <button
-          onClick={() => {
-            try {
-              setUserEnabledSound(true);
-              // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported
-              const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-              const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
-              if (AC) {
-                const ctx = new AC();
-                // create and stop a silent buffer
-                const osc = ctx.createOscillator(); osc.frequency.value = 0.0001; osc.connect(ctx.destination); osc.start(0); osc.stop(0.01);
-                if (ctx.state === 'suspended') ctx.resume().catch(() => { });
-              }
-            } catch { }
-          }}
-          className="fixed bottom-6 right-6 z-20 h-10 px-4 rounded-md bg-white/95 text-black text-sm font-semibold shadow hover:bg-white"
-          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-        >
-          Enable sound
-        </button>
+      {/* Forced Interaction Overlay to Unlock Sound */}
+      {!userEnabledSound && (
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center backdrop-blur-sm">
+          <h2 className="text-white text-3xl font-light mb-8 uppercase tracking-widest">Display Systeem</h2>
+          <button
+            onClick={() => {
+              try {
+                setUserEnabledSound(true);
+                // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported
+                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
+                if (AC) {
+                  const ctx = new AC();
+                  // create and stop a silent buffer
+                  const osc = ctx.createOscillator(); osc.frequency.value = 0.0001; osc.connect(ctx.destination); osc.start(0); osc.stop(0.01);
+                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
+                }
+              } catch { }
+            }}
+            className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"
+            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+          >
+            <span>▶ KLIK HIER OM TE STARTEN</span>
+            <span className="text-xl font-normal opacity-80">(Activeert geluid voor de rest van de sessie)</span>
+          </button>
+        </div>
       )}
     </div>
   );
