@@ -11,6 +11,17 @@ export const getInitialState = (): KrakendeState => ({
   revealedIndex: 0,
 });
 
+// Map global fase key to internal Phase
+export const getPhaseFromFaseKey = (faseKey: string): KrakendePhase | null => {
+  switch (faseKey) {
+    case '13/03': return 'positive-voting';
+    case '13/05': return 'positive-results';
+    case '13/06': return 'negative-voting';
+    case '13/09': return 'negative-results';
+    default: return null;
+  }
+};
+
 // Get the display label for a trait based on current language
 export const getTraitLabel = (trait: KrakendeTrait, lang: KrakendeLanguage): string => {
   return lang === 'nl' ? trait.nl : trait.en;

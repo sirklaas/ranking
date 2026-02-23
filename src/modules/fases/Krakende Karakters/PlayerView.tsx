@@ -5,8 +5,8 @@ import { KrakendeState } from '@/modules/krakende-karakters/types';
 import * as krakendeLogic from '@/modules/krakende-karakters/logic';
 import KrakendePlayer from '@/components/krakende-karakters/KrakendePlayer';
 
-const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, playerInfo }) => {
-  if (!sessionId || !moduleStateJson || !playerInfo) return null;
+const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, moduleStateJson, onModuleStateJson, playerInfo }) => {
+  if (!sessionId || !moduleStateJson || !playerInfo || faseKey === '13/01') return null;
 
   const state: KrakendeState = JSON.parse(moduleStateJson);
 

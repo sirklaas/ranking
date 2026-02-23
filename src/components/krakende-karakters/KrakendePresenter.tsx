@@ -40,16 +40,6 @@ export default function KrakendePresenter({ sessionId, state, onStateChange }: K
     onStateChange(newState);
   };
 
-  const handleNextPhase = async () => {
-    const newState = await krakendeLogic.nextPhase(sessionId, state);
-    onStateChange(newState);
-  };
-
-  const handlePrevPhase = async () => {
-    const newState = await krakendeLogic.prevPhase(sessionId, state);
-    onStateChange(newState);
-  };
-
   const handleRevealNext = async () => {
     const newState = await krakendeLogic.revealNextTrait(sessionId, state);
     onStateChange(newState);
@@ -111,50 +101,19 @@ export default function KrakendePresenter({ sessionId, state, onStateChange }: K
           </div>
         </div>
 
-        {/* Phase navigation */}
-        <div className="flex gap-2 mb-3">
-          {(Object.keys(PHASE_LABELS) as KrakendePhase[]).map((phase) => (
-            <button
-              key={phase}
-              onClick={() => handlePhaseChange(phase)}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
-                state.phase === phase
-                  ? 'bg-white text-[#0A1752]'
-                  : 'bg-blue-900/50 text-blue-300 hover:bg-blue-800'
-              }`}
-            >
-              {PHASE_LABELS[phase]}
-            </button>
-          ))}
-        </div>
-
-        {/* Arrow + reveal controls */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handlePrevPhase}
-            className="px-4 py-2 rounded font-bold text-sm bg-gray-600 hover:bg-gray-500 text-white"
-          >
-            ← Vorige fase
-          </button>
-          <button
-            onClick={handleNextPhase}
-            className="px-4 py-2 rounded font-bold text-sm bg-blue-600 hover:bg-blue-500 text-white"
-          >
-            Volgende fase →
-          </button>
-
-          <div className="ml-auto flex items-center gap-3">
+        {/* Reveal controls */}
+        <div className="flex justify-end items-center gap-3">
+          <div className="flex items-center gap-3 text-right">
             <span className="text-sm text-blue-200">
               Revealed: {state.revealedIndex}/{maxTraits}
             </span>
             <button
               onClick={handleRevealNext}
               disabled={state.revealedIndex >= maxTraits}
-              className={`px-4 py-2 rounded font-bold text-sm transition-all ${
-                state.revealedIndex >= maxTraits
+              className={`px-4 py-2 rounded font-bold text-sm transition-all ${state.revealedIndex >= maxTraits
                   ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                   : 'bg-yellow-500 hover:bg-yellow-400 text-black'
-              }`}
+                }`}
             >
               Reveal volgende eigenschap
             </button>
