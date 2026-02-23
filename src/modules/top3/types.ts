@@ -23,6 +23,7 @@ export interface Top3QuestionState {
 }
 
 export interface Top3State {
+  currentFase?: string;        // Tracks which slide key this state belongs to (for wiping logic)
   currentQuestion: Top3QuestionState;
   allPlayerNames: string[];    // all player names from session (for display + phone lists)
 }

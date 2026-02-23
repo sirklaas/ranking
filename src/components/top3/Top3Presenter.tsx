@@ -18,6 +18,8 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
   const totalPlayers = state.allPlayerNames.length;
   const votedCount = votes.length;
 
+  const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+
   const handleStartVoting = useCallback(async () => {
     const newState = await top3Logic.startVoting(sessionId, state);
     onStateChange(newState);
@@ -93,7 +95,7 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
                   ) : (
                     <span className="w-8"></span>
                   )}
-                  <span className="text-white font-medium flex-1">{result.playerName}</span>
+                  <span className="text-white font-medium flex-1">{formatName(result.playerName)}</span>
                   <span className="text-blue-300 font-bold">{result.percentage}%</span>
                   <span className="text-gray-400 text-sm">({result.votes} stemmen)</span>
                 </div>
@@ -160,8 +162,8 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
             <div className="grid grid-cols-3 gap-2 max-h-[250px] overflow-y-auto">
               {votes.map((vote) => (
                 <div key={vote.voterId} className="bg-gray-800/50 rounded p-2 text-sm">
-                  <div className="text-white font-medium">{vote.voterName}</div>
-                  <div className="text-blue-400 text-xs">&rarr; {vote.chosenPlayerName}</div>
+                  <div className="text-white font-medium">{formatName(vote.voterName)}</div>
+                  <div className="text-blue-400 text-xs">&rarr; {formatName(vote.chosenPlayerName)}</div>
                 </div>
               ))}
             </div>

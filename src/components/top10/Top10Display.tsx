@@ -24,6 +24,9 @@ function hashStr(s: string): number {
     return Math.abs(h);
 }
 
+/* ──────── string prefix stripper ──────── */
+const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+
 /* ──────── word-cloud item layout ──────── */
 interface CloudItem {
     name: string;
@@ -74,7 +77,7 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
         const driftAngle = ((hash % 60) - 30) / 6000;     // degrees per frame
 
         return {
-            name: r.playerName,
+            name: formatName(r.playerName),
             votes: r.votes,
             percentage: r.percentage,
             fontSize,
@@ -189,7 +192,7 @@ function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: st
                             border: hasVoted ? '2px solid transparent' : '2px solid rgba(255,255,255,0.2)',
                         }}
                     >
-                        {name}
+                        {formatName(name)}
                     </div>
                 );
             })}

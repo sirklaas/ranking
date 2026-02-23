@@ -1,0 +1,128 @@
+import { NextResponse } from 'next/server';
+import { getServerPocketBase } from '@/lib/pbServer';
+import { Top10State, Top10Vote } from '@/modules/top10/types';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
+type VoteRequest = {
+    sessionId: string;
+    voterId: string;
+    voterName: string;
+    teamNumber: number;
+    chosenPlayerId: string;
+    chosenPlayerName: string;
+    resolve: (res: Top10State) => void;
+    reject: (err: Error) => void;
+};
+
+const voteQueue: VoteRequest[] = [];
+let isProcessing = false;
+
+async function processQueue() {
+    if (isProcessing || voteQueue.length === 0) return;
+    isProcessing = true;
+
+    const currentReq = voteQueue.shift();
+    if (!currentReq) {
+        isProcessing = false;
+        return;
+    }
+
+    try {
+        const pb = await getServerPocketBase();
+        if (!pb) throw new Error('PocketBase not initialized on server');
+
+        // 1. Fetch current session
+        const session = await pb.collection('ranking').getOne(currentReq.sessionId);
+        let top10State: Top10State | null = null;
+
+        if (session.headings) {
+            let hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
+            if (typeof hObj === 'string') hObj = JSON.parse(hObj);
+            if (hObj.top10_state) {
+                top10State = typeof hObj.top10_state === 'string' ? JSON.parse(hObj.top10_state) : hObj.top10_state;
+            }
+        }
+
+        if (!top10State) {
+            throw new Error('Top10 state not initialized in session');
+        }
+
+        // 2. Validate vote
+        const alreadyVoted = top10State.currentQuestion.votes.some(
+            (v) => v.voterId === currentReq.voterId
+        );
+
+        let newState = top10State;
+
+        if (!alreadyVoted) {
+            // 3. Mutate
+            const newVote: Top10Vote = {
+                voterId: currentReq.voterId,
+                voterName: currentReq.voterName,
+                teamNumber: currentReq.teamNumber,
+                chosenPlayerId: currentReq.chosenPlayerId,
+                chosenPlayerName: currentReq.chosenPlayerName,
+                timestamp: Date.now(),
+            };
+
+            newState = {
+                ...top10State,
+                currentQuestion: {
+                    ...top10State.currentQuestion,
+                    votes: [...top10State.currentQuestion.votes, newVote],
+                },
+            };
+
+            // 4. Save securely
+            let finalHeadings = typeof session.headings === 'string' ? JSON.parse(session.headings) : (session.headings || {});
+            if (typeof finalHeadings === 'string') finalHeadings = JSON.parse(finalHeadings);
+            finalHeadings.top10_state = newState;
+
+            await pb.collection('ranking').update(currentReq.sessionId, {
+                headings: JSON.stringify(finalHeadings)
+            });
+        }
+
+        currentReq.resolve(newState);
+
+    } catch (error) {
+        console.error('[Top10 Vote API Queue Error]', error);
+        currentReq.reject(error as Error);
+    } finally {
+        isProcessing = false;
+        processQueue();
+    }
+}
+
+export async function POST(req: Request) {
+    try {
+        const body = await req.json();
+        const { sessionId, voterId, voterName, teamNumber, chosenPlayerId, chosenPlayerName } = body;
+
+        if (!sessionId || !voterId || !chosenPlayerId) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const newState = await new Promise<Top10State>((resolve, reject) => {
+            voteQueue.push({
+                sessionId,
+                voterId,
+                voterName,
+                teamNumber,
+                chosenPlayerId,
+                chosenPlayerName,
+                resolve,
+                reject,
+            });
+            processQueue();
+        });
+
+        return NextResponse.json({ success: true, state: newState });
+    } catch (error) {
+        console.error('API Error:', error);
+        return NextResponse.json({ error: 'Failed to process top10 vote' }, { status: 500 });
+    }
+}

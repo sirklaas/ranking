@@ -69,6 +69,8 @@ export default function Top3Player({
     (name) => name !== playerName
   );
 
+  const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+
   const handleSelect = (name: string) => {
     if (submitted || alreadyVoted) return;
     setSelected(name);
@@ -147,9 +149,18 @@ export default function Top3Player({
           background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
         }}
       >
-        {/* Logo band */}
+        {/* Media image - Fill screen request */}
+        {mediaUrl && (
+          <div className="absolute inset-0 z-0 h-full w-full pointer-events-none" style={{ animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
+            {/* Dark overlay to make text pop over the full-screen image if needed */}
+            <div className="absolute inset-0 bg-black/20 z-10" />
+            <img src={mediaUrl} alt={heading || 'Top 3'} className="w-full h-full object-cover z-0" />
+          </div>
+        )}
+
+        {/* Logo band - bring forward */}
         <div
-          className="relative bg-cover bg-center bg-no-repeat shrink-0"
+          className="relative z-20 shrink-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
@@ -157,24 +168,17 @@ export default function Top3Player({
           </div>
         </div>
 
-        {/* Heading (two lines) */}
+        {/* Heading - bring forward */}
         {heading && (
-          <div className="text-center px-6 pt-6 pb-2">
+          <div className="relative z-20 text-center px-6 pt-6 pb-2">
             <h1 className="text-white text-2xl leading-snug whitespace-pre-line" style={{ fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)', animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both' }}>
               {heading}
             </h1>
           </div>
         )}
 
-        {/* Media image */}
-        {mediaUrl && (
-          <div className="flex-1 flex items-center justify-center px-6 py-4" style={{ animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
-            <img src={mediaUrl} alt={heading || 'Top 3'} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" />
-          </div>
-        )}
-
         {!mediaUrl && (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="relative z-20 flex-1 flex items-center justify-center">
             <p className="text-white/60 text-lg">Wacht tot het stemmen begint...</p>
           </div>
         )}
@@ -195,7 +199,7 @@ export default function Top3Player({
       <div className="text-center mb-4 pt-2">
         <h2 className="text-white text-2xl font-bold">Kies iemand!</h2>
         <p className="text-white/60 text-sm mt-1">
-          {playerName}, kies een persoon
+          {formatName(playerName)}, kies een persoon
         </p>
       </div>
 
@@ -241,7 +245,7 @@ export default function Top3Player({
                   className="text-base font-medium truncate"
                   style={{ color: isSelected ? 'white' : 'rgba(255,255,255,0.8)' }}
                 >
-                  {name}
+                  {formatName(name)}
                 </span>
               </label>
             );

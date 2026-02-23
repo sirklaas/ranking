@@ -44,6 +44,8 @@ export default function Top10Player({
         [state.allPlayerNames, playerName]
     );
 
+    const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+
     const filteredPlayers = useMemo(() => {
         if (!query.trim()) return otherPlayers;
         const q = query.toLowerCase();
@@ -124,7 +126,7 @@ export default function Top10Player({
                         Je hebt gekozen voor:
                     </p>
                     <div className="rounded-2xl px-8 py-6 mx-auto inline-block shadow-2xl mb-4 bg-white/15 border border-white/20">
-                        <span className="text-3xl font-bold text-white">{chosenName}</span>
+                        <span className="text-3xl font-bold text-white">{formatName(chosenName)}</span>
                     </div>
                     <p className="text-white/50 text-sm mt-4">
                         Wacht op de resultaten...
@@ -183,9 +185,17 @@ export default function Top10Player({
                         'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
                 }}
             >
+                {/* Media image */}
+                {mediaUrl && (
+                    <div className="absolute inset-0 z-0 h-full w-full pointer-events-none" style={{ animation: 'top10PopIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
+                        <div className="absolute inset-0 bg-black/20 z-10" />
+                        <img src={mediaUrl} alt={heading || 'Top 10'} className="w-full h-full object-cover z-0" />
+                    </div>
+                )}
+
                 {/* Logo band */}
                 <div
-                    className="relative w-full bg-cover bg-center bg-no-repeat shrink-0 top-0 left-0"
+                    className="relative z-20 w-full bg-cover bg-center bg-no-repeat shrink-0 top-0 left-0"
                     style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
                 >
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -195,22 +205,15 @@ export default function Top10Player({
 
                 {/* Heading */}
                 {heading && (
-                    <div className="text-center px-6 pt-6 pb-2 w-full">
+                    <div className="relative z-20 text-center px-6 pt-6 pb-2 w-full">
                         <h1 className="text-white text-2xl leading-snug whitespace-pre-line" style={{ fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
                             {heading}
                         </h1>
                     </div>
                 )}
 
-                {/* Media image */}
-                {mediaUrl && (
-                    <div className="flex-1 flex w-full items-center justify-center px-6 py-4">
-                        <img src={mediaUrl} alt={heading || 'Top 10'} className="max-h-[50vh] w-auto rounded-2xl shadow-2xl object-contain" />
-                    </div>
-                )}
-
                 {!mediaUrl && (
-                    <div className="flex-1 flex items-center justify-center">
+                    <div className="relative z-20 flex-1 flex items-center justify-center">
                         <p className="text-white/60 text-lg">Wacht tot het stemmen begint...</p>
                     </div>
                 )}
@@ -232,7 +235,7 @@ export default function Top10Player({
             <div className="text-center mb-6 pt-4">
                 <h2 className="text-white text-2xl font-bold">Kies iemand!</h2>
                 <p className="text-white/60 text-sm mt-1">
-                    {playerName}, typ een naam
+                    {formatName(playerName)}, typ een naam
                 </p>
             </div>
 
@@ -261,15 +264,16 @@ export default function Top10Player({
                             >
                                 {/* Highlight matching part */}
                                 {(() => {
-                                    const idx = name.toLowerCase().indexOf(query.toLowerCase());
-                                    if (idx === -1) return name;
+                                    const formatted = formatName(name);
+                                    const idx = formatted.toLowerCase().indexOf(query.toLowerCase());
+                                    if (idx === -1) return formatted;
                                     return (
                                         <>
-                                            {name.slice(0, idx)}
+                                            {formatted.slice(0, idx)}
                                             <span className="text-yellow-300 font-bold">
-                                                {name.slice(idx, idx + query.length)}
+                                                {formatted.slice(idx, idx + query.length)}
                                             </span>
-                                            {name.slice(idx + query.length)}
+                                            {formatted.slice(idx + query.length)}
                                         </>
                                     );
                                 })()}
@@ -291,7 +295,7 @@ export default function Top10Player({
                 <div className="text-center mb-6">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-white/80 text-sm">
                         <span className="text-green-400">✓</span>
-                        <span>{selected}</span>
+                        <span>{formatName(selected)}</span>
                     </div>
                 </div>
             )}
@@ -333,7 +337,7 @@ export default function Top10Player({
                                     color: isSelected ? 'white' : 'rgba(255,255,255,0.8)',
                                 }}
                             >
-                                {name}
+                                {formatName(name)}
                             </span>
                         </button>
                     );
@@ -353,7 +357,7 @@ export default function Top10Player({
                         opacity: selected ? 1 : 0.5,
                     }}
                 >
-                    {selected ? `Bevestig: ${selected}` : 'Kies een persoon'}
+                    {selected ? `Bevestig: ${formatName(selected)}` : 'Kies een persoon'}
                 </button>
             </div>
         </div>

@@ -14,6 +14,8 @@ interface Top3DisplayProps {
 const DONUT_COLORS = ['#FF1E1E', '#F5B800', '#3182CE', '#718096'];
 const DONUT_BG = 'rgba(255,255,255,0.08)';
 
+const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+
 interface DonutSegment {
   color: string;
   percentage: number;
@@ -192,7 +194,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                 fontWeight="bold"
                 style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
               >
-                {results[i].playerName}
+                {formatName(results[i].playerName)}
               </text>
               <text
                 x={isRightSide ? labelX + 70 : labelX - 70}
@@ -258,7 +260,7 @@ function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: st
               animation: hasVoted ? 'none' : `top3NameIn 0.4s ease-out ${i * 40}ms both`,
             }}
           >
-            {name}
+            {formatName(name)}
           </div>
         );
       })}

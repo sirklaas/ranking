@@ -9,6 +9,7 @@ const createEmptyQuestion = (questionIndex: number): Top10QuestionState => ({
 });
 
 export const getInitialState = (allPlayerNames: string[] = []): Top10State => ({
+    currentFase: '',
     currentQuestion: createEmptyQuestion(0),
     allPlayerNames,
 });
@@ -48,33 +49,31 @@ export const submitVote = async (
     chosenPlayerId: string,
     chosenPlayerName: string
 ): Promise<Top10State> => {
-    // Prevent duplicate votes
-    const alreadyVoted = currentState.currentQuestion.votes.some(
-        (v) => v.voterId === voterId
-    );
-    if (alreadyVoted) return currentState;
+    try {
+        const res = await fetch('/api/top10-vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionId,
+                voterId,
+                voterName,
+                teamNumber,
+                chosenPlayerId,
+                chosenPlayerName
+            })
+        });
 
-    const newVote: Top10Vote = {
-        voterId,
-        voterName,
-        teamNumber,
-        chosenPlayerId,
-        chosenPlayerName,
-        timestamp: Date.now(),
-    };
+        if (!res.ok) {
+            console.warn('Failed to submit top10 vote via queue. Falling back to optimistic state.');
+            return currentState;
+        }
 
-    const updatedVotes = [...currentState.currentQuestion.votes, newVote];
-
-    const newState: Top10State = {
-        ...currentState,
-        currentQuestion: {
-            ...currentState.currentQuestion,
-            votes: updatedVotes,
-        },
-    };
-
-    await persistState(sessionId, newState);
-    return newState;
+        const data = await res.json();
+        return data.state;
+    } catch (err) {
+        console.error('Error submitting top10 vote:', err);
+        return currentState;
+    }
 };
 
 // Compute top 10 results from votes

@@ -9,6 +9,7 @@ const createEmptyQuestion = (questionIndex: number): Top3QuestionState => ({
 });
 
 export const getInitialState = (allPlayerNames: string[] = []): Top3State => ({
+  currentFase: '',
   currentQuestion: createEmptyQuestion(0),
   allPlayerNames,
 });
@@ -57,42 +58,31 @@ export const submitVote = async (
   chosenPlayerId: string,
   chosenPlayerName: string
 ): Promise<Top3State> => {
-  let freshState = currentState;
   try {
-    const session = await rankingService.getSessionById(sessionId);
-    if (session?.headings) {
-      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
-      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    const res = await fetch('/api/top3-vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        voterId,
+        voterName,
+        teamNumber,
+        chosenPlayerId,
+        chosenPlayerName
+      })
+    });
+
+    if (!res.ok) {
+      console.warn('Failed to submit vote via queue API. Falling back to optimistic state.');
+      return currentState;
     }
-  } catch (e) { }
 
-  // Prevent duplicate votes
-  const alreadyVoted = freshState.currentQuestion.votes.some(
-    (v) => v.voterId === voterId
-  );
-  if (alreadyVoted) return freshState;
-
-  const newVote: Top3Vote = {
-    voterId,
-    voterName,
-    teamNumber,
-    chosenPlayerId,
-    chosenPlayerName,
-    timestamp: Date.now(),
-  };
-
-  const updatedVotes = [...freshState.currentQuestion.votes, newVote];
-
-  const newState: Top3State = {
-    ...freshState,
-    currentQuestion: {
-      ...freshState.currentQuestion,
-      votes: updatedVotes,
-    },
-  };
-
-  await persistState(sessionId, newState);
-  return newState;
+    const data = await res.json();
+    return data.state;
+  } catch (err) {
+    console.error('Error submitting vote:', err);
+    return currentState;
+  }
 };
 
 // Compute top 3 results from votes

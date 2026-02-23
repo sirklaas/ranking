@@ -16,6 +16,8 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
     const totalPlayers = state.allPlayerNames.length;
     const votedCount = votes.length;
 
+    const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+
     const handleStartVoting = useCallback(async () => {
         const newState = await top10Logic.startVoting(sessionId, state);
         onStateChange(newState);
@@ -114,8 +116,8 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                     <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-y-auto">
                         {votes.map((vote) => (
                             <div key={vote.voterId} className="bg-gray-800/50 rounded p-2 text-sm">
-                                <div className="text-white font-medium">{vote.voterName}</div>
-                                <div className="text-blue-400 text-xs">&rarr; {vote.chosenPlayerName}</div>
+                                <div className="text-white font-medium">{formatName(vote.voterName)}</div>
+                                <div className="text-blue-400 text-xs">&rarr; {formatName(vote.chosenPlayerName)}</div>
                             </div>
                         ))}
                     </div>
@@ -132,7 +134,7 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                         {state.currentQuestion.results.map((result, i) => (
                             <div key={result.playerName} className="flex items-center gap-3 bg-gray-800/50 rounded p-3">
                                 <span className="text-2xl font-bold text-yellow-400 w-8 text-center">{i + 1}</span>
-                                <span className="text-white font-medium flex-1">{result.playerName}</span>
+                                <span className="text-white font-medium flex-1">{formatName(result.playerName)}</span>
                                 <span className="text-blue-300 font-bold">{result.percentage}%</span>
                                 <span className="text-gray-400 text-sm">({result.votes} stemmen)</span>
                             </div>

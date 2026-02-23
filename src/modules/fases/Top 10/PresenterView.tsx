@@ -24,11 +24,14 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     }
   }, [moduleStateJson, sessionId, state, onModuleStateJson]);
 
+  // Advance to next question automatically when faseKey changes (Next Slide navigated globally)
   useEffect(() => {
-    if (faseKey && prevFaseRef.current && faseKey !== prevFaseRef.current && sessionId) {
+    if (faseKey && sessionId && state.currentFase !== faseKey) {
+      // If there are existing votes or we were not in intro, WIPE IT entirely.
       if (state.currentQuestion.phase !== 'intro' || state.currentQuestion.votes.length > 0) {
         const nextState: Top10State = {
           ...state,
+          currentFase: faseKey,
           currentQuestion: {
             questionIndex: state.currentQuestion.questionIndex + 1,
             phase: 'intro',
@@ -38,10 +41,14 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
         };
         onModuleStateJson?.(JSON.stringify(nextState));
         top10Logic.persistState(sessionId, nextState).catch(() => { });
+      } else {
+        // Just sync the tracker marker so it doesn't wipe when not needed
+        const syncState: Top10State = { ...state, currentFase: faseKey };
+        onModuleStateJson?.(JSON.stringify(syncState));
+        top10Logic.persistState(sessionId, syncState).catch(() => { });
       }
     }
-    prevFaseRef.current = faseKey;
-  }, [faseKey, sessionId, state, onModuleStateJson]);
+  }, [faseKey, sessionId, state.currentFase, state, onModuleStateJson]);
 
   return (
     <Top10Presenter

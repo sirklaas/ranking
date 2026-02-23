@@ -23,6 +23,7 @@ export interface Top10QuestionState {
 }
 
 export interface Top10State {
+    currentFase?: string;
     currentQuestion: Top10QuestionState;
     allPlayerNames: string[];
 }

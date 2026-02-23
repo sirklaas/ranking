@@ -146,7 +146,7 @@ export default function DisplayPage() {
         loadSessionData();
       }
       // Arrow navigation: advance/retreat current_fase
-      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
         e.preventDefault();
         setCurrentSession(prev => {
           if (!prev) return prev;
@@ -155,7 +155,7 @@ export default function DisplayPage() {
           if (keys.length === 0) return prev;
           const curIdx = keys.indexOf(prev.current_fase || '');
           let nextIdx: number;
-          if (e.key === 'ArrowRight') {
+          if (e.key === 'ArrowRight' || e.key === 'PageDown') {
             nextIdx = curIdx < keys.length - 1 ? curIdx + 1 : curIdx;
           } else {
             nextIdx = curIdx > 0 ? curIdx - 1 : 0;

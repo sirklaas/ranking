@@ -42,6 +42,13 @@ export default function PresenterPage() {
 
   // Sync all module states from session (generic)
   useEffect(() => {
+    if (selectedSession && selectedSession.current_fase && selectedSession.current_fase !== currentFase) {
+      setCurrentFase(selectedSession.current_fase);
+    }
+  }, [selectedSession?.current_fase]);
+
+  // Sync all module states from session (generic)
+  useEffect(() => {
     if (!selectedSession) return;
     const newStates: Record<string, string> = {};
     Object.values(FASES).forEach((mod) => {
@@ -475,8 +482,8 @@ export default function PresenterPage() {
       const isEditable = !!(target && (target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select'));
       if (isEditable) return;
 
-      const isNext = e.key === 'ArrowRight' || e.key === ']';
-      const isPrev = e.key === 'ArrowLeft' || e.key === '[';
+      const isNext = e.key === 'ArrowRight' || e.key === ']' || e.key === 'PageDown';
+      const isPrev = e.key === 'ArrowLeft' || e.key === '[' || e.key === 'PageUp';
       if (!isNext && !isPrev) return;
 
       e.preventDefault();
