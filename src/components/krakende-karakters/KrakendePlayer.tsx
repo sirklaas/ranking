@@ -22,7 +22,7 @@ export default function KrakendePlayer({
   const isPositive = state.phase === 'positive-voting';
   const isNegative = state.phase === 'negative-voting';
   const isVoting = isPositive || isNegative;
-  const isResults = state.phase === 'positive-results' || state.phase === 'negative-results';
+  const isRevealPhase = state.phase === 'positive-results' || state.phase === 'negative-results';
 
   const traits = isPositive || state.phase === 'positive-results'
     ? state.positiveTraits
@@ -37,6 +37,7 @@ export default function KrakendePlayer({
   const [selected, setSelected] = useState<string | null>(myChoice || null);
   const [submitted, setSubmitted] = useState(!!myChoice);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showReveal, setShowReveal] = useState(false);
 
   // Reset state when phase changes
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function KrakendePlayer({
     setSelected(newChoice || null);
     setSubmitted(!!newChoice);
     setShowConfirmation(false);
+    setShowReveal(false);
   }, [state.phase, mySub, isPositive]);
 
   const handleSelect = (traitId: string) => {
@@ -62,12 +64,42 @@ export default function KrakendePlayer({
 
   const selectedTrait = traits.find((t) => t.id === selected);
 
-  // Results view — show what you picked
-  if (isResults) {
+  // Reveal Phase (Step 5/6) — button to explode trait fullscreen
+  if (isRevealPhase) {
     const chosenTrait = traits.find((t) => t.id === myChoice);
+
+    if (showReveal && chosenTrait) {
+      return (
+        <div
+          className="min-h-screen flex flex-col items-center justify-center p-6 w-full"
+          style={{
+            fontFamily: 'Barlow Semi Condensed, sans-serif',
+            backgroundColor: state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B',
+          }}
+          onClick={() => setShowReveal(false)}
+        >
+          <div
+            className="text-center w-full"
+            style={{ animation: 'krakendePopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+          >
+            <h2 className="text-[12vw] leading-none font-bold text-gray-900 uppercase break-words w-full px-2">
+              {getTraitLabel(chosenTrait, state.language)}
+            </h2>
+          </div>
+          <style jsx>{`
+            @keyframes krakendePopIn {
+              0% { transform: scale(0) rotate(-5deg); opacity: 0; }
+              60% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+              100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      );
+    }
+
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6"
+        className="min-h-screen flex flex-col items-center justify-center p-8"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
           background: state.phase === 'positive-results'
@@ -75,55 +107,45 @@ export default function KrakendePlayer({
             : 'linear-gradient(135deg, #0A1752 0%, #6b1a1a 100%)',
         }}
       >
-        <div className="text-white text-center">
-          <p className="text-lg opacity-70 mb-2">
-            {state.phase === 'positive-results' ? 'Jouw positieve eigenschap' : 'Jouw minder goede eigenschap'}
-          </p>
-          <h2 className="text-4xl font-bold mb-4">
-            {chosenTrait ? getTraitLabel(chosenTrait, state.language) : 'Geen keuze gemaakt'}
-          </h2>
-          <p className="text-lg opacity-50">{playerName} — Team {teamNumber}</p>
-        </div>
+        <button
+          onClick={() => setShowReveal(true)}
+          className="w-full py-8 px-6 rounded-3xl text-3xl font-bold shadow-2xl transition-transform active:scale-95"
+          style={{
+            backgroundColor: state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B',
+            color: '#0A1752',
+            border: '4px solid white',
+          }}
+        >
+          {state.phase === 'positive-results' ? 'REVEAL POSITIEF' : 'REVEAL NEGATIEF'}
+        </button>
+        <p className="text-white/60 mt-8 text-center text-lg">
+          Druk op de knop om jouw gekozen eigenschap aan de rest te laten zien!
+        </p>
       </div>
     );
   }
 
-  // Confirmation popup
-  if (showConfirmation && selectedTrait) {
+  // Generic "Choice Saved" popup during voting
+  if (showConfirmation || (submitted && isVoting)) {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center p-6"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
           background: isPositive
-            ? 'linear-gradient(135deg, #0A1752 0%, #2d5a4e 100%)'
-            : 'linear-gradient(135deg, #0A1752 0%, #6b1a1a 100%)',
+            ? 'linear-gradient(135deg, #0A1752 0%, #1a3a6b 100%)'
+            : 'linear-gradient(135deg, #4a1a3a 0%, #1a0a1a 100%)',
         }}
       >
-        <div
-          className="text-center"
-          style={{ animation: 'krakendePopIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
-        >
-          <div className="text-6xl mb-4">{isPositive ? '✨' : '😈'}</div>
-          <p className="text-white text-lg opacity-70 mb-2">{playerName}, jouw keuze is:</p>
-          <div
-            className="rounded-2xl px-8 py-6 mx-auto inline-block shadow-2xl mb-4"
-            style={{
-              backgroundColor: isPositive ? '#4ECDC4' : '#FF6B6B',
-            }}
-          >
-            <span className="text-3xl font-bold text-gray-900">
-              {getTraitLabel(selectedTrait, state.language)}
-            </span>
-          </div>
-          <p className="text-white/50 text-sm mt-4">Wacht op de resultaten...</p>
+        <div className="text-center" style={{ animation: 'fadeHold 0.5s ease-out' }}>
+          <div className="text-7xl mb-6">{isPositive ? '✅' : '✔️'}</div>
+          <h2 className="text-3xl font-bold text-white mb-2">Keuze Opgeslagen!</h2>
+          <p className="text-white/70 text-lg">Wacht tot iedereen gekozen heeft...</p>
         </div>
-
         <style jsx>{`
-          @keyframes krakendePopIn {
-            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-            60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+          @keyframes fadeHold {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
           }
         `}</style>
       </div>
@@ -161,13 +183,13 @@ export default function KrakendePlayer({
               key={trait.id}
               onClick={() => handleSelect(trait.id)}
               disabled={submitted}
-              className="rounded-xl p-3 text-center font-bold transition-all active:scale-95"
+              className="rounded-lg p-2 text-center font-bold transition-all active:scale-95 leading-tight flex items-center justify-center min-h-[50px]"
               style={{
                 backgroundColor: isSelected ? baseColor : 'rgba(255,255,255,0.1)',
                 color: isSelected ? '#0A1752' : 'white',
-                border: isSelected ? `3px solid ${baseColor}` : '3px solid transparent',
+                border: isSelected ? `2px solid ${baseColor}` : '2px solid transparent',
                 opacity: submitted && !isSelected ? 0.3 : 1,
-                fontSize: '0.95rem',
+                fontSize: '0.85rem',
               }}
             >
               {getTraitLabel(trait, state.language)}

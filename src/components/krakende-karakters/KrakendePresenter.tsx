@@ -8,6 +8,7 @@ interface KrakendePresenterProps {
   sessionId: string;
   state: KrakendeState;
   onStateChange: (state: KrakendeState) => void;
+  totalPlayers: number;
 }
 
 const PHASE_LABELS: Record<KrakendePhase, string> = {
@@ -17,54 +18,7 @@ const PHASE_LABELS: Record<KrakendePhase, string> = {
   'negative-results': 'Resultaten Negatief',
 };
 
-export default function KrakendePresenter({ sessionId, state, onStateChange }: KrakendePresenterProps) {
-  const [editingPositive, setEditingPositive] = useState(false);
-  const [editingNegative, setEditingNegative] = useState(false);
-  const [localPositive, setLocalPositive] = useState<KrakendeTrait[]>(state.positiveTraits);
-  const [localNegative, setLocalNegative] = useState<KrakendeTrait[]>(state.negativeTraits);
-  const [saveBanner, setSaveBanner] = useState<string | null>(null);
-
-  const showBanner = (msg: string) => {
-    setSaveBanner(msg);
-    setTimeout(() => setSaveBanner(null), 3000);
-  };
-
-  const handleToggleLanguage = async () => {
-    const newState = await krakendeLogic.toggleLanguage(sessionId, state);
-    onStateChange(newState);
-    showBanner(`Language → ${newState.language.toUpperCase()}`);
-  };
-
-  const handlePhaseChange = async (phase: KrakendePhase) => {
-    const newState = await krakendeLogic.setPhase(sessionId, state, phase);
-    onStateChange(newState);
-  };
-
-  const handleRevealNext = async () => {
-    const newState = await krakendeLogic.revealNextTrait(sessionId, state);
-    onStateChange(newState);
-  };
-
-  const handleSaveTraits = async () => {
-    const newState = await krakendeLogic.updateTraits(sessionId, state, localPositive, localNegative);
-    onStateChange(newState);
-    setEditingPositive(false);
-    setEditingNegative(false);
-    showBanner('Traits saved');
-  };
-
-  const handleTraitEdit = (
-    list: KrakendeTrait[],
-    setList: React.Dispatch<React.SetStateAction<KrakendeTrait[]>>,
-    index: number,
-    field: 'nl' | 'en',
-    value: string
-  ) => {
-    const updated = [...list];
-    updated[index] = { ...updated[index], [field]: value };
-    setList(updated);
-  };
-
+export default function KrakendePresenter({ sessionId, state, onStateChange, totalPlayers }: KrakendePresenterProps) {
   // Count submissions
   const posSubmissions = state.submissions.filter((s) => s.positiveTrait).length;
   const negSubmissions = state.submissions.filter((s) => s.negativeTrait).length;
@@ -75,150 +29,26 @@ export default function KrakendePresenter({ sessionId, state, onStateChange }: K
 
   return (
     <div className="flex flex-col gap-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      {/* Save banner */}
-      {saveBanner && (
-        <div className="bg-blue-600 text-white text-center py-2 rounded text-sm font-medium animate-pulse">
-          {saveBanner}
-        </div>
-      )}
-
-      {/* Top bar: Phase + Language + Controls */}
+      {/* Top bar: Phase + Metric */}
       <div className="bg-[#0A1752] p-4 rounded-lg text-white shadow-lg border border-blue-800">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-2xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        <div className="flex justify-between items-center">
+          <h3 className="text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
             Krakende Karakters
           </h3>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-blue-300">
-              Positief: {posSubmissions} | Negatief: {negSubmissions} keuzes
-            </span>
-            <button
-              onClick={handleToggleLanguage}
-              className="px-4 py-2 rounded font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white transition-all"
-            >
-              {state.language === 'nl' ? '🇳🇱 NL → EN' : '🇬🇧 EN → NL'}
-            </button>
-          </div>
-        </div>
-
-        {/* Reveal controls */}
-        <div className="flex justify-end items-center gap-3">
-          <div className="flex items-center gap-3 text-right">
-            <span className="text-sm text-blue-200">
-              Revealed: {state.revealedIndex}/{maxTraits}
-            </span>
-            <button
-              onClick={handleRevealNext}
-              disabled={state.revealedIndex >= maxTraits}
-              className={`px-4 py-2 rounded font-bold text-sm transition-all ${state.revealedIndex >= maxTraits
-                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                  : 'bg-yellow-500 hover:bg-yellow-400 text-black'
-                }`}
-            >
-              Reveal volgende eigenschap
-            </button>
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <span className="block text-sm text-teal-300 font-bold uppercase tracking-wider">POS Gekozen</span>
+              <span className="text-3xl font-bold">{posSubmissions} / {totalPlayers}</span>
+            </div>
+            <div className="text-center ml-4">
+              <span className="block text-sm text-red-300 font-bold uppercase tracking-wider">NEG Gekozen</span>
+              <span className="text-3xl font-bold">{negSubmissions} / {totalPlayers}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Trait editing panels */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Positive traits */}
-        <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-          <div className="flex justify-between items-center mb-3">
-            <h4 className="text-teal-400 font-bold text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              24 Positieve Eigenschappen
-            </h4>
-            <button
-              onClick={() => setEditingPositive(!editingPositive)}
-              className="text-sm text-blue-400 hover:text-blue-300"
-            >
-              {editingPositive ? 'Annuleer' : 'Bewerk'}
-            </button>
-          </div>
-          <div className="space-y-1 max-h-[400px] overflow-y-auto">
-            {(editingPositive ? localPositive : state.positiveTraits).map((trait, i) => (
-              <div key={trait.id} className="flex items-center gap-2">
-                <span className="text-gray-500 text-xs w-6 text-right">{i + 1}</span>
-                {editingPositive ? (
-                  <>
-                    <input
-                      value={localPositive[i]?.nl || ''}
-                      onChange={(e) => handleTraitEdit(localPositive, setLocalPositive, i, 'nl', e.target.value)}
-                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
-                      placeholder="NL"
-                    />
-                    <input
-                      value={localPositive[i]?.en || ''}
-                      onChange={(e) => handleTraitEdit(localPositive, setLocalPositive, i, 'en', e.target.value)}
-                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
-                      placeholder="EN"
-                    />
-                  </>
-                ) : (
-                  <span className="text-white text-sm">
-                    {trait.nl} <span className="text-gray-500">/ {trait.en}</span>
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Negative traits */}
-        <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-          <div className="flex justify-between items-center mb-3">
-            <h4 className="text-red-400 font-bold text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              24 Negatieve Eigenschappen
-            </h4>
-            <button
-              onClick={() => setEditingNegative(!editingNegative)}
-              className="text-sm text-blue-400 hover:text-blue-300"
-            >
-              {editingNegative ? 'Annuleer' : 'Bewerk'}
-            </button>
-          </div>
-          <div className="space-y-1 max-h-[400px] overflow-y-auto">
-            {(editingNegative ? localNegative : state.negativeTraits).map((trait, i) => (
-              <div key={trait.id} className="flex items-center gap-2">
-                <span className="text-gray-500 text-xs w-6 text-right">{i + 1}</span>
-                {editingNegative ? (
-                  <>
-                    <input
-                      value={localNegative[i]?.nl || ''}
-                      onChange={(e) => handleTraitEdit(localNegative, setLocalNegative, i, 'nl', e.target.value)}
-                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
-                      placeholder="NL"
-                    />
-                    <input
-                      value={localNegative[i]?.en || ''}
-                      onChange={(e) => handleTraitEdit(localNegative, setLocalNegative, i, 'en', e.target.value)}
-                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
-                      placeholder="EN"
-                    />
-                  </>
-                ) : (
-                  <span className="text-white text-sm">
-                    {trait.nl} <span className="text-gray-500">/ {trait.en}</span>
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Save button (visible when editing) */}
-      {(editingPositive || editingNegative) && (
-        <div className="flex justify-center">
-          <button
-            onClick={handleSaveTraits}
-            className="px-8 py-2 rounded font-bold text-white bg-blue-600 hover:bg-blue-500 transition-all"
-          >
-            Opslaan
-          </button>
-        </div>
-      )}
 
       {/* Submissions preview */}
       <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">

@@ -5,7 +5,7 @@ import { KrakendeState } from '@/modules/krakende-karakters/types';
 import * as krakendeLogic from '@/modules/krakende-karakters/logic';
 import KrakendePresenter from '@/components/krakende-karakters/KrakendePresenter';
 
-const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleStateJson, onModuleStateJson }) => {
+const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleStateJson, onModuleStateJson, allPlayerNames = [] }) => {
   if (!sessionId) return null;
 
   const state: KrakendeState = moduleStateJson
@@ -27,6 +27,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleSt
       sessionId={sessionId}
       state={state}
       onStateChange={(newState) => onModuleStateJson?.(JSON.stringify(newState))}
+      totalPlayers={allPlayerNames.length}
     />
   );
 };
