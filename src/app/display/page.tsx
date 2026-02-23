@@ -419,8 +419,6 @@ export default function DisplayPage() {
               ref={videoRef}
               src={currentMedia.url}
               className="w-full h-full object-contain"
-              autoPlay
-              muted
               playsInline
               onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
               onPlay={() => console.log('[Display] video play', currentMedia)}
