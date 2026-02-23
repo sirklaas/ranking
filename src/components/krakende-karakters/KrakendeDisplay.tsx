@@ -31,14 +31,8 @@ function playPopSound() {
   }
 }
 
-// Bright colors for trait tiles
-const TILE_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-  '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
-  '#F1948A', '#76D7C4', '#F8C471', '#AED6F1', '#D7BDE2',
-  '#A3E4D7', '#FAD7A0', '#ABEBC6', '#D2B4DE', '#AED6F1',
-  '#F9E79F', '#A9DFBF', '#F5B7B1', '#D6EAF8',
-];
+// Solid grey color for trait tiles
+const TILE_COLOR = '#808080';
 
 export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplayProps) {
   const isPositive = state.phase === 'positive-voting' || state.phase === 'positive-results';
@@ -90,41 +84,47 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
   if (isResults) {
     return (
       <div
-        className="min-h-screen p-8 flex flex-col relative"
+        className="min-h-screen flex flex-col relative"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: isPositive
-            ? 'linear-gradient(135deg, #0A1752 0%, #1a3a6b 50%, #2d5a4e 100%)'
-            : 'linear-gradient(135deg, #0A1752 0%, #4a1a3a 50%, #6b1a1a 100%)',
+          background: 'linear-gradient(to bottom right, #facc15, #ec4899, #9333ea)',
         }}
       >
-        <img src="/pics/logo.png" alt="Logo" className="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
-        <h1
-          className="text-center text-white mb-8 drop-shadow-lg"
-          style={{ fontSize: '3.5rem', fontWeight: 300 }}
+        {/* Horizontal Band Header */}
+        <div
+          className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 mb-8"
+          style={{ backgroundImage: 'url(/assets/band.webp)' }}
         >
-          {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
-        </h1>
+          {/* Logo - Left */}
+          <div className="flex items-center">
+            <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-24 w-auto object-contain" />
+          </div>
+          {/* Centered Text Overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <h1 className="text-4xl font-light text-white drop-shadow-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+              {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
+            </h1>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-4 gap-4 flex-1 auto-rows-min">
+        <div className="grid grid-cols-4 gap-4 flex-1 auto-rows-min px-8 pb-8">
           {shuffled.map((trait, i) => {
-            const color = TILE_COLORS[i % TILE_COLORS.length];
             return (
               <div
                 key={trait.id}
-                className="rounded-xl p-4 flex flex-col justify-center items-center shadow-lg transform transition-transform"
+                className="rounded-xl p-4 flex flex-col justify-center items-center shadow-lg transform transition-transform border-[3px] border-white"
                 style={{
-                  backgroundColor: color,
+                  backgroundColor: TILE_COLOR,
                   minHeight: '120px',
                 }}
               >
-                <div className="text-center uppercase w-full flex flex-col items-center justify-center font-barlow" style={{ fontWeight: 300, color: '#111' }}>
+                <div className="text-center uppercase w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
                   {(() => {
                     const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                     return (
                       <>
-                        <span style={{ fontSize: '2.2vw', lineHeight: '1.1' }}>{line1}</span>
-                        {line2 && <span style={{ fontSize: '2.2vw', lineHeight: '1.1' }}>{line2}</span>}
+                        <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line1}</span>
+                        {line2 && <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line2}</span>}
                       </>
                     );
                   })()}
@@ -142,43 +142,49 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
 
   return (
     <div
-      className="min-h-screen p-8 flex flex-col"
+      className="min-h-screen flex flex-col"
       style={{
         fontFamily: 'Barlow Semi Condensed, sans-serif',
-        background: isPositive
-          ? 'linear-gradient(135deg, #0A1752 0%, #1a3a6b 50%, #2d5a4e 100%)'
-          : 'linear-gradient(135deg, #0A1752 0%, #4a1a3a 50%, #6b1a1a 100%)',
+        background: 'linear-gradient(to bottom right, #facc15, #ec4899, #9333ea)',
       }}
     >
-      <img src="/pics/logo.png" alt="Logo" className="w-24 h-24 mx-auto mb-4 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
-      <h1
-        className="text-center text-white mb-6 drop-shadow-lg"
-        style={{ fontSize: '3rem', fontWeight: 300 }}
+      {/* Horizontal Band Header */}
+      <div
+        className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 mb-8"
+        style={{ backgroundImage: 'url(/assets/band.webp)' }}
       >
-        {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
-      </h1>
+        {/* Logo - Left */}
+        <div className="flex items-center">
+          <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-24 w-auto object-contain" />
+        </div>
+        {/* Centered Text Overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <h1 className="text-4xl font-light text-white drop-shadow-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
+            {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
+          </h1>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-6 gap-3 flex-1 auto-rows-min content-start">
+      <div className="grid grid-cols-6 gap-4 flex-1 auto-rows-min content-start px-8">
         {revealed.map((trait, i) => {
-          const color = TILE_COLORS[i % TILE_COLORS.length];
           const isLatest = i === revealed.length - 1;
           return (
             <div
               key={trait.id}
-              className="rounded-xl p-4 flex items-center justify-center text-center shadow-lg"
+              className="rounded-xl p-4 flex items-center justify-center text-center shadow-lg border-[3px] border-white"
               style={{
-                backgroundColor: color,
+                backgroundColor: TILE_COLOR,
                 animation: isLatest ? 'krakendePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined,
                 minHeight: '80px',
               }}
             >
-              <div className="w-full flex justify-center items-center uppercase font-barlow text-center flex-col" style={{ fontWeight: 300, color: '#111' }}>
+              <div className="w-full flex justify-center items-center uppercase font-barlow text-center flex-col text-white drop-shadow-md" style={{ fontWeight: 300 }}>
                 {(() => {
                   const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                   return (
                     <>
-                      <span style={{ fontSize: '1.8vw', lineHeight: '1.1' }}>{line1}</span>
-                      {line2 && <span style={{ fontSize: '1.8vw', lineHeight: '1.1' }}>{line2}</span>}
+                      <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line1}</span>
+                      {line2 && <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line2}</span>}
                     </>
                   );
                 })()}

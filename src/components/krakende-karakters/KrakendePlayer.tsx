@@ -121,17 +121,22 @@ export default function KrakendePlayer({
       >
         <button
           onClick={() => setShowReveal(true)}
-          className="w-full py-8 px-6 rounded-3xl text-3xl font-bold shadow-2xl transition-transform active:scale-95"
+          disabled={!chosenTrait}
+          className={`w-full py-8 px-6 rounded-3xl text-3xl font-bold shadow-2xl transition-transform ${chosenTrait ? 'active:scale-95' : 'opacity-60 grayscale cursor-not-allowed'}`}
           style={{
-            backgroundColor: state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B',
-            color: '#0A1752',
+            backgroundColor: !chosenTrait ? '#666' : (state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B'),
+            color: !chosenTrait ? '#fff' : '#0A1752',
             border: '4px solid white',
           }}
         >
-          {state.phase === 'positive-results' ? 'REVEAL POSITIEF' : 'REVEAL NEGATIEF'}
+          {!chosenTrait
+            ? 'NIET GESTEMD'
+            : (state.phase === 'positive-results' ? 'REVEAL POSITIEF' : 'REVEAL NEGATIEF')}
         </button>
         <p className="text-white/60 mt-8 text-center text-lg">
-          Druk op de knop om jouw gekozen eigenschap aan de rest te laten zien!
+          {!chosenTrait
+            ? 'Je hebt in deze ronde geen eigenschap gekozen. Wacht op de volgende fase.'
+            : 'Druk op de knop om jouw gekozen eigenschap aan de rest te laten zien!'}
         </p>
       </div>
     );

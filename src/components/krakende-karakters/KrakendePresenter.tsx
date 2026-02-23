@@ -76,6 +76,43 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
           )}
         </div>
       </div>
+
+      {/* Manual Phase Overrides */}
+      <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4 mt-2">
+        <h4 className="text-white font-bold text-lg mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+          Besturingspaneel: Forceer Fase
+        </h4>
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={() => krakendeLogic.setPhase(sessionId, state, 'positive-voting').then(onStateChange)}
+            className={`p-4 rounded-xl font-bold uppercase tracking-wider transition-transform active:scale-95 border-2 ${state.phase === 'positive-voting' ? 'bg-teal-500 text-white border-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.6)]' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'
+              }`}
+          >
+            1. Positief Stemmen
+          </button>
+          <button
+            onClick={() => krakendeLogic.setPhase(sessionId, state, 'negative-voting').then(onStateChange)}
+            className={`p-4 rounded-xl font-bold uppercase tracking-wider transition-transform active:scale-95 border-2 ${state.phase === 'negative-voting' ? 'bg-red-500 text-white border-red-300 shadow-[0_0_15px_rgba(239,68,68,0.6)]' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'
+              }`}
+          >
+            2. Negatief Stemmen
+          </button>
+          <button
+            onClick={() => krakendeLogic.setPhase(sessionId, state, 'positive-results').then(onStateChange)}
+            className={`p-4 rounded-xl font-bold uppercase tracking-wider transition-transform active:scale-95 border-2 ${state.phase === 'positive-results' ? 'bg-teal-500 text-white border-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.6)]' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'
+              }`}
+          >
+            3. Positief Allemaal
+          </button>
+          <button
+            onClick={() => krakendeLogic.setPhase(sessionId, state, 'negative-results').then(onStateChange)}
+            className={`p-4 rounded-xl font-bold uppercase tracking-wider transition-transform active:scale-95 border-2 ${state.phase === 'negative-results' ? 'bg-red-500 text-white border-red-300 shadow-[0_0_15px_rgba(239,68,68,0.6)]' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'
+              }`}
+          >
+            4. Negatief Allemaal
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
