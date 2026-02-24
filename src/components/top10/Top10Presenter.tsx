@@ -3,6 +3,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { Top10State } from '@/modules/top10/types';
 import * as top10Logic from '@/modules/top10/logic';
+import { rankingService } from '@/lib/pocketbase';
 
 interface Top10PresenterProps {
     sessionId: string;
@@ -21,6 +22,11 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
     const handleStartVoting = useCallback(async () => {
         const newState = await top10Logic.startVoting(sessionId, state);
         onStateChange(newState);
+
+        // If we are on the trailer (17/01), jump to the first question (17/05)
+        if (state.currentFase === '17/01') {
+            await rankingService.updateSession(sessionId, { current_fase: '17/05' });
+        }
     }, [sessionId, state, onStateChange]);
 
     const handleShowResults = useCallback(async () => {

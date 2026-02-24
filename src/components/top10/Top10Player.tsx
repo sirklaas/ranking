@@ -175,7 +175,7 @@ export default function Top10Player({
     if (!isVoting) {
         return (
             <div
-                className="min-h-screen flex flex-col items-center justify-center overflow-hidden"
+                className="min-h-screen flex flex-col items-center justify-start pt-24 overflow-hidden"
                 style={{
                     fontFamily: 'Barlow Semi Condensed, sans-serif',
                     background:
