@@ -238,7 +238,7 @@ export default function Top10Player({
             </div>
 
             {/* Quick-pick list (scrollable) - PRIMARY INTERACTION */}
-            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full px-2">
+            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full px-4 pt-[140px]">
                 {otherPlayers.map((name) => {
                     const isSelected = selected === name;
                     return (

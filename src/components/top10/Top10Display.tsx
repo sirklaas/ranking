@@ -3,12 +3,19 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Top10State, Top10Result } from '@/modules/top10/types';
 import { getVoterNames, getLiveTally } from '@/modules/top10/logic';
+import * as top10Logic from '@/modules/top10/logic';
+import { rankingService } from '@/lib/pocketbase';
 
 interface Top10DisplayProps {
     state: Top10State;
     heading?: string;
     mediaUrl?: string;
+    faseKey?: string;
+    sessionId?: string;
 }
+
+const barlowFont = '"Barlow Semi Condensed", sans-serif';
+const nameFont = 'Nunito, sans-serif';
 
 /* ──────── colour palette for word cloud names ──────── */
 const CLOUD_COLORS = [
@@ -16,7 +23,6 @@ const CLOUD_COLORS = [
     '#F0B27A', '#85C1E9', '#82E0AA', '#F1948A', '#AED6F1',
 ];
 
-const nameFont = 'Nunito, sans-serif';
 
 /* ──────── deterministic pseudo-random from string ──────── */
 function hashStr(s: string): number {
@@ -49,8 +55,14 @@ interface CloudItem {
 function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] {
     if (results.length === 0) return [];
     const maxVotes = results[0].votes;
-    const minFontSize = 36; // DOUBLED
-    const maxFontSize = 144; // DOUBLED
+    const minFontSize = 80; // MASSIVE
+    const maxFontSize = 240; // MASSIVE
+
+    // Add gutters to prevent clipping
+    const xGutter = 50;
+    const yGutter = 50;
+    const effectiveW = w - 2 * xGutter;
+    const effectiveH = h - 2 * yGutter;
 
     return results.map((r, i) => {
         const hash = hashStr(r.playerName);
@@ -60,19 +72,23 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
         // First item (winner) is always center + horizontal
         let x: number, y: number, rotation: number;
         if (i === 0) {
-            x = w / 2;
-            y = h / 2;
+            x = effectiveW / 2;
+            y = effectiveH / 2;
             rotation = 0;
         } else {
-            // Spread others in a loose spiral
-            const angle = (i / results.length) * Math.PI * 2 + (hash % 100) / 100;
-            const radius = 120 + (i * 35) + (hash % 50);
-            x = w / 2 + Math.cos(angle) * radius;
-            y = h / 2 + Math.sin(angle) * radius;
+            // Spread others in a loose spiral - INCREASED SPREAD
+            const angle = (i / results.length) * Math.PI * 2 * 1.5 + (hash % 100) / 100;
+            const radius = 200 + (i * 60) + (hash % 80);
+            x = effectiveW / 2 + Math.cos(angle) * radius;
+            y = effectiveH / 2 + Math.sin(angle) * radius;
             // Mix of horizontal (0°) and vertical (90° / -90°)
             const rotationOptions = [0, 0, 90, -90, 0];
             rotation = rotationOptions[hash % rotationOptions.length];
         }
+
+        // Apply gutters
+        x = Math.max(xGutter, Math.min(w - xGutter, x + xGutter));
+        y = Math.max(yGutter, Math.min(h - yGutter, y + yGutter));
 
         // Slow drift parameters
         const driftX = ((hash % 200) - 100) / 800;       // px per frame
@@ -138,9 +154,9 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
             style={{ minHeight: '500px' }}
         >
             {items.map((item, i) => (
-                <div
+                <span
                     key={item.name}
-                    className="absolute transition-all duration-700 whitespace-nowrap select-none"
+                    className="absolute whitespace-nowrap transition-all duration-1000 leading-tight p-4"
                     style={{
                         left: `${item.x}px`,
                         top: `${item.y}px`,
@@ -151,25 +167,14 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                         color: item.color,
                         opacity: item.opacity,
                         textShadow: i === 0
-                            ? '0 0 40px rgba(255,255,255,0.4), 0 0 80px rgba(255,255,255,0.2)'
-                            : '0 4px 12px rgba(0,0,0,0.5)',
+                            ? '0 0 50px rgba(255,255,255,0.5), 0 0 100px rgba(255,255,255,0.3)'
+                            : '0 4px 20px rgba(0,0,0,0.6)',
                         letterSpacing: i === 0 ? '4px' : '1px',
                         animation: `cloudFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.1}s both`,
                     }}
                 >
                     {item.name}
-                    {item.votes > 1 && (
-                        <span
-                            className="ml-2 align-super"
-                            style={{
-                                fontSize: `${Math.max(12, item.fontSize * 0.35)}px`,
-                                opacity: 0.6,
-                            }}
-                        >
-                            {item.votes}
-                        </span>
-                    )}
-                </div>
+                </span>
             ))}
         </div>
     );
@@ -190,11 +195,11 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                 transitionDelay: `${(total - index - 1) * 0.05}s`
             }}
         >
-            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl font-black shrink-0 border-4 border-white/50 shadow-inner ${index === 0 ? 'bg-yellow-400 text-black scale-110 animate-bounce' : 'bg-white text-[#0A1752]'}`}>
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl font-black shrink-0 border-4 border-white/50 shadow-inner ${index === 0 ? 'bg-yellow-400 text-black scale-110 animate-bounce' : 'bg-white text-[#0A1752]'}`} style={{ fontFamily: barlowFont }}>
                 {index + 1}
             </div>
             <div className="flex-1">
-                <div className="text-6xl font-black text-white uppercase tracking-tighter" style={{ fontFamily: nameFont }}>
+                <div className="text-6xl font-black text-white uppercase tracking-tighter" style={{ fontFamily: barlowFont }}>
                     {formatName(result.playerName)}
                 </div>
                 <div className="h-6 bg-white/10 rounded-full mt-4 overflow-hidden border border-white/5">
@@ -204,7 +209,7 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                     />
                 </div>
             </div>
-            <div className={`text-6xl font-black ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: nameFont }}>
+            <div className={`text-6xl font-black ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont }}>
                 {result.percentage}%
             </div>
         </div>
@@ -242,12 +247,13 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
 }
 
 /* ──────── main display component ──────── */
-export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayProps) {
+export default function Top10Display({ state, heading, mediaUrl, faseKey, sessionId }: Top10DisplayProps) {
     const phase = state.currentQuestion.phase;
     const votedNames = getVoterNames(state);
     const liveTally = useMemo(() => getLiveTally(state), [state]);
     const [animateCloud, setAnimateCloud] = useState(false);
     const prevPhaseRef = useRef(phase);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
     // Trigger animation when results/voting phase starts
     useEffect(() => {
@@ -257,18 +263,38 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
         prevPhaseRef.current = phase;
     }, [phase]);
 
+    // Play video only once and with sound
+    useEffect(() => {
+        if (videoRef.current) {
+            const v = videoRef.current;
+            v.muted = false;
+            v.volume = 1;
+            v.loop = false;
+
+            const playPromise = v.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("[Top10Display] Autoplay prevented, waiting for interaction", error);
+                    v.muted = true; // Fallback to muted if blocked
+                    v.play();
+                });
+            }
+        }
+    }, [mediaUrl]);
+
+
     const isVideo = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
+
+    // Override heading for trailer 17/01
+    const displayHeading = faseKey === '17/01' ? 'kies iemand uit een ander team' : heading;
 
     return (
         <div
             className="min-h-screen flex flex-col relative overflow-hidden bg-black"
-            style={{
-                fontFamily: 'Barlow Semi Condensed, sans-serif',
-            }}
         >
             {/* Google Fonts Preload */}
             <style jsx global>{`
-                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Barlow+Semi+Condensed:wght@300;400;700;900&display=swap');
             `}</style>
 
             {/* Background Media */}
@@ -276,17 +302,26 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
                 <div className="absolute inset-0 z-0 h-full w-full">
                     {isVideo ? (
                         <video
+                            ref={videoRef}
                             src={mediaUrl}
                             autoPlay
-                            muted
-                            loop
                             playsInline
                             className="w-full h-full object-cover"
+                            onPlay={(e) => { e.currentTarget.muted = false; e.currentTarget.volume = 1; e.currentTarget.loop = false; }}
+                            onEnded={async () => {
+                                // Auto-advance to voting if this was the trailer
+                                if (faseKey === '17/01' && phase === 'intro' && sessionId) {
+                                    console.log("[Top10Display] Trailer ended, jumping to voting...");
+                                    const newState = await top10Logic.startVoting(sessionId, state);
+                                    // Also update session globally to jump to 17/05
+                                    await rankingService.updateSession(sessionId, { current_fase: '17/05' });
+                                }
+                            }}
                         />
                     ) : (
                         <img src={mediaUrl} alt={heading || 'Top 10'} className="w-full h-full object-cover" />
                     )}
-                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <div className="absolute inset-0 bg-black/30 z-10" />
                 </div>
             )}
 
@@ -296,31 +331,26 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
 
             {/* Content Container */}
             <div className="relative z-20 flex-1 flex flex-col">
-                {/* Heading - MORE PROMINENT */}
-                {heading && (
-                    <div className="text-center pt-24 pb-8">
+                {/* Heading - NOW AT THE BOTTOM 75px */}
+                {displayHeading && (
+                    <div className="absolute bottom-[75px] left-0 right-0 text-center">
                         <h1
-                            className="text-white text-8xl font-black uppercase tracking-tight px-12 leading-none"
+                            className="text-white text-7xl uppercase px-12 leading-none"
                             style={{
-                                fontFamily: nameFont,
-                                textShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 100px rgba(255,255,255,0.1)'
+                                fontFamily: barlowFont,
+                                fontWeight: 300,
+                                textShadow: '0 8px 32px rgba(0,0,0,0.8)'
                             }}
                         >
-                            {heading}
+                            {displayHeading}
                         </h1>
                     </div>
                 )}
 
                 {/* Main content area */}
                 <div className="flex-1 flex items-center justify-center p-8">
-                    {/* HIDE NAMES until voting or results starts */}
-                    {phase === 'intro' ? (
-                        <div className="text-center">
-                            <div className="text-white/20 text-4xl font-black animate-pulse uppercase tracking-[2em] ml-[2em]">
-                                Klaar voor de start...
-                            </div>
-                        </div>
-                    ) : phase === 'results' ? (
+                    {/* NAMES hidden in intro phase */}
+                    {phase === 'intro' ? null : phase === 'results' ? (
                         <SequentialResults results={state.currentQuestion.results} />
                     ) : (
                         <WordCloud results={liveTally} animate={animateCloud} />
@@ -328,9 +358,12 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
                 </div>
 
                 {/* Status bar */}
-                <div className="text-center pb-20">
+                <div className="absolute bottom-10 left-0 right-0 text-center pointer-events-none">
                     {phase === 'voting' && (
-                        <div className="text-white bg-white/10 backdrop-blur-xl inline-block px-12 py-4 rounded-full text-3xl font-black border-2 border-white/20 shadow-2xl animate-bounce">
+                        <div
+                            className="text-white bg-white/10 backdrop-blur-xl inline-block px-12 py-4 rounded-full text-3xl font-black border-2 border-white/20 shadow-2xl animate-bounce"
+                            style={{ fontFamily: barlowFont }}
+                        >
                             {votedNames.length} / {state.allPlayerNames.length} gestemd
                         </div>
                     )}
