@@ -8,7 +8,23 @@ interface Top3DisplayProps {
   state: Top3State;
   heading?: string;
   mediaUrl?: string;
+  faseKey?: string;
 }
+
+const barlowFont = '"Barlow Semi Condensed", sans-serif';
+
+const TOP3_HEADINGS: Record<string, string> = {
+  '10/01': 'Kies iemand uit een van de andere teams!',
+  '10/05': 'Wie wordt er echt heel erg snel verliefd',
+  '10/06': 'Wie is de ideale schoon- zoon of zus?',
+  '10/07': 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?',
+  '10/08': 'Wie zou je absoluut niet /n op je kinderen laten passen?',
+  '10/09': 'Wie heeft de meeste crypto\'s',
+  '10/10': 'Wie is de grootste aansteller op het werk?',
+  '10/11': 'Wie zou er als eerste een account aanmaken /n op OnlyFans?',
+  '10/12': 'Wie vertrouw je jouw allerdiepste geheimen toe?',
+  '10/13': 'Wie zou je meenemen naar een parenclub?',
+};
 
 // Donut chart colors for top 3 + overigen
 const DONUT_COLORS = ['#FF1E1E', '#F5B800', '#3182CE', '#718096'];
@@ -293,10 +309,12 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   );
 }
 
-export default function Top3Display({ state, heading, mediaUrl }: Top3DisplayProps) {
+export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3DisplayProps) {
   const phase = state.currentQuestion.phase;
   const votedNames = getVoterNames(state);
   const [animateResults, setAnimateResults] = useState(false);
+
+  const displayHeading = (faseKey && TOP3_HEADINGS[faseKey]) || heading;
 
   // Inject keyframe animations once
   useEffect(() => {
@@ -360,19 +378,19 @@ export default function Top3Display({ state, heading, mediaUrl }: Top3DisplayPro
 
       {/* Relative content layer */}
       <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
-        {/* Heading — large, animated entrance */}
-        {heading && (
-          <div className="text-center pt-8 pb-4">
+        {/* Heading — large, top-aligned (75px) to match Top 10 */}
+        {displayHeading && (
+          <div className="absolute top-[75px] left-0 right-0 text-center z-30">
             <h1
-              className="text-white text-7xl font-bold"
+              className="text-white text-7xl font-bold uppercase px-12 leading-none"
               style={{
-                fontFamily: 'Barlow Semi Condensed, sans-serif',
+                fontFamily: barlowFont,
                 fontWeight: 300,
                 textShadow: '0 4px 24px rgba(0,0,0,0.8)',
                 animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
               }}
             >
-              {heading}
+              {displayHeading}
             </h1>
           </div>
         )}

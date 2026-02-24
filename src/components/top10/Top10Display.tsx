@@ -17,6 +17,21 @@ interface Top10DisplayProps {
 const barlowFont = '"Barlow Semi Condensed", sans-serif';
 const nameFont = 'Nunito, sans-serif';
 
+const TOP10_HEADINGS: Record<string, string> = {
+    '17/01': 'kies iemand uit een ander team',
+    '17/02': 'Kies iemand uit een ander team!',
+    '17/05': 'Je hebt een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?',
+    '17/06': 'Wie denkt dat ie always gelijk heeft?',
+    '17/07': 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?',
+    '17/08': 'Wie kan er 40 dagen zonder sexs?',
+    '17/09': 'Wie kan absoluut niet tegen zijn/haar verlies?',
+    '17/10': 'Wie laat weleens een wind?',
+    '17/11': 'Wie maakt de allerlelijkste Selfies ?',
+    '17/12': 'Wie is het meest verslaafd aan Social Media?',
+    '17/13': 'Wie krijgt de meeste bekeuringen?',
+    '17/14': 'Jullie doen mee met Temptation Island. /n Wie heeft als eerste iemand tussen de lakens?',
+};
+
 /* ──────── colour palette for word cloud names ──────── */
 const CLOUD_COLORS = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#F7DC6F', '#BB8FCE',
@@ -35,6 +50,21 @@ function hashStr(s: string): number {
 
 /* ──────── string prefix stripper ──────── */
 const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+
+/* ──────── AABB Collision Detection ──────── */
+interface Rect {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+function intersects(r1: Rect, r2: Rect): boolean {
+    return !(r2.x > r1.x + r1.w ||
+        r2.x + r2.w < r1.x ||
+        r2.y > r1.y + r1.h ||
+        r2.y + r2.h < r1.y);
+}
 
 /* ──────── word-cloud item layout ──────── */
 interface CloudItem {
@@ -58,45 +88,87 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
     const minFontSize = 80; // MASSIVE
     const maxFontSize = 240; // MASSIVE
 
-    // Add gutters to prevent clipping
-    const xGutter = 50;
-    const yGutter = 50;
+    const placed: Rect[] = [];
+    const cloudItems: CloudItem[] = [];
+
+    // Add gutters to prevent clipping at edges
+    const xGutter = 100;
+    const yGutter = 100;
     const effectiveW = w - 2 * xGutter;
     const effectiveH = h - 2 * yGutter;
 
-    return results.map((r, i) => {
+    results.forEach((r, i) => {
         const hash = hashStr(r.playerName);
+        const nameText = formatName(r.playerName);
         const ratio = maxVotes > 0 ? r.votes / maxVotes : 0;
         const fontSize = minFontSize + ratio * (maxFontSize - minFontSize);
 
-        // First item (winner) is always center + horizontal
-        let x: number, y: number, rotation: number;
+        // Approximate dimensions
+        // Nunito is roughly 0.6w per char at this weight
+        const approxW = nameText.length * fontSize * 0.6 + 60; // + padding
+        const approxH = fontSize * 1.2 + 60; // + padding
+
+        let x = effectiveW / 2;
+        let y = effectiveH / 2;
+        let rotation = 0;
+
         if (i === 0) {
-            x = effectiveW / 2;
-            y = effectiveH / 2;
-            rotation = 0;
+            // First item stays centered
+            x = w / 2;
+            y = h / 2;
         } else {
-            // Spread others in a loose spiral - INCREASED SPREAD
-            const angle = (i / results.length) * Math.PI * 2 * 1.5 + (hash % 100) / 100;
-            const radius = 200 + (i * 60) + (hash % 80);
-            x = effectiveW / 2 + Math.cos(angle) * radius;
-            y = effectiveH / 2 + Math.sin(angle) * radius;
-            // Mix of horizontal (0°) and vertical (90° / -90°)
+            // Try to place around a spiral until it doesn't intersect
+            let angle = (hash % 360) * (Math.PI / 180);
+            let radius = 100;
+            let step = 0;
+            let foundIndex = -1;
+
             const rotationOptions = [0, 0, 90, -90, 0];
             rotation = rotationOptions[hash % rotationOptions.length];
+
+            // If rotated 90 deg, swap approx dims for intersection check
+            const rectW = Math.abs(rotation) === 90 ? approxH : approxW;
+            const rectH = Math.abs(rotation) === 90 ? approxW : approxH;
+
+            while (step < 200) {
+                const testX = w / 2 + Math.cos(angle) * radius;
+                const testY = h / 2 + Math.sin(angle) * radius;
+
+                const testRect: Rect = {
+                    x: testX - rectW / 2,
+                    y: testY - rectH / 2,
+                    w: rectW,
+                    h: rectH
+                };
+
+                const collision = placed.some(p => intersects(p, testRect)) ||
+                    testX < xGutter || testX > w - xGutter ||
+                    testY < yGutter || testY > h - yGutter;
+
+                if (!collision) {
+                    x = testX;
+                    y = testY;
+                    foundIndex = step;
+                    break;
+                }
+
+                angle += 0.3; // Incremental spiral
+                radius += 8;
+                step++;
+            }
         }
 
-        // Apply gutters
-        x = Math.max(xGutter, Math.min(w - xGutter, x + xGutter));
-        y = Math.max(yGutter, Math.min(h - yGutter, y + yGutter));
+        const rectW = Math.abs(rotation) === 90 ? approxH : approxW;
+        const rectH = Math.abs(rotation) === 90 ? approxW : approxH;
+        placed.push({ x: x - rectW / 2, y: y - rectH / 2, w: rectW, h: rectH });
 
         // Slow drift parameters
-        const driftX = ((hash % 200) - 100) / 800;       // px per frame
-        const driftY = (((hash >> 3) % 200) - 100) / 800;
-        const driftAngle = ((hash % 60) - 30) / 6000;     // degrees per frame
+        const driftX = ((hash % 200) - 100) / 1000;
+        const driftY = (((hash >> 3) % 200) - 100) / 1000;
+        const driftAngle = ((hash % 60) - 30) / 8000;
 
-        return {
-            name: formatName(r.playerName),
+        cloudItems.push({
+            name: nameText,
             votes: r.votes,
             percentage: r.percentage,
             fontSize,
@@ -108,8 +180,10 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
             driftY,
             driftAngle,
             opacity: 0.5 + ratio * 0.5,
-        };
+        });
     });
+
+    return cloudItems;
 }
 
 /* ──────── animated word cloud ──────── */
@@ -156,7 +230,7 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
             {items.map((item, i) => (
                 <span
                     key={item.name}
-                    className="absolute whitespace-nowrap transition-all duration-1000 leading-tight p-4"
+                    className="absolute whitespace-nowrap transition-all duration-1000 leading-normal p-8"
                     style={{
                         left: `${item.x}px`,
                         top: `${item.y}px`,
@@ -285,8 +359,8 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
 
     const isVideo = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
 
-    // Override heading for trailer 17/01
-    const displayHeading = faseKey === '17/01' ? 'kies iemand uit een ander team' : heading;
+    // Override heading with hardcoded map
+    const displayHeading = (faseKey && TOP10_HEADINGS[faseKey]) || heading;
 
     return (
         <div
