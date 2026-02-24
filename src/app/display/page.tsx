@@ -384,12 +384,14 @@ export default function DisplayPage() {
       const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
       const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
       const ModDisplay = mod.DisplayView;
+      const allPlayerNames = currentSession.playernames ? teamService.parsePlayerNames(currentSession.playernames) : [];
       return (
         <ModDisplay
           faseKey={currentSession.current_fase}
           moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
           heading={heading}
           mediaUrl={mediaUrl}
+          allPlayerNames={allPlayerNames}
         />
       );
     }

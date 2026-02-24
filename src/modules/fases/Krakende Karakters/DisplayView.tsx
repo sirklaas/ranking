@@ -8,7 +8,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, moduleStateJson, allP
   if (!moduleStateJson || faseKey === '13/01') return null;
 
   const state: KrakendeState = JSON.parse(moduleStateJson);
-  return <KrakendeDisplay state={state} totalPlayers={allPlayerNames.length} />;
+  return <KrakendeDisplay state={state} allPlayerNames={allPlayerNames} />;
 };
 
 export default DisplayView;

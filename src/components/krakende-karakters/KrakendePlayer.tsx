@@ -130,8 +130,8 @@ export default function KrakendePlayer({
           }}
         >
           {!chosenTrait
-            ? 'NIET GESTEMD'
-            : (state.phase === 'positive-results' ? 'REVEAL POSITIEF' : 'REVEAL NEGATIEF')}
+            ? 'Niet gestemd'
+            : (state.phase === 'positive-results' ? 'Reveal positief' : 'Reveal negatief')}
         </button>
         <p className="text-white/60 mt-8 text-center text-lg">
           {!chosenTrait

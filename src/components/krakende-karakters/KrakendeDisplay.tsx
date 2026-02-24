@@ -6,7 +6,7 @@ import { getTraitLabel, shuffleTraits, splitLabelForTwoLines } from '@/modules/k
 
 interface KrakendeDisplayProps {
   state: KrakendeState;
-  totalPlayers: number;
+  allPlayerNames?: string[];
 }
 
 // Popup sound effect (Web Audio API)
@@ -34,7 +34,8 @@ function playPopSound() {
 // Solid grey color for trait tiles
 const TILE_COLOR = '#808080';
 
-export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplayProps) {
+export default function KrakendeDisplay({ state, allPlayerNames = [] }: KrakendeDisplayProps) {
+  const totalPlayers = allPlayerNames.length;
   const isPositive = state.phase === 'positive-voting' || state.phase === 'positive-results';
   const isResults = state.phase === 'positive-results' || state.phase === 'negative-results';
   const traits = isPositive ? state.positiveTraits : state.negativeTraits;
@@ -92,19 +93,27 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
       >
         {/* Horizontal Band Header */}
         <div
-          className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 mb-8"
+          className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center px-6"
           style={{ backgroundImage: 'url(/assets/band.webp)' }}
         >
           {/* Logo - Left */}
           <div className="flex items-center">
             <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-24 w-auto object-contain" />
           </div>
-          {/* Centered Text Overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <h1 className="text-4xl font-light text-white drop-shadow-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-              {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
-            </h1>
-          </div>
+        </div>
+
+        {/* Heading Below Band */}
+        <div className="w-full py-8 text-center px-8">
+          <h1
+            className="text-white drop-shadow-lg leading-tight"
+            style={{
+              fontFamily: 'Barlow Semi Condensed, sans-serif',
+              fontWeight: 300,
+              fontSize: '70pt'
+            }}
+          >
+            {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
+          </h1>
         </div>
 
         <div className="grid grid-cols-4 gap-4 flex-1 auto-rows-min px-8 pb-8">
@@ -116,6 +125,7 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
                 style={{
                   backgroundColor: TILE_COLOR,
                   minHeight: '120px',
+                  animation: `fadeIn 0.6s ease-out both ${i * 0.15}s`
                 }}
               >
                 <div className="text-center w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
@@ -150,19 +160,27 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
     >
       {/* Horizontal Band Header */}
       <div
-        className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 mb-8"
+        className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center px-6"
         style={{ backgroundImage: 'url(/assets/band.webp)' }}
       >
         {/* Logo - Left */}
         <div className="flex items-center">
           <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-24 w-auto object-contain" />
         </div>
-        {/* Centered Text Overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <h1 className="text-4xl font-light text-white drop-shadow-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-            {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
-          </h1>
-        </div>
+      </div>
+
+      {/* Heading Below Band */}
+      <div className="w-full py-8 text-center px-8">
+        <h1
+          className="text-white drop-shadow-lg leading-tight"
+          style={{
+            fontFamily: 'Barlow Semi Condensed, sans-serif',
+            fontWeight: 300,
+            fontSize: '70pt'
+          }}
+        >
+          {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
+        </h1>
       </div>
 
       <div className="grid grid-cols-6 gap-4 flex-1 auto-rows-min content-start px-8">
@@ -222,6 +240,10 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
             transform: scale(1);
             opacity: 1;
           }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
