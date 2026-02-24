@@ -18,8 +18,7 @@ const barlowFont = '"Barlow Semi Condensed", sans-serif';
 const nameFont = 'Nunito, sans-serif';
 
 const TOP10_HEADINGS: Record<string, string> = {
-    '17/01': 'kies iemand uit een ander team',
-    '17/02': 'Kies iemand uit een ander team!',
+    '17/01': 'Kies iemand uit een ander team!',
     '17/05': 'Je hebt een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?',
     '17/06': 'Wie denkt dat ie always gelijk heeft?',
     '17/07': 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?',
