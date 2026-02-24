@@ -28,12 +28,14 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
         onStateChange(newState);
     }, [sessionId, state, onStateChange]);
 
-    const handleNextQuestion = useCallback(async () => {
-        const newState = await top10Logic.nextQuestion(sessionId, state);
-        onStateChange(newState);
-    }, [sessionId, state, onStateChange]);
+    // Auto-trigger results when all votes are in
+    useEffect(() => {
+        if (phase === 'voting' && votedCount >= totalPlayers && totalPlayers > 0) {
+            handleShowResults();
+        }
+    }, [phase, votedCount, totalPlayers, handleShowResults]);
 
-    // Keyboard shortcuts: V = start voting, R = show results
+    // Keyboard shortcuts: V = start voting
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
@@ -42,15 +44,11 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                 e.preventDefault();
                 handleStartVoting();
             }
-            if ((e.key === 'r' || e.key === 'R') && phase === 'voting') {
-                e.preventDefault();
-                handleShowResults();
-            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [phase, handleStartVoting, handleShowResults]);
+    }, [phase, handleStartVoting]);
 
     const PHASE_LABELS = {
         intro: 'Intro',
@@ -64,14 +62,14 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
             {/* Top bar */}
             <div className="bg-[#0A1752] p-4 rounded-lg text-white shadow-lg border border-blue-800">
                 <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-2xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    <h3 className="text-2xl font-bold uppercase tracking-tight" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                         Top 10
                     </h3>
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-blue-300">
-                            Vraag {state.currentQuestion.questionIndex + 1} &bull; Fase: {PHASE_LABELS[phase]}
+                            Fase: {PHASE_LABELS[phase]}
                         </span>
-                        <span className="text-sm text-blue-300">
+                        <span className={`text-sm font-bold ${votedCount >= totalPlayers ? 'text-green-400' : 'text-blue-300'}`}>
                             Stemmen: {votedCount}/{totalPlayers}
                         </span>
                     </div>
@@ -82,61 +80,35 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                     {/* V button to start voting */}
                     <button
                         onClick={handleStartVoting}
-                        disabled={phase === 'voting' || phase === 'results'}
-                        className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${phase === 'voting' || phase === 'results'
-                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                            : 'bg-blue-600 hover:bg-blue-500 text-white'
+                        disabled={phase !== 'intro'}
+                        className={`px-8 py-4 rounded-xl font-bold text-lg transition-all flex items-center gap-3 shadow-xl ${phase !== 'intro'
+                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-700 hover:scale-105 text-white'
                             }`}
                     >
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">V</span>
-                        Start Stemmen
+                        START STEMMEN
                     </button>
 
-                    {/* Show results (R) */}
-                    <button
-                        onClick={handleShowResults}
-                        disabled={phase !== 'voting'}
-                        className={`px-6 py-3 rounded font-bold text-lg transition-all flex items-center gap-2 ${phase !== 'voting'
-                            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                            : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                            }`}
-                    >
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">R</span>
-                        Toon Resultaten
-                    </button>
+                    {phase === 'voting' && (
+                        <div className="text-blue-200 animate-pulse text-sm font-medium">
+                            Resultaten verschijnen automatisch zodra iedereen heeft gestemd...
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Votes overview */}
-            {phase === 'voting' && votes.length > 0 && (
-                <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-                    <h4 className="text-white font-bold text-lg mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                        Binnengekomen stemmen ({votedCount})
-                    </h4>
-                    <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-y-auto">
-                        {votes.map((vote) => (
-                            <div key={vote.voterId} className="bg-gray-800/50 rounded p-2 text-sm">
-                                <div className="text-white font-medium">{formatName(vote.voterName)}</div>
-                                <div className="text-blue-400 text-xs">&rarr; {formatName(vote.chosenPlayerName)}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Results preview */}
+            {/* Results Preview (Keep for Presenter to see) */}
             {phase === 'results' && state.currentQuestion.results.length > 0 && (
                 <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-                    <h4 className="text-white font-bold text-lg mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                        Top 10 Resultaten
+                    <h4 className="text-white font-bold text-lg mb-3 uppercase tracking-wider">
+                        Resultaten ({state.currentQuestion.results.length})
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                         {state.currentQuestion.results.map((result, i) => (
-                            <div key={result.playerName} className="flex items-center gap-3 bg-gray-800/50 rounded p-3">
-                                <span className="text-2xl font-bold text-yellow-400 w-8 text-center">{i + 1}</span>
-                                <span className="text-white font-medium flex-1">{formatName(result.playerName)}</span>
-                                <span className="text-blue-300 font-bold">{result.percentage}%</span>
-                                <span className="text-gray-400 text-sm">({result.votes} stemmen)</span>
+                            <div key={result.playerName} className="flex items-center justify-between bg-gray-800/50 rounded p-2 text-sm">
+                                <span className="text-white font-medium">{i + 1}. {formatName(result.playerName)}</span>
+                                <span className="text-blue-400 font-bold">{result.percentage}%</span>
                             </div>
                         ))}
                     </div>

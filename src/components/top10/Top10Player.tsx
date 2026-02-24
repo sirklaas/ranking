@@ -218,7 +218,7 @@ export default function Top10Player({
         );
     }
 
-    // Voting view — text input with autocomplete
+    // Voting view — player list only
     return (
         <div
             className="min-h-screen flex flex-col p-4 pb-12"
@@ -228,110 +228,50 @@ export default function Top10Player({
                     'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
             }}
         >
-            {/* Header */}
+            {/* Header - NOW AT THE TOP */}
             <div className="text-center mb-6 pt-4">
-                <h2 className="text-white text-2xl font-bold">Kies iemand!</h2>
-                <p className="text-white/60 text-sm mt-1">
-                    {formatName(playerName)}, typ een naam
+                <h2 className="text-white text-3xl font-bold uppercase tracking-tight">Kies iemand!</h2>
+                <div className="w-16 h-1 bg-white/20 mx-auto mt-2 rounded-full" />
+                <p className="text-white/60 text-sm mt-3">
+                    {formatName(playerName)}, wie kies jij?
                 </p>
             </div>
 
-            {/* Search input */}
-            <div className="relative mx-auto w-full max-w-sm mb-4">
-                <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    onFocus={() => setShowDropdown(true)}
-                    placeholder="Typ een naam..."
-                    className="w-full px-5 py-4 rounded-xl text-lg bg-white/10 text-white placeholder-white/40 border-2 border-white/20 focus:border-white/50 focus:outline-none transition-all"
-                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                    autoComplete="off"
-                />
-
-                {/* Autocomplete dropdown */}
-                {showDropdown && query.trim() !== '' && filteredPlayers.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a2a6c]/95 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden z-50 max-h-64 overflow-y-auto shadow-2xl">
-                        {filteredPlayers.map((name) => (
-                            <button
-                                key={name}
-                                onClick={() => handleSelect(name)}
-                                className="w-full text-left px-5 py-3 text-white hover:bg-white/15 transition-colors text-lg border-b border-white/5 last:border-b-0"
-                                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                            >
-                                {/* Highlight matching part */}
-                                {(() => {
-                                    const formatted = formatName(name);
-                                    const idx = formatted.toLowerCase().indexOf(query.toLowerCase());
-                                    if (idx === -1) return formatted;
-                                    return (
-                                        <>
-                                            {formatted.slice(0, idx)}
-                                            <span className="text-yellow-300 font-bold">
-                                                {formatted.slice(idx, idx + query.length)}
-                                            </span>
-                                            {formatted.slice(idx + query.length)}
-                                        </>
-                                    );
-                                })()}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* No results */}
-                {showDropdown && query.trim() !== '' && filteredPlayers.length === 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a2a6c]/95 backdrop-blur-md border border-white/20 rounded-xl p-4 text-white/50 text-center">
-                        Geen speler gevonden
-                    </div>
-                )}
-            </div>
-
-            {/* Selected indicator */}
-            {selected && (
-                <div className="text-center mb-6">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-white/80 text-sm">
-                        <span className="text-green-400">✓</span>
-                        <span>{formatName(selected)}</span>
-                    </div>
-                </div>
-            )}
-
-            {/* Quick-pick list (scrollable) */}
-            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full">
+            {/* Quick-pick list (scrollable) - PRIMARY INTERACTION */}
+            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full px-2">
                 {otherPlayers.map((name) => {
                     const isSelected = selected === name;
                     return (
                         <button
                             key={name}
                             onClick={() => handleSelect(name)}
-                            className="w-full flex items-center gap-4 px-5 py-3 rounded-xl transition-all active:scale-[0.98]"
+                            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg"
                             style={{
                                 backgroundColor: isSelected
-                                    ? 'rgba(255,255,255,0.2)'
-                                    : 'rgba(255,255,255,0.07)',
+                                    ? 'rgba(255,255,255,0.25)'
+                                    : 'rgba(255,255,255,0.08)',
                                 border: isSelected
-                                    ? '2px solid rgba(255,255,255,0.5)'
-                                    : '2px solid transparent',
+                                    ? '2px solid rgba(255,255,255,0.6)'
+                                    : '2px solid rgba(255,255,255,0.1)',
                             }}
                         >
                             <div
-                                className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                                className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
                                 style={{
                                     borderColor: isSelected
                                         ? '#4ECDC4'
-                                        : 'rgba(255,255,255,0.3)',
+                                        : 'rgba(255,255,255,0.4)',
                                     backgroundColor: isSelected ? '#4ECDC4' : 'transparent',
                                 }}
                             >
                                 {isSelected && (
-                                    <div className="w-2 h-2 rounded-full bg-white" />
+                                    <div className="w-2.5 h-2.5 rounded-full bg-white" />
                                 )}
                             </div>
                             <span
-                                className="text-base font-medium"
+                                className="text-lg font-bold"
                                 style={{
-                                    color: isSelected ? 'white' : 'rgba(255,255,255,0.8)',
+                                    color: isSelected ? 'white' : 'rgba(255,255,255,0.9)',
                                 }}
                             >
                                 {formatName(name)}

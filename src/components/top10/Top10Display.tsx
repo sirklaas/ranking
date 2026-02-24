@@ -16,6 +16,8 @@ const CLOUD_COLORS = [
     '#F0B27A', '#85C1E9', '#82E0AA', '#F1948A', '#AED6F1',
 ];
 
+const nameFont = 'Nunito, sans-serif';
+
 /* ──────── deterministic pseudo-random from string ──────── */
 function hashStr(s: string): number {
     let h = 0;
@@ -47,8 +49,8 @@ interface CloudItem {
 function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] {
     if (results.length === 0) return [];
     const maxVotes = results[0].votes;
-    const minFontSize = 18;
-    const maxFontSize = 72;
+    const minFontSize = 36; // DOUBLED
+    const maxFontSize = 144; // DOUBLED
 
     return results.map((r, i) => {
         const hash = hashStr(r.playerName);
@@ -144,15 +146,15 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                         top: `${item.y}px`,
                         transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
                         fontSize: `${item.fontSize}px`,
-                        fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontWeight: i === 0 ? 800 : 600,
+                        fontFamily: nameFont,
+                        fontWeight: i === 0 ? 900 : 700,
                         color: item.color,
                         opacity: item.opacity,
                         textShadow: i === 0
-                            ? '0 0 30px rgba(255,255,255,0.3), 0 0 60px rgba(255,255,255,0.1)'
-                            : '0 2px 8px rgba(0,0,0,0.3)',
-                        letterSpacing: i === 0 ? '2px' : '0.5px',
-                        animation: `cloudFadeIn 0.8s ease-out ${i * 0.1}s both`,
+                            ? '0 0 40px rgba(255,255,255,0.4), 0 0 80px rgba(255,255,255,0.2)'
+                            : '0 4px 12px rgba(0,0,0,0.5)',
+                        letterSpacing: i === 0 ? '4px' : '1px',
+                        animation: `cloudFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.1}s both`,
                     }}
                 >
                     {item.name}
@@ -175,31 +177,34 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
 
 /* ──────── dynamic results item ──────── */
 function ResultItem({ result, index, show, total }: { result: Top10Result; index: number; show: boolean; total: number }) {
+    const hash = hashStr(result.playerName);
+    const randomRot = (hash % 60) - 30; // -30 to 30 deg
+
     return (
         <div
-            className={`transition-all duration-1000 ease-out flex items-center gap-6 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl ${show ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-20 scale-50'}`}
+            className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center gap-8 bg-white/10 backdrop-blur-xl rounded-[2rem] p-8 border-2 border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${show ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-40 scale-0'}`}
             style={{
-                transform: show ? `rotate(0deg)` : `rotate(90deg)`,
+                transform: show ? `rotate(0deg)` : `rotate(${randomRot}deg)`,
                 width: '100%',
-                maxWidth: '800px',
-                transitionDelay: `${(total - index - 1) * 0.1}s` // Reveal from 10 to 1
+                maxWidth: '1000px',
+                transitionDelay: `${(total - index - 1) * 0.05}s`
             }}
         >
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-4xl font-extrabold text-[#0A1752] shrink-0 border-4 border-white/50">
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl font-black shrink-0 border-4 border-white/50 shadow-inner ${index === 0 ? 'bg-yellow-400 text-black scale-110 animate-bounce' : 'bg-white text-[#0A1752]'}`}>
                 {index + 1}
             </div>
             <div className="flex-1">
-                <div className="text-4xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                <div className="text-6xl font-black text-white uppercase tracking-tighter" style={{ fontFamily: nameFont }}>
                     {formatName(result.playerName)}
                 </div>
-                <div className="h-4 bg-white/20 rounded-full mt-3 overflow-hidden">
+                <div className="h-6 bg-white/10 rounded-full mt-4 overflow-hidden border border-white/5">
                     <div
-                        className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-1000 delay-500"
+                        className={`h-full rounded-full transition-all duration-1000 delay-500 shadow-[0_0_20px_rgba(255,255,255,0.3)] ${index === 0 ? 'bg-gradient-to-r from-yellow-300 via-white to-yellow-300' : 'bg-gradient-to-r from-cyan-300 to-blue-600'}`}
                         style={{ width: show ? `${result.percentage}%` : '0%' }}
                     />
                 </div>
             </div>
-            <div className="text-5xl font-black text-cyan-300">
+            <div className={`text-6xl font-black ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: nameFont }}>
                 {result.percentage}%
             </div>
         </div>
@@ -212,12 +217,12 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
     useEffect(() => {
         const timer = setInterval(() => {
             setRevealCount(prev => (prev < results.length ? prev + 1 : prev));
-        }, 800); // Reveal every 0.8s
+        }, 1200); // Reveal every 1.2s for drama
         return () => clearInterval(timer);
     }, [results.length]);
 
     return (
-        <div className="flex flex-col items-center gap-4 w-full p-8 overflow-y-auto max-h-screen no-scrollbar">
+        <div className="flex flex-col items-center gap-8 w-full p-12 overflow-y-auto max-h-screen no-scrollbar">
             {/* Reveal from bottom (10) to top (1) */}
             {[...results].reverse().map((res, i) => {
                 const originalIndex = results.length - 1 - i;
@@ -244,44 +249,61 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
     const [animateCloud, setAnimateCloud] = useState(false);
     const prevPhaseRef = useRef(phase);
 
-    // Trigger animation when results phase starts
+    // Trigger animation when results/voting phase starts
     useEffect(() => {
-        if (phase === 'results' && prevPhaseRef.current !== 'results') {
-            setAnimateCloud(true);
-        }
-        // Also animate during voting for live updates
-        if (phase === 'voting') {
+        if (phase === 'results' || phase === 'voting') {
             setAnimateCloud(true);
         }
         prevPhaseRef.current = phase;
     }, [phase]);
 
+    const isVideo = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
+
     return (
         <div
-            className="min-h-screen flex flex-col relative overflow-hidden"
+            className="min-h-screen flex flex-col relative overflow-hidden bg-black"
             style={{
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
-                background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
             }}
         >
+            {/* Google Fonts Preload */}
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+            `}</style>
+
             {/* Background Media */}
             {mediaUrl && (
-                <div className="absolute inset-0 z-0 h-full w-full pointer-events-none">
+                <div className="absolute inset-0 z-0 h-full w-full">
+                    {isVideo ? (
+                        <video
+                            src={mediaUrl}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <img src={mediaUrl} alt={heading || 'Top 10'} className="w-full h-full object-cover" />
+                    )}
                     <div className="absolute inset-0 bg-black/40 z-10" />
-                    <img src={mediaUrl} alt={heading || 'Top 10'} className="w-full h-full object-cover z-0" />
                 </div>
+            )}
+
+            {!mediaUrl && (
+                <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#0A1752] via-[#1a2a6c] to-[#2d3a8c]" />
             )}
 
             {/* Content Container */}
             <div className="relative z-20 flex-1 flex flex-col">
-                {/* Heading */}
+                {/* Heading - MORE PROMINENT */}
                 {heading && (
-                    <div className="text-center pt-16 pb-8">
+                    <div className="text-center pt-24 pb-8">
                         <h1
-                            className="text-white text-7xl font-black uppercase tracking-widest px-8"
+                            className="text-white text-8xl font-black uppercase tracking-tight px-12 leading-none"
                             style={{
-                                fontFamily: 'Barlow Semi Condensed, sans-serif',
-                                textShadow: '0 4px 20px rgba(0,0,0,0.5)'
+                                fontFamily: nameFont,
+                                textShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 100px rgba(255,255,255,0.1)'
                             }}
                         >
                             {heading}
@@ -293,8 +315,10 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
                 <div className="flex-1 flex items-center justify-center p-8">
                     {/* HIDE NAMES until voting or results starts */}
                     {phase === 'intro' ? (
-                        <div className="text-white/30 text-3xl font-light animate-pulse uppercase tracking-[1em]">
-                            Wachten op stemmen...
+                        <div className="text-center">
+                            <div className="text-white/20 text-4xl font-black animate-pulse uppercase tracking-[2em] ml-[2em]">
+                                Klaar voor de start...
+                            </div>
                         </div>
                     ) : phase === 'results' ? (
                         <SequentialResults results={state.currentQuestion.results} />
@@ -304,9 +328,9 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
                 </div>
 
                 {/* Status bar */}
-                <div className="text-center pb-12">
+                <div className="text-center pb-20">
                     {phase === 'voting' && (
-                        <div className="text-white bg-white/10 backdrop-blur-md inline-block px-8 py-3 rounded-full text-2xl font-bold border border-white/20">
+                        <div className="text-white bg-white/10 backdrop-blur-xl inline-block px-12 py-4 rounded-full text-3xl font-black border-2 border-white/20 shadow-2xl animate-bounce">
                             {votedNames.length} / {state.allPlayerNames.length} gestemd
                         </div>
                     )}
@@ -316,8 +340,8 @@ export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayP
             {/* CSS animations */}
             <style jsx>{`
         @keyframes cloudFadeIn {
-          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(0deg); }
-          100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(-180deg); filter: blur(20px); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); filter: blur(0); }
         }
         .no-scrollbar::-webkit-scrollbar {
           display: none;
