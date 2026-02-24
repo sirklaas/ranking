@@ -68,14 +68,14 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
             {/* Top bar */}
             <div className="bg-[#0A1752] p-4 rounded-lg text-white shadow-lg border border-blue-800">
                 <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-2xl font-bold uppercase tracking-tight" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    <h3 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                         Top 10
                     </h3>
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-blue-300">
                             Fase: {PHASE_LABELS[phase]}
                         </span>
-                        <span className={`text-sm font-bold ${votedCount >= totalPlayers ? 'text-green-400' : 'text-blue-300'}`}>
+                        <span className={`text-sm font-bold ${votedCount >= totalPlayers ? 'text-blue-400' : 'text-blue-300'}`}>
                             Stemmen: {votedCount}/{totalPlayers}
                         </span>
                     </div>
@@ -93,7 +93,7 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                             }`}
                     >
                         <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-white/20 text-sm font-mono">V</span>
-                        START STEMMEN
+                        start stemmen
                     </button>
 
                     {phase === 'voting' && (
@@ -107,7 +107,7 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
             {/* Results Preview (Keep for Presenter to see) */}
             {phase === 'results' && state.currentQuestion.results.length > 0 && (
                 <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-                    <h4 className="text-white font-bold text-lg mb-3 uppercase tracking-wider">
+                    <h4 className="text-white font-bold text-lg mb-3 tracking-wider">
                         Resultaten ({state.currentQuestion.results.length})
                     </h4>
                     <div className="space-y-1">

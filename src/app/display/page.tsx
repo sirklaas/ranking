@@ -599,7 +599,7 @@ export default function DisplayPage() {
       {/* Forced Interaction Overlay to Unlock Sound */}
       {!userEnabledSound && (
         <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center backdrop-blur-sm">
-          <h2 className="text-white text-3xl font-light mb-8 uppercase tracking-widest">Display Systeem</h2>
+          <h2 className="text-white text-3xl font-light mb-8 tracking-widest">Display Systeem</h2>
           <button
             onClick={() => {
               try {

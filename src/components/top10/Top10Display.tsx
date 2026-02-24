@@ -286,7 +286,7 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                 {index + 1}
             </div>
             <div className="flex-1">
-                <div className="text-6xl font-black text-white uppercase tracking-tighter" style={{ fontFamily: barlowFont }}>
+                <div className="text-6xl font-black text-white tracking-tighter" style={{ fontFamily: barlowFont }}>
                     {formatName(result.playerName)}
                 </div>
                 <div className="h-6 bg-white/10 rounded-full mt-4 overflow-hidden border border-white/5">
@@ -421,7 +421,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                 {displayHeading && (
                     <div className={`absolute left-0 right-0 text-center ${faseKey === '17/01' ? 'bottom-[75px]' : 'top-[75px]'}`}>
                         <h1
-                            className="text-white text-7xl uppercase px-12 leading-none"
+                            className="text-white text-7xl px-12 leading-none"
                             style={{
                                 fontFamily: barlowFont,
                                 fontWeight: 300,

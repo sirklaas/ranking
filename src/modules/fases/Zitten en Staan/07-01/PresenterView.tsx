@@ -8,7 +8,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({ faseKey }) => {
 
   return (
     <div className="w-full h-full flex flex-col text-white" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div className="text-xs uppercase tracking-wide opacity-70 mb-2">Presenter · Zitten en Staan</div>
+      <div className="text-xs  tracking-wide opacity-70 mb-2">Presenter · Zitten en Staan</div>
       {loading && <div className="text-sm">Loading…</div>}
       {error && <div className="text-sm text-red-400">{error}</div>}
       {data && (

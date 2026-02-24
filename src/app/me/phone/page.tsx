@@ -154,7 +154,7 @@ export default function PlayerPage() {
               <div className="space-y-4">
                 <button
                   onClick={() => setLoginPhase('name')}
-                  className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg transition-colors"
+                  className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-lg transition-colors"
                 >
                   Yes, I have it
                 </button>

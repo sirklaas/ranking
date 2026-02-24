@@ -397,7 +397,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
         {displayHeading && (
           <div className="absolute top-[75px] left-0 right-0 text-center z-30">
             <h1
-              className="text-white text-7xl font-bold uppercase px-12 leading-none"
+              className="text-white text-7xl font-bold px-12 leading-none"
               style={{
                 fontFamily: barlowFont,
                 fontWeight: 300,

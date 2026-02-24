@@ -154,8 +154,8 @@ export default function PresenterPage() {
                 setEliminationState(newState);
               }}
               className={`p-4 rounded-xl font-bold text-lg transition-all shadow-lg ${eliminationState.status !== 'voting'
-                ? 'bg-teal-900/50 text-teal-700 cursor-not-allowed'
-                : 'bg-teal-600 hover:bg-teal-500 text-white shadow-teal-900/50'
+                ? 'bg-blue-900/50 text-blue-700 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/50'
               }`}
               disabled={eliminationState.status !== 'voting'}
             >

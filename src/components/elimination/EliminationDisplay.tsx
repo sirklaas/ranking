@@ -23,7 +23,7 @@ export const EliminationDisplay: React.FC<EliminationDisplayProps> = ({ state })
         <div className="w-full h-full bg-black text-white relative overflow-hidden flex flex-col">
             {/* Header */}
             <div className="p-8 text-center z-10">
-                <h1 className="text-5xl font-bold uppercase tracking-widest" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                <h1 className="text-5xl font-bold tracking-widest" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                     Elimination Round {state.round}
                 </h1>
             </div>

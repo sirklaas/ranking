@@ -118,7 +118,7 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
                   minHeight: '120px',
                 }}
               >
-                <div className="text-center uppercase w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
+                <div className="text-center w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
                   {(() => {
                     const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                     return (
@@ -178,7 +178,7 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
                 minHeight: '80px',
               }}
             >
-              <div className="w-full flex justify-center items-center uppercase font-barlow text-center flex-col text-white drop-shadow-md" style={{ fontWeight: 300 }}>
+              <div className="w-full flex justify-center items-center font-barlow text-center flex-col text-white drop-shadow-md" style={{ fontWeight: 300 }}>
                 {(() => {
                   const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                   return (
@@ -196,11 +196,11 @@ export default function KrakendeDisplay({ state, totalPlayers }: KrakendeDisplay
 
       <div className="mt-8 flex justify-center fixed bottom-10 left-0 right-0">
         <div className="bg-black/40 backdrop-blur-md px-10 py-5 rounded-3xl border border-white/20 shadow-2xl flex items-center gap-6">
-          <span className="text-white/80 text-xl font-medium uppercase tracking-widest">
+          <span className="text-white/80 text-xl font-medium  tracking-widest">
             Spelers Gekozen
           </span>
           <div className="text-5xl font-bold text-white bg-white/10 px-6 py-2 rounded-2xl">
-            <span className={currentSubmissions === totalPlayers ? "text-green-400" : "text-white"}>{currentSubmissions}</span>
+            <span className={currentSubmissions === totalPlayers ? "text-blue-400" : "text-white"}>{currentSubmissions}</span>
             <span className="text-white/40 mx-2">/</span>
             <span className="text-white/80">{totalPlayers}</span>
           </div>

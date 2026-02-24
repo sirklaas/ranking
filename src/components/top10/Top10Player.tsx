@@ -230,7 +230,7 @@ export default function Top10Player({
         >
             {/* Header - NOW AT THE TOP */}
             <div className="text-center mb-6 pt-4">
-                <h2 className="text-white text-3xl font-bold uppercase tracking-tight">Kies iemand!</h2>
+                <h2 className="text-white text-3xl font-bold tracking-tight">Kies iemand!</h2>
                 <div className="w-16 h-1 bg-white/20 mx-auto mt-2 rounded-full" />
                 <p className="text-white/60 text-sm mt-3">
                     {formatName(playerName)}, wie kies jij?

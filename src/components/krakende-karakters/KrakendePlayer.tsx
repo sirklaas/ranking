@@ -86,7 +86,7 @@ export default function KrakendePlayer({
             className="text-center w-full"
             style={{ animation: 'krakendePopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
           >
-            <h2 className="text-[12vw] leading-none text-gray-900 uppercase break-words w-full px-2 font-barlow flex flex-col items-center justify-center" style={{ fontWeight: 300 }}>
+            <h2 className="text-[12vw] leading-none text-gray-900 break-words w-full px-2 font-barlow flex flex-col items-center justify-center" style={{ fontWeight: 300 }}>
               {(() => {
                 const [line1, line2] = splitLabelForTwoLines(getTraitLabel(chosenTrait, 'nl'));
                 return (
@@ -209,7 +209,7 @@ export default function KrakendePlayer({
                 fontSize: '0.85rem',
               }}
             >
-              <div className="flex flex-col items-center justify-center w-full font-barlow uppercase" style={{ fontWeight: 300 }}>
+              <div className="flex flex-col items-center justify-center w-full font-barlow" style={{ fontWeight: 300 }}>
                 {(() => {
                   const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                   return (

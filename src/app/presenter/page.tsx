@@ -611,7 +611,7 @@ export default function PresenterPage() {
                     );
                   })()}
                 </div>
-                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
+                <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
               </div>
             </div>
 
@@ -621,7 +621,7 @@ export default function PresenterPage() {
                 <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
                   {renderNextPreview(nextMedia)}
                 </div>
-                <h3 className="text-xl mt-2 text-gray-900 text-center uppercase tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
+                <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
               </div>
             </div>
 

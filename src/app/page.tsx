@@ -42,7 +42,7 @@ export default function Home() {
             <Link href="/player" className="group">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 hover:bg-white/20 transition-all duration-300 transform hover:scale-105 cursor-pointer">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-green-400 transition-colors">
+                  <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center group-hover:bg-blue-400 transition-colors">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
@@ -51,7 +51,7 @@ export default function Home() {
                   <p className="text-gray-300 mb-6">
                     Join games and submit rankings
                   </p>
-                  <div className="text-sm text-green-300 font-medium">
+                  <div className="text-sm text-blue-300 font-medium">
                     Mobile Interface →
                   </div>
                 </div>

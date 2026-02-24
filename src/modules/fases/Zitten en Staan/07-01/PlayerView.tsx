@@ -139,7 +139,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
                 </span>
               </button>
               <div
-                className="text-white font-bold text-2xl tracking-wide uppercase"
+                className="text-white font-bold text-2xl tracking-wide "
                 style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
               >
                 Oneens
@@ -160,7 +160,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
                 </span>
               </button>
               <div
-                className="text-white font-bold text-2xl tracking-wide uppercase"
+                className="text-white font-bold text-2xl tracking-wide "
                 style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
               >
                 Eens

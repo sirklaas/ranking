@@ -43,19 +43,19 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
-        
+
         // Extract player names from the first column, filtering out empty cells
         const names = jsonData
           .flat()
           .filter(cell => cell && typeof cell === 'string' && cell.trim())
           .map(name => name.toString().trim());
-        
+
         setPlayerList(names);
         setFormData(prev => ({
           ...prev,
           playernames: names.join(', ')
         }));
-        
+
         // Clear the file input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
@@ -91,7 +91,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
       if (!formData.photocircle.trim()) {
         throw new Error('Photocircle link is required');
       }
-      
+
       // Calculate nr_players from playernames and assign team numbers by prefixing names
       const playerNames = formData.playernames.split(',').map(name => name.trim()).filter(name => name);
       const playersWithTeamNumbers = teamService.assignTeamNumbersToPlayers(playerNames, formData.nr_teams);
@@ -116,7 +116,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold mb-6">Create New Ranking Session</h2>
-      
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
           {error}
@@ -196,7 +196,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Player Names
           </label>
-          
+
           {/* Excel File Import */}
           <div className="mb-4">
             <input
@@ -210,7 +210,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 📁 Import from Excel
               </button>

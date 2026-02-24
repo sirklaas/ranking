@@ -16,7 +16,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({ faseKey }) => {
 
     return (
         <div className="w-full h-full flex flex-col text-white" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            <div className="text-xs uppercase tracking-wide opacity-70 mb-2">Presenter · De Finale</div>
+            <div className="text-xs  tracking-wide opacity-70 mb-2">Presenter · De Finale</div>
             {loading && <div className="text-sm">Loading…</div>}
             {error && <div className="text-sm text-red-400">{error}</div>}
             {data && (
@@ -33,8 +33,8 @@ const PresenterView: React.FC<FaseCommonProps> = ({ faseKey }) => {
                         onClick={handleRedirect}
                         disabled={redirected}
                         className={`px-8 py-4 rounded-xl text-xl font-bold shadow-lg transition-all ${redirected
-                                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                                : 'bg-green-600 hover:bg-green-500 hover:scale-105'
+                            ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-500 hover:scale-105'
                             }`}
                     >
                         {redirected ? 'Redirecting...' : 'Ga naar Presenter Eindscherm'}

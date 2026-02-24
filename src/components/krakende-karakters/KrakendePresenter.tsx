@@ -47,17 +47,17 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sessionId, state, onStateChange]);
 
-  const renderPhaseButton = (targetPhase: KrakendePhase, label: string, num: number, color: 'teal' | 'red') => {
+  const renderPhaseButton = (targetPhase: KrakendePhase, label: string, num: number, color: 'blue' | 'red') => {
     const isActive = state.phase === targetPhase;
     const isCompleted = state.completedPhases.includes(targetPhase) && !isActive;
-    const colorClass = color === 'teal' ? 'teal' : 'red';
+    const colorClass = color === 'blue' ? 'blue' : 'red';
 
     return (
       <button
         disabled={isCompleted}
         onClick={() => krakendeLogic.setPhase(sessionId, state, targetPhase).then(onStateChange)}
-        className={`h-40 flex flex-col items-center justify-center p-4 rounded-xl font-bold uppercase tracking-wider transition-all active:scale-95 border-2 ${isActive
-          ? `bg-${colorClass}-500 text-white border-${colorClass}-300 shadow-[0_0_20px_rgba(${color === 'teal' ? '20,184,166' : '239,68,68'},0.6)]`
+        className={`h-40 flex flex-col items-center justify-center p-4 rounded-xl font-bold tracking-wider transition-all active:scale-95 border-2 ${isActive
+          ? `bg-${colorClass}-500 text-white border-${colorClass}-300 shadow-[0_0_20px_rgba(${color === 'blue' ? '37,99,235' : '239,68,68'},0.6)]`
           : isCompleted
             ? 'bg-gray-900 text-gray-600 border-gray-800 opacity-50 cursor-not-allowed'
             : `bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:border-gray-500`
@@ -83,11 +83,11 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
           </h3>
           <div className="flex items-center gap-6">
             <div className="text-center">
-              <span className="block text-sm text-teal-300 font-bold uppercase tracking-wider">POS Gekozen</span>
+              <span className="block text-sm text-blue-300 font-bold tracking-wider">POS Gekozen</span>
               <span className="text-3xl font-bold">{posSubmissions} / {totalPlayers}</span>
             </div>
             <div className="text-center ml-4">
-              <span className="block text-sm text-red-300 font-bold uppercase tracking-wider">NEG Gekozen</span>
+              <span className="block text-sm text-red-300 font-bold  tracking-wider">NEG Gekozen</span>
               <span className="text-3xl font-bold">{negSubmissions} / {totalPlayers}</span>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
             return (
               <div key={sub.playerId} className="bg-gray-800/50 rounded p-2 text-sm">
                 <div className="text-white font-medium">{sub.playerName}</div>
-                <div className="text-teal-400 text-xs">
+                <div className="text-blue-400 text-xs">
                   + {posTrait ? krakendeLogic.getTraitLabel(posTrait, state.language) : '—'}
                 </div>
                 <div className="text-red-400 text-xs">
@@ -127,9 +127,9 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
           Besturingspaneel: Forceer Fase
         </h4>
         <div className="grid grid-cols-4 gap-4">
-          {renderPhaseButton('positive-voting', 'Positief Stemmen', 1, 'teal')}
+          {renderPhaseButton('positive-voting', 'Positief Stemmen', 1, 'blue')}
           {renderPhaseButton('negative-voting', 'Negatief Stemmen', 2, 'red')}
-          {renderPhaseButton('positive-results', 'Positief Allemaal', 3, 'teal')}
+          {renderPhaseButton('positive-results', 'Positief Allemaal', 3, 'blue')}
           {renderPhaseButton('negative-results', 'Negatief Allemaal', 4, 'red')}
         </div>
       </div>

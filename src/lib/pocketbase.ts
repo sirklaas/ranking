@@ -396,7 +396,7 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '17/12': { heading: 'Wie is meest verslaafd aan Social Media?', image: 'socials.png' },
   '17/13': { heading: 'Wie heeft de grootste mond?', image: '' },
   '17/14': { heading: 'Wie is de grootste drama queen?', image: '' },
-  '20/01': { heading: 'De Finale', image: 'TrailerFinale.mp4' }
+  '20/01': { heading: 'De Finale', image: 'end.m4v' }
 };
 
 // Fases Management Helper Functions
