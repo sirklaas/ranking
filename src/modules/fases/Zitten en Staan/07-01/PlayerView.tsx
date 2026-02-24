@@ -20,8 +20,8 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
       setHeadingReady(false);
       prevFaseRef.current = faseKey;
     }
-    const btnTimer = setTimeout(() => setButtonsReady(true), DELAY_MS);
-    const headingTimer = setTimeout(() => setHeadingReady(true), 4000);
+    const btnTimer = setTimeout(() => setButtonsReady(true), 3000);
+    const headingTimer = setTimeout(() => setHeadingReady(true), 6000);
     return () => {
       clearTimeout(btnTimer);
       clearTimeout(headingTimer);

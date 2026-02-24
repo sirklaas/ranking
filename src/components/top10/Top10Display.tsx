@@ -118,9 +118,9 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
         const fontSize = minFontSize + ratio * (maxFontSize - minFontSize);
 
         // Approximate dimensions - BE MORE CONSERVATIVE
-        // Nunito is roughly 0.75w per char at this weight, plus glow space
-        const approxW = nameText.length * fontSize * 0.75 + 120;
-        const approxH = fontSize * 1.4 + 120;
+        // Nunito is roughly 0.85w per char at this weight, plus glow space
+        const approxW = nameText.length * fontSize * 0.85 + 180;
+        const approxH = fontSize * 1.5 + 180;
 
         let x = w / 2;
         let y = h / 2;
@@ -165,8 +165,8 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
                     break;
                 }
 
-                angle += 0.2; // Tighter spiral increments
-                radius += 4;  // Slower radial expansion
+                angle += 0.25; // Tighter spiral increments
+                radius += 8;  // Faster radial expansion for more space
                 step++;
             }
         }
@@ -419,12 +419,13 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
             <div className="relative z-20 flex-1 flex flex-col">
                 {/* Heading - POSITION DEPENDENT */}
                 {displayHeading && (
-                    <div className={`absolute left-0 right-0 text-center ${faseKey === '17/01' ? 'bottom-[75px]' : 'top-[75px]'}`}>
+                    <div className={`absolute left-0 right-0 text-center ${faseKey === '17/01' ? 'bottom-[150px]' : 'top-[150px]'}`}>
                         <h1
-                            className="text-white text-7xl px-12 leading-none"
+                            className="text-white px-12 leading-none"
                             style={{
                                 fontFamily: barlowFont,
                                 fontWeight: 300,
+                                fontSize: '100px',
                                 textShadow: '0 8px 32px rgba(0,0,0,0.8)'
                             }}
                         >

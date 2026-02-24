@@ -39,13 +39,29 @@ export default function KrakendePlayer({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
 
+  // Persistence keys
+  const LS_POS = `krakende_${playerId}_pos`;
+  const LS_NEG = `krakende_${playerId}_neg`;
+
+  // Restore from localStorage if session is missing the choice
+  const [localPos, setLocalPos] = useState<string | null>(null);
+  const [localNeg, setLocalNeg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalPos(localStorage.getItem(LS_POS));
+    setLocalNeg(localStorage.getItem(LS_NEG));
+  }, [LS_POS, LS_NEG]);
+
+  const effectiveChoice = myChoice || (isPositive || state.phase === 'positive-results' ? localPos : localNeg);
+
   // Reset picked state when switching around
   useEffect(() => {
-    const newChoice = isPositive || state.phase === 'positive-results'
+    const resChoice = isPositive || state.phase === 'positive-results'
       ? mySub?.positiveTrait
       : mySub?.negativeTrait;
-    setSelected(newChoice || null);
-    setSubmitted(!!newChoice);
+    const finalChoice = resChoice || (isPositive || state.phase === 'positive-results' ? localStorage.getItem(LS_POS) : localStorage.getItem(LS_NEG));
+    setSelected(finalChoice || null);
+    setSubmitted(!!finalChoice);
   }, [state.phase, mySub?.positiveTrait, mySub?.negativeTrait, isPositive]);
 
   // Only reset popup/reveal visibility when the actual phase changes
@@ -62,6 +78,11 @@ export default function KrakendePlayer({
   const handleConfirm = () => {
     if (!selected || submitted) return;
     onSubmitChoice(selected);
+
+    // Save locally
+    if (isPositive) localStorage.setItem(LS_POS, selected);
+    else if (isNegative) localStorage.setItem(LS_NEG, selected);
+
     setSubmitted(true);
     setShowConfirmation(true);
   };
@@ -70,7 +91,7 @@ export default function KrakendePlayer({
 
   // Reveal Phase (Step 5/6) — button to explode trait fullscreen
   if (isRevealPhase) {
-    const chosenTrait = traits.find((t) => t.id === myChoice);
+    const chosenTrait = traits.find((t) => t.id === effectiveChoice);
 
     if (showReveal && chosenTrait) {
       return (

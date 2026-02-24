@@ -104,16 +104,18 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
 
         {/* Heading Below Band */}
         <div className="w-full py-8 text-center px-8">
-          <h1
-            className="text-white drop-shadow-lg leading-tight"
-            style={{
-              fontFamily: 'Barlow Semi Condensed, sans-serif',
-              fontWeight: 300,
-              fontSize: '70pt'
-            }}
-          >
-            {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
-          </h1>
+          {!state.phase.endsWith('/01') && (
+            <h1
+              className="text-white drop-shadow-lg leading-tight"
+              style={{
+                fontFamily: 'Barlow Semi Condensed, sans-serif',
+                fontWeight: 300,
+                fontSize: '70pt'
+              }}
+            >
+              {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
+            </h1>
+          )}
         </div>
 
         <div className="grid grid-cols-4 gap-4 flex-1 auto-rows-min px-8 pb-8">
@@ -123,9 +125,9 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
                 key={trait.id}
                 className="rounded-xl p-4 flex flex-col justify-center items-center shadow-lg transform transition-transform border-[3px] border-white"
                 style={{
-                  backgroundColor: TILE_COLOR,
-                  minHeight: '120px',
-                  animation: `fadeIn 0.6s ease-out both ${i * 0.15}s`
+                  background: 'linear-gradient(45deg, #2563eb, #9333ea)',
+                  minHeight: '240px',
+                  animation: `fadeIn 2s ease-out both ${i * 0.15}s`
                 }}
               >
                 <div className="text-center w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
@@ -133,8 +135,8 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
                     const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                     return (
                       <>
-                        <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line1}</span>
-                        {line2 && <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line2}</span>}
+                        <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line1}</span>
+                        {line2 && <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line2}</span>}
                       </>
                     );
                   })()}
@@ -171,16 +173,18 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
 
       {/* Heading Below Band */}
       <div className="w-full py-8 text-center px-8">
-        <h1
-          className="text-white drop-shadow-lg leading-tight"
-          style={{
-            fontFamily: 'Barlow Semi Condensed, sans-serif',
-            fontWeight: 300,
-            fontSize: '70pt'
-          }}
-        >
-          {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
-        </h1>
+        {!state.phase.endsWith('/01') && (
+          <h1
+            className="text-white drop-shadow-lg leading-tight"
+            style={{
+              fontFamily: 'Barlow Semi Condensed, sans-serif',
+              fontWeight: 300,
+              fontSize: '70pt'
+            }}
+          >
+            {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
+          </h1>
+        )}
       </div>
 
       <div className="grid grid-cols-6 gap-4 flex-1 auto-rows-min content-start px-8">
@@ -191,9 +195,9 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
               key={trait.id}
               className="rounded-xl p-4 flex items-center justify-center text-center shadow-lg border-[3px] border-white"
               style={{
-                backgroundColor: TILE_COLOR,
+                background: 'linear-gradient(45deg, #2563eb, #9333ea)',
                 animation: isLatest ? 'krakendePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined,
-                minHeight: '80px',
+                minHeight: '160px',
               }}
             >
               <div className="w-full flex justify-center items-center font-barlow text-center flex-col text-white drop-shadow-md" style={{ fontWeight: 300 }}>
@@ -201,8 +205,8 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
                   const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                   return (
                     <>
-                      <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line1}</span>
-                      {line2 && <span style={{ fontSize: '3rem', lineHeight: '1.1' }}>{line2}</span>}
+                      <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line1}</span>
+                      {line2 && <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line2}</span>}
                     </>
                   );
                 })()}

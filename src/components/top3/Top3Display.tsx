@@ -395,12 +395,13 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
       <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
         {/* Heading — large, top-aligned (75px) to match Top 10 */}
         {displayHeading && (
-          <div className="absolute top-[75px] left-0 right-0 text-center z-30">
+          <div className="absolute top-[150px] left-0 right-0 text-center z-30">
             <h1
-              className="text-white text-7xl font-bold px-12 leading-none"
+              className="text-white font-bold px-12 leading-none"
               style={{
                 fontFamily: barlowFont,
                 fontWeight: 300,
+                fontSize: '100px',
                 textShadow: '0 4px 24px rgba(0,0,0,0.8)',
                 animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
               }}

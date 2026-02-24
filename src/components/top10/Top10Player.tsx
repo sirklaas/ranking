@@ -14,15 +14,33 @@ interface Top10PlayerProps {
     onVote: (chosenPlayerId: string, chosenPlayerName: string) => void;
 }
 
+const TOP10_HEADINGS: Record<string, string> = {
+    '17/01': 'Kies iemand uit een ander team!',
+    '17/05': 'Je hebt een pijnlijke pukkel op je bil waar je niet bij kan. \n Wie mag hem voor je uitknijpen?',
+    '17/06': 'Wie denkt dat ie always gelijk heeft?',
+    '17/07': 'Wie zou meedoen [tegen betaling uiteraard] \n aan de naakte fotoshoot van het Perfecte Plaatje?',
+    '17/08': 'Wie kan er 40 dagen zonder sexs?',
+    '17/09': 'Wie kan absoluut niet tegen zijn/haar verlies?',
+    '17/10': 'Wie laat weleens een wind?',
+    '17/11': 'Wie maakt de allerlelijkste Selfies ?',
+    '17/12': 'Wie is het meest verslaafd aan Social Media?',
+    '17/13': 'Wie krijgt de meeste bekeuringen?',
+    '17/14': 'Jullie doen mee met Temptation Island. \n Wie heeft als eerste iemand tussen de lakens?',
+};
+
 export default function Top10Player({
     state,
     playerId,
     playerName,
     teamNumber,
-    heading,
+    heading: propHeading,
     mediaUrl,
     onVote,
 }: Top10PlayerProps) {
+    // Determine the active heading from hardcoded list or prop
+    const activeFase = state.currentFase || '';
+    const hardcodedHeading = TOP10_HEADINGS[activeFase];
+    const displayHeading = hardcodedHeading || propHeading;
     const [query, setQuery] = useState('');
     const [selected, setSelected] = useState<string | null>(null);
     const [submitted, setSubmitted] = useState(false);
@@ -186,7 +204,7 @@ export default function Top10Player({
                 {mediaUrl && (
                     <div className="absolute inset-0 z-0 h-full w-full pointer-events-none" style={{ animation: 'top10PopIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both', animationDelay: '0.2s' }}>
                         <div className="absolute inset-0 bg-black/20 z-10" />
-                        <img src={mediaUrl} alt={heading || 'Top 10'} className="w-full h-full object-cover z-0" />
+                        <img src={mediaUrl} alt={displayHeading || 'Top 10'} className="w-full h-full object-cover z-0" />
                     </div>
                 )}
 
@@ -201,10 +219,10 @@ export default function Top10Player({
                 </div>
 
                 {/* Heading */}
-                {heading && (
+                {displayHeading && (
                     <div className="relative z-20 text-center px-6 pt-6 pb-2 w-full">
                         <h1 className="text-white text-2xl leading-snug whitespace-pre-line" style={{ fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}>
-                            {heading}
+                            {displayHeading}
                         </h1>
                     </div>
                 )}
@@ -238,7 +256,7 @@ export default function Top10Player({
             </div>
 
             {/* Quick-pick list (scrollable) - PRIMARY INTERACTION */}
-            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full px-4 pt-[140px]">
+            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full px-4 pt-4">
                 {otherPlayers.map((name) => {
                     const isSelected = selected === name;
                     return (

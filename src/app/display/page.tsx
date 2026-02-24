@@ -419,7 +419,7 @@ export default function DisplayPage() {
                 const vid = e.currentTarget;
                 // Pause before the end to prevent native black transitions. Increased to 0.4s 
                 // to make sure `timeupdate` fires in time before the browser hides the frame.
-                if (vid.duration - vid.currentTime < 0.4 && !vid.paused) {
+                if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
                   vid.pause();
                   // If this is the ending trailer (20/01), redirect to the standalone ending app
                   if (currentSession?.current_fase === '20/01') {
@@ -427,7 +427,8 @@ export default function DisplayPage() {
                   }
                 }
               }}
-              onEnded={() => {
+              onEnded={(e) => {
+                e.currentTarget.pause();
                 console.log('[Display] video ended');
                 if (currentSession?.current_fase === '20/01') {
                   window.location.href = 'https://end.pinkmilk.eu/display.html';

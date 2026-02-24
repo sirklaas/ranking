@@ -41,6 +41,15 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, heading, mediaUrl }) 
           className="absolute inset-0 w-full h-full object-contain"
           playsInline
           preload="auto"
+          onTimeUpdate={(e) => {
+            const vid = e.currentTarget;
+            if (vid.duration > 0 && vid.duration - vid.currentTime < 0.2 && !vid.paused) {
+              vid.pause();
+            }
+          }}
+          onEnded={(e) => {
+            e.currentTarget.pause();
+          }}
         />
       ) : mediaUrl ? (
         <img src={mediaUrl} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
