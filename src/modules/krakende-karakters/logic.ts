@@ -9,6 +9,7 @@ export const getInitialState = (): KrakendeState => ({
   negativeTraits: DEFAULT_NEGATIVE_TRAITS,
   submissions: [],
   revealedIndex: 0,
+  completedPhases: [],
 });
 
 // Map global fase key to internal Phase
@@ -80,6 +81,7 @@ export const nextPhase = async (
     ...currentState,
     phase: order[nextIdx],
     revealedIndex: 0, // reset reveal counter for new phase
+    completedPhases: Array.from(new Set([...currentState.completedPhases, currentState.phase])),
   };
 
   await rankingService.updateSession(sessionId, {
@@ -107,6 +109,7 @@ export const prevPhase = async (
     ...currentState,
     phase: order[prevIdx],
     revealedIndex: 0,
+    completedPhases: Array.from(new Set([...currentState.completedPhases, currentState.phase])),
   };
 
   await rankingService.updateSession(sessionId, {
@@ -222,6 +225,7 @@ export const setPhase = async (
     ...currentState,
     phase,
     revealedIndex: 0,
+    completedPhases: Array.from(new Set([...currentState.completedPhases, currentState.phase])),
   };
 
   await rankingService.updateSession(sessionId, {

@@ -24,4 +24,5 @@ export interface KrakendeState {
   negativeTraits: KrakendeTrait[];
   submissions: KrakendeSubmission[];
   revealedIndex: number; // how many traits have been revealed on display (0-24)
+  completedPhases: KrakendePhase[]; // which phases have already been completed
 }
