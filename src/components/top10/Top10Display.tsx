@@ -7,6 +7,7 @@ import { getVoterNames, getLiveTally } from '@/modules/top10/logic';
 interface Top10DisplayProps {
     state: Top10State;
     heading?: string;
+    mediaUrl?: string;
 }
 
 /* ──────── colour palette for word cloud names ──────── */
@@ -172,28 +173,63 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
     );
 }
 
-/* ──────── name wall during voting (before results) ──────── */
-function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: string[] }) {
-    const votedSet = new Set(votedNames);
+/* ──────── dynamic results item ──────── */
+function ResultItem({ result, index, show, total }: { result: Top10Result; index: number; show: boolean; total: number }) {
+    return (
+        <div
+            className={`transition-all duration-1000 ease-out flex items-center gap-6 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl ${show ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-20 scale-50'}`}
+            style={{
+                transform: show ? `rotate(0deg)` : `rotate(90deg)`,
+                width: '100%',
+                maxWidth: '800px',
+                transitionDelay: `${(total - index - 1) * 0.1}s` // Reveal from 10 to 1
+            }}
+        >
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-4xl font-extrabold text-[#0A1752] shrink-0 border-4 border-white/50">
+                {index + 1}
+            </div>
+            <div className="flex-1">
+                <div className="text-4xl font-black text-white uppercase tracking-tight" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    {formatName(result.playerName)}
+                </div>
+                <div className="h-4 bg-white/20 rounded-full mt-3 overflow-hidden">
+                    <div
+                        className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-1000 delay-500"
+                        style={{ width: show ? `${result.percentage}%` : '0%' }}
+                    />
+                </div>
+            </div>
+            <div className="text-5xl font-black text-cyan-300">
+                {result.percentage}%
+            </div>
+        </div>
+    );
+}
+
+function SequentialResults({ results }: { results: Top10Result[] }) {
+    const [revealCount, setRevealCount] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setRevealCount(prev => (prev < results.length ? prev + 1 : prev));
+        }, 800); // Reveal every 0.8s
+        return () => clearInterval(timer);
+    }, [results.length]);
 
     return (
-        <div className="flex flex-wrap gap-3 justify-center p-8">
-            {allNames.map((name) => {
-                const hasVoted = votedSet.has(name);
+        <div className="flex flex-col items-center gap-4 w-full p-8 overflow-y-auto max-h-screen no-scrollbar">
+            {/* Reveal from bottom (10) to top (1) */}
+            {[...results].reverse().map((res, i) => {
+                const originalIndex = results.length - 1 - i;
+                const show = revealCount > i;
                 return (
-                    <div
-                        key={name}
-                        className="px-5 py-3 rounded-xl text-lg font-bold transition-all duration-700"
-                        style={{
-                            fontFamily: 'Barlow Semi Condensed, sans-serif',
-                            backgroundColor: hasVoted ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.15)',
-                            color: hasVoted ? 'rgba(255,255,255,0.1)' : 'white',
-                            transform: hasVoted ? 'scale(0.8)' : 'scale(1)',
-                            border: hasVoted ? '2px solid transparent' : '2px solid rgba(255,255,255,0.2)',
-                        }}
-                    >
-                        {formatName(name)}
-                    </div>
+                    <ResultItem
+                        key={res.playerName}
+                        result={res}
+                        index={originalIndex}
+                        show={show}
+                        total={results.length}
+                    />
                 );
             })}
         </div>
@@ -201,7 +237,7 @@ function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: st
 }
 
 /* ──────── main display component ──────── */
-export default function Top10Display({ state, heading }: Top10DisplayProps) {
+export default function Top10Display({ state, heading, mediaUrl }: Top10DisplayProps) {
     const phase = state.currentQuestion.phase;
     const votedNames = getVoterNames(state);
     const liveTally = useMemo(() => getLiveTally(state), [state]);
@@ -220,54 +256,61 @@ export default function Top10Display({ state, heading }: Top10DisplayProps) {
         prevPhaseRef.current = phase;
     }, [phase]);
 
-    // Determine which results to show:
-    // During voting → live tally (real-time word cloud)
-    // During results → final computed results
-    const cloudResults = phase === 'results'
-        ? state.currentQuestion.results
-        : liveTally;
-
     return (
         <div
-            className="min-h-screen flex flex-col"
+            className="min-h-screen flex flex-col relative overflow-hidden"
             style={{
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
             }}
         >
-            {/* Heading */}
-            {heading && (
-                <div className="text-center pt-8 pb-4">
-                    <h1
-                        className="text-white text-5xl font-bold"
-                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                    >
-                        {heading}
-                    </h1>
+            {/* Background Media */}
+            {mediaUrl && (
+                <div className="absolute inset-0 z-0 h-full w-full pointer-events-none">
+                    <div className="absolute inset-0 bg-black/40 z-10" />
+                    <img src={mediaUrl} alt={heading || 'Top 10'} className="w-full h-full object-cover z-0" />
                 </div>
             )}
 
-            {/* Main content */}
-            <div className="flex-1 flex items-center justify-center p-8">
-                {(phase === 'results' || (phase === 'voting' && liveTally.length > 0)) ? (
-                    <WordCloud results={cloudResults} animate={animateCloud} />
-                ) : (
-                    <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
+            {/* Content Container */}
+            <div className="relative z-20 flex-1 flex flex-col">
+                {/* Heading */}
+                {heading && (
+                    <div className="text-center pt-16 pb-8">
+                        <h1
+                            className="text-white text-7xl font-black uppercase tracking-widest px-8"
+                            style={{
+                                fontFamily: 'Barlow Semi Condensed, sans-serif',
+                                textShadow: '0 4px 20px rgba(0,0,0,0.5)'
+                            }}
+                        >
+                            {heading}
+                        </h1>
+                    </div>
                 )}
-            </div>
 
-            {/* Status bar */}
-            <div className="text-center pb-6">
-                {phase === 'voting' && (
-                    <div className="text-white/50 text-lg">
-                        {votedNames.length} / {state.allPlayerNames.length} hebben gestemd
-                    </div>
-                )}
-                {phase === 'results' && (
-                    <div className="text-white/50 text-lg">
-                        Top 10 — {state.currentQuestion.results.length} genomineerd
-                    </div>
-                )}
+                {/* Main content area */}
+                <div className="flex-1 flex items-center justify-center p-8">
+                    {/* HIDE NAMES until voting or results starts */}
+                    {phase === 'intro' ? (
+                        <div className="text-white/30 text-3xl font-light animate-pulse uppercase tracking-[1em]">
+                            Wachten op stemmen...
+                        </div>
+                    ) : phase === 'results' ? (
+                        <SequentialResults results={state.currentQuestion.results} />
+                    ) : (
+                        <WordCloud results={liveTally} animate={animateCloud} />
+                    )}
+                </div>
+
+                {/* Status bar */}
+                <div className="text-center pb-12">
+                    {phase === 'voting' && (
+                        <div className="text-white bg-white/10 backdrop-blur-md inline-block px-8 py-3 rounded-full text-2xl font-bold border border-white/20">
+                            {votedNames.length} / {state.allPlayerNames.length} gestemd
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* CSS animations */}
@@ -275,6 +318,13 @@ export default function Top10Display({ state, heading }: Top10DisplayProps) {
         @keyframes cloudFadeIn {
           0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(0deg); }
           100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
         </div>

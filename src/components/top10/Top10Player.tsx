@@ -53,16 +53,13 @@ export default function Top10Player({
     }, [otherPlayers, query]);
 
     const handleSelect = (name: string) => {
+        if (submitted || alreadyVoted) return;
         setSelected(name);
         setQuery(name);
         setShowDropdown(false);
-    };
 
-    const handleConfirm = () => {
-        if (!selected || submitted || alreadyVoted) return;
-        // Validate selection is from the player list
-        if (!otherPlayers.includes(selected)) return;
-        onVote(selected, selected);
+        // Trigger vote immediately on selection
+        onVote(name, name);
         setSubmitted(true);
     };
 
@@ -224,7 +221,7 @@ export default function Top10Player({
     // Voting view — text input with autocomplete
     return (
         <div
-            className="min-h-screen flex flex-col p-4"
+            className="min-h-screen flex flex-col p-4 pb-12"
             style={{
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 background:
@@ -301,7 +298,7 @@ export default function Top10Player({
             )}
 
             {/* Quick-pick list (scrollable) */}
-            <div className="flex-1 overflow-y-auto pb-24 space-y-2 max-w-sm mx-auto w-full">
+            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full">
                 {otherPlayers.map((name) => {
                     const isSelected = selected === name;
                     return (
@@ -342,23 +339,6 @@ export default function Top10Player({
                         </button>
                     );
                 })}
-            </div>
-
-            {/* Confirm button — fixed at bottom */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1752] via-[#0A1752]/95 to-transparent">
-                <button
-                    onClick={handleConfirm}
-                    disabled={!selected}
-                    className="w-full py-4 rounded-xl text-xl font-bold transition-all active:scale-95"
-                    style={{
-                        backgroundColor: selected ? '#0A1752' : '#333',
-                        color: 'white',
-                        border: selected ? '2px solid white' : '2px solid #555',
-                        opacity: selected ? 1 : 0.5,
-                    }}
-                >
-                    {selected ? `Bevestig: ${formatName(selected)}` : 'Kies een persoon'}
-                </button>
             </div>
         </div>
     );
