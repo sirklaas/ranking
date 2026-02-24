@@ -81,6 +81,21 @@ interface CloudItem {
     opacity: number;
 }
 
+/* ──────── common heading renderer ──────── */
+function RenderHeading({ text, font }: { text: string; font: string }) {
+    if (!text) return null;
+    const lines = text.split(/\/[nN]/);
+    return (
+        <>
+            {lines.map((line, idx) => (
+                <div key={idx} className="block w-full">
+                    {line.trim()}
+                </div>
+            ))}
+        </>
+    );
+}
+
 function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] {
     if (results.length === 0) return [];
     const maxVotes = results[0].votes;
@@ -102,25 +117,25 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
         const ratio = maxVotes > 0 ? r.votes / maxVotes : 0;
         const fontSize = minFontSize + ratio * (maxFontSize - minFontSize);
 
-        // Approximate dimensions
-        // Nunito is roughly 0.6w per char at this weight
-        const approxW = nameText.length * fontSize * 0.6 + 60; // + padding
-        const approxH = fontSize * 1.2 + 60; // + padding
+        // Approximate dimensions - BE MORE CONSERVATIVE
+        // Nunito is roughly 0.75w per char at this weight, plus glow space
+        const approxW = nameText.length * fontSize * 0.75 + 120;
+        const approxH = fontSize * 1.4 + 120;
 
-        let x = effectiveW / 2;
-        let y = effectiveH / 2;
+        let x = w / 2;
+        let y = h / 2;
         let rotation = 0;
 
         if (i === 0) {
             // First item stays centered
             x = w / 2;
             y = h / 2;
+            rotation = 0;
         } else {
             // Try to place around a spiral until it doesn't intersect
             let angle = (hash % 360) * (Math.PI / 180);
-            let radius = 100;
+            let radius = 120; // Start further out
             let step = 0;
-            let foundIndex = -1;
 
             const rotationOptions = [0, 0, 90, -90, 0];
             rotation = rotationOptions[hash % rotationOptions.length];
@@ -129,7 +144,7 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
             const rectW = Math.abs(rotation) === 90 ? approxH : approxW;
             const rectH = Math.abs(rotation) === 90 ? approxW : approxH;
 
-            while (step < 200) {
+            while (step < 400) { // More iterations
                 const testX = w / 2 + Math.cos(angle) * radius;
                 const testY = h / 2 + Math.sin(angle) * radius;
 
@@ -147,12 +162,11 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
                 if (!collision) {
                     x = testX;
                     y = testY;
-                    foundIndex = step;
                     break;
                 }
 
-                angle += 0.3; // Incremental spiral
-                radius += 8;
+                angle += 0.2; // Tighter spiral increments
+                radius += 4;  // Slower radial expansion
                 step++;
             }
         }
@@ -414,7 +428,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                                 textShadow: '0 8px 32px rgba(0,0,0,0.8)'
                             }}
                         >
-                            {displayHeading}
+                            <RenderHeading text={displayHeading} font={barlowFont} />
                         </h1>
                     </div>
                 )}

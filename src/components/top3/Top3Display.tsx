@@ -32,6 +32,21 @@ const DONUT_BG = 'rgba(255,255,255,0.08)';
 
 const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
 
+/* ──────── common heading renderer ──────── */
+function RenderHeading({ text, font }: { text: string; font: string }) {
+  if (!text) return null;
+  const lines = text.split(/\/[nN]/);
+  return (
+    <>
+      {lines.map((line, idx) => (
+        <div key={idx} className="block w-full">
+          {line.trim()}
+        </div>
+      ))}
+    </>
+  );
+}
+
 interface DonutSegment {
   color: string;
   percentage: number;
@@ -390,7 +405,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
                 animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
               }}
             >
-              {displayHeading}
+              <RenderHeading text={displayHeading} font={barlowFont} />
             </h1>
           </div>
         )}
