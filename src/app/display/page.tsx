@@ -13,12 +13,7 @@ interface PlayersByTeam {
 }
 
 export default function DisplayPage() {
-  const [currentSession, _setCurrentSession] = useState<RankingSession | null>(null);
-  const setCurrentSession = (val: RankingSession | null | ((prev: RankingSession | null) => RankingSession | null)) => {
-    const next = typeof val === 'function' ? val(currentSessionRef.current) : val;
-    currentSessionRef.current = next;
-    _setCurrentSession(next);
-  };
+  const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
   const [playersByTeam, setPlayersByTeam] = useState<PlayersByTeam>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +23,6 @@ export default function DisplayPage() {
     | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
   >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const currentSessionRef = useRef<RankingSession | null>(null);
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
@@ -188,14 +182,14 @@ export default function DisplayPage() {
     const sessionId = currentSession.id;
 
     const unsubPromise = rankingService.subscribeToSession(sessionId, (data: Record<string, unknown>) => {
-      // Update module states
+      // Update module states from incoming record
       Object.values(FASES).forEach((mod) => {
         const sf = mod.stateField;
         if (!sf) return;
         const str = safeJsonStr(data[sf]);
         if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
       });
-      // Update current_fase and any other changed fields
+      // Merge all incoming fields (current_fase, etc.) into session
       setCurrentSession((prev) => prev ? { ...prev, ...data } as RankingSession : null);
     });
 
