@@ -101,14 +101,12 @@ export default function KrakendePlayer({
 
   const [readyForReveal, setReadyForReveal] = useState(false);
   useEffect(() => {
+    setReadyForReveal(false);
     if (isRevealPhase) {
-      // Delay button to show only after display has shown some traits
       const timer = setTimeout(() => setReadyForReveal(true), 6000);
       return () => clearTimeout(timer);
-    } else {
-      setReadyForReveal(false);
     }
-  }, [isRevealPhase]);
+  }, [state.phase, isRevealPhase]);
 
   // Reveal Phase (Step 5/6) — button to explode trait fullscreen
   if (isRevealPhase) {
@@ -156,8 +154,8 @@ export default function KrakendePlayer({
             <p className="text-white/70">
               Je hebt in deze ronde geen eigenschap gekozen. Wacht op de volgende fase.
             </p>
-            {/* Debug info - hidden but accessible */}
-            <div className="mt-8 pt-4 border-t border-white/10 text-[10px] text-white/20 font-mono text-left opacity-30">
+            {/* Debug info - visible but subtle */}
+            <div className="mt-8 pt-4 border-t border-white/10 text-[10px] text-white/40 font-mono text-left opacity-80">
               ID: {playerId.slice(-4)}<br />
               PHASE: {state.phase}<br />
               SUB_COUNT: {state.submissions.length}<br />
@@ -184,7 +182,7 @@ export default function KrakendePlayer({
         <button
           onClick={() => setShowReveal(true)}
           disabled={!readyForReveal}
-          className={`w-full py-8 px-6 rounded-3xl text-3xl font-bold shadow-2xl transition-transform border-4 border-white ${readyForReveal ? 'active:scale-95' : 'opacity-40 grayscale cursor-not-allowed'}`}
+          className={`w-full py-10 px-6 rounded-3xl text-4xl font-bold shadow-2xl transition-transform border-4 border-white ${readyForReveal ? 'active:scale-95' : 'opacity-40 grayscale cursor-not-allowed'}`}
           style={{
             backgroundColor: !readyForReveal ? '#666' : (state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B'),
             color: '#0A1752',

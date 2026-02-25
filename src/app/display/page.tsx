@@ -604,9 +604,22 @@ export default function DisplayPage() {
         <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center backdrop-blur-sm">
           <h2 className="text-white text-3xl font-light mb-8 tracking-widest">Display Systeem</h2>
           <button
-            onClick={() => {
+            onClick={async () => {
               try {
                 setUserEnabledSound(true);
+                // Reset Krakende if we are starting it
+                if (currentSession?.current_fase?.startsWith('13/')) {
+                  const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');
+                  let currentState = getInitialState();
+                  if (currentSession.krakende_state) {
+                    try {
+                      const parsed = JSON.parse(typeof currentSession.krakende_state === 'string' ? currentSession.krakende_state : JSON.stringify(currentSession.krakende_state));
+                      currentState = { ...currentState, ...parsed };
+                    } catch (e) { }
+                  }
+                  await resetState(currentSession.id, currentState);
+                }
+
                 // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported
                 const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
                 const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);

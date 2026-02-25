@@ -16,9 +16,9 @@ export const getInitialState = (): KrakendeState => ({
 export const getPhaseFromFaseKey = (faseKey: string): KrakendePhase | null => {
   switch (faseKey) {
     case '13/03': return 'positive-voting';
+    case '13/04': return 'negative-voting';
     case '13/05': return 'positive-results';
-    case '13/06': return 'negative-voting';
-    case '13/09': return 'negative-results';
+    case '13/06': return 'negative-results';
     default: return null;
   }
 };
