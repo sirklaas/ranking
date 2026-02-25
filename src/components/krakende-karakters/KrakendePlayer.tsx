@@ -99,6 +99,17 @@ export default function KrakendePlayer({
 
   const selectedTrait = traits.find((t) => t.id === selected);
 
+  const [readyForReveal, setReadyForReveal] = useState(false);
+  useEffect(() => {
+    if (isRevealPhase) {
+      // Delay button to show only after display has shown some traits
+      const timer = setTimeout(() => setReadyForReveal(true), 6000);
+      return () => clearTimeout(timer);
+    } else {
+      setReadyForReveal(false);
+    }
+  }, [isRevealPhase]);
+
   // Reveal Phase (Step 5/6) — button to explode trait fullscreen
   if (isRevealPhase) {
     const chosenTrait = traits.find((t) => t.id === effectiveChoice);
@@ -131,6 +142,35 @@ export default function KrakendePlayer({
       );
     }
 
+    if (!chosenTrait) {
+      return (
+        <div
+          className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
+          style={{
+            fontFamily: 'Barlow Semi Condensed, sans-serif',
+            background: 'linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d)',
+          }}
+        >
+          <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 w-full max-w-sm">
+            <h2 className="text-4xl font-bold text-white mb-4">Niet gestemd</h2>
+            <p className="text-white/70">
+              Je hebt in deze ronde geen eigenschap gekozen. Wacht op de volgende fase.
+            </p>
+            {/* Debug info - hidden but accessible */}
+            <div className="mt-8 pt-4 border-t border-white/10 text-[10px] text-white/20 font-mono text-left opacity-30">
+              ID: {playerId.slice(-4)}<br />
+              PHASE: {state.phase}<br />
+              SUB_COUNT: {state.submissions.length}<br />
+              MY_SUB: {mySub ? 'YES' : 'NO'}<br />
+              MY_CHOICE: {myChoice || 'NONE'}<br />
+              LOCAL_POS: {localPos || 'NONE'}<br />
+              LOCAL_NEG: {localNeg || 'NONE'}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center p-8"
@@ -143,22 +183,21 @@ export default function KrakendePlayer({
       >
         <button
           onClick={() => setShowReveal(true)}
-          disabled={!chosenTrait}
-          className={`w-full py-8 px-6 rounded-3xl text-3xl font-bold shadow-2xl transition-transform ${chosenTrait ? 'active:scale-95' : 'opacity-60 grayscale cursor-not-allowed'}`}
+          disabled={!readyForReveal}
+          className={`w-full py-8 px-6 rounded-3xl text-3xl font-bold shadow-2xl transition-transform border-4 border-white ${readyForReveal ? 'active:scale-95' : 'opacity-40 grayscale cursor-not-allowed'}`}
           style={{
-            backgroundColor: !chosenTrait ? '#666' : (state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B'),
-            color: !chosenTrait ? '#fff' : '#0A1752',
-            border: '4px solid white',
+            backgroundColor: !readyForReveal ? '#666' : (state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B'),
+            color: '#0A1752',
           }}
         >
-          {!chosenTrait
-            ? 'Niet gestemd'
-            : (state.phase === 'positive-results' ? 'Reveal positief' : 'Reveal negatief')}
+          {readyForReveal
+            ? (state.phase === 'positive-results' ? 'BEKIJK POSITIEF' : 'BEKIJK NEGATIEF')
+            : 'EVEN GEDULD...'}
         </button>
         <p className="text-white/60 mt-8 text-center text-lg">
-          {!chosenTrait
-            ? 'Je hebt in deze ronde geen eigenschap gekozen. Wacht op de volgende fase.'
-            : 'Druk op de knop om jouw gekozen eigenschap aan de rest te laten zien!'}
+          {readyForReveal
+            ? 'Druk op de knop om jouw gekozen eigenschap aan de rest te laten zien!'
+            : 'Wacht tot de presentator alle eigenschappen heeft laten zien...'}
         </p>
       </div>
     );

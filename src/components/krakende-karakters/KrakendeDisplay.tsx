@@ -102,20 +102,30 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
           </div>
         </div>
 
-        {/* Heading Below Band Removed per request - now on phone */}
-        <div className="w-full py-4 text-center px-8">
+        {/* Heading Below Band */}
+        <div className="w-full py-8 text-center px-8">
+          <h1
+            className="text-white drop-shadow-lg leading-tight"
+            style={{
+              fontFamily: 'Barlow Semi Condensed, sans-serif',
+              fontWeight: 300,
+              fontSize: '60pt'
+            }}
+          >
+            {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
+          </h1>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 flex-1 auto-rows-min px-8 pb-8">
+        <div className="grid grid-cols-4 gap-8 flex-1 auto-rows-min px-12 pb-12">
           {shuffled.map((trait, i) => {
             return (
               <div
                 key={trait.id}
-                className="rounded-xl p-4 flex flex-col justify-center items-center shadow-lg transform transition-transform border-[3px] border-white"
+                className="rounded-xl p-6 flex flex-col justify-center items-center shadow-2xl transform transition-transform border-[3px] border-white hover:scale-105"
                 style={{
                   background: 'linear-gradient(45deg, #2563eb, #9333ea)',
-                  minHeight: '240px',
-                  animation: `fadeIn 2s ease-out both ${i * 0.15}s`
+                  minHeight: '280px',
+                  animation: `fadeIn 3s ease-out both ${i * 0.1}s`
                 }}
               >
                 <div className="text-center w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
@@ -159,11 +169,21 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
         </div>
       </div>
 
-      {/* Heading Below Band Removed per request - now on phone */}
-      <div className="w-full py-4 text-center px-8">
+      {/* Heading Below Band */}
+      <div className="w-full py-8 text-center px-8">
+        <h1
+          className="text-white drop-shadow-lg leading-tight"
+          style={{
+            fontFamily: 'Barlow Semi Condensed, sans-serif',
+            fontWeight: 300,
+            fontSize: '60pt'
+          }}
+        >
+          {isPositive ? 'Goede Geinige Eigenschappen' : 'Minder Goede Eigenschappen'}
+        </h1>
       </div>
 
-      <div className="grid grid-cols-6 gap-4 flex-1 auto-rows-min content-start px-8">
+      <div className="grid grid-cols-6 gap-6 flex-1 auto-rows-min content-start px-12 pb-24">
         {revealed.map((trait, i) => {
           const isLatest = i === revealed.length - 1;
           return (
