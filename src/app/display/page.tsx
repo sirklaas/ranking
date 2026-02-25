@@ -349,7 +349,11 @@ export default function DisplayPage() {
       }
     }
 
-    if (mod?.DisplayView && (!mod.stateField || moduleStates[mod.stateField])) {
+    // Render module if: it has a DisplayView AND (no stateField required, OR state exists, OR this is NOT the trailer slot)
+    // This prevents falling through to the media overlay on question slides (e.g. 10/05-10/13) when state hasn't arrived yet
+    const isTrailerSlot = currentSession.current_fase.endsWith('/01');
+    const stateReady = !mod?.stateField || !!moduleStates[mod.stateField];
+    if (mod?.DisplayView && (stateReady || !isTrailerSlot)) {
       const headingsJson = currentSession.headings || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
       const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
@@ -578,17 +582,11 @@ export default function DisplayPage() {
             onClick={async () => {
               try {
                 setUserEnabledSound(true);
-                // Reset Krakende if we are at the very beginning
-                if (currentSession?.current_fase === '13/01' || currentSession?.current_fase === '13/02') {
-                  const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');
-                  let currentState = getInitialState();
-                  if (currentSession.krakende_state) {
-                    try {
-                      const parsed = JSON.parse(typeof currentSession.krakende_state === 'string' ? currentSession.krakende_state : JSON.stringify(currentSession.krakende_state));
-                      currentState = { ...currentState, ...parsed };
-                    } catch (e) { }
-                  }
-                  await resetState(currentSession.id, currentState);
+                // Always reset Krakende to a fresh state on display start
+                if (currentSession?.id) {
+                  const { getInitialState, updateState } = await import('@/modules/krakende-karakters/logic');
+                  const fresh = getInitialState();
+                  await updateState(currentSession.id, () => fresh).catch(() => {});
                 }
 
                 // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported

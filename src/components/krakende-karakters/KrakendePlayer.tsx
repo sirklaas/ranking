@@ -154,16 +154,6 @@ export default function KrakendePlayer({
             <p className="text-white/70">
               Je hebt in deze ronde geen eigenschap gekozen. Wacht op de volgende fase.
             </p>
-            {/* Debug info - visible but subtle */}
-            <div className="mt-8 pt-4 border-t border-white/10 text-[10px] text-white/40 font-mono text-left opacity-80">
-              ID: {playerId.slice(-4)}<br />
-              PHASE: {state.phase}<br />
-              SUB_COUNT: {state.submissions.length}<br />
-              MY_SUB: {mySub ? 'YES' : 'NO'}<br />
-              MY_CHOICE: {myChoice || 'NONE'}<br />
-              LOCAL_POS: {localPos || 'NONE'}<br />
-              LOCAL_NEG: {localNeg || 'NONE'}
-            </div>
           </div>
         </div>
       );
