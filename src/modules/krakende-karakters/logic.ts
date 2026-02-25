@@ -148,51 +148,30 @@ export const submitChoice = async (
   teamNumber: number,
   traitId: string
 ): Promise<KrakendeState> => {
-  const isPositive =
-    currentState.phase === 'positive-voting' || currentState.phase === 'positive-results';
+  try {
+    const res = await fetch('/api/krakende-choice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        playerId,
+        playerName,
+        teamNumber,
+        traitId
+      })
+    });
 
-  // Find existing submission or create new
-  const existingIdx = currentState.submissions.findIndex(
-    (s) => s.playerId === playerId
-  );
-
-  let updatedSubmissions: KrakendeSubmission[];
-  if (existingIdx >= 0) {
-    updatedSubmissions = [...currentState.submissions];
-    if (isPositive) {
-      updatedSubmissions[existingIdx] = {
-        ...updatedSubmissions[existingIdx],
-        positiveTrait: traitId,
-        timestamp: Date.now(),
-      };
-    } else {
-      updatedSubmissions[existingIdx] = {
-        ...updatedSubmissions[existingIdx],
-        negativeTrait: traitId,
-        timestamp: Date.now(),
-      };
+    if (!res.ok) {
+      console.warn('Failed to submit krakende choice via queue. Falling back to optimistic state.');
+      return currentState;
     }
-  } else {
-    const newSub: KrakendeSubmission = {
-      playerId,
-      playerName,
-      teamNumber,
-      timestamp: Date.now(),
-      ...(isPositive ? { positiveTrait: traitId } : { negativeTrait: traitId }),
-    };
-    updatedSubmissions = [...currentState.submissions, newSub];
+
+    const data = await res.json();
+    return data.state;
+  } catch (err) {
+    console.error('Error submitting krakende choice:', err);
+    return currentState;
   }
-
-  const newState: KrakendeState = {
-    ...currentState,
-    submissions: updatedSubmissions,
-  };
-
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
-  });
-
-  return newState;
 };
 
 // Update traits from the dashboard
