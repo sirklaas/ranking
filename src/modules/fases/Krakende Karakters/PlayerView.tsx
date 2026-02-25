@@ -4,11 +4,13 @@ import type { FaseCommonProps } from '@/types/fases';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
 import * as krakendeLogic from '@/modules/krakende-karakters/logic';
 import KrakendePlayer from '@/components/krakende-karakters/KrakendePlayer';
+import { safeJsonParse } from '@/lib/jsonUtils';
 
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, moduleStateJson, onModuleStateJson, playerInfo }) => {
   if (!sessionId || !moduleStateJson || !playerInfo || faseKey === '13/01') return null;
 
-  const state: KrakendeState = JSON.parse(moduleStateJson);
+  const state = safeJsonParse<KrakendeState>(moduleStateJson);
+  if (!state) return null;
 
   return (
     <KrakendePlayer

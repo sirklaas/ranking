@@ -6,6 +6,7 @@ import { rankingService, teamService, motherfileService, faseService } from '@/l
 import { RankingSession } from '@/types';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
+import { safeJsonStr } from '@/lib/jsonUtils';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -34,21 +35,9 @@ export default function DisplayPage() {
     Object.values(FASES).forEach((mod) => {
       const sf = mod.stateField;
       if (!sf) return;
-
-      let json = (currentSession as Record<string, unknown>)[sf];
-
-      if (!json && currentSession.headings) {
-        try {
-          const hObj = typeof currentSession.headings === 'string' ? JSON.parse(currentSession.headings) : currentSession.headings;
-          if (hObj[sf]) {
-            json = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
-          }
-        } catch (e) { }
-      }
-
-      if (typeof json === 'string' && json) {
-        newStates[sf] = json;
-      }
+      const raw = (currentSession as Record<string, unknown>)[sf];
+      const str = safeJsonStr(raw);
+      if (str) newStates[sf] = str;
     });
     setModuleStates((prev) => ({ ...prev, ...newStates }));
   }, [currentSession]);
@@ -231,10 +220,8 @@ export default function DisplayPage() {
         Object.values(FASES).forEach((mod) => {
           const sf = mod.stateField;
           if (!sf) return;
-          const jsonStr = rec[sf] as string | undefined;
-          if (jsonStr) {
-            setModuleStates((prev) => ({ ...prev, [sf]: jsonStr }));
-          }
+          const str = safeJsonStr((rec as Record<string, unknown>)[sf]);
+          if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
         });
 
         // If PocketBase event doesn't include current_fase, fetch the full record to get the latest value

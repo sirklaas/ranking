@@ -4,11 +4,10 @@ import type { FaseCommonProps } from '@/types/fases';
 import { Top3State } from '@/modules/top3/types';
 import * as top3Logic from '@/modules/top3/logic';
 import Top3Presenter from '@/components/top3/Top3Presenter';
+import { safeJsonParse } from '@/lib/jsonUtils';
 
 const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, allPlayerNames, heading, mediaUrl, faseKey }) => {
-  const state: Top3State = moduleStateJson
-    ? JSON.parse(moduleStateJson)
-    : top3Logic.getInitialState(allPlayerNames || []);
+  const state: Top3State = safeJsonParse<Top3State>(moduleStateJson) ?? top3Logic.getInitialState(allPlayerNames || []);
 
   const prevFaseRef = useRef(faseKey);
   const didInit = useRef(false);
@@ -22,31 +21,33 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     top3Logic.persistState(sessionId, state).catch(() => { });
   }, [moduleStateJson, sessionId, state, onModuleStateJson]);
 
-  // Advance to next question automatically when faseKey changes (Next Slide navigated globally)
+  // Advance to next question when navigator moves to a NEW Top3 fase slot
   useEffect(() => {
-    if (faseKey && sessionId && state.currentFase !== faseKey) {
-      // If there are existing votes or we were not in intro, WIPE IT entirely.
-      if (state.currentQuestion.phase !== 'intro' || state.currentQuestion.votes.length > 0) {
-        const nextState: Top3State = {
-          ...state,
-          currentFase: faseKey,
-          currentQuestion: {
-            questionIndex: state.currentQuestion.questionIndex + 1,
-            phase: 'intro',
-            votes: [],
-            results: [],
-          },
-        };
-        onModuleStateJson?.(JSON.stringify(nextState));
-        top3Logic.persistState(sessionId, nextState).catch(() => { });
-      } else {
-        // Just sync the tracker marker so it doesn't wipe when not needed
-        const syncState: Top3State = { ...state, currentFase: faseKey };
-        onModuleStateJson?.(JSON.stringify(syncState));
-        top3Logic.persistState(sessionId, syncState).catch(() => { });
-      }
+    if (!faseKey || !sessionId) return;
+    if (state.currentFase === faseKey) return; // already in sync — do nothing
+
+    // Only wipe votes/results when moving to a genuinely different question.
+    // If current slot had real voting activity, clear it for the next round.
+    if (state.currentQuestion.votes.length > 0 || state.currentQuestion.phase === 'results') {
+      const nextState: Top3State = {
+        ...state,
+        currentFase: faseKey,
+        currentQuestion: {
+          questionIndex: state.currentQuestion.questionIndex + 1,
+          phase: 'intro',
+          votes: [],
+          results: [],
+        },
+      };
+      onModuleStateJson?.(JSON.stringify(nextState));
+      top3Logic.persistState(sessionId, nextState).catch(() => { });
+    } else {
+      // No votes yet — just update the tracker, keep voting phase intact
+      const syncState: Top3State = { ...state, currentFase: faseKey };
+      onModuleStateJson?.(JSON.stringify(syncState));
+      top3Logic.persistState(sessionId, syncState).catch(() => { });
     }
-  }, [faseKey, sessionId, state.currentFase, state, onModuleStateJson]);
+  }, [faseKey, sessionId, state.currentFase]);
 
   if (!sessionId) return null;
 

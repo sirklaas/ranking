@@ -3,11 +3,13 @@ import React from 'react';
 import type { FaseCommonProps } from '@/types/fases';
 import { Top10State } from '@/modules/top10/types';
 import Top10Display from '@/components/top10/Top10Display';
+import { safeJsonParse } from '@/lib/jsonUtils';
 
 const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, heading, mediaUrl, faseKey, sessionId }) => {
   if (!moduleStateJson) return null;
 
-  const state: Top10State = JSON.parse(moduleStateJson);
+  const state = safeJsonParse<Top10State>(moduleStateJson);
+  if (!state) return null;
   return <Top10Display
     state={state}
     heading={heading}

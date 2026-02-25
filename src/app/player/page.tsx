@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { rankingService, teamService, faseService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
+import { safeJsonStr } from '@/lib/jsonUtils';
 
 interface RankingSession {
   id: string;
@@ -284,10 +285,8 @@ export default function PlayerPage() {
     Object.values(FASES).forEach((mod) => {
       const sf = mod.stateField;
       if (!sf) return;
-      const jsonStr = currentSession[sf] as string | undefined;
-      if (jsonStr) {
-        setModuleStates((prev) => ({ ...prev, [sf]: jsonStr }));
-      }
+      const str = safeJsonStr((currentSession as Record<string, unknown>)[sf]);
+      if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
     });
 
     const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
@@ -295,10 +294,8 @@ export default function PlayerPage() {
       Object.values(FASES).forEach((mod) => {
         const sf = mod.stateField;
         if (!sf) return;
-        const jsonStr = data[sf] as string | undefined;
-        if (jsonStr) {
-          setModuleStates((prev) => ({ ...prev, [sf]: jsonStr }));
-        }
+        const str = safeJsonStr(data[sf]);
+        if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
       });
       // Also update current fase if changed
       if (data.current_fase) {

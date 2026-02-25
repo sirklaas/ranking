@@ -4,11 +4,13 @@ import type { FaseCommonProps } from '@/types/fases';
 import { Top10State } from '@/modules/top10/types';
 import * as top10Logic from '@/modules/top10/logic';
 import Top10Player from '@/components/top10/Top10Player';
+import { safeJsonParse } from '@/lib/jsonUtils';
 
 const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, playerInfo, allPlayerNames, heading, mediaUrl }) => {
   if (!sessionId || !moduleStateJson || !playerInfo) return null;
 
-  const state: Top10State = JSON.parse(moduleStateJson);
+  const state = safeJsonParse<Top10State>(moduleStateJson);
+  if (!state) return null;
 
   return (
     <Top10Player

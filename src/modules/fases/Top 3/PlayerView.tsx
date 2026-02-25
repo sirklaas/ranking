@@ -4,11 +4,13 @@ import type { FaseCommonProps } from '@/types/fases';
 import { Top3State } from '@/modules/top3/types';
 import * as top3Logic from '@/modules/top3/logic';
 import Top3Player from '@/components/top3/Top3Player';
+import { safeJsonParse } from '@/lib/jsonUtils';
 
 const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, playerInfo, allPlayerNames, heading, mediaUrl }) => {
   if (!sessionId || !moduleStateJson || !playerInfo) return null;
 
-  const state: Top3State = JSON.parse(moduleStateJson);
+  const state = safeJsonParse<Top3State>(moduleStateJson);
+  if (!state) return null;
 
   return (
     <Top3Player

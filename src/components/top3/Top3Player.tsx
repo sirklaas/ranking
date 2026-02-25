@@ -189,7 +189,7 @@ export default function Top3Player({
       </div>
 
       {/* Confirm button — fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1752] via-[#0A1752]/95 to-transparent">
+      <div className="fixed bottom-[7px] left-0 right-0 px-4 pb-[7px] bg-gradient-to-t from-[#0A1752] via-[#0A1752]/95 to-transparent">
         <button
           onClick={handleConfirm}
           disabled={!selected}

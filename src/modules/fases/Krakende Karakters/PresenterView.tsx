@@ -3,12 +3,11 @@ import React, { useEffect, useRef } from 'react';
 import type { FaseCommonProps } from '@/types/fases';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
 import * as krakendeLogic from '@/modules/krakende-karakters/logic';
+import { safeJsonParse } from '@/lib/jsonUtils';
 import KrakendePresenter from '@/components/krakende-karakters/KrakendePresenter';
 
 const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleStateJson, onModuleStateJson, allPlayerNames = [] }) => {
-  const state: KrakendeState = moduleStateJson
-    ? JSON.parse(moduleStateJson)
-    : krakendeLogic.getInitialState();
+  const state: KrakendeState = safeJsonParse<KrakendeState>(moduleStateJson) ?? krakendeLogic.getInitialState();
 
   // Auto-persist initial state to PB so display + phone can pick it up immediately
   const didInit = useRef(false);
