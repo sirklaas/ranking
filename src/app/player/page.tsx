@@ -142,14 +142,23 @@ export default function PlayerPage() {
   // Generic module states (keyed by stateField name)
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
 
-  // Load PocketBase session ONCE (for team members and links) - no polling
+  // Load PocketBase session based on URL code or latest
   useEffect(() => {
     const loadSessionData = async () => {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+
         const sessions = await rankingService.getAllSessions();
         if (sessions && sessions.length > 0) {
-          const latestSession = sessions[0] as unknown as RankingSession;
-          setCurrentSession(latestSession);
+          let selectedSession = sessions[0] as unknown as RankingSession;
+
+          if (code) {
+            const found = sessions.find(s => s.id === code || s.id.startsWith(code));
+            if (found) selectedSession = found as unknown as RankingSession;
+          }
+
+          setCurrentSession(selectedSession);
         }
       } catch (error) {
         console.error('Failed to load session data (PocketBase):', error);
@@ -271,54 +280,24 @@ export default function PlayerPage() {
   useEffect(() => {
     if (!currentSession) return;
 
-    // Initial parse of all registered module states
+    // Initial parse of all registered module states from top-level PB fields
     Object.values(FASES).forEach((mod) => {
       const sf = mod.stateField;
       if (!sf) return;
-
-      let jsonStr = currentSession[sf] as string | undefined;
-
-      if (!jsonStr && currentSession.headings) {
-        try {
-          const hObj = JSON.parse(currentSession.headings as string);
-          if (hObj[sf]) {
-            jsonStr = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
-          }
-        } catch (e) { }
-      }
-
+      const jsonStr = currentSession[sf] as string | undefined;
       if (jsonStr) {
-        try {
-          setModuleStates((prev) => ({ ...prev, [sf]: jsonStr! }));
-        } catch (e) {
-          console.error(`Failed to parse ${sf}`, e);
-        }
+        setModuleStates((prev) => ({ ...prev, [sf]: jsonStr }));
       }
     });
 
     const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
-      // Update all registered module states generically
+      // Update all registered module states generically from top-level PB fields
       Object.values(FASES).forEach((mod) => {
         const sf = mod.stateField;
         if (!sf) return;
-
-        let jsonStr = data[sf] as string | undefined;
-
-        if (!jsonStr && data.headings) {
-          try {
-            const hObj = typeof data.headings === 'string' ? JSON.parse(data.headings) : data.headings as any;
-            if (hObj[sf]) {
-              jsonStr = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
-            }
-          } catch (e) { }
-        }
-
+        const jsonStr = data[sf] as string | undefined;
         if (jsonStr) {
-          try {
-            setModuleStates((prev) => ({ ...prev, [sf]: jsonStr! }));
-          } catch (e) {
-            console.error(`Failed to parse ${sf} update`, e);
-          }
+          setModuleStates((prev) => ({ ...prev, [sf]: jsonStr }));
         }
       });
       // Also update current fase if changed

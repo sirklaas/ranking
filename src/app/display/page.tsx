@@ -227,29 +227,13 @@ export default function DisplayPage() {
         });
         if (!same) return;
 
-        // Parse all registered module states generically
+        // Parse all registered module states generically from top-level PB fields
         Object.values(FASES).forEach((mod) => {
           const sf = mod.stateField;
           if (!sf) return;
-
-          let jsonStr = rec[sf] as string | undefined;
-
-          // Fallback: If PB dropped it, unpack from 'headings'
-          if (!jsonStr && rec.headings) {
-            try {
-              const hObj = JSON.parse(rec.headings);
-              if (hObj[sf]) {
-                jsonStr = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
-              }
-            } catch (e) { }
-          }
-
+          const jsonStr = rec[sf] as string | undefined;
           if (jsonStr) {
-            try {
-              setModuleStates((prev) => ({ ...prev, [sf]: jsonStr! }));
-            } catch (e) {
-              console.error(`[Display] Failed to parse ${sf}`, e);
-            }
+            setModuleStates((prev) => ({ ...prev, [sf]: jsonStr }));
           }
         });
 
@@ -607,8 +591,8 @@ export default function DisplayPage() {
             onClick={async () => {
               try {
                 setUserEnabledSound(true);
-                // Reset Krakende if we are starting it
-                if (currentSession?.current_fase?.startsWith('13/')) {
+                // Reset Krakende if we are at the very beginning
+                if (currentSession?.current_fase === '13/01' || currentSession?.current_fase === '13/02') {
                   const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');
                   let currentState = getInitialState();
                   if (currentSession.krakende_state) {

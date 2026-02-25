@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
 import { getTraitLabel, shuffleTraits, splitLabelForTwoLines } from '@/modules/krakende-karakters/logic';
 
@@ -35,6 +35,24 @@ function playPopSound() {
 const TILE_COLOR = '#808080';
 
 export default function KrakendeDisplay({ state, allPlayerNames = [] }: KrakendeDisplayProps) {
+  // Inject keyframe animations once
+  useEffect(() => {
+    if (document.getElementById('krakende-kf')) return;
+    const s = document.createElement('style');
+    s.id = 'krakende-kf';
+    s.textContent = `
+      @keyframes krakendePop {
+        0%   { transform: scale(0); opacity: 0; }
+        60%  { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes krakendeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+    `;
+    document.head.appendChild(s);
+  }, []);
   const totalPlayers = allPlayerNames.length;
   const isPositive = state.phase === 'positive-voting' || state.phase === 'positive-results';
   const isResults = state.phase === 'positive-results' || state.phase === 'negative-results';
@@ -103,13 +121,13 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
         </div>
 
         {/* Heading Below Band */}
-        <div className="w-full py-8 text-center px-8">
+        <div className="w-full py-6 text-center px-8">
           <h1
             className="text-white drop-shadow-lg leading-tight"
             style={{
               fontFamily: 'Barlow Semi Condensed, sans-serif',
               fontWeight: 300,
-              fontSize: '60pt'
+              fontSize: 'clamp(2rem, 6vw, 5rem)',
             }}
           >
             {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
@@ -125,7 +143,7 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
                 style={{
                   background: 'linear-gradient(45deg, #2563eb, #9333ea)',
                   minHeight: '280px',
-                  animation: `fadeIn 3s ease-out both ${i * 0.1}s`
+                  animation: `krakendeIn 3s ease-out both ${i * 0.1}s`
                 }}
               >
                 <div className="text-center w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
@@ -170,13 +188,13 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
       </div>
 
       {/* Heading Below Band */}
-      <div className="w-full py-8 text-center px-8">
+      <div className="w-full py-6 text-center px-8">
         <h1
           className="text-white drop-shadow-lg leading-tight"
           style={{
             fontFamily: 'Barlow Semi Condensed, sans-serif',
             fontWeight: 300,
-            fontSize: '60pt'
+            fontSize: 'clamp(2rem, 6vw, 5rem)',
           }}
         >
           {isPositive ? 'Goede Geinige Eigenschappen' : 'Minder Goede Eigenschappen'}
@@ -225,27 +243,6 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
         </div>
       </div>
 
-      {/* Pop animation keyframes */}
-      <style jsx>{`
-        @keyframes krakendePop {
-          0% {
-            transform: scale(0);
-            opacity: 0;
-          }
-          60% {
-            transform: scale(1.2);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }

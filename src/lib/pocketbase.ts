@@ -184,30 +184,6 @@ export const rankingService = {
   async updateSession(id: string, data: Record<string, unknown>) {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
-
-    // Hack: PB schema might reject top3_state, top10_state, krakende_state.
-    // Pack them into the `headings` document before updating.
-    const customFields = ['top3_state', 'top10_state', 'krakende_state'];
-    const hasCustom = customFields.some(f => data[f] !== undefined);
-
-    if (hasCustom) {
-      try {
-        const rec = await pb.collection('ranking').getOne(id);
-        let headingsObj: Record<string, any> = {};
-        try { headingsObj = typeof rec.headings === 'string' ? JSON.parse(rec.headings || '{}') : (rec.headings || {}); } catch (e) { }
-
-        customFields.forEach(f => {
-          if (data[f] !== undefined) {
-            headingsObj[f] = data[f];
-            delete data[f];
-          }
-        });
-        data.headings = JSON.stringify(headingsObj);
-      } catch (e) {
-        console.warn('Failed to intercept and pack custom states:', e);
-      }
-    }
-
     return await pb.collection('ranking').update(id, data);
   },
 

@@ -2,10 +2,13 @@
 import React from 'react';
 
 export default function TestPhonesPage() {
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const code = params?.get('code');
+
     return (
         <div className="min-h-screen bg-gray-900 p-8 flex flex-col items-center">
             <h1 className="text-white text-3xl mb-8 font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                6 Test Phones
+                6 Test Phones {code && <span className="text-gray-500 font-light text-xl">({code})</span>}
             </h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -19,7 +22,7 @@ export default function TestPhonesPage() {
                             <div className="absolute top-0 inset-x-0 h-6 bg-black rounded-b-xl w-40 mx-auto z-10 pointer-events-none"></div>
 
                             <iframe
-                                src={`/player?testName=TestSpeler${i}&testTeam=${i}`}
+                                src={`/player?testName=TestSpeler${i}&testTeam=${i}${code ? `&code=${code}` : ''}`}
                                 className="w-full h-full rounded-[2.5rem] bg-white"
                                 style={{ border: 'none' }}
                                 title={`Phone ${i}`}

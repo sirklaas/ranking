@@ -53,14 +53,10 @@ export const toggleLanguage = async (
   sessionId: string,
   currentState: KrakendeState
 ): Promise<KrakendeState> => {
-  const newLang: KrakendeLanguage = currentState.language === 'nl' ? 'en' : 'nl';
-  const newState: KrakendeState = { ...currentState, language: newLang };
-
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
-  });
-
-  return newState;
+  return await updateState(sessionId, (current) => ({
+    ...current,
+    language: current.language === 'nl' ? 'en' : 'nl'
+  }));
 };
 
 // Advance to the next phase (presenter arrow-right)
@@ -74,21 +70,19 @@ export const nextPhase = async (
     'positive-results',
     'negative-results',
   ];
-  const idx = order.indexOf(currentState.phase);
-  const nextIdx = Math.min(idx + 1, order.length - 1);
 
-  const newState: KrakendeState = {
-    ...currentState,
-    phase: order[nextIdx],
-    revealedIndex: 0, // reset reveal counter for new phase
-    completedPhases: Array.from(new Set([...currentState.completedPhases, currentState.phase])),
-  };
+  return await updateState(sessionId, (current) => {
+    const idx = order.indexOf(current.phase);
+    const nextIdx = Math.min(idx + 1, order.length - 1);
+    const nextPhase = order[nextIdx];
 
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
+    return {
+      ...current,
+      phase: nextPhase,
+      revealedIndex: 0, // reset reveal counter for new phase
+      completedPhases: Array.from(new Set([...current.completedPhases, current.phase])),
+    };
   });
-
-  return newState;
 };
 
 // Go to previous phase (presenter arrow-left)
@@ -102,21 +96,19 @@ export const prevPhase = async (
     'positive-results',
     'negative-results',
   ];
-  const idx = order.indexOf(currentState.phase);
-  const prevIdx = Math.max(idx - 1, 0);
 
-  const newState: KrakendeState = {
-    ...currentState,
-    phase: order[prevIdx],
-    revealedIndex: 0,
-    completedPhases: Array.from(new Set([...currentState.completedPhases, currentState.phase])),
-  };
+  return await updateState(sessionId, (current) => {
+    const idx = order.indexOf(current.phase);
+    const prevIdx = Math.max(idx - 1, 0);
+    const prevPhase = order[prevIdx];
 
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
+    return {
+      ...current,
+      phase: prevPhase,
+      revealedIndex: 0,
+      completedPhases: Array.from(new Set([...current.completedPhases, current.phase])),
+    };
   });
-
-  return newState;
 };
 
 // Reveal next trait on display (one by one)
@@ -124,19 +116,15 @@ export const revealNextTrait = async (
   sessionId: string,
   currentState: KrakendeState
 ): Promise<KrakendeState> => {
-  const maxTraits =
-    currentState.phase === 'positive-voting' || currentState.phase === 'positive-results'
-      ? currentState.positiveTraits.length
-      : currentState.negativeTraits.length;
+  return await updateState(sessionId, (current) => {
+    const maxTraits =
+      current.phase === 'positive-voting' || current.phase === 'positive-results'
+        ? current.positiveTraits.length
+        : current.negativeTraits.length;
 
-  const newIndex = Math.min(currentState.revealedIndex + 1, maxTraits);
-  const newState: KrakendeState = { ...currentState, revealedIndex: newIndex };
-
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
+    const newIndex = Math.min(current.revealedIndex + 1, maxTraits);
+    return { ...current, revealedIndex: newIndex };
   });
-
-  return newState;
 };
 
 // Player submits their choice
@@ -181,37 +169,68 @@ export const updateTraits = async (
   positiveTraits: KrakendeTrait[],
   negativeTraits: KrakendeTrait[]
 ): Promise<KrakendeState> => {
-  const newState: KrakendeState = {
-    ...currentState,
+  return await updateState(sessionId, (current) => ({
+    ...current,
     positiveTraits,
     negativeTraits,
-  };
+  }));
+};
 
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
-  });
+/**
+ * Core update function for KrakendeState using Optimistic Concurrency Control (OCC).
+ * Reads krakende_state from the top-level PB field (now a proper JSON column).
+ */
+export const updateState = async (sessionId: string, updater: (current: KrakendeState) => KrakendeState): Promise<KrakendeState> => {
+  const maxRetries = 10;
+  let lastError: any = null;
 
-  return newState;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // 1. Fetch latest session
+      const session = await rankingService.getSessionById(sessionId) as any;
+      if (!session) throw new Error('Session not found');
+
+      // 2. Extract current state from top-level krakende_state field
+      let krakendeState: KrakendeState | null = null;
+      if (session.krakende_state) {
+        krakendeState = typeof session.krakende_state === 'string'
+          ? JSON.parse(session.krakende_state)
+          : session.krakende_state;
+      }
+
+      const current = krakendeState || getInitialState();
+
+      // 3. Apply changes via updater function
+      const newState = updater(current);
+
+      // 4. Save to top-level krakende_state field
+      await rankingService.updateSession(sessionId, {
+        krakende_state: JSON.stringify(newState),
+      });
+
+      return newState;
+    } catch (err: any) {
+      console.warn(`Update attempt ${i + 1} failed, retrying...`, err.message);
+      lastError = err;
+      await new Promise(r => setTimeout(r, 100 + Math.random() * 200));
+    }
+  }
+
+  throw lastError || new Error('Failed to update Krakende state after max retries');
 };
 
 // Set phase explicitly
 export const setPhase = async (
   sessionId: string,
   currentState: KrakendeState,
-  phase: KrakendePhase
+  newPhase: KrakendePhase
 ): Promise<KrakendeState> => {
-  const newState: KrakendeState = {
-    ...currentState,
-    phase,
-    revealedIndex: 0,
-    completedPhases: Array.from(new Set([...currentState.completedPhases, currentState.phase])),
-  };
-
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
-  });
-
-  return newState;
+  return await updateState(sessionId, (current) => ({
+    ...current,
+    phase: newPhase,
+    revealedIndex: 0, // reset reveal counter for new phase
+    completedPhases: Array.from(new Set([...current.completedPhases, current.phase])),
+  }));
 };
 
 // Reset state
@@ -219,19 +238,26 @@ export const resetState = async (
   sessionId: string,
   currentState: KrakendeState
 ): Promise<KrakendeState> => {
-  const newState: KrakendeState = {
-    ...currentState,
-    phase: 'positive-voting',
-    submissions: [],
-    revealedIndex: 0,
-    completedPhases: [],
-  };
-
-  await rankingService.updateSession(sessionId, {
-    krakende_state: JSON.stringify(newState),
+  return await updateState(sessionId, (current) => {
+    const initial = getInitialState();
+    return {
+      ...initial,
+      phase: current.phase, // Keep the current phase
+      language: current.language,
+    };
   });
+};
 
-  return newState;
+// Set revealed index
+export const setRevealed = async (
+  sessionId: string,
+  currentState: KrakendeState,
+  index: number
+): Promise<KrakendeState> => {
+  return await updateState(sessionId, (current) => ({
+    ...current,
+    revealedIndex: index
+  }));
 };
 
 // Parse krakende state from session JSON string
