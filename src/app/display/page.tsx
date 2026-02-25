@@ -35,8 +35,8 @@ export default function DisplayPage() {
     Object.values(FASES).forEach((mod) => {
       const sf = mod.stateField;
       if (!sf) return;
-      const raw = (currentSession as Record<string, unknown>)[sf];
-      const str = safeJsonStr(raw);
+
+      const str = safeJsonStr((currentSession as Record<string, unknown>)[sf]);
       if (str) newStates[sf] = str;
     });
     setModuleStates((prev) => ({ ...prev, ...newStates }));
@@ -134,6 +134,28 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
+      // Arrow navigation: advance/retreat current_fase
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        setCurrentSession(prev => {
+          if (!prev) return prev;
+          const headings = faseService.parseHeadings(prev.headings || '{}');
+          const keys = Object.keys(headings);
+          if (keys.length === 0) return prev;
+          const curIdx = keys.indexOf(prev.current_fase || '');
+          let nextIdx: number;
+          if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+            nextIdx = curIdx < keys.length - 1 ? curIdx + 1 : curIdx;
+          } else {
+            nextIdx = curIdx > 0 ? curIdx - 1 : 0;
+          }
+          const nextFase = keys[nextIdx];
+          if (nextFase !== prev.current_fase) {
+            rankingService.updateSession(prev.id, { current_fase: nextFase }).catch(() => { });
+          }
+          return { ...prev, current_fase: nextFase };
+        });
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -176,43 +198,59 @@ export default function DisplayPage() {
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 
-  // Subscribe to PocketBase session updates
+  // Subscribe to PocketBase session updates (current_fase and elimination_state changes)
   useEffect(() => {
     type PBEvent = { record?: Partial<RankingSession> } | Partial<RankingSession>;
     const unsub = rankingService.subscribeToRankings(async (e: unknown) => {
       try {
         const evt = e as PBEvent;
         const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
-        if (!rec) return;
+        if (!rec || !currentSession) return;
+        const same = rec.id === currentSession.id;
+        // Better debug output to avoid confusion when PB omits unchanged fields
+        console.log('[Display] PB event:', {
+          incomingId: rec.id,
+          currentId: currentSession?.id,
+          current_fase_incoming: rec.current_fase,
+          current_fase_prev: currentSession?.current_fase,
+        });
+        if (!same) return;
 
-        // Fetch full record every time — guarantees current_fase and all fields are present
-        try {
-          const fresh = await rankingService.getSessionById(rec.id as string) as unknown as RankingSession;
-          if (!fresh?.id) return;
+        // Parse all registered module states generically
+        Object.values(FASES).forEach((mod) => {
+          const sf = mod.stateField;
+          if (!sf) return;
 
-          // Only update if this is our session
-          setCurrentSession(prev => {
-            if (!prev || prev.id !== fresh.id) return prev;
-            return { ...prev, ...fresh };
-          });
+          const str = safeJsonStr((rec as Record<string, unknown>)[sf]);
+          if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
+        });
 
-          // Update module states from the fresh full record
-          Object.values(FASES).forEach((mod) => {
-            const sf = mod.stateField;
-            if (!sf) return;
-            const str = safeJsonStr((fresh as unknown as Record<string, unknown>)[sf]);
-            if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
-          });
-        } catch { /* ignore fetch errors */ }
-      } catch { /* ignore */ }
+        // If PocketBase event doesn't include current_fase, fetch the full record to get the latest value
+        if (typeof rec.current_fase === 'undefined') {
+          try {
+            const fresh = await rankingService.getSessionById(rec.id as string);
+            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(fresh as unknown as RankingSession) }));
+          } catch {
+            // Fallback: merge what we have
+            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
+          }
+        } else {
+          // Merge to keep other fields stable when we do have current_fase
+          setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
+        }
+      } catch {
+        // ignore
+      }
     });
+    // Best-effort cleanup if supported
     return () => {
       try {
         if (typeof unsub === 'function') (unsub as unknown as () => void)();
-        else (unsub as Promise<() => void>).then(u => u()).catch(() => {});
-      } catch { }
+      } catch {
+        // ignore
+      }
     };
-  }, []);
+  }, [currentSession?.id]);
 
   // Compute current media whenever session/current_fase or motherMeta changes
   useEffect(() => {
@@ -312,11 +350,7 @@ export default function DisplayPage() {
       }
     }
 
-    // Render module if: it has a DisplayView AND (no stateField required, OR state exists, OR this is NOT the trailer slot)
-    // This prevents falling through to the media overlay on question slides (e.g. 10/05-10/13) when state hasn't arrived yet
-    const isTrailerSlot = currentSession.current_fase.endsWith('/01');
-    const stateReady = !mod?.stateField || !!moduleStates[mod.stateField];
-    if (mod?.DisplayView && (stateReady || !isTrailerSlot)) {
+    if (mod?.DisplayView && (!mod.stateField || moduleStates[mod.stateField])) {
       const headingsJson = currentSession.headings || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
       const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';
@@ -545,11 +579,17 @@ export default function DisplayPage() {
             onClick={async () => {
               try {
                 setUserEnabledSound(true);
-                // Always reset Krakende to a fresh state on display start
-                if (currentSession?.id) {
-                  const { getInitialState, updateState } = await import('@/modules/krakende-karakters/logic');
-                  const fresh = getInitialState();
-                  await updateState(currentSession.id, () => fresh).catch(() => {});
+                // Reset Krakende if we are starting it
+                if (currentSession?.current_fase?.startsWith('13/')) {
+                  const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');
+                  let currentState = getInitialState();
+                  if (currentSession.krakende_state) {
+                    try {
+                      const parsed = JSON.parse(typeof currentSession.krakende_state === 'string' ? currentSession.krakende_state : JSON.stringify(currentSession.krakende_state));
+                      currentState = { ...currentState, ...parsed };
+                    } catch (e) { }
+                  }
+                  await resetState(currentSession.id, currentState);
                 }
 
                 // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported
