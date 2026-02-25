@@ -102,20 +102,8 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
           </div>
         </div>
 
-        {/* Heading Below Band */}
-        <div className="w-full py-8 text-center px-8">
-          {!state.phase.endsWith('/01') && (
-            <h1
-              className="text-white drop-shadow-lg leading-tight"
-              style={{
-                fontFamily: 'Barlow Semi Condensed, sans-serif',
-                fontWeight: 300,
-                fontSize: '70pt'
-              }}
-            >
-              {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
-            </h1>
-          )}
+        {/* Heading Below Band Removed per request - now on phone */}
+        <div className="w-full py-4 text-center px-8">
         </div>
 
         <div className="grid grid-cols-4 gap-4 flex-1 auto-rows-min px-8 pb-8">
@@ -171,20 +159,8 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
         </div>
       </div>
 
-      {/* Heading Below Band */}
-      <div className="w-full py-8 text-center px-8">
-        {!state.phase.endsWith('/01') && (
-          <h1
-            className="text-white drop-shadow-lg leading-tight"
-            style={{
-              fontFamily: 'Barlow Semi Condensed, sans-serif',
-              fontWeight: 300,
-              fontSize: '70pt'
-            }}
-          >
-            {isPositive ? 'Goede Geinige Eigenschappen' : 'Misschien iets Minder goede Eigenschappen'}
-          </h1>
-        )}
+      {/* Heading Below Band Removed per request - now on phone */}
+      <div className="w-full py-4 text-center px-8">
       </div>
 
       <div className="grid grid-cols-6 gap-4 flex-1 auto-rows-min content-start px-8">

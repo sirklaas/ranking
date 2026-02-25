@@ -440,8 +440,8 @@ export default function DisplayPage() {
           )}
           {/* Heading overlay in top 1/3 */}
           {(() => {
-            // "Zitten en staan" = groep 07, no headings here per request.
-            if (currentSession?.current_fase?.startsWith('07/')) return null;
+            // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
+            if (currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
 
             const headings = faseService.parseHeadings(currentSession?.headings || '{}');
             const headingText = headings[currentSession?.current_fase || '']?.heading || '';

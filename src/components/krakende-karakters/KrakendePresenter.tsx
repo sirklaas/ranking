@@ -27,18 +27,13 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
 
       const phaseMap: Record<string, KrakendePhase> = {
         '1': 'positive-voting',
-        '2': 'negative-voting',
-        '3': 'positive-results',
+        '2': 'positive-results',
+        '3': 'negative-voting',
         '4': 'negative-results',
       };
 
       const targetPhase = phaseMap[e.key];
       if (targetPhase) {
-        // Prevent action if already completed (except if current phase)
-        if (state.completedPhases.includes(targetPhase) && state.phase !== targetPhase) {
-          console.warn(`[KrakendePresenter] Phase ${targetPhase} already completed. Skip.`);
-          return;
-        }
         krakendeLogic.setPhase(sessionId, state, targetPhase).then(onStateChange);
       }
     };
@@ -47,6 +42,12 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sessionId, state, onStateChange]);
 
+  const handleReset = () => {
+    if (window.confirm('Weet je zeker dat je alle keuzes wilt wissen en wilt herstarten?')) {
+      krakendeLogic.resetState(sessionId, state).then(onStateChange);
+    }
+  };
+
   const renderPhaseButton = (targetPhase: KrakendePhase, label: string, num: number, color: 'blue' | 'red') => {
     const isActive = state.phase === targetPhase;
     const isCompleted = state.completedPhases.includes(targetPhase) && !isActive;
@@ -54,13 +55,10 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
 
     return (
       <button
-        disabled={isCompleted}
         onClick={() => krakendeLogic.setPhase(sessionId, state, targetPhase).then(onStateChange)}
         className={`h-40 flex flex-col items-center justify-center p-4 rounded-xl font-bold tracking-wider transition-all active:scale-95 border-2 ${isActive
           ? `bg-${colorClass}-500 text-white border-${colorClass}-300 shadow-[0_0_20px_rgba(${color === 'blue' ? '37,99,235' : '239,68,68'},0.6)]`
-          : isCompleted
-            ? 'bg-gray-900 text-gray-600 border-gray-800 opacity-50 cursor-not-allowed'
-            : `bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:border-gray-500`
+          : `bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:border-gray-500`
           }`}
       >
         <span className="text-4xl mb-2">{num}</span>
@@ -78,9 +76,17 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
       {/* Top bar: Phase + Metric */}
       <div className="bg-[#0A1752] p-4 rounded-lg text-white shadow-lg border border-blue-800">
         <div className="flex justify-between items-center">
-          <h3 className="text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-            Krakende Karakters
-          </h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+              Krakende Karakters
+            </h3>
+            <button
+              onClick={handleReset}
+              className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-md font-bold transition-all active:scale-95 border border-red-400"
+            >
+              RESET GAME (Leegmaken)
+            </button>
+          </div>
           <div className="flex items-center gap-6">
             <div className="text-center">
               <span className="block text-sm text-blue-300 font-bold tracking-wider">POS Gekozen</span>
@@ -124,13 +130,13 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
       {/* Manual Phase Overrides - 4 IN A ROW */}
       <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4 mt-2">
         <h4 className="text-white font-bold text-lg mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-          Besturingspaneel: Forceer Fase
+          Besturingspaneel: Spelverloop
         </h4>
         <div className="grid grid-cols-4 gap-4">
-          {renderPhaseButton('positive-voting', 'Positief Stemmen', 1, 'blue')}
-          {renderPhaseButton('negative-voting', 'Negatief Stemmen', 2, 'red')}
-          {renderPhaseButton('positive-results', 'Positief Allemaal', 3, 'blue')}
-          {renderPhaseButton('negative-results', 'Negatief Allemaal', 4, 'red')}
+          {renderPhaseButton('positive-voting', '1. Positief Stemmen', 1, 'blue')}
+          {renderPhaseButton('positive-results', '2. Positief Allemaal', 2, 'blue')}
+          {renderPhaseButton('negative-voting', '3. Negatief Stemmen', 3, 'red')}
+          {renderPhaseButton('negative-results', '4. Negatief Allemaal', 4, 'red')}
         </div>
       </div>
     </div>

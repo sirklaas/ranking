@@ -189,11 +189,18 @@ export default function KrakendePlayer({
       </div>
     );
   }
+  // Clear localStorage if server state has NO submissions (reset by presenter)
+  useEffect(() => {
+    if (state.submissions.length === 0) {
+      localStorage.removeItem(LS_POS);
+      localStorage.removeItem(LS_NEG);
+      setLocalPos(null);
+      setLocalNeg(null);
+    }
+  }, [state.submissions.length, LS_POS, LS_NEG]);
 
-  // Voting view — pick a trait
   return (
     <div
-      className="min-h-screen flex flex-col p-4"
       style={{
         fontFamily: 'Barlow Semi Condensed, sans-serif',
         background: isPositive
@@ -203,10 +210,13 @@ export default function KrakendePlayer({
     >
       {/* Header */}
       <div className="text-center mb-4">
-        <h2 className="text-white text-2xl font-bold">
+        <h1 className="text-white text-4xl font-bold tracking-tight mb-1 uppercase" style={{ fontWeight: 700 }}>
+          Krakende Karakters
+        </h1>
+        <h2 className="text-white/90 text-xl font-medium">
           {isPositive ? 'Goede Geinige Eigenschappen' : 'Minder goede Eigenschappen'}
         </h2>
-        <p className="text-white/60 text-sm mt-1">
+        <p className="text-white/50 text-xs mt-1">
           Kies de eigenschap die bij jou past, {playerName}
         </p>
       </div>

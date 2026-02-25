@@ -214,6 +214,26 @@ export const setPhase = async (
   return newState;
 };
 
+// Reset state
+export const resetState = async (
+  sessionId: string,
+  currentState: KrakendeState
+): Promise<KrakendeState> => {
+  const newState: KrakendeState = {
+    ...currentState,
+    phase: 'positive-voting',
+    submissions: [],
+    revealedIndex: 0,
+    completedPhases: [],
+  };
+
+  await rankingService.updateSession(sessionId, {
+    krakende_state: JSON.stringify(newState),
+  });
+
+  return newState;
+};
+
 // Parse krakende state from session JSON string
 export const parseState = (json: string | undefined): KrakendeState | null => {
   if (!json) return null;
