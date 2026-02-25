@@ -13,7 +13,12 @@ interface PlayersByTeam {
 }
 
 export default function DisplayPage() {
-  const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
+  const [currentSession, _setCurrentSession] = useState<RankingSession | null>(null);
+  const setCurrentSession = (val: RankingSession | null | ((prev: RankingSession | null) => RankingSession | null)) => {
+    const next = typeof val === 'function' ? val(currentSessionRef.current) : val;
+    currentSessionRef.current = next;
+    _setCurrentSession(next);
+  };
   const [playersByTeam, setPlayersByTeam] = useState<PlayersByTeam>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +28,7 @@ export default function DisplayPage() {
     | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
   >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const currentSessionRef = useRef<RankingSession | null>(null);
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
@@ -183,8 +189,8 @@ export default function DisplayPage() {
       try {
         const evt = e as PBEvent;
         const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
-        if (!rec || !currentSession) return;
-        const same = rec.id === currentSession.id;
+        if (!rec || !currentSessionRef.current) return;
+        const same = rec.id === currentSessionRef.current.id;
         // Better debug output to avoid confusion when PB omits unchanged fields
         console.log('[Display] PB event:', {
           incomingId: rec.id,
