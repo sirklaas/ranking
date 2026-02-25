@@ -176,29 +176,43 @@ export default function DisplayPage() {
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 
-  // Subscribe to PocketBase session updates — fires once when session ID is known
-  const subscribedIdRef = useRef<string | null>(null);
+  // Subscribe to PocketBase session updates
   useEffect(() => {
-    if (!currentSession?.id) return;
-    if (subscribedIdRef.current === currentSession.id) return; // already subscribed
-    subscribedIdRef.current = currentSession.id;
-    const sessionId = currentSession.id;
+    type PBEvent = { record?: Partial<RankingSession> } | Partial<RankingSession>;
+    const unsub = rankingService.subscribeToRankings(async (e: unknown) => {
+      try {
+        const evt = e as PBEvent;
+        const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
+        if (!rec) return;
 
-    let unsub: (() => void) | null = null;
-    rankingService.subscribeToSession(sessionId, (data: Record<string, unknown>) => {
-      // Update module states from incoming record
-      Object.values(FASES).forEach((mod) => {
-        const sf = mod.stateField;
-        if (!sf) return;
-        const str = safeJsonStr(data[sf]);
-        if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
-      });
-      // Merge all incoming fields (current_fase, etc.) into session
-      setCurrentSession((prev) => prev ? { ...prev, ...data } as RankingSession : null);
-    }).then((u) => { unsub = u; }).catch(() => {});
+        // Fetch full record every time — guarantees current_fase and all fields are present
+        try {
+          const fresh = await rankingService.getSessionById(rec.id as string) as unknown as RankingSession;
+          if (!fresh?.id) return;
 
-    return () => { unsub?.(); };
-  }, [currentSession?.id]);
+          // Only update if this is our session
+          setCurrentSession(prev => {
+            if (!prev || prev.id !== fresh.id) return prev;
+            return { ...prev, ...fresh };
+          });
+
+          // Update module states from the fresh full record
+          Object.values(FASES).forEach((mod) => {
+            const sf = mod.stateField;
+            if (!sf) return;
+            const str = safeJsonStr((fresh as unknown as Record<string, unknown>)[sf]);
+            if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
+          });
+        } catch { /* ignore fetch errors */ }
+      } catch { /* ignore */ }
+    });
+    return () => {
+      try {
+        if (typeof unsub === 'function') (unsub as unknown as () => void)();
+        else (unsub as Promise<() => void>).then(u => u()).catch(() => {});
+      } catch { }
+    };
+  }, []);
 
   // Compute current media whenever session/current_fase or motherMeta changes
   useEffect(() => {
