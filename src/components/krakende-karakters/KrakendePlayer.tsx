@@ -96,36 +96,27 @@ export default function KrakendePlayer({
     if (showReveal && chosenTrait) {
       return (
         <div
-          className="min-h-screen flex flex-col items-center justify-center p-6 w-full"
-          style={{
-            fontFamily: 'Barlow Semi Condensed, sans-serif',
-            backgroundColor: state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B',
-          }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black overflow-hidden"
           onClick={() => setShowReveal(false)}
         >
+          {/* Rotated Container for Landscape Text */}
           <div
-            className="text-center w-full"
-            style={{ animation: 'krakendePopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+            className="flex flex-col items-center justify-center w-[100vh] h-[100vw] rotate-90 origin-center"
           >
-            <h2 className="text-[12vw] leading-none text-gray-900 break-words w-full px-2 font-barlow flex flex-col items-center justify-center" style={{ fontWeight: 300 }}>
-              {(() => {
-                const [line1, line2] = splitLabelForTwoLines(getTraitLabel(chosenTrait, 'nl'));
-                return (
-                  <>
-                    <span>{line1}</span>
-                    {line2 && <span>{line2}</span>}
-                  </>
-                );
-              })()}
+            <h2 className="text-white text-center font-bold tracking-tighter leading-none whitespace-nowrap px-4 w-full"
+              style={{
+                fontSize: 'calc(95vw)', // Use viewport width (which is height in landscape) to set size
+                fontFamily: 'Barlow Semi Condensed, sans-serif',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                lineHeight: 0.8
+              }}>
+              {getTraitLabel(chosenTrait, 'nl')}
             </h2>
+            <p className="text-white/20 absolute bottom-4 text-sm font-light tracking-widest uppercase">
+              Tik om te sluiten
+            </p>
           </div>
-          <style jsx>{`
-            @keyframes krakendePopIn {
-              0% { transform: scale(0) rotate(-5deg); opacity: 0; }
-              60% { transform: scale(1.05) rotate(2deg); opacity: 1; }
-              100% { transform: scale(1) rotate(0deg); opacity: 1; }
-            }
-          `}</style>
         </div>
       );
     }

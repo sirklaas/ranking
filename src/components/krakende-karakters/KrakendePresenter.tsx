@@ -27,8 +27,8 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
 
       const phaseMap: Record<string, KrakendePhase> = {
         '1': 'positive-voting',
-        '2': 'positive-results',
-        '3': 'negative-voting',
+        '2': 'negative-voting',
+        '3': 'positive-results',
         '4': 'negative-results',
       };
 
@@ -134,9 +134,9 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
         </h4>
         <div className="grid grid-cols-4 gap-4">
           {renderPhaseButton('positive-voting', '1. Positief Stemmen', 1, 'blue')}
-          {renderPhaseButton('positive-results', '2. Positief Allemaal', 2, 'blue')}
-          {renderPhaseButton('negative-voting', '3. Negatief Stemmen', 3, 'red')}
-          {renderPhaseButton('negative-results', '4. Negatief Allemaal', 4, 'red')}
+          {renderPhaseButton('negative-voting', '2. Negatief Stemmen', 2, 'red')}
+          {renderPhaseButton('positive-results', '3. Positief Resultaten', 3, 'blue')}
+          {renderPhaseButton('negative-results', '4. Negatief Resultaten', 4, 'red')}
         </div>
       </div>
     </div>
