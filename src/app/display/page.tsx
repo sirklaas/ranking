@@ -176,12 +176,16 @@ export default function DisplayPage() {
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 
-  // Subscribe to PocketBase session updates — use subscribeToSession (specific record) like player page
+  // Subscribe to PocketBase session updates — fires once when session ID is known
+  const subscribedIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!currentSession?.id) return;
+    if (subscribedIdRef.current === currentSession.id) return; // already subscribed
+    subscribedIdRef.current = currentSession.id;
     const sessionId = currentSession.id;
 
-    const unsubPromise = rankingService.subscribeToSession(sessionId, (data: Record<string, unknown>) => {
+    let unsub: (() => void) | null = null;
+    rankingService.subscribeToSession(sessionId, (data: Record<string, unknown>) => {
       // Update module states from incoming record
       Object.values(FASES).forEach((mod) => {
         const sf = mod.stateField;
@@ -191,11 +195,9 @@ export default function DisplayPage() {
       });
       // Merge all incoming fields (current_fase, etc.) into session
       setCurrentSession((prev) => prev ? { ...prev, ...data } as RankingSession : null);
-    });
+    }).then((u) => { unsub = u; }).catch(() => {});
 
-    return () => {
-      unsubPromise.then((unsub: () => void) => unsub()).catch(() => {});
-    };
+    return () => { unsub?.(); };
   }, [currentSession?.id]);
 
   // Compute current media whenever session/current_fase or motherMeta changes
