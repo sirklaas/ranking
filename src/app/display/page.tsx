@@ -134,28 +134,6 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
-      // Arrow navigation: advance/retreat current_fase
-      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        e.preventDefault();
-        setCurrentSession(prev => {
-          if (!prev) return prev;
-          const headings = faseService.parseHeadings(prev.headings || '{}');
-          const keys = Object.keys(headings);
-          if (keys.length === 0) return prev;
-          const curIdx = keys.indexOf(prev.current_fase || '');
-          let nextIdx: number;
-          if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-            nextIdx = curIdx < keys.length - 1 ? curIdx + 1 : curIdx;
-          } else {
-            nextIdx = curIdx > 0 ? curIdx - 1 : 0;
-          }
-          const nextFase = keys[nextIdx];
-          if (nextFase !== prev.current_fase) {
-            rankingService.updateSession(prev.id, { current_fase: nextFase }).catch(() => { });
-          }
-          return { ...prev, current_fase: nextFase };
-        });
-      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
