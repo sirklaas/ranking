@@ -87,6 +87,16 @@ export default function KrakendePlayer({
     setShowConfirmation(true);
   };
 
+  // Clear localStorage if server state has NO submissions (reset by presenter)
+  useEffect(() => {
+    if (state.submissions.length === 0) {
+      localStorage.removeItem(LS_POS);
+      localStorage.removeItem(LS_NEG);
+      setLocalPos(null);
+      setLocalNeg(null);
+    }
+  }, [state.submissions.length, LS_POS, LS_NEG]);
+
   const selectedTrait = traits.find((t) => t.id === selected);
 
   // Reveal Phase (Step 5/6) — button to explode trait fullscreen
@@ -180,15 +190,6 @@ export default function KrakendePlayer({
       </div>
     );
   }
-  // Clear localStorage if server state has NO submissions (reset by presenter)
-  useEffect(() => {
-    if (state.submissions.length === 0) {
-      localStorage.removeItem(LS_POS);
-      localStorage.removeItem(LS_NEG);
-      setLocalPos(null);
-      setLocalNeg(null);
-    }
-  }, [state.submissions.length, LS_POS, LS_NEG]);
 
   return (
     <div
