@@ -5,6 +5,7 @@ import RankingSessionForm from '@/components/game/RankingSessionForm';
 import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
 import { teamService, faseService, rankingService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
+import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
@@ -47,28 +48,15 @@ export default function PresenterPage() {
     }
   }, [selectedSession?.current_fase]);
 
-  // Sync all module states from session (generic)
+  // Sync all module states from session (generic) — top-level PB fields only
   useEffect(() => {
     if (!selectedSession) return;
     const newStates: Record<string, string> = {};
     Object.values(FASES).forEach((mod) => {
       const sf = mod.stateField;
       if (!sf) return;
-
-      let json = (selectedSession as Record<string, unknown>)[sf];
-
-      if (!json && selectedSession.headings) {
-        try {
-          const hObj = JSON.parse(selectedSession.headings);
-          if (hObj[sf]) {
-            json = typeof hObj[sf] === 'string' ? hObj[sf] : JSON.stringify(hObj[sf]);
-          }
-        } catch (e) { }
-      }
-
-      if (typeof json === 'string' && json) {
-        newStates[sf] = json;
-      }
+      const str = safeJsonStr((selectedSession as Record<string, unknown>)[sf]);
+      if (str) newStates[sf] = str;
     });
     setModuleStates((prev) => ({ ...prev, ...newStates }));
   }, [selectedSession]);
