@@ -200,25 +200,19 @@ export default function DisplayPage() {
         });
         if (!same) return;
 
-        // Parse all registered module states generically from top-level PB fields
-        Object.values(FASES).forEach((mod) => {
-          const sf = mod.stateField;
-          if (!sf) return;
-          const str = safeJsonStr((rec as Record<string, unknown>)[sf]);
-          if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
-        });
-
-        // If PocketBase event doesn't include current_fase, fetch the full record to get the latest value
-        if (typeof rec.current_fase === 'undefined') {
-          try {
-            const fresh = await rankingService.getSessionById(rec.id as string);
-            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(fresh as unknown as RankingSession) }));
-          } catch {
-            // Fallback: merge what we have
-            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
-          }
-        } else {
-          // Merge to keep other fields stable when we do have current_fase
+        // Always fetch full record — PB partial events often omit unchanged fields like current_fase
+        try {
+          const fresh = await rankingService.getSessionById(rec.id as string) as unknown as RankingSession;
+          // Update module states from the fresh full record
+          Object.values(FASES).forEach((mod) => {
+            const sf = mod.stateField;
+            if (!sf) return;
+            const str = safeJsonStr((fresh as unknown as Record<string, unknown>)[sf]);
+            if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
+          });
+          setCurrentSession(fresh);
+        } catch {
+          // Fallback: apply whatever partial data we have
           setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
         }
       } catch {
