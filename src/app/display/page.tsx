@@ -350,7 +350,12 @@ export default function DisplayPage() {
       }
     }
 
-    if (mod?.DisplayView && (!mod.stateField || moduleStates[mod.stateField])) {
+    // Render module if it has a DisplayView AND either:
+    // - no stateField required, OR state exists, OR this is NOT the trailer slot (*/01)
+    // On question slides (e.g. 10/05), render the module even without state — DisplayView handles the fallback
+    const isTrailerSlot = currentSession.current_fase.endsWith('/01');
+    const stateReady = !mod?.stateField || !!moduleStates[mod.stateField];
+    if (mod?.DisplayView && (stateReady || !isTrailerSlot)) {
       const headingsJson = currentSession.headings || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
       const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';

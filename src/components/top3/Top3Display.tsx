@@ -393,9 +393,9 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
 
       {/* Relative content layer */}
       <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
-        {/* Heading — large, top-aligned (75px) to match Top 10 */}
+        {/* Heading — large, bottom-aligned 75px up */}
         {displayHeading && (
-          <div className="absolute top-[150px] left-0 right-0 text-center z-30">
+          <div className="absolute bottom-[75px] left-0 right-0 text-center z-30">
             <h1
               className="text-white font-bold px-12 leading-none"
               style={{
