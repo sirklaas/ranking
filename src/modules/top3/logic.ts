@@ -28,12 +28,11 @@ export const startVoting = async (
   // Always fetch fresh state to prevent race conditions
   let freshState = currentState;
   try {
-    const session = await rankingService.getSessionById(sessionId);
-    if (session?.headings) {
-      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
-      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    const session = await rankingService.getSessionById(sessionId) as Record<string, unknown>;
+    if (session?.top3_state) {
+      freshState = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state as string) : session.top3_state as Top3State;
     }
-  } catch (e) { }
+  } catch (e) { console.warn('[top3] startVoting fresh fetch error:', e); }
 
   const newState: Top3State = {
     ...freshState,
@@ -122,12 +121,11 @@ export const showResults = async (
 ): Promise<Top3State> => {
   let freshState = currentState;
   try {
-    const session = await rankingService.getSessionById(sessionId);
-    if (session?.headings) {
-      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
-      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    const session = await rankingService.getSessionById(sessionId) as Record<string, unknown>;
+    if (session?.top3_state) {
+      freshState = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state as string) : session.top3_state as Top3State;
     }
-  } catch (e) { }
+  } catch (e) { console.warn('[top3] showResults fresh fetch error:', e); }
 
   const results = computeResults(freshState.currentQuestion.votes);
 
@@ -151,12 +149,11 @@ export const nextQuestion = async (
 ): Promise<Top3State> => {
   let freshState = currentState;
   try {
-    const session = await rankingService.getSessionById(sessionId);
-    if (session?.headings) {
-      const hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
-      if (hObj.top3_state) freshState = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
+    const session = await rankingService.getSessionById(sessionId) as Record<string, unknown>;
+    if (session?.top3_state) {
+      freshState = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state as string) : session.top3_state as Top3State;
     }
-  } catch (e) { }
+  } catch (e) { console.warn('[top3] nextQuestion fresh fetch error:', e); }
 
   const nextIndex = freshState.currentQuestion.questionIndex + 1;
 

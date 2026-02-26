@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import RankingSessionForm from '@/components/game/RankingSessionForm';
 import RankingSessionList from '@/components/game/RankingSessionList';
@@ -23,6 +23,7 @@ export default function PresenterPage() {
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
   const [pbStatus, setPbStatus] = useState<string>('init');
+  const localWriteTs = useRef<number>(0); // timestamp of last local module state write
 
   // Reliable PB write with logging + retry
   const writeFaseToPB = useCallback(async (sessionId: string, fase: string) => {
@@ -67,8 +68,13 @@ export default function PresenterPage() {
   }, [selectedSession?.current_fase]);
 
   // Sync all module states from session (generic) — top-level PB fields only
+  // SKIP if a local write happened < 3s ago (prevents PB subscription from reverting V/R state)
   useEffect(() => {
     if (!selectedSession) return;
+    if (Date.now() - localWriteTs.current < 3000) {
+      console.log('[Presenter] Skipping PB module state sync (local write lockout)');
+      return;
+    }
     const newStates: Record<string, string> = {};
     Object.values(FASES).forEach((mod) => {
       const sf = mod.stateField;
@@ -569,7 +575,7 @@ export default function PresenterPage() {
                 faseKey={currentFase}
                 sessionId={selectedSession.id}
                 moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-                onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
+                onModuleStateJson={(json) => { if (mod.stateField) { localWriteTs.current = Date.now(); setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); } }}
                 allPlayerNames={allPlayerNames}
               />
             );

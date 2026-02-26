@@ -149,16 +149,17 @@ export default function DisplayPage() {
     };
   }, [loadSessionData]);
 
-  // Play video only when the media URL actually changes (not on every poll/render)
+  // Play video only when the media URL actually changes AND user has clicked start
   useEffect(() => {
     const v = videoRef.current;
+    if (!userEnabledSound) return; // Don't play until user clicks start button
     if (!currentMedia || currentMedia.type !== 'video' || !v) return;
     if (currentMedia.url === lastPlayedUrl.current) return; // already playing this URL
     lastPlayedUrl.current = currentMedia.url;
 
     console.log(`[Display ${APP_VERSION}] Playing new video: ${currentMedia.name}`);
     try {
-      v.muted = !userEnabledSound;
+      v.muted = false;
       v.volume = 1;
       const p = v.play();
       if (p && typeof p.then === 'function') {
@@ -391,17 +392,24 @@ export default function DisplayPage() {
           ) : (
             <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />
           )}
-          {/* Heading overlay at bottom 75px up */}
+          {/* Heading overlay: top center 100px for normal fases, bottom for trailers (xx/01) */}
           {(() => {
             // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
             if (currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
 
             const headings = faseService.parseHeadings(currentSession?.headings || '{}');
             const headingText = headings[currentSession?.current_fase || '']?.heading || '';
+            const isTrailer = currentSession?.current_fase?.endsWith('/01');
             return headingText ? (
               <div
-                className="absolute bottom-[75px] left-0 right-0 flex items-center justify-center px-8 text-center"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)', paddingTop: '40px', paddingBottom: '20px' }}
+                className={`absolute left-0 right-0 flex items-center justify-center px-8 text-center ${isTrailer ? 'bottom-[75px]' : 'top-[100px]'}`}
+                style={{
+                  background: isTrailer
+                    ? 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)'
+                    : 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)',
+                  paddingTop: isTrailer ? '40px' : '20px',
+                  paddingBottom: isTrailer ? '20px' : '40px',
+                }}
               >
                 <h1
                   className="text-white text-5xl font-light whitespace-pre-line"
