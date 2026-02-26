@@ -39,12 +39,9 @@ async function processQueue() {
         const session = await pb.collection('ranking').getOne(currentReq.sessionId);
         let top3State: Top3State | null = null;
 
-        if (session.headings) {
-            let hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
-            if (typeof hObj === 'string') hObj = JSON.parse(hObj); // Double parsed sometimes
-            if (hObj.top3_state) {
-                top3State = typeof hObj.top3_state === 'string' ? JSON.parse(hObj.top3_state) : hObj.top3_state;
-            }
+        // Read from top-level top3_state field (NOT from headings)
+        if (session.top3_state) {
+            top3State = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state) : session.top3_state;
         }
 
         if (!top3State) {
@@ -77,13 +74,9 @@ async function processQueue() {
                 },
             };
 
-            // 4. Save back to PocketBase securely
-            let finalHeadings = typeof session.headings === 'string' ? JSON.parse(session.headings) : (session.headings || {});
-            if (typeof finalHeadings === 'string') finalHeadings = JSON.parse(finalHeadings);
-            finalHeadings.top3_state = newState;
-
+            // 4. Save back to top-level top3_state field
             await pb.collection('ranking').update(currentReq.sessionId, {
-                headings: JSON.stringify(finalHeadings)
+                top3_state: JSON.stringify(newState)
             });
         }
 

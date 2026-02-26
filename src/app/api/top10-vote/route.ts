@@ -38,12 +38,9 @@ async function processQueue() {
         const session = await pb.collection('ranking').getOne(currentReq.sessionId);
         let top10State: Top10State | null = null;
 
-        if (session.headings) {
-            let hObj = typeof session.headings === 'string' ? JSON.parse(session.headings) : session.headings;
-            if (typeof hObj === 'string') hObj = JSON.parse(hObj);
-            if (hObj.top10_state) {
-                top10State = typeof hObj.top10_state === 'string' ? JSON.parse(hObj.top10_state) : hObj.top10_state;
-            }
+        // Read from top-level top10_state field (NOT from headings)
+        if (session.top10_state) {
+            top10State = typeof session.top10_state === 'string' ? JSON.parse(session.top10_state) : session.top10_state;
         }
 
         if (!top10State) {
@@ -76,13 +73,9 @@ async function processQueue() {
                 },
             };
 
-            // 4. Save securely
-            let finalHeadings = typeof session.headings === 'string' ? JSON.parse(session.headings) : (session.headings || {});
-            if (typeof finalHeadings === 'string') finalHeadings = JSON.parse(finalHeadings);
-            finalHeadings.top10_state = newState;
-
+            // 4. Save back to top-level top10_state field
             await pb.collection('ranking').update(currentReq.sessionId, {
-                headings: JSON.stringify(finalHeadings)
+                top10_state: JSON.stringify(newState)
             });
         }
 
