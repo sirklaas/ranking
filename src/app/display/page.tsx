@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v2.2';
+const APP_VERSION = 'v2.2a';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -177,7 +177,7 @@ export default function DisplayPage() {
     } catch (e) {
       console.error('[Display] Video play error:', e);
     }
-  }, [currentMedia, currentSession, userEnabledSound]);
+  }, [currentMedia, userEnabledSound]);
 
   // Poll PocketBase every 2s for session updates (reliable — no subscription issues)
   useEffect(() => {
@@ -302,7 +302,7 @@ export default function DisplayPage() {
 
   // Version badge (shown on all paths)
   const versionBadge = (
-    <div className="fixed bottom-2 right-2 z-[9999] text-white/50 text-xs" style={{ fontFamily: 'monospace' }}>
+    <div className="fixed z-[9999] text-white/50 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>
       {APP_VERSION} | fase: {currentSession?.current_fase || '?'}
     </div>
   );
@@ -396,7 +396,7 @@ export default function DisplayPage() {
           ) : (
             <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />
           )}
-          {/* Heading overlay in top 1/3 */}
+          {/* Heading overlay at bottom 75px up */}
           {(() => {
             // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
             if (currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
@@ -405,8 +405,8 @@ export default function DisplayPage() {
             const headingText = headings[currentSession?.current_fase || '']?.heading || '';
             return headingText ? (
               <div
-                className="absolute top-0 left-0 right-0 flex items-center justify-center px-8 text-center"
-                style={{ height: '33%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}
+                className="absolute bottom-[75px] left-0 right-0 flex items-center justify-center px-8 text-center"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)', paddingTop: '40px', paddingBottom: '20px' }}
               >
                 <h1
                   className="text-white text-5xl font-light whitespace-pre-line"
@@ -565,6 +565,9 @@ export default function DisplayPage() {
             onClick={async () => {
               try {
                 setUserEnabledSound(true);
+                // Directly play video from click handler (user gesture context) for reliable sound
+                const v = videoRef.current;
+                if (v) { v.muted = false; v.volume = 1; v.play().catch(() => {}); }
                 // Reset Krakende if we are starting it
                 if (currentSession?.current_fase?.startsWith('13/')) {
                   const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');

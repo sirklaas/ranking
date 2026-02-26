@@ -7,7 +7,7 @@ export default function TestPhonesPage() {
 
     return (
         <div className="min-h-screen bg-gray-900 p-8 flex flex-col items-center">
-            <div className="fixed bottom-1 right-1 z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace' }}>v2.2</div>
+            <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>v2.2a</div>
             <h1 className="text-white text-3xl mb-8 font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                 6 Test Phones {code && <span className="text-gray-500 font-light text-xl">({code})</span>}
             </h1>
