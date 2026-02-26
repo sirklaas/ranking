@@ -15,14 +15,15 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleSt
   const didInit = useRef(false);
   useEffect(() => {
     if (!sessionId || didInit.current) return;
-    const isStale = faseKey === '13/02' && (
-      state.phase === 'positive-results' || state.phase === 'negative-results'
-    );
-    if (!moduleStateJson || isStale) {
+    // Always reset when entering 13/02 (entry point) to clear any stale state from previous games
+    const shouldReset = !moduleStateJson || faseKey === '13/02';
+    if (shouldReset) {
       didInit.current = true;
       const initial = krakendeLogic.getInitialState();
       onModuleStateJson?.(JSON.stringify(initial));
-      krakendeLogic.updateState(sessionId, () => initial).catch(() => {});
+      krakendeLogic.updateState(sessionId, () => initial)
+        .then(() => console.log('[Krakende PresenterView] State reset to initial at', faseKey))
+        .catch((e) => console.error('[Krakende PresenterView] Reset failed:', e));
     }
   }, [moduleStateJson, sessionId, faseKey, state.phase]);
 

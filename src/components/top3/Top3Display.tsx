@@ -401,7 +401,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
               style={{
                 fontFamily: barlowFont,
                 fontWeight: 300,
-                fontSize: '20rem',
+                fontSize: '10rem',
                 textShadow: '0 4px 24px rgba(0,0,0,0.8)',
                 animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
               }}

@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v3.0';
+const APP_VERSION = 'v3.1';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -413,7 +413,7 @@ export default function DisplayPage() {
               >
                 <h1
                   className="text-white font-light whitespace-pre-line"
-                  style={{ textShadow: '0 3px 16px rgba(0,0,0,0.8)', fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '20rem' }}
+                  style={{ textShadow: '0 3px 16px rgba(0,0,0,0.8)', fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, fontSize: '10rem' }}
                 >
                   {headingText}
                 </h1>

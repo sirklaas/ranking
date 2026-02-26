@@ -108,6 +108,16 @@ export default function KrakendePlayer({
     }
   }, [state.phase, isRevealPhase]);
 
+  // 6s delay before showing voting grid (wait for display to finish revealing traits)
+  const [votingReady, setVotingReady] = useState(false);
+  useEffect(() => {
+    setVotingReady(false);
+    if (isVoting) {
+      const timer = setTimeout(() => setVotingReady(true), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.phase, isVoting]);
+
   // Reveal Phase (Step 5/6) — button to explode trait fullscreen
   if (isRevealPhase) {
     const chosenTrait = traits.find((t) => t.id === effectiveChoice);
@@ -191,6 +201,33 @@ export default function KrakendePlayer({
     );
   }
 
+  // Waiting screen while display reveals traits (6s)
+  if (isVoting && !votingReady && !submitted) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-6"
+        style={{
+          fontFamily: 'Barlow Semi Condensed, sans-serif',
+          background: isPositive
+            ? 'linear-gradient(135deg, #0A1752 0%, #2d5a4e 100%)'
+            : 'linear-gradient(135deg, #0A1752 0%, #6b1a1a 100%)',
+        }}
+      >
+        <div className="text-center" style={{ animation: 'fadeHold 0.5s ease-out' }}>
+          <div className="text-7xl mb-6">⏳</div>
+          <h2 className="text-3xl font-bold text-white mb-2">Even geduld...</h2>
+          <p className="text-white/70 text-lg">De eigenschappen worden getoond op het scherm</p>
+        </div>
+        <style jsx>{`
+          @keyframes fadeHold {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   // Generic "Choice Saved" popup during voting
   if (showConfirmation || (submitted && isVoting)) {
     return (
@@ -220,6 +257,7 @@ export default function KrakendePlayer({
 
   return (
     <div
+      className="min-h-screen px-4 pt-4"
       style={{
         fontFamily: 'Barlow Semi Condensed, sans-serif',
         background: isPositive
@@ -241,7 +279,7 @@ export default function KrakendePlayer({
       </div>
 
       {/* Trait grid */}
-      <div className="grid grid-cols-2 gap-2 flex-1 overflow-y-auto pb-20">
+      <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-24">
         {traits.map((trait, i) => {
           const isSelected = selected === trait.id;
           const baseColor = isPositive ? '#4ECDC4' : '#FF6B6B';
