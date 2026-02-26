@@ -207,6 +207,26 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
               {/* Leaderboard Badge */}
               {results[i].playerName !== 'Overige spelers' ? (
                 <>
+                  {/* Glowing animated ring for #1 */}
+                  {i === 0 && (
+                    <>
+                      <circle
+                        cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={40}
+                        fill="none" stroke={seg.color} strokeWidth="3"
+                        strokeDasharray="12 8"
+                        style={{ filter: `drop-shadow(0 0 8px ${seg.color}) drop-shadow(0 0 16px ${seg.color})` }}
+                      >
+                        <animateTransform attributeName="transform" type="rotate" from={`0 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} to={`360 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} dur="3s" repeatCount="indefinite" />
+                      </circle>
+                      <circle
+                        cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={44}
+                        fill="none" stroke={seg.color} strokeWidth="1.5" strokeOpacity="0.4"
+                        strokeDasharray="6 14"
+                      >
+                        <animateTransform attributeName="transform" type="rotate" from={`360 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} to={`0 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} dur="5s" repeatCount="indefinite" />
+                      </circle>
+                    </>
+                  )}
                   <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={32} fill={seg.color} stroke="rgba(255,255,255,0.2)" strokeWidth="4" />
                   <text x={isRightSide ? labelX + 20 : labelX - 20} y={labelY + 6} textAnchor="middle" fill="#000" fontSize="30" fontWeight="900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                     {i + 1}
@@ -274,15 +294,16 @@ function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: st
   const votedSet = new Set(votedNames);
 
   return (
-    <div className="flex flex-wrap gap-3 justify-center p-8">
+    <div className="flex flex-wrap gap-4 justify-center p-8">
       {allNames.map((name, i) => {
         const hasVoted = votedSet.has(name);
         return (
           <div
             key={name}
-            className="px-5 py-3 rounded-xl text-lg font-bold transition-all duration-700 pointer-events-none"
+            className="px-6 py-6 rounded-xl text-2xl transition-all duration-700 pointer-events-none"
             style={{
               fontFamily: 'Barlow Semi Condensed, sans-serif',
+              fontWeight: 300,
               backgroundColor: 'rgba(255,255,255,0.15)',
               color: 'white',
               opacity: hasVoted ? 0 : 1,
@@ -395,7 +416,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
       <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
         {/* Heading — top 100px for questions, bottom 75px for trailer */}
         {displayHeading && (
-          <div className={`absolute left-0 right-0 text-center z-30 ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[100px]'}`}>
+          <div className={`absolute left-0 right-0 text-center z-30 ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[150px]'}`}>
             <h1
               className="text-white font-bold px-12 leading-none"
               style={{
@@ -424,10 +445,10 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
         </div>
 
         {/* Status bar */}
-        <div className="text-center pb-6">
+        <div className="text-center pb-8">
           {phase === 'voting' && (
-            <div className="text-white/80 text-xl font-medium" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-              {votedNames.length} / {state.allPlayerNames.length} hebben gestemd
+            <div className="text-white text-4xl font-bold" style={{ fontFamily: barlowFont, textShadow: '0 3px 12px rgba(0,0,0,0.7)' }}>
+              {votedNames.length} van de {state.allPlayerNames.length} hebben gestemd
             </div>
           )}
         </div>

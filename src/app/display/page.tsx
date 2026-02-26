@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v3.1';
+const APP_VERSION = 'v3.2';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -567,28 +567,41 @@ export default function DisplayPage() {
           <button
             onClick={async () => {
               try {
+                // 1. Unlock audio context FIRST in user-gesture context
+                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
+                if (AC) {
+                  const ctx = new AC();
+                  const buf = ctx.createBuffer(1, 1, 22050);
+                  const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(0);
+                  if (ctx.state === 'suspended') await ctx.resume();
+                }
+
+                // 2. Play a silent audio to unlock HTMLMediaElement audio on Safari
+                const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+                silentAudio.volume = 0.01;
+                await silentAudio.play().catch(() => {});
+
+                // 3. Now play the actual video with sound
                 setUserEnabledSound(true);
-                // Reset lastPlayedUrl so the useEffect can play the current video
                 lastPlayedUrl.current = '';
-                // Directly play video from click handler (user gesture context) for reliable sound
                 const v = videoRef.current;
-                if (v && v.src) { v.muted = false; v.volume = 1; v.play().catch(() => {}); }
-                // Always reset Krakende Karakters state on start
+                if (v && v.src) {
+                  v.muted = false;
+                  v.volume = 1;
+                  v.currentTime = 0;
+                  await v.play().catch(() => {
+                    console.warn('[Display] Video play failed even after unlock, trying muted');
+                    v.muted = true; v.play().catch(() => {});
+                  });
+                }
+
+                // 4. Reset Krakende Karakters state
                 try {
                   const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');
                   const freshState = getInitialState();
                   if (currentSession) await resetState(currentSession.id, freshState);
                 } catch (e) { console.warn('[Display] Krakende reset error:', e); }
-
-                // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported
-                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
-                if (AC) {
-                  const ctx = new AC();
-                  // create and stop a silent buffer
-                  const osc = ctx.createOscillator(); osc.frequency.value = 0.0001; osc.connect(ctx.destination); osc.start(0); osc.stop(0.01);
-                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
-                }
               } catch { }
             }}
             className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"
