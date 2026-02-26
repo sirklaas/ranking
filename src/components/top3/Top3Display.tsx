@@ -104,15 +104,15 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
     offset += r.percentage;
   });
 
-  const radius = 350;
+  const radius = 525;
   const circumference = 2 * Math.PI * radius;
-  const strokeWidth = 120;
-  const center = 600; // viewBox 1200x1200
+  const strokeWidth = 180;
+  const center = 900; // viewBox 1800x1800
 
   return (
     <svg
-      viewBox="0 0 1200 1200"
-      className="w-full h-full max-w-[1100px] max-h-[1100px] overflow-visible transition-opacity duration-300"
+      viewBox="0 0 1800 1800"
+      className="w-full h-full max-w-[1650px] max-h-[1650px] overflow-visible transition-opacity duration-300"
       style={{ opacity: animate ? 1 : 0 }}
     >
       {/* Background circle */}
@@ -141,7 +141,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
         const midPercent = seg.offset + (seg.percentage / 2);
         const angle = (midPercent / 100) * Math.PI * 2 - (Math.PI / 2); // 12 o'clock start
 
-        const labelRadius = radius + strokeWidth + 40; // distance from center
+        const labelRadius = radius + strokeWidth + 60; // distance from center
         const labelX = center + Math.cos(angle) * labelRadius;
         const labelY = center + Math.sin(angle) * labelRadius;
 
@@ -243,13 +243,13 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
         );
       })}
       {/* Center text backdrop */}
-      <circle cx={center} cy={center} r={radius - strokeWidth - 10} fill="rgba(0,0,0,0.3)" />
+      <circle cx={center} cy={center} r={radius - strokeWidth - 15} fill="rgba(0,0,0,0.3)" />
 
       {/* Center text */}
-      <text x={center} y={center - 10} textAnchor="middle" fill="white" fontSize="48" fontWeight="800" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', letterSpacing: '4px' }}>
+      <text x={center} y={center - 15} textAnchor="middle" fill="white" fontSize="72" fontWeight="800" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', letterSpacing: '4px' }}>
         TOP 3
       </text>
-      <text x={center} y={center + 40} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="26" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', letterSpacing: '2px' }}>
+      <text x={center} y={center + 55} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="39" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', letterSpacing: '2px' }}>
         {totalPercentage > 0 ? `${results.reduce((s, r) => s + r.votes, 0)} STEMMEN` : ''}
       </text>
 
@@ -309,9 +309,9 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   }, [animate]);
 
   return (
-    <div className="flex items-center justify-center w-full max-w-7xl mx-auto pb-10 mt-10">
+    <div className="flex items-center justify-center w-full mx-auto pb-10 mt-10">
       {/* Donut chart - Now full width with labels embedded inside */}
-      <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '1000px' }}>
+      <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '100vh' }}>
         <AnimatedDonut results={results} animate={animate} />
       </div>
 
@@ -401,7 +401,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
               style={{
                 fontFamily: barlowFont,
                 fontWeight: 300,
-                fontSize: '100px',
+                fontSize: '20rem',
                 textShadow: '0 4px 24px rgba(0,0,0,0.8)',
                 animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
               }}

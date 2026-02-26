@@ -286,17 +286,17 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                 {index + 1}
             </div>
             <div className="flex-1">
-                <div className="text-6xl font-black text-white tracking-tighter" style={{ fontFamily: barlowFont }}>
+                <div className="text-5xl text-white tracking-tight" style={{ fontFamily: barlowFont, fontWeight: 400 }}>
                     {formatName(result.playerName)}
                 </div>
-                <div className="h-6 bg-white/10 rounded-full mt-4 overflow-hidden border border-white/5">
+                <div className="h-4 bg-white/10 rounded-full mt-3 overflow-hidden border border-white/5">
                     <div
                         className={`h-full rounded-full transition-all duration-1000 delay-500 shadow-[0_0_20px_rgba(255,255,255,0.3)] ${index === 0 ? 'bg-gradient-to-r from-yellow-300 via-white to-yellow-300' : 'bg-gradient-to-r from-cyan-300 to-blue-600'}`}
                         style={{ width: show ? `${result.percentage}%` : '0%' }}
                     />
                 </div>
             </div>
-            <div className={`text-6xl font-black ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont }}>
+            <div className={`text-5xl ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400 }}>
                 {result.percentage}%
             </div>
         </div>
@@ -313,17 +313,19 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
         return () => clearInterval(timer);
     }, [results.length]);
 
+    // DOM order: rank 1 at top, rank N at bottom
+    // Reveal order: bottom (rank N) first, rank 1 last
     return (
-        <div className="flex flex-col items-center gap-8 w-full p-12 overflow-y-auto max-h-screen no-scrollbar">
-            {/* Reveal from bottom (10) to top (1) */}
-            {[...results].reverse().map((res, i) => {
-                const originalIndex = results.length - 1 - i;
-                const show = revealCount > i;
+        <div className="flex flex-col gap-4 w-full p-6 overflow-y-auto max-h-screen no-scrollbar">
+            {results.map((res, i) => {
+                // Reveal from bottom: last index revealed first
+                const revealIndex = results.length - 1 - i;
+                const show = revealCount > revealIndex;
                 return (
                     <ResultItem
                         key={res.playerName}
                         result={res}
-                        index={originalIndex}
+                        index={i}
                         show={show}
                         total={results.length}
                     />
@@ -425,7 +427,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                             style={{
                                 fontFamily: barlowFont,
                                 fontWeight: 300,
-                                fontSize: '100px',
+                                fontSize: '20rem',
                                 textShadow: '0 8px 32px rgba(0,0,0,0.8)'
                             }}
                         >
@@ -435,12 +437,22 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                 )}
 
                 {/* Main content area */}
-                <div className="flex-1 flex items-center justify-center p-8">
-                    {/* NAMES hidden in intro phase */}
+                <div className="flex-1 flex items-stretch p-4">
                     {phase === 'intro' ? null : phase === 'results' ? (
-                        <SequentialResults results={state.currentQuestion.results} />
+                        <>
+                            {/* Left: results list */}
+                            <div className="w-1/2 flex items-center">
+                                <SequentialResults results={state.currentQuestion.results} />
+                            </div>
+                            {/* Right: wordcloud stays visible */}
+                            <div className="w-1/2 flex items-center justify-center">
+                                <WordCloud results={liveTally} animate={animateCloud} />
+                            </div>
+                        </>
                     ) : (
-                        <WordCloud results={liveTally} animate={animateCloud} />
+                        <div className="w-full flex items-center justify-center">
+                            <WordCloud results={liveTally} animate={animateCloud} />
+                        </div>
                     )}
                 </div>
 

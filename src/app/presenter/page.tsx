@@ -822,7 +822,7 @@ export default function PresenterPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div className="fixed z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '75px' }}>v2.9 | fase: {currentFase} | PB: {pbStatus}</div>
+      <div className="fixed z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '75px' }}>v3.0 | fase: {currentFase} | PB: {pbStatus}</div>
       <div className="w-full">
         {currentView === 'list' && (
           <div className="flex justify-end mb-8">
