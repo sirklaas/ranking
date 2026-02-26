@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v2.5';
+const APP_VERSION = 'v2.6';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -25,6 +25,7 @@ export default function DisplayPage() {
     | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
   >(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const lastPlayedUrl = useRef<string>('');
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
@@ -148,31 +149,23 @@ export default function DisplayPage() {
     };
   }, [loadSessionData]);
 
-  // Try to start playback with sound; if user enabled sound, it works natively
+  // Play video only when the media URL actually changes (not on every poll/render)
   useEffect(() => {
     const v = videoRef.current;
+    if (!currentMedia || currentMedia.type !== 'video' || !v) return;
+    if (currentMedia.url === lastPlayedUrl.current) return; // already playing this URL
+    lastPlayedUrl.current = currentMedia.url;
 
-    // Compute locally if media overlay is allowed for the current fase
-    // We allow media overlays on basically any fase that has a video (e.g. */01 trailers or 01/04 intro)
-    const faseStr = currentSession?.current_fase || '';
-    const allow = (() => {
-      // Allow video trailers to play anytime they exist
-      return true;
-    })();
-
-    if (!currentMedia || currentMedia.type !== 'video' || !allow || !v) {
-      return;
-    }
-
+    console.log(`[Display ${APP_VERSION}] Playing new video: ${currentMedia.name}`);
     try {
-      v.muted = false;
+      v.muted = !userEnabledSound;
       v.volume = 1;
       const p = v.play();
       if (p && typeof p.then === 'function') {
         p.catch((e) => {
-          console.warn('[Display] Autoplay blocked by browser. Falling back to muted.', e);
+          console.warn('[Display] Autoplay blocked, falling back to muted.', e);
           v.muted = true;
-          v.play().catch((err) => console.error('[Display] Even muted autoplay blocked:', err));
+          v.play().catch(() => {});
         });
       }
     } catch (e) {
@@ -193,15 +186,22 @@ export default function DisplayPage() {
         if (!active || !fresh) return;
 
         const freshFase = fresh.current_fase || '?';
-        setPollDebug(prev => ({ count: prev.count + 1, lastPbFase: freshFase, error: '' }));
+        setPollDebug(prev => ({ ...prev, count: prev.count + 1, lastPbFase: freshFase, error: '' }));
 
-        // Always update current_fase from PB
+        // Only update if something actually changed
         setCurrentSession((prev) => {
           if (!prev) return prev;
-          if (fresh.current_fase !== prev.current_fase) {
-            console.log(`[Display ${APP_VERSION}] Poll: fase ${prev.current_fase} → ${fresh.current_fase}`);
+          if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings) {
+            // Check module states
+            let changed = false;
+            Object.values(FASES).forEach((mod) => {
+              const sf = mod.stateField;
+              if (!sf) return;
+              if ((fresh as Record<string, unknown>)[sf] !== (prev as Record<string, unknown>)[sf]) changed = true;
+            });
+            if (!changed) return prev; // no change, skip re-render
           }
-          // Always merge fresh data
+          console.log(`[Display ${APP_VERSION}] Poll: fase ${prev.current_fase} → ${fresh.current_fase}`);
           return { ...prev, ...fresh };
         });
       } catch (e) {
@@ -210,7 +210,7 @@ export default function DisplayPage() {
       }
     };
 
-    const timer = setInterval(poll, 2000);
+    const timer = setInterval(poll, 5000);
     return () => { active = false; clearInterval(timer); };
   }, [currentSession?.id]);
 
@@ -563,18 +563,12 @@ export default function DisplayPage() {
                 // Directly play video from click handler (user gesture context) for reliable sound
                 const v = videoRef.current;
                 if (v) { v.muted = false; v.volume = 1; v.play().catch(() => {}); }
-                // Reset Krakende if we are starting it
-                if (currentSession?.current_fase?.startsWith('13/')) {
+                // Always reset Krakende Karakters state on start
+                try {
                   const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');
-                  let currentState = getInitialState();
-                  if (currentSession.krakende_state) {
-                    try {
-                      const parsed = JSON.parse(typeof currentSession.krakende_state === 'string' ? currentSession.krakende_state : JSON.stringify(currentSession.krakende_state));
-                      currentState = { ...currentState, ...parsed };
-                    } catch (e) { }
-                  }
-                  await resetState(currentSession.id, currentState);
-                }
+                  const freshState = getInitialState();
+                  if (currentSession) await resetState(currentSession.id, freshState);
+                } catch (e) { console.warn('[Display] Krakende reset error:', e); }
 
                 // Attempt to unlock audio on Safari/iOS by resuming AudioContext if supported
                 const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };

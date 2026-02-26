@@ -35,7 +35,7 @@ export default function PresenterPage() {
       } catch (e) {
         console.error(`[Presenter] PB write FAILED attempt ${attempt}:`, e);
         setPbStatus(`✗ ${fase} #${attempt}`);
-        if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+        if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 1000));
       }
     }
     setPbStatus(`FAIL ${fase}`);
@@ -816,7 +816,7 @@ export default function PresenterPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div className="fixed z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '75px' }}>v2.5 | fase: {currentFase} | PB: {pbStatus}</div>
+      <div className="fixed z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '75px' }}>v2.6 | fase: {currentFase} | PB: {pbStatus}</div>
       <div className="w-full">
         {currentView === 'list' && (
           <div className="flex justify-end mb-8">
