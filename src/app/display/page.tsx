@@ -8,6 +8,8 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
+const APP_VERSION = 'v2.1';
+
 interface PlayersByTeam {
   [teamNumber: number]: string[];
 }
@@ -134,28 +136,7 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
-      // Arrow navigation: advance/retreat current_fase
-      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
-        e.preventDefault();
-        setCurrentSession(prev => {
-          if (!prev) return prev;
-          const headings = faseService.parseHeadings(prev.headings || '{}');
-          const keys = Object.keys(headings);
-          if (keys.length === 0) return prev;
-          const curIdx = keys.indexOf(prev.current_fase || '');
-          let nextIdx: number;
-          if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-            nextIdx = curIdx < keys.length - 1 ? curIdx + 1 : curIdx;
-          } else {
-            nextIdx = curIdx > 0 ? curIdx - 1 : 0;
-          }
-          const nextFase = keys[nextIdx];
-          if (nextFase !== prev.current_fase) {
-            rankingService.updateSession(prev.id, { current_fase: nextFase }).catch(() => { });
-          }
-          return { ...prev, current_fase: nextFase };
-        });
-      }
+      // Arrow keys removed — display follows PB only, presenter controls slides
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -333,6 +314,13 @@ export default function DisplayPage() {
     );
   }
 
+  // Version badge (shown on all paths)
+  const versionBadge = (
+    <div className="fixed bottom-2 right-2 z-[9999] text-white/50 text-xs" style={{ fontFamily: 'monospace' }}>
+      {APP_VERSION} | fase: {currentSession?.current_fase || '?'}
+    </div>
+  );
+
   // Render module DisplayView if a registered fase module matches the current fase
   if (currentSession?.current_fase) {
     let mod = findFaseModule(currentSession.current_fase);
@@ -362,20 +350,26 @@ export default function DisplayPage() {
       const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
       const ModDisplay = mod.DisplayView;
       const allPlayerNames = currentSession.playernames ? teamService.parsePlayerNames(currentSession.playernames) : [];
+      console.log(`[Display ${APP_VERSION}] Rendering module`, mod.title, 'for', currentSession.current_fase);
       return (
-        <ModDisplay
-          faseKey={currentSession.current_fase}
-          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-          heading={heading}
-          mediaUrl={mediaUrl}
-          allPlayerNames={allPlayerNames}
-        />
+        <>
+          <ModDisplay
+            faseKey={currentSession.current_fase}
+            moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+            heading={heading}
+            mediaUrl={mediaUrl}
+            allPlayerNames={allPlayerNames}
+          />
+          {versionBadge}
+        </>
       );
     }
   }
 
+  console.log(`[Display ${APP_VERSION}] Falling through to media overlay for fase`, currentSession?.current_fase);
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      {versionBadge}
       {/* Media overlay: plays current fase video/image when available */}
       {currentMedia && currentMedia.url && allowMediaOverlay && (
         <div className="fixed inset-0 z-50 bg-black">
