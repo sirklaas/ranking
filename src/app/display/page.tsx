@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.2';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -179,30 +179,44 @@ export default function DisplayPage() {
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 
-  // Subscribe to PocketBase session updates — same pattern as player page (proven working)
+  // Poll PocketBase every 2s for session updates (reliable — no subscription issues)
   useEffect(() => {
     if (!currentSession) return;
+    const sessionId = currentSession.id;
+    let active = true;
 
-    const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
-      console.log(`[Display ${APP_VERSION}] PB event:`, { current_fase: data.current_fase, id: data.id });
+    const poll = async () => {
+      if (!active) return;
+      try {
+        const fresh = await rankingService.getSessionById(sessionId) as unknown as RankingSession;
+        if (!active || !fresh) return;
 
-      // Update all registered module states
-      Object.values(FASES).forEach((mod) => {
-        const sf = mod.stateField;
-        if (!sf) return;
-        const str = safeJsonStr(data[sf]);
-        if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
-      });
-
-      // Update current_fase (and merge full record)
-      if (data.current_fase) {
-        setCurrentSession((prev) => prev ? { ...prev, ...(data as unknown as Partial<RankingSession>) } : prev);
+        setCurrentSession((prev) => {
+          if (!prev) return prev;
+          // Only update if something changed
+          if (fresh.current_fase !== prev.current_fase || fresh.headings !== prev.headings) {
+            console.log(`[Display ${APP_VERSION}] Poll: fase ${prev.current_fase} → ${fresh.current_fase}`);
+            return { ...prev, ...fresh };
+          }
+          // Check module states even if fase didn't change
+          let stateChanged = false;
+          Object.values(FASES).forEach((mod) => {
+            const sf = mod.stateField;
+            if (!sf) return;
+            const freshVal = (fresh as Record<string, unknown>)[sf];
+            const prevVal = (prev as Record<string, unknown>)[sf];
+            if (freshVal !== prevVal) stateChanged = true;
+          });
+          if (stateChanged) return { ...prev, ...fresh };
+          return prev;
+        });
+      } catch (e) {
+        console.warn(`[Display ${APP_VERSION}] Poll error:`, e);
       }
-    });
-
-    return () => {
-      unsubscribe.then((unsub: () => void) => unsub()).catch(() => {});
     };
+
+    const timer = setInterval(poll, 2000);
+    return () => { active = false; clearInterval(timer); };
   }, [currentSession?.id]);
 
   // Compute current media whenever session/current_fase or motherMeta changes
@@ -293,6 +307,8 @@ export default function DisplayPage() {
     </div>
   );
 
+  console.log(`[Display ${APP_VERSION}] Render: fase=${currentSession?.current_fase}`);
+
   // Render module DisplayView if a registered fase module matches the current fase
   if (currentSession?.current_fase) {
     let mod = findFaseModule(currentSession.current_fase);
@@ -360,9 +376,8 @@ export default function DisplayPage() {
               }}
               onTimeUpdate={(e) => {
                 const vid = e.currentTarget;
-                // Pause before the end to prevent native black transitions. Increased to 0.4s 
-                // to make sure `timeupdate` fires in time before the browser hides the frame.
-                if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
+                // Pause 0.5s before end to freeze on last visible frame (prevent black)
+                if (vid.duration - vid.currentTime < 0.5 && !vid.paused) {
                   vid.pause();
                   // If this is the ending trailer (20/01), redirect to the standalone ending app
                   if (currentSession?.current_fase === '20/01') {
