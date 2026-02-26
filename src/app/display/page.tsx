@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v2.2a';
+const APP_VERSION = 'v2.3';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
