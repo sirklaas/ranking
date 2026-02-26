@@ -242,7 +242,6 @@ export const resetState = async (
     const initial = getInitialState();
     return {
       ...initial,
-      phase: current.phase, // Keep the current phase
       language: current.language,
     };
   });

@@ -250,11 +250,11 @@ export default function KrakendePlayer({
               key={trait.id}
               onClick={() => handleSelect(trait.id)}
               disabled={submitted}
-              className="rounded-lg p-2 text-center font-bold transition-all active:scale-95 leading-tight flex items-center justify-center min-h-[50px]"
+              className="rounded-lg px-3 py-2 text-center font-semibold transition-all active:scale-95 leading-tight flex items-center justify-center min-h-[50px] shadow-md"
               style={{
                 backgroundColor: isSelected ? baseColor : 'rgba(255,255,255,0.1)',
                 color: isSelected ? '#0A1752' : 'white',
-                border: isSelected ? `2px solid ${baseColor}` : '2px solid transparent',
+                border: isSelected ? `2px solid ${baseColor}` : '2px solid rgba(255,255,255,0.5)',
                 opacity: submitted && !isSelected ? 0.3 : 1,
                 fontSize: '0.85rem',
               }}
