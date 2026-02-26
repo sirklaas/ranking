@@ -393,9 +393,9 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
 
       {/* Relative content layer */}
       <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
-        {/* Heading — large, bottom-aligned 75px up */}
+        {/* Heading — top 100px for questions, bottom 75px for trailer */}
         {displayHeading && (
-          <div className="absolute bottom-[75px] left-0 right-0 text-center z-30">
+          <div className={`absolute left-0 right-0 text-center z-30 ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[100px]'}`}>
             <h1
               className="text-white font-bold px-12 leading-none"
               style={{

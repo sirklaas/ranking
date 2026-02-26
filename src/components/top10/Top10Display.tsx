@@ -419,7 +419,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
             <div className="relative z-20 flex-1 flex flex-col">
                 {/* Heading - POSITION DEPENDENT */}
                 {displayHeading && (
-                    <div className={`absolute left-0 right-0 text-center ${faseKey === '17/01' ? 'bottom-[150px]' : 'top-[150px]'}`}>
+                    <div className={`absolute left-0 right-0 text-center ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[100px]'}`}>
                         <h1
                             className="text-white px-12 leading-none"
                             style={{
