@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v2.3';
+const APP_VERSION = 'v2.4';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -29,6 +29,7 @@ export default function DisplayPage() {
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
+  const [pollDebug, setPollDebug] = useState({ count: 0, lastPbFase: '?', error: '' });
 
   // Sync module states from session on load / session change
   useEffect(() => {
@@ -191,26 +192,20 @@ export default function DisplayPage() {
         const fresh = await rankingService.getSessionById(sessionId) as unknown as RankingSession;
         if (!active || !fresh) return;
 
+        const freshFase = fresh.current_fase || '?';
+        setPollDebug(prev => ({ count: prev.count + 1, lastPbFase: freshFase, error: '' }));
+
+        // Always update current_fase from PB
         setCurrentSession((prev) => {
           if (!prev) return prev;
-          // Only update if something changed
-          if (fresh.current_fase !== prev.current_fase || fresh.headings !== prev.headings) {
+          if (fresh.current_fase !== prev.current_fase) {
             console.log(`[Display ${APP_VERSION}] Poll: fase ${prev.current_fase} → ${fresh.current_fase}`);
-            return { ...prev, ...fresh };
           }
-          // Check module states even if fase didn't change
-          let stateChanged = false;
-          Object.values(FASES).forEach((mod) => {
-            const sf = mod.stateField;
-            if (!sf) return;
-            const freshVal = (fresh as Record<string, unknown>)[sf];
-            const prevVal = (prev as Record<string, unknown>)[sf];
-            if (freshVal !== prevVal) stateChanged = true;
-          });
-          if (stateChanged) return { ...prev, ...fresh };
-          return prev;
+          // Always merge fresh data
+          return { ...prev, ...fresh };
         });
       } catch (e) {
+        setPollDebug(prev => ({ ...prev, error: String(e) }));
         console.warn(`[Display ${APP_VERSION}] Poll error:`, e);
       }
     };
@@ -303,7 +298,7 @@ export default function DisplayPage() {
   // Version badge (shown on all paths)
   const versionBadge = (
     <div className="fixed z-[9999] text-white/50 text-xs" style={{ fontFamily: 'monospace', bottom: '10px', left: '50%', transform: 'translateX(-50%)' }}>
-      {APP_VERSION} | fase: {currentSession?.current_fase || '?'}
+      {APP_VERSION} | fase: {currentSession?.current_fase || '?'} | poll#{pollDebug.count} pb:{pollDebug.lastPbFase} {pollDebug.error ? '❌' + pollDebug.error : ''}
     </div>
   );
 
