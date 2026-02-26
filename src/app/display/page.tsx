@@ -179,57 +179,29 @@ export default function DisplayPage() {
     }
   }, [currentMedia, currentSession, userEnabledSound]);
 
-  // Subscribe to PocketBase session updates (current_fase and elimination_state changes)
+  // Subscribe to PocketBase session updates — same pattern as player page (proven working)
   useEffect(() => {
-    type PBEvent = { record?: Partial<RankingSession> } | Partial<RankingSession>;
-    const unsub = rankingService.subscribeToRankings(async (e: unknown) => {
-      try {
-        const evt = e as PBEvent;
-        const rec = (evt && ('record' in evt ? evt.record : evt)) as Partial<RankingSession> | undefined;
-        if (!rec || !currentSession) return;
-        const same = rec.id === currentSession.id;
-        // Better debug output to avoid confusion when PB omits unchanged fields
-        console.log('[Display] PB event:', {
-          incomingId: rec.id,
-          currentId: currentSession?.id,
-          current_fase_incoming: rec.current_fase,
-          current_fase_prev: currentSession?.current_fase,
-        });
-        if (!same) return;
+    if (!currentSession) return;
 
-        // Parse all registered module states generically
-        Object.values(FASES).forEach((mod) => {
-          const sf = mod.stateField;
-          if (!sf) return;
+    const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
+      console.log(`[Display ${APP_VERSION}] PB event:`, { current_fase: data.current_fase, id: data.id });
 
-          const str = safeJsonStr((rec as Record<string, unknown>)[sf]);
-          if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
-        });
+      // Update all registered module states
+      Object.values(FASES).forEach((mod) => {
+        const sf = mod.stateField;
+        if (!sf) return;
+        const str = safeJsonStr(data[sf]);
+        if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
+      });
 
-        // If PocketBase event doesn't include current_fase, fetch the full record to get the latest value
-        if (typeof rec.current_fase === 'undefined') {
-          try {
-            const fresh = await rankingService.getSessionById(rec.id as string);
-            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(fresh as unknown as RankingSession) }));
-          } catch {
-            // Fallback: merge what we have
-            setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
-          }
-        } else {
-          // Merge to keep other fields stable when we do have current_fase
-          setCurrentSession(prev => ({ ...(prev as RankingSession), ...(rec as RankingSession) }));
-        }
-      } catch {
-        // ignore
+      // Update current_fase (and merge full record)
+      if (data.current_fase) {
+        setCurrentSession((prev) => prev ? { ...prev, ...(data as unknown as Partial<RankingSession>) } : prev);
       }
     });
-    // Best-effort cleanup if supported
+
     return () => {
-      try {
-        if (typeof unsub === 'function') (unsub as unknown as () => void)();
-      } catch {
-        // ignore
-      }
+      unsubscribe.then((unsub: () => void) => unsub()).catch(() => {});
     };
   }, [currentSession?.id]);
 

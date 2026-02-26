@@ -800,7 +800,7 @@ export default function PresenterPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div className="fixed bottom-1 right-1 z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace' }}>v2.1</div>
+      <div className="fixed z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', right: '50px' }}>v2.1</div>
       <div className="w-full">
         {currentView === 'list' && (
           <div className="flex justify-end mb-8">
