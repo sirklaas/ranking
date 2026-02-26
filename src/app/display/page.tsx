@@ -565,44 +565,40 @@ export default function DisplayPage() {
         <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center backdrop-blur-sm">
           <h2 className="text-white text-3xl font-light mb-8 tracking-widest">Display Systeem</h2>
           <button
-            onClick={async () => {
+            onClick={() => {
+              // IMMEDIATELY dismiss overlay
+              setUserEnabledSound(true);
+              lastPlayedUrl.current = '';
+
+              // Unlock audio (all sync, in user-gesture context)
               try {
-                // 1. Unlock audio context FIRST in user-gesture context
                 const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
                 const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
                 if (AC) {
                   const ctx = new AC();
                   const buf = ctx.createBuffer(1, 1, 22050);
-                  const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(0);
-                  if (ctx.state === 'suspended') await ctx.resume();
+                  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
+                  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
                 }
+              } catch (e) { console.warn('[Display] AudioContext unlock error:', e); }
 
-                // 2. Play a silent audio to unlock HTMLMediaElement audio on Safari
-                const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-                silentAudio.volume = 0.01;
-                await silentAudio.play().catch(() => {});
-
-                // 3. Now play the actual video with sound
-                setUserEnabledSound(true);
-                lastPlayedUrl.current = '';
+              // Play video with sound (sync call in user gesture)
+              try {
                 const v = videoRef.current;
                 if (v && v.src) {
                   v.muted = false;
                   v.volume = 1;
                   v.currentTime = 0;
-                  await v.play().catch(() => {
-                    console.warn('[Display] Video play failed even after unlock, trying muted');
-                    v.muted = true; v.play().catch(() => {});
-                  });
+                  const p = v.play();
+                  if (p) p.catch(() => { v.muted = true; v.play().catch(() => {}); });
                 }
+              } catch (e) { console.warn('[Display] Video play error:', e); }
 
-                // 4. Reset Krakende Karakters state
-                try {
-                  const { getInitialState, resetState } = await import('@/modules/krakende-karakters/logic');
-                  const freshState = getInitialState();
-                  if (currentSession) await resetState(currentSession.id, freshState);
-                } catch (e) { console.warn('[Display] Krakende reset error:', e); }
-              } catch { }
+              // Reset Krakende state (async, fire-and-forget)
+              import('@/modules/krakende-karakters/logic').then(({ getInitialState, resetState }) => {
+                const fresh = getInitialState();
+                if (currentSession) resetState(currentSession.id, fresh).catch(() => {});
+              }).catch(() => {});
             }}
             className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"
             style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
