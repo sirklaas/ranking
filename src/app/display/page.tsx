@@ -302,7 +302,7 @@ export default function DisplayPage() {
 
   // Version badge (shown on all paths)
   const versionBadge = (
-    <div className="fixed z-[9999] text-white/50 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>
+    <div className="fixed z-[9999] text-white/50 text-xs" style={{ fontFamily: 'monospace', bottom: '10px', left: '50%', transform: 'translateX(-50%)' }}>
       {APP_VERSION} | fase: {currentSession?.current_fase || '?'}
     </div>
   );
