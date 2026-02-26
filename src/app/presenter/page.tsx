@@ -22,6 +22,24 @@ export default function PresenterPage() {
   const [isClient, setIsClient] = useState(false);
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
+  const [pbStatus, setPbStatus] = useState<string>('init');
+
+  // Reliable PB write with logging + retry
+  const writeFaseToPB = useCallback(async (sessionId: string, fase: string) => {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await rankingService.updateSession(sessionId, { current_fase: fase });
+        setPbStatus(`✓ ${fase}`);
+        console.log(`[Presenter] PB write OK: ${fase} (attempt ${attempt})`);
+        return;
+      } catch (e) {
+        console.error(`[Presenter] PB write FAILED attempt ${attempt}:`, e);
+        setPbStatus(`✗ ${fase} #${attempt}`);
+        if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+      }
+    }
+    setPbStatus(`FAIL ${fase}`);
+  }, []);
 
 
   // Subscribe to PB real-time updates for the active session (to show live votes arriving)
@@ -212,9 +230,7 @@ export default function PresenterPage() {
     setCurrentView('game');
     setCurrentFase('01/01');
     // Persist initial fase so Display receives a defined value immediately
-    try {
-      rankingService.updateSession(selectedSession.id, { current_fase: '01/01' }).catch(() => { });
-    } catch { }
+    writeFaseToPB(selectedSession.id, '01/01');
     console.log('State updated - should show game interface now');
   };
 
@@ -222,7 +238,7 @@ export default function PresenterPage() {
     setCurrentFase(fase);
     // Update the session's current fase in the database
     if (selectedSession) {
-      rankingService.updateSession(selectedSession.id, { current_fase: fase });
+      writeFaseToPB(selectedSession.id, fase);
     }
   };
 
@@ -479,7 +495,7 @@ export default function PresenterPage() {
         let next = getNextFaseGlobal(currentFase);
         setCurrentFase(next);
         if (selectedSession) {
-          rankingService.updateSession(selectedSession.id, { current_fase: next }).catch(() => { });
+          writeFaseToPB(selectedSession.id, next);
         }
         if (next === '20/01') {
           setTimeout(() => {
@@ -490,13 +506,13 @@ export default function PresenterPage() {
         const prev = getPrevFaseGlobal(currentFase);
         setCurrentFase(prev);
         if (selectedSession) {
-          rankingService.updateSession(selectedSession.id, { current_fase: prev }).catch(() => { });
+          writeFaseToPB(selectedSession.id, prev);
         }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [currentView, currentFase, selectedSession, getNextFaseGlobal, getPrevFaseGlobal]);
+  }, [currentView, currentFase, selectedSession, getNextFaseGlobal, getPrevFaseGlobal, writeFaseToPB]);
 
   // No presenter-side autoplay; Display page handles playback
 
@@ -800,7 +816,7 @@ export default function PresenterPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      <div className="fixed z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '75px' }}>v2.4 | fase: {currentFase}</div>
+      <div className="fixed z-[9999] text-gray-400 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '75px' }}>v2.5 | fase: {currentFase} | PB: {pbStatus}</div>
       <div className="w-full">
         {currentView === 'list' && (
           <div className="flex justify-end mb-8">
