@@ -277,33 +277,55 @@ export default function PlayerPage() {
     setIsLoading(false);
   };
 
-  // Subscribe to session updates
+  // Subscribe to session updates + polling fallback
   useEffect(() => {
     if (!currentSession) return;
+    const sessionId = currentSession.id;
 
     // Initial parse of all registered module states from top-level PB fields
-    Object.values(FASES).forEach((mod) => {
-      const sf = mod.stateField;
-      if (!sf) return;
-      const str = safeJsonStr((currentSession as Record<string, unknown>)[sf]);
-      if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
-    });
-
-    const unsubscribe = rankingService.subscribeToSession(currentSession.id, (data: Record<string, unknown>) => {
-      // Update all registered module states generically from top-level PB fields
+    const parseModuleStates = (data: Record<string, unknown>) => {
       Object.values(FASES).forEach((mod) => {
         const sf = mod.stateField;
         if (!sf) return;
         const str = safeJsonStr(data[sf]);
-        if (str) setModuleStates((prev) => ({ ...prev, [sf]: str }));
+        if (str) setModuleStates((prev) => (prev[sf] === str ? prev : { ...prev, [sf]: str }));
       });
-      // Also update current fase if changed
+    };
+
+    parseModuleStates(currentSession as Record<string, unknown>);
+
+    // Real-time subscription
+    const unsubscribe = rankingService.subscribeToSession(sessionId, (data: Record<string, unknown>) => {
+      parseModuleStates(data);
       if (data.current_fase) {
         setCurrentSession((prev: RankingSession | null) => prev ? { ...prev, current_fase: data.current_fase as string } : null);
       }
     });
 
+    // Polling fallback (every 3s) — subscriptions can be unreliable with multiple iframes
+    let active = true;
+    const poll = async () => {
+      if (!active) return;
+      try {
+        const fresh = await rankingService.getSessionById(sessionId) as unknown as RankingSession;
+        if (!active || !fresh) return;
+        parseModuleStates(fresh as unknown as Record<string, unknown>);
+        if (fresh.current_fase) {
+          setCurrentSession((prev: RankingSession | null) => {
+            if (!prev) return prev;
+            if (fresh.current_fase === prev.current_fase) return prev;
+            return { ...prev, current_fase: fresh.current_fase };
+          });
+        }
+      } catch (e) {
+        console.warn('[Player] Poll error:', e);
+      }
+    };
+    const pollTimer = setInterval(poll, 3000);
+
     return () => {
+      active = false;
+      clearInterval(pollTimer);
       unsubscribe.then((unsub: () => void) => unsub());
     };
   }, [currentSession?.id]);
@@ -396,7 +418,7 @@ export default function PlayerPage() {
         background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
       }}
     >
-      <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>v3.2 | {currentSession?.current_fase || ''}</div>
+      <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>v3.3 | {currentSession?.current_fase || ''}</div>
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
 

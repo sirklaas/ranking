@@ -283,7 +283,7 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                 transitionDelay: `${(total - index - 1) * 0.05}s`
             }}
         >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shrink-0 border-2 border-white/50 ${index === 0 ? 'bg-yellow-400 text-black' : 'bg-white/20 text-white'}`} style={{ fontFamily: barlowFont }}>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shrink-0 border-2 border-white/50 ${index === 0 ? 'bg-yellow-400 text-black animate-bounce' : 'bg-white/20 text-white'}`} style={{ fontFamily: barlowFont }}>
                 {index + 1}
             </div>
             <div className="flex-1 min-w-0 overflow-hidden">
@@ -314,10 +314,9 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
         return () => clearInterval(timer);
     }, [results.length]);
 
-    // DOM order: rank 1 at top, rank N at bottom
-    // Reveal order: bottom (rank N) first, rank 1 last
+    // Reverse order: lowest rank at bottom, #1 at top. Reveal from bottom up.
     return (
-        <div className="flex flex-col gap-1 w-full px-4 no-scrollbar" style={{ paddingBottom: '75px' }}>
+        <div className="flex flex-col gap-1 w-full px-4 no-scrollbar">
             {results.map((res, i) => {
                 // Reveal from bottom: last index revealed first
                 const revealIndex = results.length - 1 - i;
@@ -445,7 +444,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                     {phase === 'intro' ? null : phase === 'results' ? (
                         <>
                             {/* Left: results list - anchored to bottom */}
-                            <div className="w-1/2 flex flex-col justify-end" style={{ height: '100%' }}>
+                            <div className="absolute left-0 bottom-0 w-1/2" style={{ paddingBottom: '75px', paddingLeft: '16px' }}>
                                 <SequentialResults results={state.currentQuestion.results} />
                             </div>
                             {/* Right: wordcloud stays visible */}

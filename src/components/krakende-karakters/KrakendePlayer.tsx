@@ -108,12 +108,12 @@ export default function KrakendePlayer({
     }
   }, [state.phase, isRevealPhase]);
 
-  // 6s delay before showing voting grid (wait for display to finish revealing traits)
+  // ~17s delay before showing voting grid (24 traits × 0.7s = 16.8s on display)
   const [votingReady, setVotingReady] = useState(false);
   useEffect(() => {
     setVotingReady(false);
     if (isVoting) {
-      const timer = setTimeout(() => setVotingReady(true), 6000);
+      const timer = setTimeout(() => setVotingReady(true), 17000);
       return () => clearTimeout(timer);
     }
   }, [state.phase, isVoting]);
@@ -257,7 +257,7 @@ export default function KrakendePlayer({
 
   return (
     <div
-      className="min-h-screen px-4 pt-4"
+      className="h-screen flex flex-col overflow-hidden"
       style={{
         fontFamily: 'Barlow Semi Condensed, sans-serif',
         background: isPositive
@@ -265,21 +265,21 @@ export default function KrakendePlayer({
           : 'linear-gradient(135deg, #0A1752 0%, #6b1a1a 100%)',
       }}
     >
-      {/* Header */}
-      <div className="text-center mb-4">
-        <h1 className="text-white text-4xl font-bold tracking-tight mb-1 uppercase" style={{ fontWeight: 700 }}>
+      {/* Header — compact */}
+      <div className="text-center py-3 px-4 shrink-0">
+        <h1 className="text-white text-2xl font-bold tracking-tight uppercase" style={{ fontWeight: 700 }}>
           Krakende Karakters
         </h1>
-        <h2 className="text-white/90 text-xl font-medium">
+        <h2 className="text-white/90 text-base font-medium">
           {isPositive ? 'Goede Geinige Eigenschappen' : 'Minder goede Eigenschappen'}
         </h2>
-        <p className="text-white/50 text-xs mt-1">
+        <p className="text-white/50 text-xs">
           Kies de eigenschap die bij jou past, {playerName}
         </p>
       </div>
 
-      {/* Trait grid */}
-      <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-24">
+      {/* Trait grid — matches step 1/2: grid-cols-2 gap-2 px-4, scrollable */}
+      <div className="grid grid-cols-2 gap-2 px-4 overflow-y-auto flex-1 pb-20 content-start">
         {traits.map((trait, i) => {
           const isSelected = selected === trait.id;
           const baseColor = isPositive ? '#4ECDC4' : '#FF6B6B';
@@ -288,16 +288,16 @@ export default function KrakendePlayer({
               key={trait.id}
               onClick={() => handleSelect(trait.id)}
               disabled={submitted}
-              className="rounded-lg px-3 py-2 text-center font-semibold transition-all active:scale-95 leading-tight flex items-center justify-center min-h-[50px] shadow-md"
+              className="rounded-lg px-3 py-2 text-center font-semibold transition-all active:scale-95 leading-tight shadow-md border-2 border-white overflow-hidden"
               style={{
                 backgroundColor: isSelected ? baseColor : 'rgba(255,255,255,0.1)',
                 color: isSelected ? '#0A1752' : 'white',
-                border: isSelected ? `2px solid ${baseColor}` : '2px solid rgba(255,255,255,0.5)',
+                borderColor: isSelected ? baseColor : 'rgba(255,255,255,0.5)',
                 opacity: submitted && !isSelected ? 0.3 : 1,
-                fontSize: '0.85rem',
+                fontSize: '0.9rem',
               }}
             >
-              <div className="flex flex-col items-center justify-center w-full font-barlow" style={{ fontWeight: 300 }}>
+              <div className="flex flex-col items-center justify-center w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
                 {(() => {
                   const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                   return (
@@ -319,12 +319,14 @@ export default function KrakendePlayer({
           <button
             onClick={handleConfirm}
             disabled={!selected}
-            className="w-full py-4 rounded-xl text-xl font-bold transition-all active:scale-95"
+            className="w-full py-3 rounded-lg text-lg font-semibold transition-all active:scale-95 border-2 border-white shadow-md"
             style={{
               backgroundColor: selected ? '#0A1752' : '#333',
               color: 'white',
-              border: selected ? '2px solid white' : '2px solid #555',
+              borderColor: selected ? 'white' : '#555',
               opacity: selected ? 1 : 0.5,
+              fontFamily: 'Barlow Semi Condensed, sans-serif',
+              fontWeight: 400,
             }}
           >
             {selected
