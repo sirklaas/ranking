@@ -20,9 +20,9 @@ const TOP3_HEADINGS: Record<string, string> = {
   '10/07': 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?',
   '10/08': 'Wie zou je absoluut niet /n op je kinderen laten passen?',
   '10/09': 'Wie heeft de meeste crypto\'s',
-  '10/10': 'Wie is de grootste aansteller op het werk?',
+  '10/10': 'Wie komt het vaakst te laat?',
   '10/11': 'Wie zou er als eerste een account aanmaken /n op OnlyFans?',
-  '10/12': 'Wie vertrouw je jouw allerdiepste geheimen toe?',
+  '10/12': 'Wie moet je zeker geen geheim vertellen?',
   '10/13': 'Wie zou je meenemen naar een parenclub?',
 };
 
