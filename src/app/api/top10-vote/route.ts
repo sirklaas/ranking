@@ -55,7 +55,7 @@ async function processQueue() {
         let newState = top10State;
 
         if (!alreadyVoted) {
-            // 3. Mutate
+            // 3. Build the new vote
             const newVote: Top10Vote = {
                 voterId: currentReq.voterId,
                 voterName: currentReq.voterName,
@@ -65,18 +65,42 @@ async function processQueue() {
                 timestamp: Date.now(),
             };
 
-            newState = {
-                ...top10State,
-                currentQuestion: {
-                    ...top10State.currentQuestion,
-                    votes: [...top10State.currentQuestion.votes, newVote],
-                },
-            };
+            // 4. Re-read latest state to avoid overwriting phase changes (e.g. results)
+            const latestSession = await pb.collection('ranking').getOne(currentReq.sessionId, { $autoCancel: false });
+            let latestState: Top10State | null = null;
+            if (latestSession.top10_state) {
+                latestState = typeof latestSession.top10_state === 'string' ? JSON.parse(latestSession.top10_state) : latestSession.top10_state;
+            }
 
-            // 4. Save back to top-level top10_state field
-            await pb.collection('ranking').update(currentReq.sessionId, {
-                top10_state: JSON.stringify(newState)
-            });
+            // If phase moved past voting, don't overwrite — just return latest state
+            if (latestState && latestState.currentQuestion.phase !== 'voting') {
+                currentReq.resolve(latestState);
+                isProcessing = false;
+                processQueue();
+                return;
+            }
+
+            // Merge vote into latest state (preserves concurrent changes)
+            const baseState = latestState || top10State;
+            const existingVotes = baseState.currentQuestion.votes;
+            const stillNotVoted = !existingVotes.some((v) => v.voterId === currentReq.voterId);
+
+            if (stillNotVoted) {
+                newState = {
+                    ...baseState,
+                    currentQuestion: {
+                        ...baseState.currentQuestion,
+                        votes: [...existingVotes, newVote],
+                    },
+                };
+
+                // 5. Save back to top-level top10_state field
+                await pb.collection('ranking').update(currentReq.sessionId, {
+                    top10_state: JSON.stringify(newState)
+                });
+            } else {
+                newState = baseState;
+            }
         }
 
         currentReq.resolve(newState);
