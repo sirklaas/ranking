@@ -142,24 +142,23 @@ export default function KrakendePlayer({
     if (showReveal && chosenTrait) {
       return (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black overflow-hidden"
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)' }}
           onClick={() => setShowReveal(false)}
         >
-          {/* Rotated Container for Landscape Text */}
-          <div
-            className="flex flex-col items-center justify-center w-[100vh] h-[100vw] rotate-90 origin-center"
-          >
-            <h2 className="text-white text-center font-bold tracking-tighter leading-none whitespace-nowrap px-4 w-full"
+          <div className="flex flex-col items-center justify-center w-full h-full p-6">
+            <h2 className="text-white text-center font-bold tracking-tighter px-4 w-full"
               style={{
-                fontSize: 'calc(95vw)', // Use viewport width (which is height in landscape) to set size
+                fontSize: 'clamp(3rem, 15vw, 8rem)',
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 fontWeight: 800,
                 textTransform: 'uppercase',
-                lineHeight: 0.8
+                lineHeight: 1.0,
+                wordBreak: 'break-word',
               }}>
               {getTraitLabel(chosenTrait, 'nl')}
             </h2>
-            <p className="text-white/20 absolute bottom-4 text-sm font-light tracking-widest uppercase">
+            <p className="text-white/40 absolute bottom-6 text-sm font-light tracking-widest uppercase">
               Tik om te sluiten
             </p>
           </div>
@@ -173,7 +172,7 @@ export default function KrakendePlayer({
           className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
           style={{
             fontFamily: 'Barlow Semi Condensed, sans-serif',
-            background: 'linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d)',
+            background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
           }}
         >
           <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 w-full max-w-sm">
@@ -191,9 +190,7 @@ export default function KrakendePlayer({
         className="min-h-screen flex flex-col items-center justify-center p-8"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: state.phase === 'positive-results'
-            ? 'linear-gradient(135deg, #0A1752 0%, #2d5a4e 100%)'
-            : 'linear-gradient(135deg, #0A1752 0%, #6b1a1a 100%)',
+          background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
         }}
       >
         <button
@@ -206,7 +203,7 @@ export default function KrakendePlayer({
           }}
         >
           {readyForReveal
-            ? (state.phase === 'positive-results' ? 'BEKIJK POSITIEF' : 'BEKIJK NEGATIEF')
+            ? (state.phase === 'positive-results' ? 'SHOW YOUR POSITIVE' : 'SHOW YOUR NEGATIVE')
             : 'EVEN GEDULD...'}
         </button>
         <p className="text-white/60 mt-8 text-center text-lg">
@@ -225,9 +222,7 @@ export default function KrakendePlayer({
         className="min-h-screen flex flex-col items-center justify-center p-6"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: isPositive
-            ? 'linear-gradient(135deg, #0A1752 0%, #2d5a4e 100%)'
-            : 'linear-gradient(135deg, #0A1752 0%, #6b1a1a 100%)',
+          background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
         }}
       >
         <div className="text-center" style={{ animation: 'fadeHold 0.5s ease-out' }}>
@@ -252,9 +247,7 @@ export default function KrakendePlayer({
         className="min-h-screen flex flex-col items-center justify-center p-6"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: isPositive
-            ? 'linear-gradient(135deg, #0A1752 0%, #1a3a6b 100%)'
-            : 'linear-gradient(135deg, #4a1a3a 0%, #1a0a1a 100%)',
+          background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
         }}
       >
         <div className="text-center" style={{ animation: 'fadeHold 0.5s ease-out' }}>
@@ -277,9 +270,7 @@ export default function KrakendePlayer({
       className="h-screen flex flex-col overflow-hidden"
       style={{
         fontFamily: 'Barlow Semi Condensed, sans-serif',
-        background: isPositive
-          ? 'linear-gradient(135deg, #0A1752 0%, #2d5a4e 100%)'
-          : 'linear-gradient(135deg, #0A1752 0%, #6b1a1a 100%)',
+        background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
       }}
     >
       {/* Header — compact */}
