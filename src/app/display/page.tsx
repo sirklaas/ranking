@@ -548,13 +548,21 @@ export default function DisplayPage() {
               })}
             </div>
 
-            {/* Footer Info */}
-            <div className="text-center mt-16 text-white/80">
-              <p className="text-lg">
-                Total Players: {Object.values(playersByTeam).flat().length} |
-                Teams: {currentSession.nr_teams} |
-                Location: {currentSession.city}
-              </p>
+            {/* PhotoCircle Download */}
+            <div className="flex flex-col items-center mt-8">
+              <h2 className="text-white text-5xl mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+                Download PhotoCircle
+              </h2>
+              <div className="bg-white p-3 rounded-xl shadow-lg">
+                <Image
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent('https://join.photocircleapp.com/8FG2MT44TZ')}`}
+                  alt="PhotoCircle QR Code"
+                  width={240}
+                  height={240}
+                  className="w-60 h-60"
+                  unoptimized
+                />
+              </div>
             </div>
           </div>
         </>
