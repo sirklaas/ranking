@@ -146,19 +146,21 @@ export default function KrakendePlayer({
           style={{ background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)' }}
           onClick={() => setShowReveal(false)}
         >
-          <div className="flex flex-col items-center justify-center w-full h-full p-6">
-            <h2 className="text-white text-center font-bold tracking-tighter px-4 w-full"
+          {/* Rotated container for landscape text */}
+          <div
+            className="flex flex-col items-center justify-center w-[100vh] h-[100vw] rotate-90 origin-center"
+          >
+            <h2 className="text-white text-center font-bold tracking-tighter px-8 w-full"
               style={{
-                fontSize: 'clamp(3rem, 15vw, 8rem)',
+                fontSize: 'clamp(3rem, 18vh, 12rem)',
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
-                fontWeight: 800,
+                fontWeight: 400,
                 textTransform: 'uppercase',
-                lineHeight: 1.0,
-                wordBreak: 'break-word',
+                lineHeight: 0.95,
               }}>
               {getTraitLabel(chosenTrait, 'nl')}
             </h2>
-            <p className="text-white/40 absolute bottom-6 text-sm font-light tracking-widest uppercase">
+            <p className="text-white/40 absolute bottom-4 text-sm font-light tracking-widest uppercase">
               Tik om te sluiten
             </p>
           </div>
