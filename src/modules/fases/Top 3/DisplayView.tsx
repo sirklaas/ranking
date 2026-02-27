@@ -12,7 +12,7 @@ const TOP3_SLIDES: Record<string, { heading: string; image: string }> = {
   '10/07': { heading: 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?', image: 'andes.jpeg' },
   '10/08': { heading: 'Wie zou je absoluut niet /n op je kinderen laten passen?', image: 'kinderen.png' },
   '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: 'crypto.png' },
-  '10/10': { heading: 'Wie komt het altijd te laat', image: 'cry.png' },
+  '10/10': { heading: 'Wie komt het vaakst te laat?', image: 'cry.png' },
   '10/11': { heading: 'Wie zou er als eerste een account aanmaken /n op OnlyFans?', image: 'only.png' },
   '10/12': { heading: 'Wie moet je zeker geen geheim vertellen?', image: 'geheim.png' },
   '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: 'parenclub.png' },
