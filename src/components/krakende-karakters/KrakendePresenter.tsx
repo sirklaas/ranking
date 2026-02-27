@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { KrakendeState, KrakendeTrait, KrakendePhase } from '@/modules/krakende-karakters/types';
 import * as krakendeLogic from '@/modules/krakende-karakters/logic';
+import { krakendeVoteService, KrakendeVote } from '@/lib/pocketbase';
 
 interface KrakendePresenterProps {
   sessionId: string;
@@ -44,6 +45,8 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
 
   const handleReset = () => {
     if (window.confirm('Weet je zeker dat je alle keuzes wilt wissen en wilt herstarten?')) {
+      // Clear votes from krakende_votes collection + reset state
+      krakendeVoteService.clearVotes(sessionId).catch(() => {});
       krakendeLogic.resetState(sessionId, state).then(onStateChange);
     }
   };
@@ -67,9 +70,27 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
     );
   };
 
-  // Count submissions
-  const posSubmissions = state.submissions.filter((s) => s.positiveTrait).length;
-  const negSubmissions = state.submissions.filter((s) => s.negativeTrait).length;
+  // Poll vote counts from krakende_votes collection (scalable)
+  const [posVotes, setPosVotes] = useState<KrakendeVote[]>([]);
+  const [negVotes, setNegVotes] = useState<KrakendeVote[]>([]);
+  useEffect(() => {
+    let active = true;
+    const poll = async () => {
+      const [pos, neg] = await Promise.all([
+        krakendeVoteService.getVotes(sessionId, 'positive'),
+        krakendeVoteService.getVotes(sessionId, 'negative'),
+      ]);
+      if (!active) return;
+      setPosVotes(pos);
+      setNegVotes(neg);
+    };
+    poll();
+    const timer = setInterval(poll, 3000);
+    return () => { active = false; clearInterval(timer); };
+  }, [sessionId]);
+
+  const posSubmissions = posVotes.length;
+  const negSubmissions = negVotes.length;
 
   return (
     <div className="flex flex-col gap-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
@@ -100,30 +121,40 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
         </div>
       </div>
 
-      {/* Submissions preview */}
+      {/* Submissions preview (from krakende_votes collection) */}
       <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
         <h4 className="text-white font-bold text-lg mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-          Keuzes ({state.submissions.length} spelers)
+          Keuzes ({posSubmissions + negSubmissions} stemmen)
         </h4>
         <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
-          {state.submissions.map((sub) => {
-            const posTrait = state.positiveTraits.find((t) => t.id === sub.positiveTrait);
-            const negTrait = state.negativeTraits.find((t) => t.id === sub.negativeTrait);
-            return (
-              <div key={sub.playerId} className="bg-gray-800/50 rounded p-2 text-sm">
-                <div className="text-white font-medium">{sub.playerName}</div>
-                <div className="text-blue-400 text-xs">
-                  + {posTrait ? krakendeLogic.getTraitLabel(posTrait, state.language) : '—'}
+          {/* Show unique players across both phases */}
+          {(() => {
+            const allVotes = [...posVotes, ...negVotes];
+            const playerMap = new Map<string, { name: string; pos?: string; neg?: string }>();
+            allVotes.forEach(v => {
+              const entry = playerMap.get(v.player_id) || { name: v.player_name };
+              if (v.fase === 'positive') entry.pos = v.trait_id;
+              if (v.fase === 'negative') entry.neg = v.trait_id;
+              playerMap.set(v.player_id, entry);
+            });
+            const entries = Array.from(playerMap.entries());
+            if (entries.length === 0) return <div className="text-gray-500 text-sm col-span-3">Nog geen keuzes gemaakt</div>;
+            return entries.map(([pid, info]) => {
+              const posTrait = state.positiveTraits.find(t => t.id === info.pos);
+              const negTrait = state.negativeTraits.find(t => t.id === info.neg);
+              return (
+                <div key={pid} className="bg-gray-800/50 rounded p-2 text-sm">
+                  <div className="text-white font-medium">{info.name}</div>
+                  <div className="text-blue-400 text-xs">
+                    + {posTrait ? krakendeLogic.getTraitLabel(posTrait, state.language) : '—'}
+                  </div>
+                  <div className="text-red-400 text-xs">
+                    − {negTrait ? krakendeLogic.getTraitLabel(negTrait, state.language) : '—'}
+                  </div>
                 </div>
-                <div className="text-red-400 text-xs">
-                  − {negTrait ? krakendeLogic.getTraitLabel(negTrait, state.language) : '—'}
-                </div>
-              </div>
-            );
-          })}
-          {state.submissions.length === 0 && (
-            <div className="text-gray-500 text-sm col-span-3">Nog geen keuzes gemaakt</div>
-          )}
+              );
+            });
+          })()}
         </div>
       </div>
 

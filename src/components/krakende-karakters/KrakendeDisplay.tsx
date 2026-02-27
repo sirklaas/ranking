@@ -7,6 +7,7 @@ import { getTraitLabel, shuffleTraits, splitLabelForTwoLines } from '@/modules/k
 interface KrakendeDisplayProps {
   state: KrakendeState;
   allPlayerNames?: string[];
+  sessionId?: string;
 }
 
 // Popup sound effect (Web Audio API)
@@ -34,7 +35,7 @@ function playPopSound() {
 // Solid grey color for trait tiles
 const TILE_COLOR = '#808080';
 
-export default function KrakendeDisplay({ state, allPlayerNames = [] }: KrakendeDisplayProps) {
+export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId }: KrakendeDisplayProps) {
   // Inject keyframe animations once
   useEffect(() => {
     if (document.getElementById('krakende-kf')) return;
@@ -58,10 +59,26 @@ export default function KrakendeDisplay({ state, allPlayerNames = [] }: Krakende
   const isResults = state.phase === 'positive-results' || state.phase === 'negative-results';
   const traits = isPositive ? state.positiveTraits : state.negativeTraits;
 
-  // Track submissions for the metric
-  const posSubmissions = state.submissions.filter((s) => s.positiveTrait).length;
-  const negSubmissions = state.submissions.filter((s) => s.negativeTrait).length;
-  const currentSubmissions = isPositive ? posSubmissions : negSubmissions;
+  // Poll vote count from krakende_votes collection (scalable — no shared state writes)
+  const [voteCount, setVoteCount] = useState(0);
+  useEffect(() => {
+    if (!sessionId) return;
+    const fase = isPositive ? 'positive' : 'negative';
+    let active = true;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/krakende-vote?sessionId=${encodeURIComponent(sessionId)}&fase=${encodeURIComponent(fase)}`);
+        if (!active || !res.ok) return;
+        const data = await res.json();
+        setVoteCount(data.votes?.length || 0);
+      } catch { /* silent */ }
+    };
+    poll();
+    const timer = setInterval(poll, 3000);
+    return () => { active = false; clearInterval(timer); };
+  }, [sessionId, isPositive]);
+
+  const currentSubmissions = voteCount;
 
   // Shuffle traits once per phase (stable order via ref)
   const shuffledRef = useRef<typeof traits>([]);

@@ -5,12 +5,12 @@ import { KrakendeState } from '@/modules/krakende-karakters/types';
 import KrakendeDisplay from '@/components/krakende-karakters/KrakendeDisplay';
 import { safeJsonParse } from '@/lib/jsonUtils';
 
-const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, moduleStateJson, allPlayerNames = [] }) => {
+const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, moduleStateJson, allPlayerNames = [] }) => {
   if (!moduleStateJson || faseKey === '13/01') return null;
 
   const state = safeJsonParse<KrakendeState>(moduleStateJson);
   if (!state) return null;
-  return <KrakendeDisplay state={state} allPlayerNames={allPlayerNames} />;
+  return <KrakendeDisplay state={state} allPlayerNames={allPlayerNames} sessionId={sessionId} />;
 };
 
 export default DisplayView;

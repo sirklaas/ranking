@@ -302,33 +302,35 @@ export default function PlayerPage() {
       }
     });
 
-    // Polling fallback (every 3s) — subscriptions can be unreliable with multiple iframes
+    return () => {
+      unsubscribe.then((unsub: () => void) => unsub());
+    };
+  }, [currentSession?.id]);
+
+  // Extra polling ONLY during Krakende Karakters (group 13) — subscriptions can miss updates with many iframes
+  useEffect(() => {
+    if (!currentSession?.id) return;
+    const fase = currentSession.current_fase || '';
+    if (!fase.startsWith('13/')) return; // Only poll during Krakende
+
     let active = true;
     const poll = async () => {
       if (!active) return;
       try {
-        const fresh = await rankingService.getSessionById(sessionId) as unknown as RankingSession;
+        const fresh = await rankingService.getSessionById(currentSession.id) as unknown as RankingSession;
         if (!active || !fresh) return;
-        parseModuleStates(fresh as unknown as Record<string, unknown>);
-        if (fresh.current_fase) {
-          setCurrentSession((prev: RankingSession | null) => {
-            if (!prev) return prev;
-            if (fresh.current_fase === prev.current_fase) return prev;
-            return { ...prev, current_fase: fresh.current_fase };
-          });
-        }
-      } catch (e) {
-        console.warn('[Player] Poll error:', e);
+        // Update krakende_state specifically
+        const str = safeJsonStr((fresh as unknown as Record<string, unknown>)['krakende_state']);
+        if (str) setModuleStates((prev) => (prev['krakende_state'] === str ? prev : { ...prev, krakende_state: str }));
+      } catch {
+        // Silently handle 429 / network errors
       }
     };
-    const pollTimer = setInterval(poll, 3000);
+    const timer = setInterval(poll, 10000);
+    poll(); // immediate first poll
 
-    return () => {
-      active = false;
-      clearInterval(pollTimer);
-      unsubscribe.then((unsub: () => void) => unsub());
-    };
-  }, [currentSession?.id]);
+    return () => { active = false; clearInterval(timer); };
+  }, [currentSession?.id, currentSession?.current_fase]);
 
   const closePopup = () => {
     // Fade out popup, then start fase 01/02

@@ -6,6 +6,7 @@ import { getTraitLabel, splitLabelForTwoLines } from '@/modules/krakende-karakte
 
 interface KrakendePlayerProps {
   state: KrakendeState;
+  sessionId?: string;
   playerId: string;
   playerName: string;
   teamNumber: number;
@@ -14,6 +15,7 @@ interface KrakendePlayerProps {
 
 export default function KrakendePlayer({
   state,
+  sessionId,
   playerId,
   playerName,
   teamNumber,

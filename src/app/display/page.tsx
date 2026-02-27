@@ -339,6 +339,7 @@ export default function DisplayPage() {
         <>
           <ModDisplay
             faseKey={currentSession.current_fase}
+            sessionId={currentSession.id}
             moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
             heading={heading}
             mediaUrl={mediaUrl}
@@ -594,11 +595,16 @@ export default function DisplayPage() {
                 }
               } catch (e) { console.warn('[Display] Video play error:', e); }
 
-              // Reset Krakende state (async, fire-and-forget)
+              // Reset Krakende state + clear votes collection (async, fire-and-forget)
               import('@/modules/krakende-karakters/logic').then(({ getInitialState, resetState }) => {
                 const fresh = getInitialState();
                 if (currentSession) resetState(currentSession.id, fresh).catch(() => {});
               }).catch(() => {});
+              if (currentSession) {
+                import('@/lib/pocketbase').then(({ krakendeVoteService }) => {
+                  krakendeVoteService.clearVotes(currentSession.id).catch(() => {});
+                }).catch(() => {});
+              }
             }}
             className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"
             style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}

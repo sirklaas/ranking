@@ -4,6 +4,7 @@ import type { FaseCommonProps } from '@/types/fases';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
 import * as krakendeLogic from '@/modules/krakende-karakters/logic';
 import { safeJsonParse } from '@/lib/jsonUtils';
+import { krakendeVoteService } from '@/lib/pocketbase';
 import KrakendePresenter from '@/components/krakende-karakters/KrakendePresenter';
 
 const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleStateJson, onModuleStateJson, allPlayerNames = [] }) => {
@@ -24,6 +25,8 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleSt
       krakendeLogic.updateState(sessionId, () => initial)
         .then(() => console.log('[Krakende PresenterView] State reset to initial at', faseKey))
         .catch((e) => console.error('[Krakende PresenterView] Reset failed:', e));
+      // Clear votes from separate collection
+      krakendeVoteService.clearVotes(sessionId).catch(() => {});
     }
   }, [moduleStateJson, sessionId, faseKey, state.phase]);
 

@@ -491,3 +491,66 @@ export const faseService = {
     return '{}';
   }
 };
+
+// Krakende Karakters vote service — uses separate PB collection for scalability
+export interface KrakendeVote {
+  id?: string;
+  session_id: string;
+  player_id: string;
+  player_name: string;
+  team_number: number;
+  trait_id: string;
+  fase: string; // 'positive' or 'negative'
+}
+
+export const krakendeVoteService = {
+  /** Submit a vote via API route (simple INSERT, no conflicts) */
+  async submitVote(vote: Omit<KrakendeVote, 'id'>): Promise<boolean> {
+    try {
+      const res = await fetch('/api/krakende-vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: vote.session_id,
+          playerId: vote.player_id,
+          playerName: vote.player_name,
+          teamNumber: vote.team_number,
+          traitId: vote.trait_id,
+          fase: vote.fase,
+        }),
+      });
+      return res.ok;
+    } catch (e) {
+      console.error('[krakendeVoteService] submitVote error:', e);
+      return false;
+    }
+  },
+
+  /** Get all votes for a session (optionally filtered by fase) */
+  async getVotes(sessionId: string, fase?: string): Promise<KrakendeVote[]> {
+    try {
+      let url = `/api/krakende-vote?sessionId=${encodeURIComponent(sessionId)}`;
+      if (fase) url += `&fase=${encodeURIComponent(fase)}`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.votes || [];
+    } catch (e) {
+      console.error('[krakendeVoteService] getVotes error:', e);
+      return [];
+    }
+  },
+
+  /** Clear all votes for a session (used on reset) */
+  async clearVotes(sessionId: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/krakende-vote?sessionId=${encodeURIComponent(sessionId)}`, {
+        method: 'DELETE',
+      });
+      return res.ok;
+    } catch (e) {
+      console.error('[krakendeVoteService] clearVotes error:', e);
+      return false;
+    }
+  },
+};
