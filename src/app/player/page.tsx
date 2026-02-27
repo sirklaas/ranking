@@ -234,7 +234,11 @@ export default function PlayerPage() {
   const lastHeadingRef = useRef<string>('');
   useEffect(() => {
     if (!motherfile) return;
-    const faseKey = currentPhase === 'team' ? '01/01' : currentPhase === 'photocircle' ? '01/02' : currentPhase === 'name' ? '01/03' : '';
+    // For onboarding phases, map to fixed faseKeys; for 'complete', use the actual PB fase (01/04, 01/05, 01/06)
+    let faseKey = currentPhase === 'team' ? '01/01' : currentPhase === 'photocircle' ? '01/02' : currentPhase === 'name' ? '01/03' : '';
+    if (!faseKey && currentPhase === 'complete' && currentSession?.current_fase?.startsWith('01/')) {
+      faseKey = currentSession.current_fase;
+    }
     if (!faseKey) return;
     try {
       const headingText = faseService.getCurrentHeading(JSON.stringify(motherfile), faseKey);
@@ -248,7 +252,7 @@ export default function PlayerPage() {
     } catch (e) {
       console.error('Failed to parse heading from motherfile', e);
     }
-  }, [currentPhase, motherfile]);
+  }, [currentPhase, motherfile, currentSession?.current_fase]);
 
   // Helper to advance phases with fade-out/in of heading
   const advancePhase = (next: 'photocircle' | 'name' | 'complete') => {

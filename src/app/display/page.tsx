@@ -394,7 +394,9 @@ export default function DisplayPage() {
           {/* Heading overlay: top center 100px for normal fases, bottom for trailers (xx/01) */}
           {(() => {
             // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
+            // 01/04-01/06: heading only on phones, not on display.
             if (currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
+            if (['01/04', '01/05', '01/06'].includes(currentSession?.current_fase || '')) return null;
 
             // Hardcoded heading overrides for fases that need text over their trailer video
             const TRAILER_HEADING_OVERRIDES: Record<string, string> = {
