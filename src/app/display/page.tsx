@@ -325,7 +325,7 @@ export default function DisplayPage() {
     // On question slides (e.g. 10/05), render the module even without state — DisplayView handles the fallback
     const isTrailerSlot = currentSession.current_fase.endsWith('/01');
     const stateReady = !mod?.stateField || !!moduleStates[mod.stateField];
-    if (mod?.DisplayView && (stateReady || !isTrailerSlot)) {
+    if (mod?.DisplayView && (stateReady || isTrailerSlot)) {
       const headingsJson = currentSession.headings || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
       const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';

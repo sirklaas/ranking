@@ -240,7 +240,7 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
     return (
         <div
             ref={containerRef}
-            className="relative w-full h-full overflow-hidden"
+            className="relative w-full h-full overflow-visible"
             style={{ minHeight: '500px' }}
         >
             {items.map((item, i) => (
@@ -286,8 +286,8 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
             <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shrink-0 border-2 border-white/50 ${index === 0 ? 'bg-yellow-400 text-black animate-bounce' : 'bg-white/20 text-white'}`} style={{ fontFamily: barlowFont }}>
                 {index + 1}
             </div>
-            <div className="flex-1 min-w-0 overflow-hidden">
-                <div className="text-white tracking-tight truncate" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '5.5rem', lineHeight: 1.1 }}>
+            <div className="flex-1 min-w-0">
+                <div className="text-white tracking-tight" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '5.5rem', lineHeight: 1.2, overflow: 'visible' }}>
                     {formatName(result.playerName)}
                 </div>
                 <div className="flex items-center gap-3 mt-1">

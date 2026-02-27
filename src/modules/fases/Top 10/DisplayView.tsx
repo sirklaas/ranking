@@ -7,6 +7,10 @@ import { safeJsonParse } from '@/lib/jsonUtils';
 
 // Hardcoded slides — faseKey → heading + image filename
 const TOP10_SLIDES: Record<string, { heading: string; image: string }> = {
+  '17/01': { heading: 'Kies iemand uit een ander team!', image: '' },
+  '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
+  '17/03': { heading: 'Kies iemand uit een ander team!', image: '' },
+  '17/04': { heading: 'Kies iemand uit een ander team!', image: '' },
   '17/05': { heading: 'Je hebt een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?', image: 'pukkel.png' },
   '17/06': { heading: 'Wie denkt dat ie always gelijk heeft?', image: 'right.png' },
   '17/07': { heading: 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?', image: 'plaatje.jpeg' },
@@ -25,15 +29,15 @@ const EMPTY_TOP10_STATE: Top10State = {
   currentQuestion: { questionIndex: 0, phase: 'intro', votes: [], results: [] },
 };
 
-const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, sessionId }) => {
-  // Trailer slot → return null, let media overlay play the video
-  if (!faseKey || faseKey === '17/01' || faseKey === '17/02') return null;
+const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, sessionId, mediaUrl: passedMediaUrl }) => {
+  if (!faseKey) return null;
 
   // Look up hardcoded slide data
   const slide = TOP10_SLIDES[faseKey];
   if (!slide) return null;
 
-  const hardcodedMediaUrl = slide.image ? `/pics/${encodeURIComponent(slide.image)}` : '';
+  // Use hardcoded image, or fall back to media passed from display page (trailer video)
+  const hardcodedMediaUrl = slide.image ? `/pics/${encodeURIComponent(slide.image)}` : (passedMediaUrl || '');
   const state = safeJsonParse<Top10State>(moduleStateJson) ?? { ...EMPTY_TOP10_STATE, currentFase: faseKey };
 
   return <Top10Display

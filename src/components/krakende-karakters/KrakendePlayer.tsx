@@ -81,9 +81,14 @@ export default function KrakendePlayer({
     if (!selected || submitted) return;
     onSubmitChoice(selected);
 
-    // Save locally
-    if (isPositive) localStorage.setItem(LS_POS, selected);
-    else if (isNegative) localStorage.setItem(LS_NEG, selected);
+    // Save locally AND update React state so effectiveChoice works in results phase
+    if (isPositive) {
+      localStorage.setItem(LS_POS, selected);
+      setLocalPos(selected);
+    } else if (isNegative) {
+      localStorage.setItem(LS_NEG, selected);
+      setLocalNeg(selected);
+    }
 
     setSubmitted(true);
     setShowConfirmation(true);
