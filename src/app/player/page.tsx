@@ -277,12 +277,11 @@ export default function PlayerPage() {
     setIsLoading(false);
   };
 
-  // Subscribe to session updates + polling fallback
+  // Poll session state via cached server proxy (no direct PB connections from phones)
   useEffect(() => {
     if (!currentSession) return;
     const sessionId = currentSession.id;
 
-    // Initial parse of all registered module states from top-level PB fields
     const parseModuleStates = (data: Record<string, unknown>) => {
       Object.values(FASES).forEach((mod) => {
         const sf = mod.stateField;
@@ -294,17 +293,28 @@ export default function PlayerPage() {
 
     parseModuleStates(currentSession as Record<string, unknown>);
 
-    // Real-time subscription
-    const unsubscribe = rankingService.subscribeToSession(sessionId, (data: Record<string, unknown>) => {
-      parseModuleStates(data);
-      if (data.current_fase) {
-        setCurrentSession((prev: RankingSession | null) => prev ? { ...prev, current_fase: data.current_fase as string } : null);
-      }
-    });
-
-    return () => {
-      unsubscribe.then((unsub: () => void) => unsub());
+    let active = true;
+    const poll = async () => {
+      if (!active) return;
+      try {
+        const res = await fetch(`/api/session-state?id=${encodeURIComponent(sessionId)}`);
+        if (!active || !res.ok) return;
+        const { session: fresh } = await res.json();
+        if (!active || !fresh) return;
+        parseModuleStates(fresh as Record<string, unknown>);
+        if (fresh.current_fase) {
+          setCurrentSession((prev: RankingSession | null) => {
+            if (!prev) return prev;
+            if (fresh.current_fase === prev.current_fase) return prev;
+            return { ...prev, current_fase: fresh.current_fase as string };
+          });
+        }
+      } catch { /* silent */ }
     };
+    const timer = setInterval(poll, 3000);
+    poll();
+
+    return () => { active = false; clearInterval(timer); };
   }, [currentSession?.id]);
 
   const closePopup = () => {

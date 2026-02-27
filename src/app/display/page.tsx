@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v3.3';
+const APP_VERSION = 'v3.4';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -174,7 +174,7 @@ export default function DisplayPage() {
     }
   }, [currentMedia, userEnabledSound]);
 
-  // Poll PocketBase every 2s for session updates (reliable — no subscription issues)
+  // Poll session state via cached server proxy (never hits PB directly from browser)
   useEffect(() => {
     if (!currentSession) return;
     const sessionId = currentSession.id;
@@ -183,31 +183,29 @@ export default function DisplayPage() {
     const poll = async () => {
       if (!active) return;
       try {
-        const fresh = await rankingService.getSessionById(sessionId) as unknown as RankingSession;
+        const res = await fetch(`/api/session-state?id=${encodeURIComponent(sessionId)}`);
+        if (!active || !res.ok) return;
+        const { session: fresh } = await res.json();
         if (!active || !fresh) return;
 
         const freshFase = fresh.current_fase || '?';
         setPollDebug(prev => ({ ...prev, count: prev.count + 1, lastPbFase: freshFase, error: '' }));
 
-        // Only update if something actually changed
         setCurrentSession((prev) => {
           if (!prev) return prev;
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings) {
-            // Check module states
             let changed = false;
             Object.values(FASES).forEach((mod) => {
               const sf = mod.stateField;
               if (!sf) return;
               if ((fresh as Record<string, unknown>)[sf] !== (prev as Record<string, unknown>)[sf]) changed = true;
             });
-            if (!changed) return prev; // no change, skip re-render
+            if (!changed) return prev;
           }
-          console.log(`[Display ${APP_VERSION}] Poll: fase ${prev.current_fase} → ${fresh.current_fase}`);
           return { ...prev, ...fresh };
         });
       } catch (e) {
         setPollDebug(prev => ({ ...prev, error: String(e) }));
-        console.warn(`[Display ${APP_VERSION}] Poll error:`, e);
       }
     };
 
@@ -303,7 +301,7 @@ export default function DisplayPage() {
     </div>
   );
 
-  console.log(`[Display ${APP_VERSION}] Render: fase=${currentSession?.current_fase}`);
+  // Render logging removed to reduce console spam
 
   // Render module DisplayView if a registered fase module matches the current fase
   if (currentSession?.current_fase) {

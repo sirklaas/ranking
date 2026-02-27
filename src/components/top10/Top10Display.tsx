@@ -18,10 +18,6 @@ const barlowFont = '"Barlow Semi Condensed", sans-serif';
 const nameFont = 'Nunito, sans-serif';
 
 const TOP10_HEADINGS: Record<string, string> = {
-    '17/01': 'Kies iemand uit een ander team',
-    '17/02': 'Kies iemand uit een ander team',
-    '17/03': 'Kies iemand uit een ander team',
-    '17/04': 'Kies iemand uit een ander team',
     '17/05': 'Je hebt een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?',
     '17/06': 'Wie denkt dat ie always gelijk heeft?',
     '17/07': 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?',
@@ -287,15 +283,17 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                 {index + 1}
             </div>
             <div className="flex-1 min-w-0 overflow-hidden">
-                <div className="text-white tracking-tight truncate" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '3rem', lineHeight: 1.1 }}>
+                <div className="text-white tracking-tight truncate" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '2.8rem', lineHeight: 1.1 }}>
                     {formatName(result.playerName)}
                 </div>
-                <div className="h-6 bg-white/10 rounded-full mt-1 overflow-hidden relative" style={{ width: '50%' }}>
-                    <div
-                        className={`h-full rounded-full transition-all duration-1000 delay-500 ${index === 0 ? 'bg-gradient-to-r from-yellow-300 via-white to-yellow-300' : 'bg-gradient-to-r from-cyan-300 to-blue-600'}`}
-                        style={{ width: show ? `${result.percentage}%` : '0%' }}
-                    />
-                    <span className={`absolute right-[-4.5rem] top-1/2 -translate-y-1/2 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '3rem', whiteSpace: 'nowrap' }}>
+                <div className="flex items-center gap-3 mt-1">
+                    <div className="h-6 bg-white/10 rounded-full overflow-hidden" style={{ width: '50%' }}>
+                        <div
+                            className={`h-full rounded-full transition-all duration-1000 delay-500 ${index === 0 ? 'bg-gradient-to-r from-yellow-300 via-white to-yellow-300' : 'bg-gradient-to-r from-cyan-300 to-blue-600'}`}
+                            style={{ width: show ? `${result.percentage}%` : '0%' }}
+                        />
+                    </div>
+                    <span className={`shrink-0 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '2.8rem', whiteSpace: 'nowrap' }}>
                         {result.percentage}%
                     </span>
                 </div>
@@ -447,13 +445,13 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                             <div className="absolute left-0 bottom-0 w-1/2" style={{ paddingBottom: '75px', paddingLeft: '16px' }}>
                                 <SequentialResults results={state.currentQuestion.results} />
                             </div>
-                            {/* Right: wordcloud stays visible — pushed right, below heading */}
-                            <div className="w-1/2 flex items-center justify-center" style={{ paddingLeft: '10%', paddingTop: '220px' }}>
+                            {/* Right: wordcloud — absolutely positioned in right half, below heading */}
+                            <div className="absolute right-0 top-0 bottom-0 w-1/2" style={{ paddingTop: '240px' }}>
                                 <WordCloud results={liveTally} animate={animateCloud} />
                             </div>
                         </>
                     ) : (
-                        <div className="w-full flex items-center justify-center" style={{ paddingTop: '220px' }}>
+                        <div className="absolute right-0 top-0 bottom-0 w-full" style={{ paddingTop: '240px' }}>
                             <WordCloud results={liveTally} animate={animateCloud} />
                         </div>
                     )}

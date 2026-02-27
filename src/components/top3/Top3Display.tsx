@@ -178,10 +178,10 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                 <g>
                   {/* Backdrop */}
                   <rect
-                    x={isRightSide ? labelX + 40 : labelX - 440}
-                    y={labelY - 50}
-                    width="400"
-                    height="90"
+                    x={isRightSide ? labelX + 40 : labelX - 540}
+                    y={labelY - 70}
+                    width="500"
+                    height="180"
                     rx="8"
                     fill="rgba(0,0,0,0.6)"
                     stroke={seg.color}
@@ -193,10 +193,10 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                   />
                   {/* Scanning line effect */}
                   <rect
-                    x={isRightSide ? labelX + 40 : labelX - 440}
-                    y={labelY - 50}
-                    width="400"
-                    height="90"
+                    x={isRightSide ? labelX + 40 : labelX - 540}
+                    y={labelY - 70}
+                    width="500"
+                    height="180"
                     rx="8"
                     fill={`url(#scanline-${i})`}
                     style={{ mixBlendMode: 'overlay', opacity: 0.5 }}
@@ -249,10 +249,10 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
               </text>
               <text
                 x={isRightSide ? labelX + 70 : labelX - 70}
-                y={labelY + 26}
+                y={labelY + 50}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill={seg.color}
-                fontSize="26"
+                fontSize="60"
                 fontWeight="600"
                 style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', textShadow: '0 1px 5px rgba(0,0,0,0.8)', letterSpacing: '1px' }}
               >
