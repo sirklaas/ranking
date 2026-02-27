@@ -74,7 +74,7 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
       } catch { /* silent */ }
     };
     poll();
-    const timer = setInterval(poll, 3000);
+    const timer = setInterval(poll, 10000);
     return () => { active = false; clearInterval(timer); };
   }, [sessionId, isPositive]);
 
