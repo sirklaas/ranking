@@ -11,15 +11,15 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleSt
   const state: KrakendeState = safeJsonParse<KrakendeState>(moduleStateJson) ?? krakendeLogic.getInitialState();
 
   // Auto-persist initial state to PB so display + phone can pick it up immediately.
-  // Also reset if we're at the entry fase (13/02) but state is already in a results phase
-  // (stale state from a previous game).
-  const didInit = useRef(false);
+  // Always reset when entering 13/02 (entry point) to clear stale state + votes.
+  const didInitForFase = useRef<string | null>(null);
   useEffect(() => {
-    if (!sessionId || didInit.current) return;
-    // Always reset when entering 13/02 (entry point) to clear any stale state from previous games
+    if (!sessionId) return;
+    // Only reset once per faseKey entry (re-entering 13/02 triggers again)
+    if (didInitForFase.current === faseKey) return;
     const shouldReset = !moduleStateJson || faseKey === '13/02';
     if (shouldReset) {
-      didInit.current = true;
+      didInitForFase.current = faseKey;
       const initial = krakendeLogic.getInitialState();
       onModuleStateJson?.(JSON.stringify(initial));
       krakendeLogic.updateState(sessionId, () => initial)

@@ -7,6 +7,8 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
+const APP_VERSION = 'v3.5';
+
 interface RankingSession {
   id: string;
   gamename: string;
@@ -405,7 +407,7 @@ export default function PlayerPage() {
         background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
       }}
     >
-      <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>v3.3 | {currentSession?.current_fase || ''}</div>
+      <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>{APP_VERSION} | {currentSession?.current_fase || ''}</div>
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
 

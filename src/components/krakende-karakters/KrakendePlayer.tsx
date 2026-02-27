@@ -89,22 +89,25 @@ export default function KrakendePlayer({
     setShowConfirmation(true);
   };
 
-  // Note: localStorage is NOT cleared based on state.submissions anymore.
-  // Votes go to krakende_votes collection, so submissions is always empty.
-  // localStorage is only cleared when phase resets to positive-voting from a results phase
-  // (i.e. a new round starts).
+  // Clear localStorage when game is reset:
+  // 1. Transitioning FROM results back to voting (new round)
+  // 2. Fresh reset detected (completedPhases empty + positive-voting = presenter hit reset)
   const prevPhaseRef = React.useRef(state.phase);
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = state.phase;
-    // Only clear when transitioning FROM results back to voting (new round)
-    if (state.phase === 'positive-voting' && (prev === 'negative-results' || prev === 'positive-results')) {
+    const fromResults = prev === 'negative-results' || prev === 'positive-results';
+    const freshReset = state.phase === 'positive-voting' && state.completedPhases.length === 0;
+    if (state.phase === 'positive-voting' && (fromResults || freshReset)) {
       localStorage.removeItem(LS_POS);
       localStorage.removeItem(LS_NEG);
       setLocalPos(null);
       setLocalNeg(null);
+      setSelected(null);
+      setSubmitted(false);
+      setShowConfirmation(false);
     }
-  }, [state.phase, LS_POS, LS_NEG]);
+  }, [state.phase, state.completedPhases.length, LS_POS, LS_NEG]);
 
   const selectedTrait = traits.find((t) => t.id === selected);
 
