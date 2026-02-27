@@ -111,7 +111,7 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
         playPopSound();
         return next;
       });
-    }, 700); // 0.7 seconds between each pop
+    }, 500); // 0.5 seconds between each pop (24 × 0.5s = 12s total)
 
     return () => clearInterval(timer);
   }, [isResults, autoRevealIndex, traits.length]);

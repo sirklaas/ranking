@@ -30,16 +30,20 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleSt
     }
   }, [moduleStateJson, sessionId, faseKey, state.phase]);
 
-  // Sync global faseKey to internal phase (hooks before any return)
+  // Sync global faseKey to internal phase — ONLY when faseKey changes
+  // (not when state.phase changes from internal button presses)
+  const prevFaseKeyRef = useRef(faseKey);
   useEffect(() => {
     if (!sessionId) return;
+    if (prevFaseKeyRef.current === faseKey) return; // faseKey didn't change, skip
+    prevFaseKeyRef.current = faseKey;
     const impliedPhase = krakendeLogic.getPhaseFromFaseKey(faseKey);
     if (impliedPhase && impliedPhase !== state.phase) {
       krakendeLogic.setPhase(sessionId, state, impliedPhase).then(newState => {
         onModuleStateJson?.(JSON.stringify(newState));
       });
     }
-  }, [faseKey, state.phase, sessionId]);
+  }, [faseKey, sessionId]);
 
   if (!sessionId) return null;
 

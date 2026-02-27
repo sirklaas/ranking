@@ -110,12 +110,12 @@ export default function KrakendePlayer({
     }
   }, [state.phase, isRevealPhase]);
 
-  // ~17s delay before showing voting grid (24 traits × 0.7s = 16.8s on display)
+  // ~12s delay before showing voting grid (24 traits × 0.5s = 12s on display)
   const [votingReady, setVotingReady] = useState(false);
   useEffect(() => {
     setVotingReady(false);
     if (isVoting) {
-      const timer = setTimeout(() => setVotingReady(true), 17000);
+      const timer = setTimeout(() => setVotingReady(true), 12000);
       return () => clearTimeout(timer);
     }
   }, [state.phase, isVoting]);

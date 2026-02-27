@@ -287,18 +287,18 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                 {index + 1}
             </div>
             <div className="flex-1 min-w-0 overflow-hidden">
-                <div className="text-white tracking-tight truncate" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '4.5rem', lineHeight: 1.1 }}>
+                <div className="text-white tracking-tight truncate" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '3rem', lineHeight: 1.1 }}>
                     {formatName(result.playerName)}
                 </div>
-                <div className="h-2 bg-white/10 rounded-full mt-1 overflow-hidden" style={{ width: '50%' }}>
+                <div className="h-6 bg-white/10 rounded-full mt-1 overflow-hidden relative" style={{ width: '50%' }}>
                     <div
                         className={`h-full rounded-full transition-all duration-1000 delay-500 ${index === 0 ? 'bg-gradient-to-r from-yellow-300 via-white to-yellow-300' : 'bg-gradient-to-r from-cyan-300 to-blue-600'}`}
                         style={{ width: show ? `${result.percentage}%` : '0%' }}
                     />
+                    <span className={`absolute right-[-4.5rem] top-1/2 -translate-y-1/2 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '3rem', whiteSpace: 'nowrap' }}>
+                        {result.percentage}%
+                    </span>
                 </div>
-            </div>
-            <div className={`shrink-0 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '2rem' }}>
-                {result.percentage}%
             </div>
         </div>
     );
@@ -316,7 +316,7 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
 
     // Reverse order: lowest rank at bottom, #1 at top. Reveal from bottom up.
     return (
-        <div className="flex flex-col gap-1 w-full px-4 no-scrollbar">
+        <div className="flex flex-col gap-4 w-full px-4 no-scrollbar">
             {results.map((res, i) => {
                 // Reveal from bottom: last index revealed first
                 const revealIndex = results.length - 1 - i;
@@ -447,13 +447,13 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                             <div className="absolute left-0 bottom-0 w-1/2" style={{ paddingBottom: '75px', paddingLeft: '16px' }}>
                                 <SequentialResults results={state.currentQuestion.results} />
                             </div>
-                            {/* Right: wordcloud stays visible */}
-                            <div className="w-1/2 flex items-center justify-center">
+                            {/* Right: wordcloud stays visible — pushed right, below heading */}
+                            <div className="w-1/2 flex items-center justify-center" style={{ paddingLeft: '10%', paddingTop: '220px' }}>
                                 <WordCloud results={liveTally} animate={animateCloud} />
                             </div>
                         </>
                     ) : (
-                        <div className="w-full flex items-center justify-center">
+                        <div className="w-full flex items-center justify-center" style={{ paddingTop: '220px' }}>
                             <WordCloud results={liveTally} animate={animateCloud} />
                         </div>
                     )}

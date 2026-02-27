@@ -241,8 +241,8 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                 y={labelY - 10}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill="white"
-                fontSize="42"
-                fontWeight="bold"
+                fontSize="80"
+                fontWeight="300"
                 style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
               >
                 {formatName(results[i].playerName)}
