@@ -18,6 +18,10 @@ const barlowFont = '"Barlow Semi Condensed", sans-serif';
 const nameFont = 'Nunito, sans-serif';
 
 const TOP10_HEADINGS: Record<string, string> = {
+    '17/01': 'Kies iemand uit een ander team',
+    '17/02': 'Kies iemand uit een ander team',
+    '17/03': 'Kies iemand uit een ander team',
+    '17/04': 'Kies iemand uit een ander team',
     '17/05': 'Je hebt een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?',
     '17/06': 'Wie denkt dat ie always gelijk heeft?',
     '17/07': 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?',
@@ -283,7 +287,7 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                 {index + 1}
             </div>
             <div className="flex-1 min-w-0 overflow-hidden">
-                <div className="text-white tracking-tight truncate" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '2.8rem', lineHeight: 1.1 }}>
+                <div className="text-white tracking-tight truncate" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '5.5rem', lineHeight: 1.1 }}>
                     {formatName(result.playerName)}
                 </div>
                 <div className="flex items-center gap-3 mt-1">
@@ -293,7 +297,7 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
                             style={{ width: show ? `${result.percentage}%` : '0%' }}
                         />
                     </div>
-                    <span className={`shrink-0 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '2.8rem', whiteSpace: 'nowrap' }}>
+                    <span className={`shrink-0 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '5.5rem', whiteSpace: 'nowrap' }}>
                         {result.percentage}%
                     </span>
                 </div>

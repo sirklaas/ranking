@@ -238,7 +238,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
 
               <text
                 x={isRightSide ? labelX + 70 : labelX - 70}
-                y={labelY - 10}
+                y={labelY + 5}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill="white"
                 fontSize="80"
@@ -249,7 +249,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
               </text>
               <text
                 x={isRightSide ? labelX + 70 : labelX - 70}
-                y={labelY + 50}
+                y={labelY + 65}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill={seg.color}
                 fontSize="60"

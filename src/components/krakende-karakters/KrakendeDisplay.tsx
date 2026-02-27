@@ -151,19 +151,19 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
           </h1>
         </div>
 
-        <div className="grid grid-cols-4 gap-8 flex-1 auto-rows-min px-12 pb-12">
+        <div className="grid grid-cols-6 gap-6 flex-1 auto-rows-min content-start px-12 pb-12">
           {shuffled.map((trait, i) => {
             return (
               <div
                 key={trait.id}
-                className="rounded-xl p-6 flex flex-col justify-center items-center shadow-2xl transform transition-transform border-[3px] border-white hover:scale-105"
+                className="rounded-xl p-4 flex items-center justify-center text-center shadow-lg border-[3px] border-white"
                 style={{
                   background: 'linear-gradient(45deg, #2563eb, #9333ea)',
-                  minHeight: '280px',
+                  minHeight: '160px',
                   animation: `krakendeIn 3s ease-out both ${i * 0.1}s`
                 }}
               >
-                <div className="text-center w-full flex flex-col items-center justify-center font-barlow text-white drop-shadow-md" style={{ fontWeight: 300 }}>
+                <div className="w-full flex justify-center items-center font-barlow text-center flex-col text-white drop-shadow-md" style={{ fontWeight: 300 }}>
                   {(() => {
                     const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
                     return (
