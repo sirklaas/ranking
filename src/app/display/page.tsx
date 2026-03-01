@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.3';
+const APP_VERSION = 'v4.4';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -555,24 +555,28 @@ export default function DisplayPage() {
                     </div>
 
                     {/* Player Names */}
-                    <div className="flex flex-col gap-1 w-full px-1">
+                    <div className="flex flex-col gap-1 w-full px-1" style={{ height: 'calc(100vh - 350px)' }}>
                       {teamPlayers.map((player, playerIndex) => {
                         const isLeader = player === topPlayer && highestVotes > 0;
 
                         return (
                           <div
                             key={playerIndex}
-                            className={`px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden transition-all duration-1000 ${isLeader
+                            className={`rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden transition-all duration-1000 flex items-center justify-center ${isLeader
                               ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black transform scale-[1.05] z-10'
                               : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
                               }`}
                             style={{
                               fontFamily: 'Barlow Semi Condensed, sans-serif',
                               fontWeight: isLeader ? 700 : 500,
-                              fontSize: isLeader ? '48px' : '40px'
+                              fontSize: isLeader ? 'min(48px, 6vh)' : 'min(40px, 5vh)',
+                              flex: 1,
+                              minHeight: 0,
+                              maxHeight: '65px',
+                              padding: '2px 8px'
                             }}
                           >
-                            <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                            <span className="block truncate w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                               {isLeader && <span className="mr-2">👑</span>}
                               {player}
                             </span>

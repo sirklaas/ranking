@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.3';
+const APP_VERSION = 'v4.4';
 
 interface RankingSession {
   id: string;
@@ -132,7 +132,7 @@ export default function PlayerPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Player onboarding flow states
-  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'photocircle_ask' | 'photocircle_popup' | 'name' | 'teamleader' | 'complete'>('intro');
+  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'photocircle_ask' | 'photocircle_popup' | 'name' | 'teamleader' | 'complete'>('team');
   const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
   const [, setPlayerData] = useState<{ teamNumber: string, playerName: string, hasPhotoCircle: boolean } | null>(null);
   const [votedTeamLeader, setVotedTeamLeader] = useState<string | null>(null);
