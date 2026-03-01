@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v5.2';
+const APP_VERSION = 'v5.6';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -488,6 +488,9 @@ export default function DisplayPage() {
             {/* Teams Display - Single Row Layout */}
             <div className="flex justify-center items-start overflow-hidden w-full px-2">
               {Array.from({ length: currentSession.nr_teams }, (_, index) => {
+                const maxPlayersInAnyTeam = currentSession.nr_teams
+                  ? Math.max(...Array.from({ length: currentSession.nr_teams }).map((_, i) => (playersByTeam[i + 1] || []).length))
+                  : 1;
                 const teamNumber = index + 1;
                 let teamPlayers = playersByTeam[teamNumber] || [];
 
@@ -555,34 +558,40 @@ export default function DisplayPage() {
                     </div>
 
                     {/* Player Names */}
-                    <div className="flex flex-col gap-1 w-full px-1" style={{ height: 'calc(100vh - 350px)' }}>
-                      {teamPlayers.map((player, playerIndex) => {
-                        const isLeader = player === topPlayer && highestVotes > 0;
+                    <div className="flex flex-col gap-1 w-full px-1 justify-start" style={{ height: 'calc(100vh - 350px)' }}>
+                      {(() => {
+                        const playerCount = Math.max(maxPlayersInAnyTeam, 1);
+                        // Calculate max font size mathematically so 12+ players don't overflow the 100vh container
+                        // Assume available height is ~65vh. 65vh / 12 = 5.4vh per item minus gap
+                        return teamPlayers.map((player, playerIndex) => {
+                          const isLeader = player === topPlayer && highestVotes > 0;
 
-                        return (
-                          <div
-                            key={playerIndex}
-                            className={`rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden transition-all duration-1000 flex items-center justify-center ${isLeader
-                              ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black transform scale-[1.05] z-10'
-                              : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
-                              }`}
-                            style={{
-                              fontFamily: 'Barlow Semi Condensed, sans-serif',
-                              fontWeight: isLeader ? 700 : 500,
-                              fontSize: isLeader ? 'min(48px, 6vh)' : 'min(40px, 5vh)',
-                              flex: 1,
-                              minHeight: 0,
-                              maxHeight: '65px',
-                              padding: '2px 8px'
-                            }}
-                          >
-                            <span className="block truncate w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                              {isLeader && <span className="mr-2">👑</span>}
-                              {player}
-                            </span>
-                          </div>
-                        );
-                      })}
+                          return (
+                            <div
+                              key={playerIndex}
+                              className={`rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden transition-all duration-1000 flex items-center justify-center ${isLeader
+                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black transform scale-[1.05] z-10'
+                                : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
+                                }`}
+                              style={{
+                                fontFamily: 'Barlow Semi Condensed, sans-serif',
+                                fontWeight: isLeader ? 700 : 500,
+                                fontSize: isLeader ? `min(48px, calc(65vh / ${playerCount} * 0.6))` : `min(40px, calc(65vh / ${playerCount} * 0.55))`,
+                                flex: `1 1 auto`,
+                                minHeight: 0,
+                                maxHeight: '65px',
+                                padding: '1px 4px',
+                                lineHeight: '1.1'
+                              }}
+                            >
+                              <span className="block truncate w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                                {isLeader && <span className="mr-2">👑</span>}
+                                {player}
+                              </span>
+                            </div>
+                          );
+                        });
+                      })()}
 
                       {/* Empty slots if team has fewer players */}
                       {teamPlayers.length === 0 && (

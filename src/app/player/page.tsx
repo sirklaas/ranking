@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v5.2';
+const APP_VERSION = 'v5.6';
 
 interface RankingSession {
   id: string;
@@ -614,30 +614,34 @@ export default function PlayerPage() {
         )}
 
         {/* Sections 7-12: Team Members Display (Name & Teamleader selection) */}
-        <div className="row-span-6 overflow-y-auto px-4">
+        <div className="row-span-6 overflow-hidden w-full flex flex-col justify-start px-2">
           {(currentPhase === 'name' || currentPhase === 'teamleader') && teamMembers.length > 0 && (
-            <div className="h-full pt-4">
-              <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+            <div className="w-full pt-2 pb-6">
+              <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto w-full">
                 {teamMembers.map((member, index) => {
                   // In teamleader phase, don't show the player's own name
                   if (currentPhase === 'teamleader' && member === selectedPlayerName) {
                     return null;
                   }
 
+                  const rowCount = Math.max(Math.ceil(teamMembers.length / 2), 1);
+
                   return (
                     <button
                       key={`${member}-${currentPhase}`}
                       onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
-                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 px-3 py-[0.8rem] rounded-lg text-center font-bold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all transform hover:scale-[1.03] flex items-center justify-center uppercase tracking-wide"
+                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-[1.5px] border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all transform hover:scale-[1.03] flex items-center justify-center uppercase tracking-wide leading-tight"
                       style={{
                         fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontSize: '1rem',
+                        fontSize: `min(1.1rem, calc(40vh / ${rowCount} * 0.4))`,
                         animationDelay: `${index * 150}ms`,
                         animationFillMode: 'both',
-                        minHeight: '60px'
+                        height: `min(60px, calc(45vh / ${rowCount}))`,
+                        minHeight: '28px',
+                        padding: '2px 4px'
                       }}
                     >
-                      {member}
+                      <span className="truncate w-full px-1">{member}</span>
                     </button>
                   );
                 })}
