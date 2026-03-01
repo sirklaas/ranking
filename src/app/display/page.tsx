@@ -489,7 +489,39 @@ export default function DisplayPage() {
             <div className="flex justify-center items-start overflow-hidden w-full px-2">
               {Array.from({ length: currentSession.nr_teams }, (_, index) => {
                 const teamNumber = index + 1;
-                const teamPlayers = playersByTeam[teamNumber] || [];
+                let teamPlayers = playersByTeam[teamNumber] || [];
+
+                // Sort players based on team leader votes
+                let highestVotes = 0;
+                let topPlayer = '';
+
+                try {
+                  const currentVotes = JSON.parse((currentSession.team_leader_votes as string) || '{}');
+                  const teamKey = `team_${teamNumber}`;
+                  const teamVotes = currentVotes[teamKey] || {};
+
+                  // Sort players: highest votes first
+                  teamPlayers.sort((a, b) => {
+                    const votesA = teamVotes[a] || 0;
+                    const votesB = teamVotes[b] || 0;
+                    if (votesA > highestVotes) {
+                      highestVotes = votesA;
+                      topPlayer = a;
+                    }
+                    if (votesB > highestVotes) {
+                      highestVotes = votesB;
+                      topPlayer = b;
+                    }
+                    return votesB - votesA; // Descending order
+                  });
+
+                  // If multiple have same highest votes, the first one encountered stays topPlayer
+                  // if highestVotes is 0, topPlayer is empty
+                  if (highestVotes === 0) topPlayer = '';
+
+                } catch (e) {
+                  console.error('Failed to parse team leader votes for display sorting');
+                }
 
                 return (
                   <div
@@ -524,19 +556,29 @@ export default function DisplayPage() {
 
                     {/* Player Names */}
                     <div className="flex flex-col gap-1 w-full px-1">
-                      {teamPlayers.map((player, playerIndex) => (
-                        <div
-                          key={playerIndex}
-                          className="bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800 px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden"
-                          style={{
-                            fontFamily: 'Barlow Semi Condensed, sans-serif',
-                            fontWeight: 500,
-                            fontSize: '1.125rem' // 1.5x bigger than text-sm (0.875rem * 1.5 ≈ 1.125rem)
-                          }}
-                        >
-                          <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{player}</span>
-                        </div>
-                      ))}
+                      {teamPlayers.map((player, playerIndex) => {
+                        const isLeader = player === topPlayer && highestVotes > 0;
+
+                        return (
+                          <div
+                            key={playerIndex}
+                            className={`px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden transition-all duration-1000 ${isLeader
+                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black transform scale-[1.05] z-10'
+                                : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
+                              }`}
+                            style={{
+                              fontFamily: 'Barlow Semi Condensed, sans-serif',
+                              fontWeight: isLeader ? 700 : 500,
+                              fontSize: isLeader ? '1.25rem' : '1.125rem'
+                            }}
+                          >
+                            <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                              {isLeader && <span className="mr-2">👑</span>}
+                              {player}
+                            </span>
+                          </div>
+                        );
+                      })}
 
                       {/* Empty slots if team has fewer players */}
                       {teamPlayers.length === 0 && (
