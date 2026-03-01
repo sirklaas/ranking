@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.4';
+const APP_VERSION = 'v4.5';
 
 interface RankingSession {
   id: string;
@@ -499,19 +499,6 @@ export default function PlayerPage() {
             animate={true}
           />
         </div>
-
-        {/* Intro Phase - Start Button */}
-        {currentPhase === 'intro' && (
-          <div className="row-span-8 flex items-center justify-center -mt-[10vh]">
-            <button
-              onClick={() => advancePhase('team')}
-              className="w-48 h-48 rounded-full border-[10px] border-white bg-transparent flex flex-col items-center justify-center text-white transition-transform active:scale-95 hover:bg-white/10"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              <span className="text-4xl font-light mb-2 opacity-80" style={{ letterSpacing: '0.1em' }}>START</span>
-            </button>
-          </div>
-        )}
 
         {/* Sections 5-6: Team Number Input Circle - Moved lower for two-line headings */}
         {currentPhase === 'team' && (
