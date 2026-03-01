@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.1';
+const APP_VERSION = 'v4.2';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -166,7 +166,7 @@ export default function DisplayPage() {
         p.catch((e) => {
           console.warn('[Display] Autoplay blocked, falling back to muted.', e);
           v.muted = true;
-          v.play().catch(() => {});
+          v.play().catch(() => { });
         });
       }
     } catch (e) {
@@ -595,7 +595,7 @@ export default function DisplayPage() {
                   const ctx = new AC();
                   const buf = ctx.createBuffer(1, 1, 22050);
                   const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
-                  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
                 }
               } catch (e) { console.warn('[Display] AudioContext unlock error:', e); }
 
@@ -607,19 +607,19 @@ export default function DisplayPage() {
                   v.volume = 1;
                   v.currentTime = 0;
                   const p = v.play();
-                  if (p) p.catch(() => { v.muted = true; v.play().catch(() => {}); });
+                  if (p) p.catch(() => { v.muted = true; v.play().catch(() => { }); });
                 }
               } catch (e) { console.warn('[Display] Video play error:', e); }
 
               // Reset Krakende state + clear votes collection (async, fire-and-forget)
               import('@/modules/krakende-karakters/logic').then(({ getInitialState, resetState }) => {
                 const fresh = getInitialState();
-                if (currentSession) resetState(currentSession.id, fresh).catch(() => {});
-              }).catch(() => {});
+                if (currentSession) resetState(currentSession.id, fresh).catch(() => { });
+              }).catch(() => { });
               if (currentSession) {
                 import('@/lib/pocketbase').then(({ krakendeVoteService }) => {
-                  krakendeVoteService.clearVotes(currentSession.id).catch(() => {});
-                }).catch(() => {});
+                  krakendeVoteService.clearVotes(currentSession.id).catch(() => { });
+                }).catch(() => { });
               }
             }}
             className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"

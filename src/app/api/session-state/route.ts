@@ -9,7 +9,7 @@ export const fetchCache = 'force-no-store';
 // ALL clients (display, presenter, phones) poll this route instead of hitting PB directly.
 // Only 1 PB call every 3 seconds regardless of how many clients there are.
 let cachedSession: { data: Record<string, unknown>; ts: number; id: string } | null = null;
-const CACHE_TTL = 3000;
+const CACHE_TTL = 1000;
 
 /**
  * GET /api/session-state?id=<sessionId>

@@ -34,6 +34,7 @@ export const startVoting = async (
             votes: [],
             results: [],
         },
+        allPlayerNames: currentState.allPlayerNames?.length > 0 ? currentState.allPlayerNames : [],
     };
     await persistState(sessionId, newState);
     return newState;

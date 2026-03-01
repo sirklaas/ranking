@@ -234,11 +234,8 @@ export const teamService = {
   assignTeamNumbersToPlayers: (playerNames: string[], numberOfTeams: number): string[] => {
     if (!playerNames.length || numberOfTeams === 0) return playerNames;
 
-    // Shuffle players randomly for initial distribution
-    const shuffledPlayers = [...playerNames].sort(() => Math.random() - 0.5);
-
     // Assign team numbers by prefixing names
-    return shuffledPlayers.map((player, index) => {
+    return playerNames.map((player, index) => {
       const teamNumber = (index % numberOfTeams) + 1;
       const teamPrefix = teamNumber.toString().padStart(3, '0'); // 001, 002, etc.
       return `${teamPrefix} ${player}`;

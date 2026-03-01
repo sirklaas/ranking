@@ -42,6 +42,7 @@ export const startVoting = async (
       votes: [],
       results: [],
     },
+    allPlayerNames: freshState.allPlayerNames.length > 0 ? freshState.allPlayerNames : (currentState.allPlayerNames || []),
   };
   await persistState(sessionId, newState);
   return newState;

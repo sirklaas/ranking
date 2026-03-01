@@ -208,17 +208,26 @@ export default function PlayerPage() {
 
       // Load real player from localStorage
       const savedStr = localStorage.getItem('rankingPlayerData');
+      let currentPlayerData = null;
+
       if (savedStr) {
         try {
-          const saved = JSON.parse(savedStr);
-          if (saved.playerName && saved.teamNumber) {
-            setTeamNumber(saved.teamNumber);
-            setSelectedPlayerName(saved.playerName);
-            setHasPhotoCircleAccount(saved.hasPhotoCircle);
+          currentPlayerData = JSON.parse(savedStr);
+          if (currentPlayerData.playerName && currentPlayerData.teamNumber) {
+            setTeamNumber(currentPlayerData.teamNumber);
+            setSelectedPlayerName(currentPlayerData.playerName);
+            setHasPhotoCircleAccount(currentPlayerData.hasPhotoCircle);
             setShowTeamInfo(true);
             setCurrentPhase('complete');
           }
         } catch (e) { }
+      }
+
+      // Ensure persistent unique playerId (UUID-like)
+      if (!currentPlayerData?.playerId) {
+        const newId = Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+        const data = { ...currentPlayerData, playerId: newId };
+        localStorage.setItem('rankingPlayerData', JSON.stringify(data));
       }
     }
   }, []);
@@ -317,7 +326,7 @@ export default function PlayerPage() {
         }
       } catch { /* silent */ }
     };
-    const timer = setInterval(poll, 3000);
+    const timer = setInterval(poll, 1000);
     poll();
 
     return () => { active = false; clearInterval(timer); };
@@ -355,15 +364,17 @@ export default function PlayerPage() {
 
   const handleNameSelection = (name: string) => {
     setSelectedPlayerName(name);
-    // Store player data in memory for later use
+    // Store in localStorage for persistence
+    const savedStr = localStorage.getItem('rankingPlayerData');
+    let existing = {};
+    try { existing = JSON.parse(savedStr || '{}'); } catch (e) { }
     const data = {
+      ...existing,
       teamNumber,
       playerName: name,
       hasPhotoCircle: hasPhotoCircleAccount || false
     };
-    setPlayerData(data);
-
-    // Store in localStorage for persistence
+    setPlayerData(data as any);
     localStorage.setItem('rankingPlayerData', JSON.stringify(data));
 
     // Show welcome popup first, then complete the phase
@@ -373,7 +384,8 @@ export default function PlayerPage() {
   };
 
   // Render module PlayerView if a registered fase module matches the current fase
-  if (currentSession?.current_fase) {
+  // GUARD: Only show game modules if onboarding is complete
+  if (currentSession?.current_fase && currentPhase === 'complete') {
     const mod = findFaseModule(currentSession.current_fase);
     if (mod?.PlayerView) {
       const allPlayerNames = teamService.parsePlayerNames(currentSession.playernames as string);
@@ -393,7 +405,7 @@ export default function PlayerPage() {
           heading={heading}
           mediaUrl={mediaUrl}
           playerInfo={{
-            playerId: selectedPlayerName || `anon_${teamNumber}`,
+            playerId: (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('rankingPlayerData') || '{}').playerId : null) || selectedPlayerName || `anon_${teamNumber}`,
             playerName: selectedPlayerName || 'Speler',
             teamNumber: parseInt(teamNumber) || 0,
           }}
