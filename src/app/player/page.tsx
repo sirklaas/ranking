@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.8';
+const APP_VERSION = 'v4.9';
 
 interface RankingSession {
   id: string;
@@ -233,6 +233,22 @@ export default function PlayerPage() {
     }
   }, []);
 
+  // Effect to handle session change invalidation
+  useEffect(() => {
+    if (!currentSession || typeof window === 'undefined') return;
+    const lastSessionId = localStorage.getItem('rankingSessionId');
+    if (lastSessionId && lastSessionId !== currentSession.id) {
+      console.log('New game session detected. Clearing player data.');
+      localStorage.removeItem('rankingPlayerData');
+      setTeamNumber('');
+      setSelectedPlayerName('');
+      setTeamMembers([]);
+      setShowTeamInfo(false);
+      setCurrentPhase('team');
+    }
+    localStorage.setItem('rankingSessionId', currentSession.id);
+  }, [currentSession]);
+
   // Track which heading keys have animated, so we never animate the same content twice
   const animatedKeysRef = useRef<Set<string>>(new Set());
   const startedKeysRef = useRef<Set<string>>(new Set());
@@ -426,20 +442,34 @@ export default function PlayerPage() {
 
       const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
       return (
-        <mod.PlayerView
-          faseKey={currentSession.current_fase}
-          sessionId={currentSession.id}
-          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-          onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
-          heading={heading}
-          mediaUrl={mediaUrl}
-          playerInfo={{
-            playerId: (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('rankingPlayerData') || '{}').playerId : null) || selectedPlayerName || `anon_${teamNumber}`,
-            playerName: selectedPlayerName || 'Speler',
-            teamNumber: parseInt(teamNumber) || 0,
-          }}
-          allPlayerNames={allPlayerNames}
-        />
+        <>
+          <mod.PlayerView
+            faseKey={currentSession.current_fase}
+            sessionId={currentSession.id}
+            moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+            onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
+            heading={heading}
+            mediaUrl={mediaUrl}
+            playerInfo={{
+              playerId: (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('rankingPlayerData') || '{}').playerId : null) || selectedPlayerName || `anon_${teamNumber}`,
+              playerName: selectedPlayerName || 'Speler',
+              teamNumber: parseInt(teamNumber) || 0,
+            }}
+            allPlayerNames={allPlayerNames}
+          />
+          <div className="fixed top-4 right-4 z-[9999]">
+            <button
+              onClick={() => {
+                localStorage.removeItem('rankingPlayerData');
+                window.location.reload();
+              }}
+              className="bg-black/30 hover:bg-black/50 text-white/50 hover:text-white px-3 py-1 rounded text-xs backdrop-blur-sm transition-colors border border-white/20"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Afmelden
+            </button>
+          </div>
+        </>
       );
     }
   }
