@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.7';
+const APP_VERSION = 'v4.8';
 
 interface RankingSession {
   id: string;
@@ -483,12 +483,11 @@ export default function PlayerPage() {
         <div className="row-span-2 flex items-center justify-center px-4">
           <MemoTypewriterHeading
             lines={
-              currentPhase === 'intro' ? ['Klaar voor de', 'eerste vraag?'] :
-                currentPhase === 'team' ? ['In welk team zit je?', 'kijk op het grote scherm', 'En vul dit hier in'] :
-                  currentPhase === 'photocircle_ask' ? ['Heb je een Photo circle', 'account aangemaakt?'] :
-                    currentPhase === 'name' ? ['Wat is jouw naam?'] :
-                      currentPhase === 'teamleader' ? ['Wie kies jij', 'als Teamleider?'] :
-                        currentHeading
+              currentPhase === 'team' ? ['In welk team zit je?', 'kijk op het grote scherm', 'En vul dit hier in'] :
+                currentPhase === 'photocircle_ask' ? ['Heb je een Photo circle', 'account aangemaakt?'] :
+                  currentPhase === 'name' ? ['Wat is jouw naam?'] :
+                    currentPhase === 'teamleader' ? ['Wie kies jij', 'als Teamleider?'] :
+                      currentHeading
             }
             visible={headingVisible}
             animate={true}

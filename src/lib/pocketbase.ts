@@ -320,7 +320,7 @@ export const teamService = {
 // Any keys missing from the database (or having an empty image) will seamlessly fall back to these default values.
 export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string | null }> = {
   '01/00': { heading: 'In welk team zit je?', image: null },
-  '01/01': { heading: 'Klaar voor de\neerste vraag?', image: null },
+  '01/01': { heading: 'In welk team zit je?', image: null },
   '01/02': { heading: 'Heb je \'n PhotoCircle account?', image: '' },
   '01/03': { heading: 'Wat is jouw naam?', image: '' },
   '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' },
