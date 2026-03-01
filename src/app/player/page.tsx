@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.5';
+const APP_VERSION = 'v4.7';
 
 interface RankingSession {
   id: string;
@@ -294,7 +294,8 @@ export default function PlayerPage() {
     const selectedTeamMembers = teamAssignments[parseInt(teamNumber)] || [];
 
     setTeamMembers(selectedTeamMembers);
-    advancePhase('photocircle_ask');
+    setShowPopup(true);
+    advancePhase('photocircle_popup');
     setIsLoading(false);
   };
 
@@ -339,12 +340,12 @@ export default function PlayerPage() {
   }, [currentSession?.id]);
 
   const closePopup = () => {
-    // Fade out popup, then start name selection
+    // Fade out popup, then move to photocircle check
     setPopupFadingOut(true);
     setTimeout(() => {
       setShowPopup(false);
       setPopupFadingOut(false);
-      advancePhase('name');
+      advancePhase('photocircle_ask');
     }, 1000);
   };
 
@@ -359,14 +360,8 @@ export default function PlayerPage() {
 
   const handlePhotoCircleResponse = (hasAccount: boolean) => {
     setHasPhotoCircleAccount(hasAccount);
-    if (!hasAccount) {
-      // Show popup if no account
-      setShowPopup(true);
-      setCurrentPhase('photocircle_popup');
-    } else {
-      // Move to name selection phase with fade
-      advancePhase('name');
-    }
+    // Both JA and NEE advance to name selection according to the new flow
+    advancePhase('name');
   };
 
   const submitTeamLeaderVote = async (leaderName: string) => {
