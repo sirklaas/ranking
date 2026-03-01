@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v4.9';
+const APP_VERSION = 'v5.0';
 
 interface RankingSession {
   id: string;
@@ -486,14 +486,14 @@ export default function PlayerPage() {
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
 
-        {/* Sections 1-2: Logo Background + Logo Overlay - Sticky Header */}
+        {/* Sections 1-3: Logo Background + Logo Overlay - Sticky Header */}
         <div
-          className="row-span-2 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50 sticky-header"
+          className="row-span-3 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50 sticky-header"
           style={{
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            minHeight: '16.666667vh' // Ensure proper height
+            minHeight: '20vh' // Ensure proper height
           }}
         >
           {/* Logo Overlay - Much Bigger */}
@@ -509,11 +509,11 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Sections 3-4: Dynamic Heading with Typewriter Animation */}
-        <div className="row-span-2 flex items-center justify-center px-4">
+        {/* Sections 4-6: Dynamic Heading with Typewriter Animation */}
+        <div className="row-span-3 flex items-center justify-center px-4">
           <MemoTypewriterHeading
             lines={
-              currentPhase === 'team' ? ['In welk team zit je?', 'kijk op het grote scherm', 'En vul dit hier in'] :
+              currentPhase === 'team' ? ['In welk team zit je?', 'Kijk op het grote scherm,', 'en vul dit hier in:'] :
                 currentPhase === 'photocircle_ask' ? ['Heb je een Photo circle', 'account aangemaakt?'] :
                   currentPhase === 'name' ? ['Wat is jouw naam?'] :
                     currentPhase === 'teamleader' ? ['Wie kies jij', 'als Teamleider?'] :
@@ -524,9 +524,9 @@ export default function PlayerPage() {
           />
         </div>
 
-        {/* Sections 5-6: Team Number Input Circle - Moved lower for two-line headings */}
+        {/* Sections 7-12: Team Number Input Circle & Action Button */}
         {currentPhase === 'team' && (
-          <div className="row-span-2 flex items-center justify-center">
+          <div className="row-span-6 flex flex-col items-center justify-start pt-4 gap-8">
             {!showTeamInfo ? (
               <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
                 <input
@@ -552,25 +552,22 @@ export default function PlayerPage() {
                 <span className="text-5xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{teamNumber}</span>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Show button when team number is entered */}
-        {/* Section 6: Dynamic Action Button */}
-        {currentPhase === 'team' && !showTeamInfo && teamNumber && (
-          <div className="flex items-center justify-center px-4 mt-6">
-            <button
-              onClick={handleTeamSubmit}
-              disabled={!teamNumber || isLoading}
-              className="text-white w-48 h-48 rounded-full text-4xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-[8px] border-white active:scale-95 flex items-center justify-center"
-              style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
-            >
-              <div className="flex flex-col items-center">
-                <span>Enter</span>
-              </div>
-            </button>
+            {/* Section 6: Dynamic Action Button */}
+            {!showTeamInfo && teamNumber && (
+              <button
+                onClick={handleTeamSubmit}
+                disabled={!teamNumber || isLoading}
+                className="text-white w-48 h-48 rounded-full text-4xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-[8px] border-white active:scale-95 flex items-center justify-center animate-scale-in"
+                style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
+              >
+                <div className="flex flex-col items-center">
+                  <span>Enter</span>
+                </div>
+              </button>
+            )}
           </div>
         )}
 
