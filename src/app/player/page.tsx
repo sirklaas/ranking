@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v5.0';
+const APP_VERSION = 'v5.1';
 
 interface RankingSession {
   id: string;
@@ -130,6 +130,7 @@ export default function PlayerPage() {
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [selectedPlayerName, setSelectedPlayerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Player onboarding flow states
   const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'photocircle_ask' | 'photocircle_popup' | 'name' | 'teamleader' | 'complete'>('team');
@@ -230,6 +231,8 @@ export default function PlayerPage() {
         const data = { ...currentPlayerData, playerId: newId };
         localStorage.setItem('rankingPlayerData', JSON.stringify(data));
       }
+      // Finished loading session state from localStorage
+      setIsInitializing(false);
     }
   }, []);
 
@@ -472,6 +475,21 @@ export default function PlayerPage() {
         </>
       );
     }
+  }
+
+  // Prevent flash of onboarding screens if localStorage is still being checked
+  if (isInitializing) {
+    return (
+      <div
+        className="min-h-screen relative overflow-hidden flex items-center justify-center text-white text-xl"
+        style={{
+          fontFamily: 'Barlow Semi Condensed, sans-serif',
+          background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
+        }}
+      >
+        <div className="animate-pulse">Even geduld...</div>
+      </div>
+    );
   }
 
   return (
