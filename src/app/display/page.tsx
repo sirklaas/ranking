@@ -563,13 +563,13 @@ export default function DisplayPage() {
                           <div
                             key={playerIndex}
                             className={`px-3 py-2 rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden transition-all duration-1000 ${isLeader
-                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black transform scale-[1.05] z-10'
-                                : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
+                              ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black transform scale-[1.05] z-10'
+                              : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
                               }`}
                             style={{
                               fontFamily: 'Barlow Semi Condensed, sans-serif',
                               fontWeight: isLeader ? 700 : 500,
-                              fontSize: isLeader ? '1.25rem' : '1.125rem'
+                              fontSize: isLeader ? '48px' : '40px'
                             }}
                           >
                             <span className="block truncate" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
@@ -590,23 +590,6 @@ export default function DisplayPage() {
                   </div>
                 );
               })}
-            </div>
-
-            {/* PhotoCircle Download */}
-            <div className="flex flex-col items-center mt-8">
-              <h2 className="text-white text-5xl mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-                Download PhotoCircle
-              </h2>
-              <div className="bg-white p-3 rounded-xl shadow-lg">
-                <Image
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent('https://join.photocircleapp.com/8FG2MT44TZ')}`}
-                  alt="PhotoCircle QR Code"
-                  width={240}
-                  height={240}
-                  className="w-60 h-60"
-                  unoptimized
-                />
-              </div>
             </div>
           </div>
         </>
