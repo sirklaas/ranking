@@ -169,7 +169,8 @@ export const rankingService = {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
     return await pb.collection('ranking').getFullList({
-      sort: '-created'
+      sort: '-created',
+      requestKey: null,
     });
   },
 
