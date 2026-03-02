@@ -1,4 +1,4 @@
-import { KrakendeState, KrakendePhase, KrakendeLanguage, KrakendeSubmission, KrakendeTrait } from './types';
+import { KrakendeState, KrakendePhase, KrakendeLanguage, KrakendeTrait } from './types';
 import { DEFAULT_POSITIVE_TRAITS, DEFAULT_NEGATIVE_TRAITS } from './defaults';
 import { rankingService } from '@/lib/pocketbase';
 
@@ -51,7 +51,7 @@ export const shuffleTraits = (traits: KrakendeTrait[]): KrakendeTrait[] => {
 // Toggle language
 export const toggleLanguage = async (
   sessionId: string,
-  currentState: KrakendeState
+  _currentState: KrakendeState // prefixed with underscore to skip ESLint unused
 ): Promise<KrakendeState> => {
   return await updateState(sessionId, (current) => ({
     ...current,
@@ -62,7 +62,7 @@ export const toggleLanguage = async (
 // Advance to the next phase (presenter arrow-right)
 export const nextPhase = async (
   sessionId: string,
-  currentState: KrakendeState
+  _currentState: KrakendeState
 ): Promise<KrakendeState> => {
   const order: KrakendePhase[] = [
     'positive-voting',
@@ -88,7 +88,7 @@ export const nextPhase = async (
 // Go to previous phase (presenter arrow-left)
 export const prevPhase = async (
   sessionId: string,
-  currentState: KrakendeState
+  _currentState: KrakendeState
 ): Promise<KrakendeState> => {
   const order: KrakendePhase[] = [
     'positive-voting',
@@ -114,7 +114,7 @@ export const prevPhase = async (
 // Reveal next trait on display (one by one)
 export const revealNextTrait = async (
   sessionId: string,
-  currentState: KrakendeState
+  _currentState: KrakendeState
 ): Promise<KrakendeState> => {
   return await updateState(sessionId, (current) => {
     const maxTraits =
@@ -182,19 +182,19 @@ export const updateTraits = async (
  */
 export const updateState = async (sessionId: string, updater: (current: KrakendeState) => KrakendeState): Promise<KrakendeState> => {
   const maxRetries = 10;
-  let lastError: any = null;
+  let lastError: Error | null = null;
 
   for (let i = 0; i < maxRetries; i++) {
     try {
       // 1. Fetch latest session
-      const session = await rankingService.getSessionById(sessionId) as any;
+      const session = await rankingService.getSessionById(sessionId) as unknown as { krakende_state?: string | KrakendeState };
       if (!session) throw new Error('Session not found');
 
       // 2. Extract current state from top-level krakende_state field
       let krakendeState: KrakendeState | null = null;
       if (session.krakende_state) {
         krakendeState = typeof session.krakende_state === 'string'
-          ? JSON.parse(session.krakende_state)
+          ? JSON.parse(session.krakende_state) as KrakendeState
           : session.krakende_state;
       }
 
@@ -209,9 +209,11 @@ export const updateState = async (sessionId: string, updater: (current: Krakende
       });
 
       return newState;
-    } catch (err: any) {
-      console.warn(`Update attempt ${i + 1} failed, retrying...`, err.message);
-      lastError = err;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.warn(`Update attempt ${i + 1} failed, retrying...`, err.message);
+        lastError = err;
+      }
       await new Promise(r => setTimeout(r, 100 + Math.random() * 200));
     }
   }
@@ -222,7 +224,7 @@ export const updateState = async (sessionId: string, updater: (current: Krakende
 // Set phase explicitly
 export const setPhase = async (
   sessionId: string,
-  currentState: KrakendeState,
+  _currentState: KrakendeState,
   newPhase: KrakendePhase
 ): Promise<KrakendeState> => {
   return await updateState(sessionId, (current) => ({

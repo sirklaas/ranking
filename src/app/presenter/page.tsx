@@ -833,7 +833,7 @@ export default function PresenterPage() {
 
       </div>
     );
-  };
+  }; // end of renderSessionDetails
 
   return (
     <div className="min-h-screen bg-gray-100 p-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
