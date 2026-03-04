@@ -338,10 +338,21 @@ export default function PlayerPage() {
     const poll = async () => {
       if (!active) return;
       try {
-        const res = await fetch(`/api/session-state?id=${encodeURIComponent(sessionId)}`);
+        // If the player scanned a specific game QR, stick to it. If they just went to /player, track the latest show!
+        const params = new URLSearchParams(window.location.search);
+        const pollId = params.get('code') ? sessionId : 'latest';
+
+        const res = await fetch(`/api/session-state?id=${encodeURIComponent(pollId)}`);
         if (!active || !res.ok) return;
         const { session: fresh } = await res.json();
         if (!active || !fresh) return;
+
+        // Handle full session replacement if a new game took over the 'latest' slot
+        if (fresh.id !== currentSession.id) {
+          setCurrentSession(fresh);
+          return;
+        }
+
         parseModuleStates(fresh as Record<string, unknown>);
         if (fresh.current_fase) {
           setCurrentSession((prev: RankingSession | null) => {
