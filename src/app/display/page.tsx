@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v6.5';
+const APP_VERSION = 'v6.6';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -18,6 +18,7 @@ export default function DisplayPage() {
   const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
   const [playersByTeam, setPlayersByTeam] = useState<PlayersByTeam>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gameCode, setGameCode] = useState<string>('');
   const [currentMedia, setCurrentMedia] = useState<
@@ -122,6 +123,7 @@ export default function DisplayPage() {
   };
 
   useEffect(() => {
+    setIsMounted(true);
     // Load Google Fonts
     const link = document.createElement('link');
     link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700&display=swap';
@@ -620,16 +622,20 @@ export default function DisplayPage() {
       </div>
 
       {/* Forced Interaction Overlay to Unlock Sound */}
-      {!userEnabledSound && (
-        <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center backdrop-blur-sm">
+      {isMounted && !userEnabledSound && (
+        <div className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center pointer-events-auto">
           <h2 className="text-white text-3xl font-light mb-8 tracking-widest">Display Systeem</h2>
           <button
-            onClick={() => {
-              // IMMEDIATELY dismiss overlay
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('[Display] Start button clicked');
+
+              // 1. Immediately dismiss overlay
               setUserEnabledSound(true);
               lastPlayedUrl.current = '';
 
-              // Unlock audio (all sync, in user-gesture context)
+              // 2. Unlock audio context
               try {
                 const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
                 const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
@@ -639,21 +645,22 @@ export default function DisplayPage() {
                   const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
                   if (ctx.state === 'suspended') ctx.resume().catch(() => { });
                 }
-              } catch (e) { console.warn('[Display] AudioContext unlock error:', e); }
+              } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
 
-              // Play video with sound (sync call in user gesture)
-              try {
-                const v = videoRef.current;
-                if (v && v.src) {
-                  v.muted = false;
-                  v.volume = 1;
-                  v.currentTime = 0;
-                  const p = v.play();
-                  if (p) p.catch(() => { v.muted = true; v.play().catch(() => { }); });
-                }
-              } catch (e) { console.warn('[Display] Video play error:', e); }
+              // 3. Kickstart the video if one is loaded
+              setTimeout(() => {
+                try {
+                  const v = videoRef.current;
+                  if (v && v.src) {
+                    v.muted = false;
+                    v.volume = 1;
+                    const p = v.play();
+                    if (p) p.catch(() => { v.muted = true; v.play().catch(() => { }); });
+                  }
+                } catch (err) { console.warn('[Display] Video play error:', err); }
+              }, 100);
             }}
-            className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"
+            className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2 cursor-pointer pointer-events-auto"
             style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
           >
             <span>▶ KLIK HIER OM TE STARTEN</span>
