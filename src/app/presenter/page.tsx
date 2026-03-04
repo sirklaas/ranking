@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = 'v6.4';
+const APP_VERSION = 'v6.5';
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
