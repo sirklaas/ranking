@@ -652,20 +652,9 @@ export default function DisplayPage() {
                   if (p) p.catch(() => { v.muted = true; v.play().catch(() => { }); });
                 }
               } catch (e) { console.warn('[Display] Video play error:', e); }
-
-              // Reset Krakende state + clear votes collection (async, fire-and-forget)
-              import('@/modules/krakende-karakters/logic').then(({ getInitialState, resetState }) => {
-                const fresh = getInitialState();
-                if (currentSession) resetState(currentSession.id, fresh).catch(() => { });
-              }).catch(() => { });
-              if (currentSession) {
-                import('@/lib/pocketbase').then(({ krakendeVoteService }) => {
-                  krakendeVoteService.clearVotes(currentSession.id).catch(() => { });
-                }).catch(() => { });
-              }
-            }}
-            className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              className = "px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2"
+              style = {{ fontFamily: 'Barlow Semi Condensed, sans-serif' }
+            }
           >
             <span>▶ KLIK HIER OM TE STARTEN</span>
             <span className="text-xl font-normal opacity-80">(Activeert geluid voor de rest van de sessie)</span>
