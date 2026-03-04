@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v6.7';
+const APP_VERSION = 'v6.8';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -132,6 +132,41 @@ export default function DisplayPage() {
 
     loadSessionData();
 
+    // Forceful global interaction handler to guarantee audio unlock
+    const forceUnlockAudio = () => {
+      if (userEnabledSound) return;
+      console.log('[Display] Global unlock triggered');
+      setUserEnabledSound(true);
+      lastPlayedUrl.current = '';
+
+      try {
+        const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+        const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
+        if (AC) {
+          const ctx = new AC();
+          const buf = ctx.createBuffer(1, 1, 22050);
+          const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
+          if (ctx.state === 'suspended') ctx.resume().catch(() => { });
+        }
+      } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
+
+      setTimeout(() => {
+        try {
+          const v = videoRef.current;
+          if (v && v.src) {
+            v.muted = false;
+            v.volume = 1;
+            const p = v.play();
+            if (p) p.catch(() => { v.muted = true; v.play().catch(() => { }); });
+          }
+        } catch (err) { }
+      }, 100);
+    };
+
+    // Attach global listeners for touch/click anywhere
+    document.addEventListener('mousedown', forceUnlockAudio, { capture: true, once: true });
+    document.addEventListener('touchstart', forceUnlockAudio, { capture: true, once: true });
+
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' || e.key === 'F') {
@@ -140,7 +175,10 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
-      // Arrow keys removed — display follows PB only, presenter controls slides
+      // Spacebar or Enter to unlock audio if overlay is present
+      if (!userEnabledSound && (e.key === ' ' || e.key === 'Enter')) {
+        forceUnlockAudio();
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -611,50 +649,24 @@ export default function DisplayPage() {
       </div>
 
       {/* Forced Interaction Overlay to Unlock Sound */}
+      {/* Forced Interaction Overlay to Unlock Sound */}
       {isMounted && !userEnabledSound && (
-        <div className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center pointer-events-auto">
-          <h2 className="text-white text-3xl font-light mb-8 tracking-widest">Display Systeem</h2>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('[Display] Start button clicked');
-
-              // 1. Immediately dismiss overlay
-              setUserEnabledSound(true);
-              lastPlayedUrl.current = '';
-
-              // 2. Unlock audio context
-              try {
-                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
-                if (AC) {
-                  const ctx = new AC();
-                  const buf = ctx.createBuffer(1, 1, 22050);
-                  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
-                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
-                }
-              } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
-
-              // 3. Kickstart the video if one is loaded
-              setTimeout(() => {
-                try {
-                  const v = videoRef.current;
-                  if (v && v.src) {
-                    v.muted = false;
-                    v.volume = 1;
-                    const p = v.play();
-                    if (p) p.catch(() => { v.muted = true; v.play().catch(() => { }); });
-                  }
-                } catch (err) { console.warn('[Display] Video play error:', err); }
-              }, 100);
-            }}
-            className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] hover:scale-105 transition-transform active:scale-95 flex flex-col items-center gap-2 cursor-pointer pointer-events-auto"
+        <div
+          onClick={() => {
+            // Triggered by the global listener anyway, but kept for fallback
+            const event = new MouseEvent('mousedown');
+            document.dispatchEvent(event);
+          }}
+          className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center cursor-pointer pointer-events-auto"
+        >
+          <h2 className="text-white text-3xl font-light mb-8 tracking-widest pointer-events-none">Display Systeem</h2>
+          <div
+            className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] flex flex-col items-center gap-2 pointer-events-none animate-pulse"
             style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
           >
-            <span>▶ KLIK HIER OM TE STARTEN</span>
+            <span>▶ KLIK ERGENS OM TE STARTEN</span>
             <span className="text-xl font-normal opacity-80">(Activeert geluid voor de rest van de sessie)</span>
-          </button>
+          </div>
         </div>
       )}
     </div>
