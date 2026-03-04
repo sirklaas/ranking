@@ -608,7 +608,7 @@ export default function PlayerPage() {
               style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
             >
               NEE
-              <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center -ml-1">Maak een<br />account aan</span>
+              <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center">Probeer<br />opnieuw</span>
             </button>
           </div>
         )}
@@ -732,7 +732,7 @@ export default function PlayerPage() {
                 <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                   <p>Je bent nu ingelogd in team {teamNumber}.</p>
                   <p></p>
-                  <p>Veel plezier met de game!</p>
+                  <p>Heel veel plezier vandaag met de show!</p>
                 </div>
               </div>
             </div>
@@ -763,7 +763,7 @@ export default function PlayerPage() {
         }
         
         .animate-scale-in {
-          animation: scale-in 0.3s ease-out;
+          animation: scale-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         
         /* Remove number input spinners */

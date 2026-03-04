@@ -439,45 +439,45 @@ export default function DisplayPage() {
 
           {/* Horizontal Band with Background + Overlaid Text and Logo */}
           <div
-            className="relative z-10 w-full h-48 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6"
+            className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6"
             style={{
               backgroundImage: 'url(/assets/band.webp)',
-              marginTop: '50px'
+              marginTop: '10px'
             }}
           >
-            {/* Logo - Left side of band - Much Larger */}
+            {/* Logo - Left side of band */}
             <div className="flex items-center">
               <Image
                 src="/assets/ranking_logo.webp"
                 alt="Ranking Logo"
-                width={320}
-                height={160}
-                className="h-40 w-auto object-contain"
+                width={256}
+                height={128}
+                className="h-28 w-auto object-contain"
                 priority
               />
             </div>
 
             {/* Centered Text Overlay */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <p className="text-2xl md:text-3xl text-white/90 mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+              <p className="text-xl md:text-2xl text-white/90 mb-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
                 Quizmaster Klaas presenteert
               </p>
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
                 {currentSession.showname} - {currentSession.city}
               </h1>
-              <p className="text-2xl md:text-3xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+              <p className="text-xl md:text-2xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
                 De teams van vandaag zijn:
               </p>
             </div>
 
-            {/* QR Code - Right side of band (bigger) */}
-            <div className="bg-white p-2 rounded-lg shadow-lg">
+            {/* QR Code - Right side of band (smaller) */}
+            <div className="bg-white p-2 rounded-lg shadow-lg z-20">
               <Image
                 src={qrCodeUrl}
                 alt="Join Game QR Code"
-                width={160}
-                height={160}
-                className="w-40 h-40"
+                width={112}
+                height={112}
+                className="w-28 h-28"
                 unoptimized
               />
             </div>
@@ -558,11 +558,10 @@ export default function DisplayPage() {
                     </div>
 
                     {/* Player Names */}
-                    <div className="flex flex-col gap-1 w-full px-1 justify-start" style={{ height: 'calc(100vh - 350px)' }}>
+                    <div className="flex flex-col gap-1 w-full px-1 justify-start" style={{ height: 'calc(100vh - 220px)' }}>
                       {(() => {
                         const playerCount = Math.max(maxPlayersInAnyTeam, 1);
                         // Calculate max font size mathematically so 12+ players don't overflow the 100vh container
-                        // Assume available height is ~65vh. 65vh / 12 = 5.4vh per item minus gap
                         return teamPlayers.map((player, playerIndex) => {
                           const isLeader = player === topPlayer && highestVotes > 0;
 
@@ -576,7 +575,7 @@ export default function DisplayPage() {
                               style={{
                                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                                 fontWeight: isLeader ? 700 : 500,
-                                fontSize: isLeader ? `min(48px, calc(65vh / ${playerCount} * 0.6))` : `min(40px, calc(65vh / ${playerCount} * 0.55))`,
+                                fontSize: isLeader ? `min(48px, calc(80vh / ${playerCount} * 0.6))` : `min(40px, calc(80vh / ${playerCount} * 0.55))`,
                                 flex: `1 1 auto`,
                                 minHeight: 0,
                                 maxHeight: '65px',
