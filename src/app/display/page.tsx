@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v6.1';
+const APP_VERSION = 'v6.2';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -558,10 +558,10 @@ export default function DisplayPage() {
                     </div>
 
                     {/* Player Names */}
-                    <div className="flex flex-col gap-1 w-full px-1 justify-start" style={{ height: 'calc(100vh - 220px)' }}>
+                    <div className="flex flex-col gap-1.5 w-full px-1 justify-start pb-4" style={{ height: '70vh' }}>
                       {(() => {
                         const playerCount = Math.max(maxPlayersInAnyTeam, 1);
-                        // Calculate max font size mathematically so 12+ players don't overflow the 100vh container
+                        // Calculate max font size mathematically so 12+ players don't overflow the container
                         return teamPlayers.map((player, playerIndex) => {
                           const isLeader = player === topPlayer && highestVotes > 0;
 
@@ -575,12 +575,13 @@ export default function DisplayPage() {
                               style={{
                                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                                 fontWeight: isLeader ? 700 : 500,
-                                fontSize: isLeader ? `min(48px, calc(80vh / ${playerCount} * 0.6))` : `min(40px, calc(80vh / ${playerCount} * 0.55))`,
-                                flex: `1 1 auto`,
-                                minHeight: 0,
-                                maxHeight: '65px',
-                                padding: '1px 4px',
-                                lineHeight: '1.1'
+                                fontSize: isLeader ? `min(40px, 4.5vh, calc(70vh / ${playerCount} * 0.55))` : `min(32px, 4vh, calc(70vh / ${playerCount} * 0.5))`,
+                                flex: `0 1 auto`,
+                                height: `calc(70vh / ${Math.max(playerCount, 8)})`, // Distribute height smoothly
+                                minHeight: '30px',
+                                maxHeight: '55px', // Prevents them from becoming gigantic rectangles on small teams
+                                padding: '0 4px',
+                                lineHeight: '1'
                               }}
                             >
                               <span className="block truncate w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>

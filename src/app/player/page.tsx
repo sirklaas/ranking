@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v6.1';
+const APP_VERSION = 'v6.2';
 
 interface RankingSession {
   id: string;
@@ -535,7 +535,8 @@ export default function PlayerPage() {
                 currentPhase === 'photocircle_ask' ? ['Heb je een Photo circle', 'account aangemaakt?'] :
                   currentPhase === 'name' ? ['Wat is jouw naam?'] :
                     currentPhase === 'teamleader' ? ['Wie kies jij', 'als Teamleider?'] :
-                      currentHeading
+                      (currentPhase === 'complete' && currentSession?.current_fase?.startsWith('01/')) ? ['Heel veel plezier vandaag', 'met de show!'] :
+                        currentHeading
             }
             visible={headingVisible}
             animate={true}
