@@ -252,17 +252,6 @@ export default function DisplayPage() {
     console.log('[Display] Resolved media from local pics folder', { faseKey, fileName, isVideo, mediaUrl });
     setCurrentMedia({ url: mediaUrl, name: fileName, type: isVideo ? 'video' : 'image', fallbackLocalUrl: mediaUrl });
 
-    // Add a light-weight preload hint for smoother start
-    try {
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = isVideo ? 'video' : 'image';
-      link.href = mediaUrl;
-      document.head.appendChild(link);
-      setTimeout(() => {
-        try { document.head.removeChild(link); } catch { }
-      }, 5000);
-    } catch { }
   }, [currentSession]);
 
   // Removed mute state syncing; videos play with sound by default
