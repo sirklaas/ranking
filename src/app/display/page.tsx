@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v6.2';
+const APP_VERSION = 'v6.3';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -176,14 +176,13 @@ export default function DisplayPage() {
 
   // Poll session state via cached server proxy (never hits PB directly from browser)
   useEffect(() => {
-    if (!currentSession) return;
-    const sessionId = currentSession.id;
     let active = true;
 
     const poll = async () => {
       if (!active) return;
       try {
-        const res = await fetch(`/api/session-state?id=${encodeURIComponent(sessionId)}`);
+        // ALWAYS poll the most recently updated session so the display snaps to new shows automatically!
+        const res = await fetch(`/api/session-state?id=latest`);
         if (!active || !res.ok) return;
         const { session: fresh } = await res.json();
         if (!active || !fresh) return;
@@ -192,7 +191,11 @@ export default function DisplayPage() {
         setPollDebug(prev => ({ ...prev, count: prev.count + 1, lastPbFase: freshFase, error: '' }));
 
         setCurrentSession((prev) => {
-          if (!prev) return prev;
+          if (!prev) return fresh;
+          if (fresh.id !== prev.id) {
+            console.log(`[Display] Switched to new active game session: ${fresh.id}`);
+            return fresh;
+          }
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings) {
             let changed = false;
             Object.values(FASES).forEach((mod) => {
@@ -210,8 +213,9 @@ export default function DisplayPage() {
     };
 
     const timer = setInterval(poll, 3000);
+    poll(); // immediate first poll
     return () => { active = false; clearInterval(timer); };
-  }, [currentSession?.id]);
+  }, []);
 
   // Compute current media whenever session/current_fase or motherMeta changes
   useEffect(() => {

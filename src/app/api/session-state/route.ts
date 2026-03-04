@@ -8,7 +8,7 @@ export const fetchCache = 'force-no-store';
 // ── Server-side cache (3s TTL) ──────────────────────────────────────────────
 // ALL clients (display, presenter, phones) poll this route instead of hitting PB directly.
 // Only 1 PB call every 3 seconds regardless of how many clients there are.
-let cachedSession: { data: Record<string, unknown>; ts: number; id: string } | null = null;
+let cachedSession: { data: Record<string, unknown>; ts: number; id: string; isLatest?: boolean } | null = null;
 const CACHE_TTL = 1000;
 
 /**
@@ -26,14 +26,27 @@ export async function GET(req: Request) {
     }
 
     // Return cached if fresh
-    if (cachedSession && cachedSession.id === sessionId && Date.now() - cachedSession.ts < CACHE_TTL) {
+    if (cachedSession && (cachedSession.id === sessionId || (sessionId === 'latest' && cachedSession.isLatest)) && Date.now() - cachedSession.ts < CACHE_TTL) {
       return NextResponse.json({ success: true, session: cachedSession.data });
     }
 
     const pb = await getServerPocketBase();
-    const record = await pb.collection('ranking').getOne(sessionId, { $autoCancel: false });
+    let record;
 
-    cachedSession = { data: record as unknown as Record<string, unknown>, ts: Date.now(), id: sessionId };
+    if (sessionId === 'latest') {
+      const records = await pb.collection('ranking').getList(1, 1, { sort: '-updated', $autoCancel: false });
+      record = records.items[0];
+      if (!record) return NextResponse.json({ error: 'No active session' }, { status: 404 });
+    } else {
+      record = await pb.collection('ranking').getOne(sessionId, { $autoCancel: false });
+    }
+
+    cachedSession = {
+      data: record as unknown as Record<string, unknown>,
+      ts: Date.now(),
+      id: record.id,
+      isLatest: sessionId === 'latest'
+    };
     return NextResponse.json({ success: true, session: record });
   } catch (error) {
     console.error('[session-state] GET Error:', error);
