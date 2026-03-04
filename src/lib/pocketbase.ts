@@ -254,7 +254,7 @@ export const teamService = {
     return prefixedPlayerName.replace(/^\d{3}\s/, '');
   },
 
-  // Generate team assignments from prefixed player names
+  // Generate team assignments from player names (handles BOTH prefixed and unprefixed names)
   generateTeamAssignments: (playerNames: string[], numberOfTeams: number): { [key: number]: string[] } => {
     if (!playerNames.length || numberOfTeams === 0) return {};
 
@@ -265,14 +265,29 @@ export const teamService = {
       teams[i] = [];
     }
 
-    // Group players by their team number prefix
+    const unprefixedPlayers: string[] = [];
+
+    // First pass: Group players by explicit team prefix if they have one
     playerNames.forEach(playerName => {
-      const teamNumber = teamService.getPlayerTeamNumber(playerName);
-      if (teamNumber > 0 && teamNumber <= numberOfTeams) {
+      const explicitTeamNumber = teamService.getPlayerTeamNumber(playerName);
+      if (explicitTeamNumber > 0 && explicitTeamNumber <= numberOfTeams) {
         const displayName = teamService.getDisplayPlayerName(playerName);
-        teams[teamNumber].push(displayName);
+        teams[explicitTeamNumber].push(displayName);
+      } else {
+        // Player has no prefix (or invalid prefix), queue them for auto-distribution
+        unprefixedPlayers.push(teamService.getDisplayPlayerName(playerName));
       }
     });
+
+    // Second pass: Distribute unprefixed players sequentially to fill the rest of the teams
+    if (unprefixedPlayers.length > 0) {
+      const namesPerTeam = Math.ceil(unprefixedPlayers.length / numberOfTeams);
+      unprefixedPlayers.forEach((playerName, index) => {
+        const autoTeamNum = Math.floor(index / namesPerTeam) + 1;
+        const finalTeamNum = Math.min(autoTeamNum, numberOfTeams);
+        teams[finalTeamNum].push(playerName);
+      });
+    }
 
     return teams;
   },
