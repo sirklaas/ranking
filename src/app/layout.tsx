@@ -1,4 +1,5 @@
-
+import type { Metadata } from "next";
+import "./globals.css";
 export const metadata: Metadata = {
   title: "Ranking the Starzzz",
   description: "Interactive voting and ranking game show platform",
