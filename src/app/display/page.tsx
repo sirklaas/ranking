@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v6.8';
+const APP_VERSION = 'v6.9';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -29,6 +29,7 @@ export default function DisplayPage() {
   const lastPlayedUrl = useRef<string>('');
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
+  const soundUnlockedRef = useRef(false); // Ref to avoid stale closure in event listeners
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
   const [pollDebug, setPollDebug] = useState({ count: 0, lastPbFase: '?', error: '' });
@@ -132,9 +133,10 @@ export default function DisplayPage() {
 
     loadSessionData();
 
-    // Forceful global interaction handler to guarantee audio unlock
+    // Forceful global interaction handler — uses ref so closure is never stale
     const forceUnlockAudio = () => {
-      if (userEnabledSound) return;
+      if (soundUnlockedRef.current) return; // Already unlocked
+      soundUnlockedRef.current = true;
       console.log('[Display] Global unlock triggered');
       setUserEnabledSound(true);
       lastPlayedUrl.current = '';
