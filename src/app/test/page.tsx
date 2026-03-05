@@ -328,9 +328,10 @@ export default function TestPage() {
 
         if (!runningRef.current) return;
 
-        // Submit vote to PocketBase (real API call just like the actual player page)
+        // Submit vote to PocketBase — always fetch FRESH state first to avoid race condition
         try {
-            const currentVotesRaw = sess.team_leader_votes || '{}';
+            const freshSess = await rankingService.getSessionById(sess.id) as unknown as SessionData;
+            const currentVotesRaw = (freshSess?.team_leader_votes as string) || '{}';
             const currentVotes = JSON.parse(currentVotesRaw);
             const teamKey = `team_${player.teamNumber}`;
             if (!currentVotes[teamKey]) currentVotes[teamKey] = {};
@@ -339,10 +340,7 @@ export default function TestPage() {
 
             await rankingService.updateSession(sess.id, { team_leader_votes: JSON.stringify(currentVotes) });
 
-            // Update our local copy of the session votes
-            sess.team_leader_votes = JSON.stringify(currentVotes);
-
-            upd(p => allLogs(p, `✅ Vote saved to PocketBase`));
+            upd(p => allLogs(p, `✅ Vote saved (${leaderVote}: ${currentVotes[teamKey][leaderVote]} total)`));
         } catch (e) {
             upd(p => allLogs(p, `⚠️ Vote save failed: ${e}`));
         }
