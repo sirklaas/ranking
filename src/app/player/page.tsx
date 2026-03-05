@@ -399,22 +399,23 @@ export default function PlayerPage() {
     setVotedTeamLeader(leaderName);
 
     try {
-      // Fetch the freshest vote state via server API (avoids stale data race)
+      // Fetch fresh vote state via server API
       const freshRes = await fetch(`/api/session-state?id=${currentSession.id}`);
       const freshJson = await freshRes.json();
-      const freshVotesRaw = (freshJson?.session?.teamleaders as string) || '{}';
-      const currentVotes = JSON.parse(freshVotesRaw);
+      // teamleaders is a JSON-type field in PocketBase — read as object directly
+      const currentVotes: Record<string, Record<string, number>> =
+        (freshJson?.session?.teamleaders as Record<string, Record<string, number>>) || {};
 
       const teamKey = `team_${teamNumber}`;
       if (!currentVotes[teamKey]) currentVotes[teamKey] = {};
       if (!currentVotes[teamKey][leaderName]) currentVotes[teamKey][leaderName] = 0;
       currentVotes[teamKey][leaderName] += 1;
 
-      // Write back via authenticated server-side PATCH (bypasses client PB auth)
+      // Write back as actual object — PocketBase JSON field requires an object, not a string
       await fetch('/api/session-state', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: currentSession.id, data: { teamleaders: JSON.stringify(currentVotes) } }),
+        body: JSON.stringify({ id: currentSession.id, data: { teamleaders: currentVotes } }),
       });
     } catch (e) {
       console.error('Failed to save team leader vote', e);

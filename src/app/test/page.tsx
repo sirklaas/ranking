@@ -13,7 +13,7 @@ interface SessionData {
     playernames: string;
     nr_teams: number;
     nr_players: number;
-    teamleaders?: string;
+    teamleaders?: Record<string, Record<string, number>> | string | null;
     [key: string]: unknown;
 }
 
@@ -334,17 +334,19 @@ export default function TestPage() {
         try {
             const freshRes = await fetch(`/api/session-state?id=${sess.id}`);
             const freshJson = await freshRes.json();
-            const currentVotesRaw = (freshJson?.session?.teamleaders as string) || '{}';
-            const currentVotes = JSON.parse(currentVotesRaw);
+            // teamleaders is a JSON-type PB field — read as object directly (no JSON.parse)
+            const currentVotes: Record<string, Record<string, number>> =
+                (freshJson?.session?.teamleaders as Record<string, Record<string, number>>) || {};
             const teamKey = `team_${player.teamNumber}`;
             if (!currentVotes[teamKey]) currentVotes[teamKey] = {};
             if (!currentVotes[teamKey][leaderVote]) currentVotes[teamKey][leaderVote] = 0;
             currentVotes[teamKey][leaderVote] += 1;
 
+            // Write back as actual object (not stringified!)
             await fetch('/api/session-state', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: sess.id, data: { teamleaders: JSON.stringify(currentVotes) } }),
+                body: JSON.stringify({ id: sess.id, data: { teamleaders: currentVotes } }),
             });
 
             upd(p => allLogs(p, `✅ Vote saved (${leaderVote}: ${currentVotes[teamKey][leaderVote]} total)`));
@@ -446,8 +448,9 @@ export default function TestPage() {
 
         // Assign first 4 players
         const initSess = { ...session };
-        fetch('/api/session-state', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: session.id, data: { teamleaders: '{}' } }) }).catch(() => { });
-        initSess.teamleaders = '{}';
+        // Reset votes via authenticated PATCH
+        fetch('/api/session-state', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: session.id, data: { teamleaders: {} } }) }).catch(() => { });
+        initSess.teamleaders = {};
 
         shuffled.slice(0, SLOT_COUNT).forEach((player, slotId) => {
             setTimeout(() => {

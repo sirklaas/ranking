@@ -535,27 +535,17 @@ export default function DisplayPage() {
                 let topPlayer = '';
 
                 try {
-                  const currentVotes = JSON.parse((currentSession.teamleaders as string) || '{}');
-                  const teamKey = `team_${teamNumber}`;
-                  const teamVotes = currentVotes[teamKey] || {};
+                  const teamVotes = ((currentSession.teamleaders as Record<string, Record<string, number>> | null)?.[`team_${teamNumber}`]) || {};
 
                   // Sort players: highest votes first
                   teamPlayers.sort((a, b) => {
                     const votesA = teamVotes[a] || 0;
                     const votesB = teamVotes[b] || 0;
-                    if (votesA > highestVotes) {
-                      highestVotes = votesA;
-                      topPlayer = a;
-                    }
-                    if (votesB > highestVotes) {
-                      highestVotes = votesB;
-                      topPlayer = b;
-                    }
-                    return votesB - votesA; // Descending order
+                    if (votesA > highestVotes) { highestVotes = votesA; topPlayer = a; }
+                    if (votesB > highestVotes) { highestVotes = votesB; topPlayer = b; }
+                    return votesB - votesA;
                   });
 
-                  // If multiple have same highest votes, the first one encountered stays topPlayer
-                  // if highestVotes is 0, topPlayer is empty
                   if (highestVotes === 0) topPlayer = '';
 
                 } catch (e) {
