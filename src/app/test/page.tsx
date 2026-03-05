@@ -249,9 +249,19 @@ export default function TestPage() {
     useEffect(() => {
         async function load() {
             try {
-                const sessions = await rankingService.getAllSessions();
-                if (!sessions.length) { setSessionError('No sessions found in PocketBase'); return; }
-                const sess = sessions[0] as unknown as SessionData;
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetId = urlParams.get('session');
+
+                let sess: SessionData;
+
+                if (targetId) {
+                    sess = await rankingService.getSessionById(targetId) as unknown as SessionData;
+                } else {
+                    const sessions = await rankingService.getAllSessions();
+                    if (!sessions.length) { setSessionError('No sessions found in PocketBase'); return; }
+                    sess = sessions[0] as unknown as SessionData;
+                }
+
                 setSession(sess);
 
                 const parsed = teamService.parsePlayerNames(sess.playernames);

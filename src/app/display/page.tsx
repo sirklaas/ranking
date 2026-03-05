@@ -30,9 +30,15 @@ export default function DisplayPage() {
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const soundUnlockedRef = useRef(false); // Ref to avoid stale closure in event listeners
+  const lockedSessionId = useRef<string | null>(null);
+  const currentSessionRef = useRef<RankingSession | null>(null);
   const [motherMeta, setMotherMeta] = useState<{ collection: string; recordId: string; baseUrl: string } | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
   const [pollDebug, setPollDebug] = useState({ count: 0, lastPbFase: '?', error: '' });
+
+  useEffect(() => {
+    currentSessionRef.current = currentSession;
+  }, [currentSession]);
 
   // Sync module states from session on load / session change
   useEffect(() => {
@@ -133,11 +139,11 @@ export default function DisplayPage() {
 
     loadSessionData();
 
-    // Forceful global interaction handler — uses ref so closure is never stale
+    // Event listener for audio context unlock
     const forceUnlockAudio = () => {
-      if (soundUnlockedRef.current) return; // Already unlocked
+      if (soundUnlockedRef.current) return;
       soundUnlockedRef.current = true;
-      console.log('[Display] Global unlock triggered');
+      console.log('[Display] Global unlock triggered via event');
       setUserEnabledSound(true);
       lastPlayedUrl.current = '';
 
@@ -223,11 +229,20 @@ export default function DisplayPage() {
     const poll = async () => {
       if (!active) return;
       try {
-        // ALWAYS poll the most recently updated session so the display snaps to new shows automatically!
-        const res = await fetch(`/api/session-state?id=latest`);
+        // Use URL param if provided, otherwise locked session, otherwise latest
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('session') || lockedSessionId.current || 'latest';
+
+        const res = await fetch(`/api/session-state?id=${targetId}`);
         if (!active || !res.ok) return;
         const { session: fresh } = await res.json();
         if (!active || !fresh) return;
+
+        // If we queried latest and we are currently locked in (because user clicked start)
+        // ensure we lock to this ID so we don't switch streams mid-show
+        if (!lockedSessionId.current && targetId === 'latest') {
+          lockedSessionId.current = fresh.id;
+        }
 
         const freshFase = fresh.current_fase || '?';
         setPollDebug(prev => ({ ...prev, count: prev.count + 1, lastPbFase: freshFase, error: '' }));
@@ -655,13 +670,53 @@ export default function DisplayPage() {
       </div>
 
       {/* Forced Interaction Overlay to Unlock Sound */}
-      {/* Forced Interaction Overlay to Unlock Sound */}
       {isMounted && !userEnabledSound && (
         <div
-          onClick={() => {
-            // Triggered by the global listener anyway, but kept for fallback
-            const event = new MouseEvent('mousedown');
-            document.dispatchEvent(event);
+          onClick={async () => {
+            if (soundUnlockedRef.current) return;
+            soundUnlockedRef.current = true;
+            setUserEnabledSound(true);
+
+            // Audio unlock
+            try {
+              const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+              const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
+              if (AC) {
+                const ctx = new AC();
+                const buf = ctx.createBuffer(1, 1, 22050);
+                const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
+                if (ctx.state === 'suspended') ctx.resume().catch(() => { });
+              }
+            } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
+
+            // HARD RESET AND LOCK
+            const sess = currentSessionRef.current;
+            if (sess) {
+              // Lock the ID tightly
+              lockedSessionId.current = sess.id;
+              console.log('[Display] Locked session to:', sess.id);
+
+              // Empties scores and teamleaders as requested
+              try {
+                // Delete all krakende votes
+                await fetch(`/api/krakende-vote?sessionId=${sess.id}`, { method: 'DELETE' });
+                // Reset teamleaders and fase to 01/01
+                await fetch('/api/session-state', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    id: sess.id,
+                    data: {
+                      teamleaders: {},
+                      current_fase: '01/01'
+                    }
+                  })
+                });
+                console.log('[Display] Hard reset complete');
+              } catch (e) {
+                console.error('[Display] Hard reset failed:', e);
+              }
+            }
           }}
           className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center cursor-pointer pointer-events-auto"
         >
