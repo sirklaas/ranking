@@ -537,13 +537,26 @@ export default function DisplayPage() {
                 try {
                   const teamVotes = ((currentSession.teamleaders as Record<string, Record<string, number>> | null)?.[`team_${teamNumber}`]) || {};
 
-                  // Sort players: highest votes first
+                  // Find top player first (with alphabetical tie-breaker)
+                  teamPlayers.forEach(p => {
+                    const v = teamVotes[p] || 0;
+                    if (v > highestVotes) {
+                      highestVotes = v;
+                      topPlayer = p;
+                    } else if (v === highestVotes && highestVotes > 0) {
+                      // Stable tie-breaker: alphabetical order ensures consistency across all screens
+                      if (p < topPlayer) topPlayer = p;
+                    }
+                  });
+
+                  // Sort players: highest votes first. If tied, ensure topPlayer is at very top, else alphabetical.
                   teamPlayers.sort((a, b) => {
                     const votesA = teamVotes[a] || 0;
                     const votesB = teamVotes[b] || 0;
-                    if (votesA > highestVotes) { highestVotes = votesA; topPlayer = a; }
-                    if (votesB > highestVotes) { highestVotes = votesB; topPlayer = b; }
-                    return votesB - votesA;
+                    if (votesB !== votesA) return votesB - votesA;
+                    if (a === topPlayer) return -1;
+                    if (b === topPlayer) return 1;
+                    return a.localeCompare(b);
                   });
 
                   if (highestVotes === 0) topPlayer = '';
@@ -594,14 +607,14 @@ export default function DisplayPage() {
                           return (
                             <div
                               key={playerIndex}
-                              className={`rounded-lg text-center font-semibold border-2 border-white shadow-md overflow-hidden transition-all duration-1000 flex items-center justify-center ${isLeader
-                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black transform scale-[1.05] z-10'
+                              className={`rounded-lg text-center border-2 border-white shadow-md overflow-hidden transition-all duration-1000 flex items-center justify-center ${isLeader
+                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black'
                                 : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
                                 }`}
                               style={{
                                 fontFamily: 'Barlow Semi Condensed, sans-serif',
-                                fontWeight: isLeader ? 700 : 500,
-                                fontSize: isLeader ? `min(40px, 4.5vh, calc(70vh / ${playerCount} * 0.55))` : `min(32px, 4vh, calc(70vh / ${playerCount} * 0.5))`,
+                                fontWeight: 400,
+                                fontSize: `min(32px, 4vh, calc(70vh / ${playerCount} * 0.5))`,
                                 flex: `0 1 auto`,
                                 height: `calc(70vh / ${Math.max(playerCount, 8)})`, // Distribute height smoothly
                                 minHeight: '30px',
