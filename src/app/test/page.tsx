@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { rankingService, teamService } from '@/lib/pocketbase';
 
+const APP_VERSION = 'v7.0';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -227,7 +229,7 @@ export default function TestPage() {
     const [speed, setSpeed] = useState(STEP_MS_DEFAULT);
     const [done, setDone] = useState(false);
     const [sessionError, setSessionError] = useState<string | null>(null);
-    const [tieBreakRule, setTieBreakRule] = useState<'first' | 'retry' | 'random'>('random');
+    const [tieBreakRule, setTieBreakRule] = useState<'first' | 'retry' | 'random'>('first');
 
     // Track player start times per slot
     const startTimes = useRef<Record<number, number>>({});
@@ -545,6 +547,7 @@ export default function TestPage() {
                 <div className="text-center mb-6">
                     <h1 className="text-3xl font-bold text-white tracking-widest uppercase">📱 Phone Simulator</h1>
                     <p className="text-white/50 text-sm mt-1">Simulates all players through the full on-boarding flow with real PocketBase calls</p>
+                    <div className="mt-1 text-white/30 text-xs font-mono">{APP_VERSION}-test</div>
                 </div>
 
                 {/* Session Info */}
@@ -666,13 +669,13 @@ export default function TestPage() {
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mt-4">
                         <h2 className="text-2xl font-bold text-white mb-4">🏆 Simulation Results</h2>
 
-                        {/* Ties warning */}
+                        {/* Ties */}
                         {analysis.ties.length > 0 && (
-                            <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-xl p-4 mb-4">
-                                <div className="text-yellow-300 font-bold mb-2">⚠️ Ties Detected!</div>
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+                                <div className="text-white font-bold mb-2">Ties resolved (first vote counts double):</div>
                                 {analysis.ties.map(tie => (
-                                    <div key={tie.teamNumber} className="text-yellow-200 text-sm mb-1">
-                                        <strong>Team {tie.teamNumber}:</strong> {tie.tiedPlayers.join(' vs ')} — both have {tie.votes} vote{tie.votes !== 1 ? 's' : ''}.
+                                    <div key={tie.teamNumber} className="text-white/70 text-sm mb-1">
+                                        Team {tie.teamNumber}: {tie.tiedPlayers.join(' / ')} — all {tie.votes} vote{tie.votes !== 1 ? 's' : ''}.
                                         <span className="ml-2 text-yellow-400 italic">
                                             {tieBreakRule === 'first' ? '→ First vote wins' :
                                                 tieBreakRule === 'retry' ? '→ Retry round required' :
@@ -688,13 +691,13 @@ export default function TestPage() {
                             {analysis.winners.sort((a, b) => a.team - b.team).map(w => (
                                 <div
                                     key={w.team}
-                                    className={`rounded-xl p-3 border ${w.isTie ? 'border-yellow-500/50 bg-yellow-900/20' : 'border-green-500/30 bg-green-900/20'}`}
+                                    className={`rounded-xl p-3 border ${w.isTie ? 'border-yellow-500/30 bg-white/5' : 'border-green-500/30 bg-green-900/20'}`}
                                 >
                                     <div className="text-white/50 text-xs uppercase tracking-widest mb-1">Team {w.team}</div>
                                     <div className={`font-bold text-sm ${w.isTie ? 'text-yellow-300' : 'text-green-300'}`}>
-                                        {w.isTie ? '⚠️ ' : '👑 '}{w.winner}
+                                        👑 {w.winner}
                                     </div>
-                                    <div className="text-white/40 text-xs">{w.votes} vote{w.votes !== 1 ? 's' : ''}</div>
+                                    <div className="text-white/40 text-xs">{w.votes} vote{w.votes !== 1 ? 's' : ''}{w.isTie ? ' (tie)' : ''}</div>
                                 </div>
                             ))}
                         </div>

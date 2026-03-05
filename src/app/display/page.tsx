@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v7.0';
+const APP_VERSION = 'v8.0';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -238,7 +238,8 @@ export default function DisplayPage() {
             console.log(`[Display] Switched to new active game session: ${fresh.id}`);
             return fresh;
           }
-          if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings) {
+          if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings
+            && fresh.team_leader_votes === (prev as Record<string, unknown>).team_leader_votes) {
             let changed = false;
             Object.values(FASES).forEach((mod) => {
               const sf = mod.stateField;
