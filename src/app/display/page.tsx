@@ -390,7 +390,7 @@ export default function DisplayPage() {
       {versionBadge}
       {/* Media overlay: plays current fase video/image when available */}
       {currentMedia && currentMedia.url && allowMediaOverlay && (
-        <div className="fixed inset-0 z-50 bg-black">
+        <div className={`fixed inset-0 z-50 bg-black ${!userEnabledSound ? 'pointer-events-none' : ''}`}>
           {currentMedia.type === 'video' ? (
             <video
               key={currentMedia.url}
