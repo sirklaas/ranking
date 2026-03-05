@@ -330,22 +330,28 @@ export default function TestPage() {
 
         if (!runningRef.current) return;
 
-        // Submit vote to PocketBase — always fetch FRESH state first to avoid race condition
+        // Submit vote via authenticated server-side PATCH — fetch fresh state first to avoid race condition
         try {
-            const freshSess = await rankingService.getSessionById(sess.id) as unknown as SessionData;
-            const currentVotesRaw = (freshSess?.team_leader_votes as string) || '{}';
+            const freshRes = await fetch(`/api/session-state?id=${sess.id}`);
+            const freshJson = await freshRes.json();
+            const currentVotesRaw = (freshJson?.session?.team_leader_votes as string) || '{}';
             const currentVotes = JSON.parse(currentVotesRaw);
             const teamKey = `team_${player.teamNumber}`;
             if (!currentVotes[teamKey]) currentVotes[teamKey] = {};
             if (!currentVotes[teamKey][leaderVote]) currentVotes[teamKey][leaderVote] = 0;
             currentVotes[teamKey][leaderVote] += 1;
 
-            await rankingService.updateSession(sess.id, { team_leader_votes: JSON.stringify(currentVotes) });
+            await fetch('/api/session-state', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: sess.id, data: { team_leader_votes: JSON.stringify(currentVotes) } }),
+            });
 
             upd(p => allLogs(p, `✅ Vote saved (${leaderVote}: ${currentVotes[teamKey][leaderVote]} total)`));
         } catch (e) {
             upd(p => allLogs(p, `⚠️ Vote save failed: ${e}`));
         }
+
 
         if (!runningRef.current) return;
 

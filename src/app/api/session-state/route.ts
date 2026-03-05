@@ -5,16 +5,13 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-// ── Server-side cache (3s TTL) ──────────────────────────────────────────────
-// ALL clients (display, presenter, phones) poll this route instead of hitting PB directly.
-// Only 1 PB call every 3 seconds regardless of how many clients there are.
+// ── Server-side cache (1s TTL) ──────────────────────────────────────────────
 let cachedSession: { data: Record<string, unknown>; ts: number; id: string; isLatest?: boolean } | null = null;
 const CACHE_TTL = 1000;
 
 /**
  * GET /api/session-state?id=<sessionId>
- * Returns full session record, cached server-side for 3s.
- * Eliminates ALL direct browser→PB calls.
+ * Returns full session record, cached server-side for 1s.
  */
 export async function GET(req: Request) {
   try {
@@ -50,10 +47,37 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: true, session: record });
   } catch (error) {
     console.error('[session-state] GET Error:', error);
-    // Return stale cache on error (better than nothing)
     if (cachedSession) {
       return NextResponse.json({ success: true, session: cachedSession.data, stale: true });
     }
     return NextResponse.json({ error: 'Failed to get session' }, { status: 500 });
+  }
+}
+
+/**
+ * PATCH /api/session-state
+ * Body: { id: string, data: Record<string, unknown> }
+ * Merges `data` into the session using server-side authenticated PocketBase.
+ * Used for teamleader votes and other client-initiated writes that need auth.
+ */
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, data } = body as { id: string; data: Record<string, unknown> };
+
+    if (!id || !data) {
+      return NextResponse.json({ error: 'Missing id or data' }, { status: 400 });
+    }
+
+    const pb = await getServerPocketBase();
+    const updated = await pb.collection('ranking').update(id, data, { $autoCancel: false });
+
+    // Invalidate cache so next GET returns fresh data immediately
+    cachedSession = null;
+
+    return NextResponse.json({ success: true, session: updated });
+  } catch (error) {
+    console.error('[session-state] PATCH Error:', error);
+    return NextResponse.json({ error: 'Failed to update session' }, { status: 500 });
   }
 }

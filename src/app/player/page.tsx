@@ -398,20 +398,23 @@ export default function PlayerPage() {
     if (!currentSession) return;
     setVotedTeamLeader(leaderName);
 
-    // Read current votes from session, add vote, save to session
     try {
-      const currentVotes = JSON.parse((currentSession.team_leader_votes as string) || '{}');
+      // Fetch the freshest vote state via server API (avoids stale data race)
+      const freshRes = await fetch(`/api/session-state?id=${currentSession.id}`);
+      const freshJson = await freshRes.json();
+      const freshVotesRaw = (freshJson?.session?.team_leader_votes as string) || '{}';
+      const currentVotes = JSON.parse(freshVotesRaw);
+
       const teamKey = `team_${teamNumber}`;
-      if (!currentVotes[teamKey]) {
-        currentVotes[teamKey] = {};
-      }
-      if (!currentVotes[teamKey][leaderName]) {
-        currentVotes[teamKey][leaderName] = 0;
-      }
+      if (!currentVotes[teamKey]) currentVotes[teamKey] = {};
+      if (!currentVotes[teamKey][leaderName]) currentVotes[teamKey][leaderName] = 0;
       currentVotes[teamKey][leaderName] += 1;
 
-      await rankingService.updateSession(currentSession.id, {
-        team_leader_votes: JSON.stringify(currentVotes)
+      // Write back via authenticated server-side PATCH (bypasses client PB auth)
+      await fetch('/api/session-state', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: currentSession.id, data: { team_leader_votes: JSON.stringify(currentVotes) } }),
       });
     } catch (e) {
       console.error('Failed to save team leader vote', e);
@@ -422,6 +425,7 @@ export default function PlayerPage() {
     setCurrentPhase('complete');
     setShowTeamInfo(true);
   };
+
 
   const handleNameSelection = (name: string) => {
     setSelectedPlayerName(name);
