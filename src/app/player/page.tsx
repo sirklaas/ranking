@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v6.9';
+const APP_VERSION = 'v7.0';
 
 interface RankingSession {
   id: string;
@@ -538,12 +538,12 @@ export default function PlayerPage() {
           </div>
         </div>
 
-        {/* Sections 4-6: Dynamic Heading with Typewriter Animation */}
-        <div className="row-span-3 flex items-center justify-center px-4">
+        {/* Sections 4-5: Dynamic Heading with Typewriter Animation */}
+        <div className="row-span-2 flex items-center justify-center px-4">
           <MemoTypewriterHeading
             lines={
               currentPhase === 'team' ? ['In welk team zit je?', 'Kijk op het grote scherm,', 'en vul dit hier in:'] :
-                currentPhase === 'photocircle_ask' ? ['Heb je een Photo circle', 'account aangemaakt?'] :
+                currentPhase === 'photocircle_ask' ? ['Heb je een PhotoCircle', 'account aangemaakt?'] :
                   currentPhase === 'name' ? ['Wat is jouw naam?'] :
                     currentPhase === 'teamleader' ? ['Wie kies jij', 'als Teamleider?'] :
                       (currentPhase === 'complete' && currentSession?.current_fase?.startsWith('01/')) ? ['Heel veel plezier vandaag', 'met de show!'] :
@@ -625,31 +625,35 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {/* Sections 7-12: Team Members Display (Name & Teamleader selection) */}
-        <div className="row-span-6 overflow-hidden w-full flex flex-col justify-start px-2">
+        {/* Sections 6-12: Team Members Display (Name & Teamleader selection) */}
+        <div className="row-span-7 overflow-hidden w-full flex flex-col px-2 pt-1">
           {(currentPhase === 'name' || currentPhase === 'teamleader') && teamMembers.length > 0 && (
-            <div className="w-full pt-2 pb-6">
-              <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto w-full">
+            <div className="w-full h-full flex flex-col">
+              <div
+                className="grid grid-cols-2 gap-[3px] max-w-sm mx-auto w-full h-full"
+                style={{ gridTemplateRows: `repeat(${Math.ceil(teamMembers.filter(m => !(currentPhase === 'teamleader' && m === selectedPlayerName)).length / 2)}, 1fr)` }}
+              >
                 {teamMembers.map((member, index) => {
                   // In teamleader phase, don't show the player's own name
                   if (currentPhase === 'teamleader' && member === selectedPlayerName) {
                     return null;
                   }
 
-                  const rowCount = Math.max(Math.ceil(teamMembers.length / 2), 1);
+                  const visibleCount = currentPhase === 'teamleader'
+                    ? teamMembers.filter(m => m !== selectedPlayerName).length
+                    : teamMembers.length;
+                  const rowCount = Math.max(Math.ceil(visibleCount / 2), 1);
 
                   return (
                     <button
                       key={`${member}-${currentPhase}`}
                       onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
-                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-[1.5px] border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all transform hover:scale-[1.03] flex items-center justify-center uppercase tracking-wide leading-tight"
+                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-md text-center font-bold border border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight min-h-0"
                       style={{
                         fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontSize: `min(1.1rem, calc(40vh / ${rowCount} * 0.4))`,
-                        animationDelay: `${index * 150}ms`,
+                        fontSize: `clamp(0.55rem, calc(55vh / ${rowCount} * 0.25), 1.1rem)`,
+                        animationDelay: `${index * 80}ms`,
                         animationFillMode: 'both',
-                        height: `min(60px, calc(45vh / ${rowCount}))`,
-                        minHeight: '28px',
                         padding: '2px 4px'
                       }}
                     >
@@ -668,7 +672,7 @@ export default function PlayerPage() {
         <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-1000 ${popupFadingOut ? 'opacity-0' : 'opacity-100'}`}>
           <div className="flex items-center justify-center px-4">
             <div
-              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-scale-in"
+              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-popup-grow"
               style={{
                 background: 'linear-gradient(135deg, #cc6344 0%, #cc8f5d 25%, #6782bb 50%, #6262ab 75%, #6fb7b3 100%)',
                 border: '4px solid white',
