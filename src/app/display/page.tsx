@@ -239,7 +239,7 @@ export default function DisplayPage() {
             return fresh;
           }
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings
-            && fresh.team_leader_votes === (prev as Record<string, unknown>).team_leader_votes) {
+            && fresh.teamleaders === (prev as Record<string, unknown>).teamleaders) {
             let changed = false;
             Object.values(FASES).forEach((mod) => {
               const sf = mod.stateField;
@@ -535,7 +535,7 @@ export default function DisplayPage() {
                 let topPlayer = '';
 
                 try {
-                  const currentVotes = JSON.parse((currentSession.team_leader_votes as string) || '{}');
+                  const currentVotes = JSON.parse((currentSession.teamleaders as string) || '{}');
                   const teamKey = `team_${teamNumber}`;
                   const teamVotes = currentVotes[teamKey] || {};
 

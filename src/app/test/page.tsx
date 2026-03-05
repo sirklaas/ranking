@@ -13,7 +13,7 @@ interface SessionData {
     playernames: string;
     nr_teams: number;
     nr_players: number;
-    team_leader_votes?: string;
+    teamleaders?: string;
     [key: string]: unknown;
 }
 
@@ -334,7 +334,7 @@ export default function TestPage() {
         try {
             const freshRes = await fetch(`/api/session-state?id=${sess.id}`);
             const freshJson = await freshRes.json();
-            const currentVotesRaw = (freshJson?.session?.team_leader_votes as string) || '{}';
+            const currentVotesRaw = (freshJson?.session?.teamleaders as string) || '{}';
             const currentVotes = JSON.parse(currentVotesRaw);
             const teamKey = `team_${player.teamNumber}`;
             if (!currentVotes[teamKey]) currentVotes[teamKey] = {};
@@ -344,7 +344,7 @@ export default function TestPage() {
             await fetch('/api/session-state', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: sess.id, data: { team_leader_votes: JSON.stringify(currentVotes) } }),
+                body: JSON.stringify({ id: sess.id, data: { teamleaders: JSON.stringify(currentVotes) } }),
             });
 
             upd(p => allLogs(p, `✅ Vote saved (${leaderVote}: ${currentVotes[teamKey][leaderVote]} total)`));
@@ -446,10 +446,8 @@ export default function TestPage() {
 
         // Assign first 4 players
         const initSess = { ...session };
-        initSess.team_leader_votes = '{}';
-
-        // Clear votes first
-        rankingService.updateSession(session.id, { team_leader_votes: '{}' }).catch(() => { });
+        fetch('/api/session-state', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: session.id, data: { teamleaders: '{}' } }) }).catch(() => { });
+        initSess.teamleaders = '{}';
 
         shuffled.slice(0, SLOT_COUNT).forEach((player, slotId) => {
             setTimeout(() => {

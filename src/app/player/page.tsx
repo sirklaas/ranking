@@ -402,7 +402,7 @@ export default function PlayerPage() {
       // Fetch the freshest vote state via server API (avoids stale data race)
       const freshRes = await fetch(`/api/session-state?id=${currentSession.id}`);
       const freshJson = await freshRes.json();
-      const freshVotesRaw = (freshJson?.session?.team_leader_votes as string) || '{}';
+      const freshVotesRaw = (freshJson?.session?.teamleaders as string) || '{}';
       const currentVotes = JSON.parse(freshVotesRaw);
 
       const teamKey = `team_${teamNumber}`;
@@ -414,7 +414,7 @@ export default function PlayerPage() {
       await fetch('/api/session-state', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: currentSession.id, data: { team_leader_votes: JSON.stringify(currentVotes) } }),
+        body: JSON.stringify({ id: currentSession.id, data: { teamleaders: JSON.stringify(currentVotes) } }),
       });
     } catch (e) {
       console.error('Failed to save team leader vote', e);
