@@ -32,7 +32,13 @@ export async function GET(req: Request) {
 
     if (sessionId === 'latest') {
       // Priority-based: find the session with priority=1 first
-      let records = await pb.collection('ranking').getList(1, 1, { filter: 'priority = 1', $autoCancel: false });
+      let records;
+      try {
+        records = await pb.collection('ranking').getList(1, 1, { filter: 'priority = 1', $autoCancel: false });
+      } catch {
+        // priority field may not exist yet — ignore
+        records = { items: [] };
+      }
       if (!records.items.length) {
         // Fallback: most recently updated
         records = await pb.collection('ranking').getList(1, 1, { sort: '-updated', $autoCancel: false });

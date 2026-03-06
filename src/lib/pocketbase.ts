@@ -168,10 +168,18 @@ export const rankingService = {
   async getAllSessions() {
     const pb = getPocketBase();
     if (!pb) throw new Error('PocketBase not available');
-    return await pb.collection('ranking').getFullList({
-      sort: '-priority,-updated',
-      requestKey: null,
-    });
+    // Try priority-based sort first; fall back if priority field doesn't exist yet
+    try {
+      return await pb.collection('ranking').getFullList({
+        sort: '-priority,-updated',
+        requestKey: null,
+      });
+    } catch {
+      return await pb.collection('ranking').getFullList({
+        sort: '-updated',
+        requestKey: null,
+      });
+    }
   },
 
   // Get ranking session by ID

@@ -58,6 +58,45 @@ export default function RankingSessionList({ onSessionSelect, refreshTrigger }: 
     }
   };
 
+  const togglePriority = async (sessionId: string, currentPriority: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // If this session is already priority, unset it. Otherwise set it and clear all others.
+      if (currentPriority === 1) {
+        await fetch('/api/session-state', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: sessionId, data: { priority: 0 } })
+        });
+        setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, priority: 0 } as RankingSession : s));
+      } else {
+        // Clear all others first
+        for (const s of sessions) {
+          if ((s as unknown as Record<string, unknown>).priority === 1) {
+            await fetch('/api/session-state', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: s.id, data: { priority: 0 } })
+            });
+          }
+        }
+        // Set this one
+        await fetch('/api/session-state', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: sessionId, data: { priority: 1 } })
+        });
+        setSessions(prev => prev.map(s =>
+          s.id === sessionId
+            ? { ...s, priority: 1 } as RankingSession
+            : { ...s, priority: 0 } as RankingSession
+        ));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle priority');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -130,7 +169,7 @@ export default function RankingSessionList({ onSessionSelect, refreshTrigger }: 
                     <p className="text-gray-600 text-sm mb-2">
                       {session.city} • {formatDate(session.created)}
                     </p>
-                    
+
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                       <span className="flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,7 +177,7 @@ export default function RankingSessionList({ onSessionSelect, refreshTrigger }: 
                         </svg>
                         {session.nr_players} players
                       </span>
-                      
+
                       {session.nr_teams > 0 && (
                         <span className="flex items-center">
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,7 +186,7 @@ export default function RankingSessionList({ onSessionSelect, refreshTrigger }: 
                           {session.nr_teams} teams
                         </span>
                       )}
-                      
+
                       {session.teamname && (
                         <span className="flex items-center">
                           <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +196,7 @@ export default function RankingSessionList({ onSessionSelect, refreshTrigger }: 
                         </span>
                       )}
                     </div>
-                    
+
                     {playerNames.length > 0 && (
                       <div className="mt-2">
                         <p className="text-xs text-gray-400 mb-1">Players:</p>
@@ -168,16 +207,33 @@ export default function RankingSessionList({ onSessionSelect, refreshTrigger }: 
                       </div>
                     )}
                   </div>
-                  
-                  <button
-                    onClick={(e) => handleDelete(session.id, e)}
-                    className="ml-4 text-red-500 hover:text-red-700 p-1"
-                    title="Delete session"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+
+                  <div className="flex items-center gap-2 ml-4">
+                    {/* Priority star toggle */}
+                    <button
+                      onClick={(e) => togglePriority(session.id, (session as unknown as Record<string, unknown>).priority as number || 0, e)}
+                      className={`p-2 rounded-lg transition-all ${(session as unknown as Record<string, unknown>).priority === 1
+                        ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100 scale-110'
+                        : 'text-gray-300 hover:text-yellow-400 hover:bg-gray-100'
+                        }`}
+                      title={(session as unknown as Record<string, unknown>).priority === 1 ? 'Active show (click to deactivate)' : 'Set as active show'}
+                    >
+                      <svg className="w-6 h-6" fill={(session as unknown as Record<string, unknown>).priority === 1 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </button>
+
+                    {/* Delete button */}
+                    <button
+                      onClick={(e) => handleDelete(session.id, e)}
+                      className="text-red-500 hover:text-red-700 p-1"
+                      title="Delete session"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
