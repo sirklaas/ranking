@@ -603,8 +603,9 @@ export default function DisplayPage() {
                     <div className="relative w-full px-1 pb-4" style={{ height: '70vh' }}>
                       {(() => {
                         const playerCount = Math.max(maxPlayersInAnyTeam, 1);
-                        // Calculate slot height (each card occupies one slot)
-                        const gap = 6; // gap in px between cards (matches gap-1.5)
+                        // Single consistent slot unit: total height / player count
+                        // Each slot = slotH tall. Card fills most of it, with a small gap.
+                        const gapPx = 4;
 
                         // Build a sorted index map: for each player, what visual slot should they be in?
                         const teamVotes = ((currentSession.teamleaders as Record<string, Record<string, number>> | null)?.[`team_${teamNumber}`]) || {};
@@ -629,6 +630,8 @@ export default function DisplayPage() {
                           const originalSlot = teamPlayers.indexOf(player);
                           const slotDiff = targetSlot - originalSlot;
 
+                          // slotH = 70vh / playerCount — one consistent unit
+                          // card top = originalSlot * slotH, card height = slotH - gapPx
                           return (
                             <div
                               key={player}
@@ -640,15 +643,11 @@ export default function DisplayPage() {
                                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                                 fontWeight: 400,
                                 fontSize: `min(32px, 4vh, calc(70vh / ${playerCount} * 0.5))`,
-                                height: `calc((70vh - ${(playerCount - 1) * gap}px) / ${Math.max(playerCount, 8)})`,
-                                minHeight: '30px',
-                                maxHeight: '55px',
+                                height: `calc(70vh / ${playerCount} - ${gapPx}px)`,
                                 padding: '0 4px',
                                 lineHeight: '1',
-                                // Position based on original slot
-                                top: `calc(${originalSlot} * (70vh / ${Math.max(playerCount, 8)} + ${gap}px))`,
-                                // Animate to target slot via transform
-                                transform: `translateY(calc(${slotDiff} * (70vh / ${Math.max(playerCount, 8)} + ${gap}px)))`,
+                                top: `calc(${originalSlot} * 70vh / ${playerCount})`,
+                                transform: `translateY(calc(${slotDiff} * 70vh / ${playerCount}))`,
                                 transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), background 1s ease, box-shadow 1s ease',
                                 boxShadow: isLeader ? '0 0 20px rgba(234, 179, 8, 0.5)' : undefined,
                               }}
