@@ -101,7 +101,7 @@ export const showResults = async (
     sessionId: string,
     currentState: Top10State
 ): Promise<Top10State> => {
-    const results = computeResults(currentState.currentQuestion.votes);
+    const results = computeResults(currentState?.currentQuestion?.votes || []);
 
     const newState: Top10State = {
         ...currentState,
@@ -167,17 +167,17 @@ export const setPlayerNames = async (
 
 // Get voters who have already voted
 export const getVoterNames = (state: Top10State): string[] => {
-    return state.currentQuestion.votes.map((v) => v.voterName);
+    return state?.currentQuestion?.votes?.map((v) => v.voterName) || [];
 };
 
 // Check if a specific player has voted
 export const hasPlayerVoted = (state: Top10State, playerId: string): boolean => {
-    return state.currentQuestion.votes.some((v) => v.voterId === playerId);
+    return state?.currentQuestion?.votes?.some((v) => v.voterId === playerId) || false;
 };
 
 // Get live tally (for real-time word cloud during voting)
 export const getLiveTally = (state: Top10State): Top10Result[] => {
-    const votes = state.currentQuestion.votes;
-    if (votes.length === 0) return [];
+    const votes = state?.currentQuestion?.votes;
+    if (!votes || votes.length === 0) return [];
     return computeResults(votes);
 };

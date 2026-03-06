@@ -120,7 +120,7 @@ export default function Top10Player({
     if (alreadyVoted || submitted) {
         const chosenName =
             selected ||
-            state.currentQuestion.votes.find((v) => v.voterId === playerId)
+            state?.currentQuestion?.votes?.find((v) => v.voterId === playerId)
                 ?.chosenPlayerName ||
             '';
         return (

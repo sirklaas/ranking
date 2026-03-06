@@ -128,7 +128,7 @@ export const showResults = async (
     }
   } catch (e) { console.warn('[top3] showResults fresh fetch error:', e); }
 
-  const results = computeResults(freshState.currentQuestion.votes);
+  const results = computeResults(freshState?.currentQuestion?.votes || []);
 
   const newState: Top3State = {
     ...freshState,
@@ -202,10 +202,10 @@ export const setPlayerNames = async (
 
 // Get voters who have already voted (for display: remove from name wall)
 export const getVoterNames = (state: Top3State): string[] => {
-  return state.currentQuestion.votes.map((v) => v.voterName);
+  return state?.currentQuestion?.votes?.map((v) => v.voterName) || [];
 };
 
 // Check if a specific player has voted
 export const hasPlayerVoted = (state: Top3State, playerId: string): boolean => {
-  return state.currentQuestion.votes.some((v) => v.voterId === playerId);
+  return state?.currentQuestion?.votes?.some((v) => v.voterId === playerId) || false;
 };
