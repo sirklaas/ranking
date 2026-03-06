@@ -547,6 +547,43 @@ export default function TestPage() {
     // ---------------------------------------------------------------------------
     // Render
     // ---------------------------------------------------------------------------
+    const simulateTopXVotes = useCallback(async (type: 'top3' | 'top10') => {
+        if (!session || !allPlayers.length) return;
+        setRunning(true);
+        const endpoint = type === 'top3' ? '/api/top3-vote' : '/api/top10-vote';
+
+        // Loop through every player and cast a random vote
+        for (let i = 0; i < allPlayers.length; i++) {
+            const voter = allPlayers[i];
+            // Pick a random player that is NOT the voter
+            const others = allPlayers.filter(p => p.name !== voter.name);
+            const chosen = others[Math.floor(Math.random() * others.length)];
+
+            try {
+                await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: session.id,
+                        voterId: voter.name,
+                        voterName: voter.name,
+                        teamNumber: voter.teamNumber,
+                        chosenPlayerId: chosen.name,
+                        chosenPlayerName: chosen.name
+                    })
+                });
+                console.log(`[Test] Simulated ${type} vote: ${voter.name} -> ${chosen.name}`);
+            } catch (e) {
+                console.error(`[Test] Failed to simulate vote for ${voter.name}:`, e);
+            }
+
+            // Random delay between votes so they stream in visually (0.5 to 1.5s)
+            await sleep(rand(500, 1500));
+        }
+        setRunning(false);
+        alert(`Finished simulating ${type.toUpperCase()} votes for all ${allPlayers.length} players!`);
+    }, [session, allPlayers]);
+
     return (
         <div
             className="min-h-screen"
@@ -600,62 +637,82 @@ export default function TestPage() {
                 )}
 
                 {/* Controls */}
-                <div className="flex flex-wrap gap-4 items-center mb-6 bg-white/5 border border-white/10 rounded-xl p-4">
-                    <div className="flex items-center gap-2">
-                        <span className="text-white/60 text-sm">Speed:</span>
-                        <select
-                            value={speed}
-                            onChange={e => setSpeed(Number(e.target.value))}
-                            disabled={running}
-                            className="bg-white/10 text-white rounded-lg px-3 py-1 text-sm border border-white/20 disabled:opacity-50"
-                        >
-                            <option value={300}>⚡ Very Fast (0.3s)</option>
-                            <option value={600}>🚀 Fast (0.6s)</option>
-                            <option value={900}>▶️ Normal (0.9s)</option>
-                            <option value={1800}>🐢 Slow (1.8s)</option>
-                            <option value={3000}>👁️ Watch (3s)</option>
-                        </select>
+                <div className="flex flex-col gap-4 mb-6 bg-white/5 border border-white/10 rounded-xl p-4">
+                    <div className="flex flex-wrap gap-4 items-center">
+                        <div className="flex items-center gap-2">
+                            <span className="text-white/60 text-sm">Speed:</span>
+                            <select
+                                value={speed}
+                                onChange={e => setSpeed(Number(e.target.value))}
+                                disabled={running}
+                                className="bg-white/10 text-white rounded-lg px-3 py-1 text-sm border border-white/20 disabled:opacity-50"
+                            >
+                                <option value={300}>⚡ Very Fast (0.3s)</option>
+                                <option value={600}>🚀 Fast (0.6s)</option>
+                                <option value={900}>▶️ Normal (0.9s)</option>
+                                <option value={1800}>🐢 Slow (1.8s)</option>
+                                <option value={3000}>👁️ Watch (3s)</option>
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <span className="text-white/60 text-sm">Tie-break:</span>
+                            <select
+                                value={tieBreakRule}
+                                onChange={e => setTieBreakRule(e.target.value as 'first' | 'retry' | 'random')}
+                                className="bg-white/10 text-white rounded-lg px-3 py-1 text-sm border border-white/20"
+                            >
+                                <option value="random">🎲 Random winner</option>
+                                <option value="first">1️⃣ First vote counts double</option>
+                                <option value="retry">🔄 Retry round</option>
+                            </select>
+                        </div>
+
+                        <div className="flex gap-3 ml-auto">
+                            {!running ? (
+                                <button
+                                    onClick={startSimulation}
+                                    disabled={!session || !allPlayers.length}
+                                    className="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-xl shadow-lg disabled:opacity-40 hover:scale-105 transition-transform active:scale-95"
+                                >
+                                    ▶ Start Config (Teamleaders)
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={stopSimulation}
+                                    className="px-6 py-2 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition-colors"
+                                >
+                                    ⏹ Stop
+                                </button>
+                            )}
+
+                            {done && (
+                                <button
+                                    onClick={exportResults}
+                                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform"
+                                >
+                                    📥 Export Results
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <span className="text-white/60 text-sm">Tie-break:</span>
-                        <select
-                            value={tieBreakRule}
-                            onChange={e => setTieBreakRule(e.target.value as 'first' | 'retry' | 'random')}
-                            className="bg-white/10 text-white rounded-lg px-3 py-1 text-sm border border-white/20"
+                    {/* New Simulators for Top 3 and Top 10 */}
+                    <div className="flex gap-4 pt-4 border-t border-white/10 mt-2">
+                        <button
+                            onClick={() => simulateTopXVotes('top3')}
+                            disabled={running || !session || !allPlayers.length}
+                            className="px-6 py-3 bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold rounded-xl shadow-lg disabled:opacity-40 hover:scale-105 transition-transform active:scale-95 flex-1"
                         >
-                            <option value="random">🎲 Random winner</option>
-                            <option value="first">1️⃣ First vote counts double</option>
-                            <option value="retry">🔄 Retry round</option>
-                        </select>
-                    </div>
-
-                    <div className="flex gap-3 ml-auto">
-                        {!running ? (
-                            <button
-                                onClick={startSimulation}
-                                disabled={!session || !allPlayers.length}
-                                className="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-xl shadow-lg disabled:opacity-40 hover:scale-105 transition-transform active:scale-95"
-                            >
-                                ▶ Start Simulation
-                            </button>
-                        ) : (
-                            <button
-                                onClick={stopSimulation}
-                                className="px-6 py-2 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition-colors"
-                            >
-                                ⏹ Stop
-                            </button>
-                        )}
-
-                        {done && (
-                            <button
-                                onClick={exportResults}
-                                className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-transform"
-                            >
-                                📥 Export Results
-                            </button>
-                        )}
+                            🎲 Simulate Top 3 Votes
+                        </button>
+                        <button
+                            onClick={() => simulateTopXVotes('top10')}
+                            disabled={running || !session || !allPlayers.length}
+                            className="px-6 py-3 bg-gradient-to-br from-orange-500 to-red-600 text-white font-bold rounded-xl shadow-lg disabled:opacity-40 hover:scale-105 transition-transform active:scale-95 flex-1"
+                        >
+                            🎲 Simulate Top 10 Votes
+                        </button>
                     </div>
                 </div>
 
