@@ -635,7 +635,7 @@ export default function PlayerPage() {
           {(currentPhase === 'name' || currentPhase === 'teamleader') && teamMembers.length > 0 && (
             <div className="w-full h-full flex flex-col">
               <div
-                className="grid grid-cols-2 gap-[3px] max-w-sm mx-auto w-full h-full"
+                className="grid grid-cols-2 gap-2 max-w-sm mx-auto w-full h-full pb-2"
                 style={{ gridTemplateRows: `repeat(${Math.ceil(teamMembers.filter(m => !(currentPhase === 'teamleader' && m === selectedPlayerName)).length / 2)}, 1fr)` }}
               >
                 {teamMembers.map((member, index) => {
@@ -653,13 +653,13 @@ export default function PlayerPage() {
                     <button
                       key={`${member}-${currentPhase}`}
                       onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
-                      className="bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-md text-center font-bold border border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight min-h-0"
+                      className="w-full h-full bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight"
                       style={{
                         fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontSize: `clamp(0.55rem, calc(55vh / ${rowCount} * 0.25), 1.1rem)`,
+                        fontSize: `clamp(14px, calc(45vh / ${rowCount} * 0.4), 28px)`,
                         animationDelay: `${index * 80}ms`,
                         animationFillMode: 'both',
-                        padding: '2px 4px'
+                        padding: '4px'
                       }}
                     >
                       <span className="truncate w-full px-1">{member}</span>
