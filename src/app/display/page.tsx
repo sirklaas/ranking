@@ -713,18 +713,19 @@ export default function DisplayPage() {
               lockedSessionId.current = sess.id;
               console.log('[Display] Locked session to:', sess.id);
 
-              // Empties scores and teamleaders as requested
-              // Step 1: Immediately clear React state so display is clean
+              // Empties scores and teamleaders
+              // Step 1: Immediately clear React state so display is clean RIGHT NOW
               setCurrentSession(prev => prev ? {
                 ...prev,
-                teamleaders: null,
+                teamleaders: {},
                 current_fase: '01/01',
                 top3_state: '{}',
                 top10_state: '{}',
                 krakende_state: '{}'
               } as unknown as RankingSession : prev);
 
-              // Step 2: Persist to PocketBase
+              // Step 2: Persist to PocketBase and use the PATCH *response* as ground truth
+              // (avoids stale edge cache on a separate GET)
               try {
                 await fetch(`/api/krakende-vote?sessionId=${sess.id}`, { method: 'DELETE' });
                 const patchRes = await fetch('/api/session-state', {
@@ -733,7 +734,7 @@ export default function DisplayPage() {
                   body: JSON.stringify({
                     id: sess.id,
                     data: {
-                      teamleaders: null,
+                      teamleaders: {},
                       current_fase: '01/01',
                       top3_state: '{}',
                       top10_state: '{}',
@@ -742,15 +743,12 @@ export default function DisplayPage() {
                   })
                 });
                 const patchJson = await patchRes.json();
-                console.log('[Display] PATCH result:', patchRes.status, patchJson);
-
-                // Step 3: Re-fetch to sync React with PB
-                const freshRes = await fetch(`/api/session-state?id=${sess.id}`);
-                const freshJson = await freshRes.json();
-                if (freshJson?.session) {
-                  setCurrentSession(freshJson.session as unknown as RankingSession);
+                console.log('[Display] PATCH result:', patchRes.status, JSON.stringify(patchJson?.session?.teamleaders));
+                // Use the PATCH response directly — no separate GET needed
+                if (patchJson?.session) {
+                  setCurrentSession(patchJson.session as unknown as RankingSession);
                 }
-                console.log('[Display] Hard reset complete — state refreshed');
+                console.log('[Display] Hard reset complete');
               } catch (e) {
                 console.error('[Display] Hard reset failed:', e);
               }
