@@ -290,12 +290,12 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
 }
 
 // Name wall: shows all player names, voted ones fade out
-function NameWall({ allNames, votedNames }: { allNames: string[]; votedNames: string[] }) {
+function NameWall({ allNames = [], votedNames = [] }: { allNames: string[]; votedNames: string[] }) {
   const votedSet = new Set(votedNames);
 
   return (
     <div className="flex flex-wrap gap-4 justify-center p-8">
-      {allNames.map((name, i) => {
+      {(allNames || []).map((name, i) => {
         const hasVoted = votedSet.has(name);
         return (
           <div

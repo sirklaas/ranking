@@ -270,6 +270,35 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
     );
 }
 
+// Name wall: shows all player names, voted ones fade out
+function NameWall({ allNames = [], votedNames = [] }: { allNames: string[]; votedNames: string[] }) {
+    const votedSet = new Set(votedNames);
+
+    return (
+        <div className="flex flex-wrap gap-4 justify-center p-8">
+            {(allNames || []).map((name, i) => {
+                const hasVoted = votedSet.has(name);
+                return (
+                    <div
+                        key={name}
+                        className="px-6 py-6 rounded-xl text-2xl bg-white/10 text-white transition-all duration-700 pointer-events-none"
+                        style={{
+                            fontFamily: 'Barlow Semi Condensed, sans-serif',
+                            fontWeight: 300,
+                            opacity: hasVoted ? 0 : 1,
+                            transform: hasVoted ? 'scale(0)' : 'scale(1)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            animation: hasVoted ? 'none' : `top10NameIn 0.4s ease-out ${i * 30}ms both`,
+                        }}
+                    >
+                        {formatName(name)}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 /* ──────── dynamic results item ──────── */
 function ResultItem({ result, index, show, total }: { result: Top10Result; index: number; show: boolean; total: number }) {
     const hash = hashStr(result.playerName);
@@ -443,7 +472,11 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
 
                 {/* Main content area */}
                 <div className="flex-1 flex items-stretch p-4">
-                    {phase === 'intro' ? null : phase === 'results' ? (
+                    {phase === 'intro' ? (
+                        <div className="flex-1 flex flex-wrap gap-4 items-center justify-center p-8">
+                            <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
+                        </div>
+                    ) : phase === 'results' ? (
                         <>
                             {/* Left: results list - anchored to bottom */}
                             <div className="absolute left-0 bottom-0 w-1/2" style={{ paddingBottom: '75px', paddingLeft: '16px' }}>
@@ -488,6 +521,6 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
           scrollbar-width: none;
         }
       `}</style>
-        </div>
+        </div >
     );
 }
