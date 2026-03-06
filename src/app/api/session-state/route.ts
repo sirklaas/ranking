@@ -31,7 +31,12 @@ export async function GET(req: Request) {
     let record;
 
     if (sessionId === 'latest') {
-      const records = await pb.collection('ranking').getList(1, 1, { sort: '-updated', $autoCancel: false });
+      // Priority-based: find the session with priority=1 first
+      let records = await pb.collection('ranking').getList(1, 1, { filter: 'priority = 1', $autoCancel: false });
+      if (!records.items.length) {
+        // Fallback: most recently updated
+        records = await pb.collection('ranking').getList(1, 1, { sort: '-updated', $autoCancel: false });
+      }
       record = records.items[0];
       if (!record) return NextResponse.json({ error: 'No active session' }, { status: 404 });
     } else {

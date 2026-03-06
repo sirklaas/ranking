@@ -700,7 +700,7 @@ export default function DisplayPage() {
               try {
                 // Delete all krakende votes
                 await fetch(`/api/krakende-vote?sessionId=${sess.id}`, { method: 'DELETE' });
-                // Reset teamleaders and fase to 01/01
+                // Reset teamleaders, all module states, and fase to 01/01
                 await fetch('/api/session-state', {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
@@ -708,7 +708,10 @@ export default function DisplayPage() {
                     id: sess.id,
                     data: {
                       teamleaders: {},
-                      current_fase: '01/01'
+                      current_fase: '01/01',
+                      top3_state: '{}',
+                      top10_state: '{}',
+                      krakende_state: '{}'
                     }
                   })
                 });
