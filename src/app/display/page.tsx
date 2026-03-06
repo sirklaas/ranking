@@ -545,39 +545,27 @@ export default function DisplayPage() {
                 const teamNumber = index + 1;
                 let teamPlayers = playersByTeam[teamNumber] || [];
 
-                // Sort players based on team leader votes
+                // Find top player for highlighting (with alphabetical tie-breaker)
                 let highestVotes = 0;
                 let topPlayer = '';
 
                 try {
                   const teamVotes = ((currentSession.teamleaders as Record<string, Record<string, number>> | null)?.[`team_${teamNumber}`]) || {};
 
-                  // Find top player first (with alphabetical tie-breaker)
                   teamPlayers.forEach(p => {
                     const v = teamVotes[p] || 0;
                     if (v > highestVotes) {
                       highestVotes = v;
                       topPlayer = p;
                     } else if (v === highestVotes && highestVotes > 0) {
-                      // Stable tie-breaker: alphabetical order ensures consistency across all screens
                       if (p < topPlayer) topPlayer = p;
                     }
-                  });
-
-                  // Sort players: highest votes first. If tied, ensure topPlayer is at very top, else alphabetical.
-                  teamPlayers.sort((a, b) => {
-                    const votesA = teamVotes[a] || 0;
-                    const votesB = teamVotes[b] || 0;
-                    if (votesB !== votesA) return votesB - votesA;
-                    if (a === topPlayer) return -1;
-                    if (b === topPlayer) return 1;
-                    return a.localeCompare(b);
                   });
 
                   if (highestVotes === 0) topPlayer = '';
 
                 } catch (e) {
-                  console.error('Failed to parse team leader votes for display sorting');
+                  console.error('Failed to parse team leader votes');
                 }
 
                 return (
@@ -611,35 +599,65 @@ export default function DisplayPage() {
                       </span>
                     </div>
 
-                    {/* Player Names */}
-                    <div className="flex flex-col gap-1.5 w-full px-1 justify-start pb-4" style={{ height: '70vh' }}>
+                    {/* Player Names — animated via transform, not array reorder */}
+                    <div className="relative w-full px-1 pb-4" style={{ height: '70vh' }}>
                       {(() => {
                         const playerCount = Math.max(maxPlayersInAnyTeam, 1);
-                        // Calculate max font size mathematically so 12+ players don't overflow the container
-                        return teamPlayers.map((player, playerIndex) => {
+                        // Calculate slot height (each card occupies one slot)
+                        const gap = 6; // gap in px between cards (matches gap-1.5)
+
+                        // Build a sorted index map: for each player, what visual slot should they be in?
+                        const teamVotes = ((currentSession.teamleaders as Record<string, Record<string, number>> | null)?.[`team_${teamNumber}`]) || {};
+
+                        // Create sorted order by votes
+                        const sortedPlayers = [...teamPlayers].sort((a, b) => {
+                          const votesA = teamVotes[a] || 0;
+                          const votesB = teamVotes[b] || 0;
+                          if (votesB !== votesA) return votesB - votesA;
+                          if (a === topPlayer) return -1;
+                          if (b === topPlayer) return 1;
+                          return a.localeCompare(b);
+                        });
+
+                        // Map each player to their target visual slot index
+                        const slotMap: Record<string, number> = {};
+                        sortedPlayers.forEach((p, i) => slotMap[p] = i);
+
+                        return teamPlayers.map((player) => {
                           const isLeader = player === topPlayer && highestVotes > 0;
+                          const targetSlot = slotMap[player] ?? 0;
+                          const originalSlot = teamPlayers.indexOf(player);
+                          const slotDiff = targetSlot - originalSlot;
 
                           return (
                             <div
-                              key={playerIndex}
-                              className={`rounded-lg text-center border-2 border-white shadow-md overflow-hidden transition-all duration-1000 flex items-center justify-center ${isLeader
-                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black'
+                              key={player}
+                              className={`absolute left-1 right-1 rounded-lg text-center border-2 border-white shadow-md overflow-hidden flex items-center justify-center ${isLeader
+                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black z-10'
                                 : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
                                 }`}
                               style={{
                                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                                 fontWeight: 400,
                                 fontSize: `min(32px, 4vh, calc(70vh / ${playerCount} * 0.5))`,
-                                flex: `0 1 auto`,
-                                height: `calc(70vh / ${Math.max(playerCount, 8)})`, // Distribute height smoothly
+                                height: `calc((70vh - ${(playerCount - 1) * gap}px) / ${Math.max(playerCount, 8)})`,
                                 minHeight: '30px',
-                                maxHeight: '55px', // Prevents them from becoming gigantic rectangles on small teams
+                                maxHeight: '55px',
                                 padding: '0 4px',
-                                lineHeight: '1'
+                                lineHeight: '1',
+                                // Position based on original slot
+                                top: `calc(${originalSlot} * (70vh / ${Math.max(playerCount, 8)} + ${gap}px))`,
+                                // Animate to target slot via transform
+                                transform: `translateY(calc(${slotDiff} * (70vh / ${Math.max(playerCount, 8)} + ${gap}px)))`,
+                                transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), background 1s ease, box-shadow 1s ease',
+                                boxShadow: isLeader ? '0 0 20px rgba(234, 179, 8, 0.5)' : undefined,
                               }}
                             >
                               <span className="block truncate w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                                {isLeader && <span className="mr-2">👑</span>}
+                                {isLeader && <span className="mr-2" style={{
+                                  display: 'inline-block',
+                                  animation: isLeader ? 'crownReveal 1s ease-out' : 'none'
+                                }}>👑</span>}
                                 {player}
                               </span>
                             </div>
