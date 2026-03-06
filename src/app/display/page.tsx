@@ -715,7 +715,13 @@ export default function DisplayPage() {
                     }
                   })
                 });
-                console.log('[Display] Hard reset complete');
+                // Immediately fetch the freshly-cleared session so React state is clean
+                const freshRes = await fetch(`/api/session-state?id=${sess.id}`);
+                const freshJson = await freshRes.json();
+                if (freshJson?.session) {
+                  setCurrentSession(freshJson.session as unknown as RankingSession);
+                }
+                console.log('[Display] Hard reset complete — state refreshed');
               } catch (e) {
                 console.error('[Display] Hard reset failed:', e);
               }
