@@ -80,15 +80,23 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Missing id or data' }, { status: 400 });
     }
 
+    console.log('[session-state] PATCH input:', id, JSON.stringify(data));
+
     const pb = await getServerPocketBase();
     const updated = await pb.collection('ranking').update(id, data, { $autoCancel: false });
+
+    console.log('[session-state] PATCH updated teamleaders:', JSON.stringify((updated as Record<string, unknown>).teamleaders));
+
+    // Verify: re-read to confirm PB persisted the change
+    const verify = await pb.collection('ranking').getOne(id, { $autoCancel: false });
+    console.log('[session-state] PATCH verify teamleaders:', JSON.stringify((verify as Record<string, unknown>).teamleaders));
 
     // Invalidate cache so next GET returns fresh data immediately
     cachedSession = null;
 
-    return NextResponse.json({ success: true, session: updated });
+    return NextResponse.json({ success: true, session: verify });
   } catch (error) {
     console.error('[session-state] PATCH Error:', error);
-    return NextResponse.json({ error: 'Failed to update session' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update session', detail: String(error) }, { status: 500 });
   }
 }
