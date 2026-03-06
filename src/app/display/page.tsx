@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v8.4';
+const APP_VERSION = 'v8.5';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -404,6 +404,7 @@ export default function DisplayPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
       {versionBadge}
+
       {/* Media overlay: plays current fase video/image when available */}
       {currentMedia && currentMedia.url && allowMediaOverlay && (
         <div className={`fixed inset-0 z-50 bg-black ${!userEnabledSound ? 'pointer-events-none' : ''}`}>
@@ -687,85 +688,110 @@ export default function DisplayPage() {
       </div>
 
       {/* Forced Interaction Overlay to Unlock Sound */}
-      {isMounted && !userEnabledSound && (
-        <div
-          onClick={async () => {
-            soundUnlockedRef.current = true;
-            setUserEnabledSound(true);
-            console.log('[Display] Start clicked — running hard reset');
+      {isMounted && !userEnabledSound && <div
+        className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center"
+      >
+        <h2 className="text-white text-3xl font-light mb-12 tracking-widest pointer-events-none">Display Systeem</h2>
 
-            // Audio unlock
-            try {
-              const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-              const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
-              if (AC) {
-                const ctx = new AC();
-                const buf = ctx.createBuffer(1, 1, 22050);
-                const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
-                if (ctx.state === 'suspended') ctx.resume().catch(() => { });
-              }
-            } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
+        <div className="flex gap-6">
+          {/* Safe Start Button */}
+          <button
+            onMouseDown={(e) => e.stopPropagation()} // Prevent global unlock from swallowing click
+            onClick={async () => {
+              soundUnlockedRef.current = true;
+              setUserEnabledSound(true);
+              console.log('[Display] Resume clicked — enabling audio only');
 
-            // HARD RESET AND LOCK
-            const sess = currentSessionRef.current;
-            if (sess) {
-              // Lock the ID tightly
-              lockedSessionId.current = sess.id;
-              console.log('[Display] Locked session to:', sess.id);
-
-              // Empties scores and teamleaders
-              // Step 1: Immediately clear React state so display is clean RIGHT NOW
-              setCurrentSession(prev => prev ? {
-                ...prev,
-                teamleaders: {},
-                current_fase: '01/01',
-                top3_state: '{}',
-                top10_state: '{}',
-                krakende_state: '{}'
-              } as unknown as RankingSession : prev);
-
-              // Step 2: Persist to PocketBase and use the PATCH *response* as ground truth
-              // (avoids stale edge cache on a separate GET)
               try {
-                await fetch(`/api/krakende-vote?sessionId=${sess.id}`, { method: 'DELETE' });
-                const patchRes = await fetch('/api/session-state', {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    id: sess.id,
-                    data: {
-                      teamleaders: {},
-                      current_fase: '01/01',
-                      top3_state: '{}',
-                      top10_state: '{}',
-                      krakende_state: '{}'
-                    }
-                  })
-                });
-                const patchJson = await patchRes.json();
-                console.log('[Display] PATCH result:', patchRes.status, JSON.stringify(patchJson?.session?.teamleaders));
-                // Use the PATCH response directly — no separate GET needed
-                if (patchJson?.session) {
-                  setCurrentSession(patchJson.session as unknown as RankingSession);
+                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
+                if (AC) {
+                  const ctx = new AC();
+                  const buf = ctx.createBuffer(1, 1, 22050);
+                  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
+                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
                 }
-                console.log('[Display] Hard reset complete');
-              } catch (e) {
-                console.error('[Display] Hard reset failed:', e);
-              }
-            }
-          }}
-          className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center cursor-pointer pointer-events-auto"
-        >
-          <h2 className="text-white text-3xl font-light mb-8 tracking-widest pointer-events-none">Display Systeem</h2>
-          <div
-            className="px-12 py-8 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-3xl text-4xl shadow-[0_0_50px_rgba(236,72,153,0.5)] flex flex-col items-center gap-2 pointer-events-none animate-pulse"
+              } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
+            }}
+            className="px-10 py-6 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-2xl text-2xl transition-all shadow-lg flex flex-col items-center gap-2 cursor-pointer"
             style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
           >
-            <span>▶ KLIK ERGENS OM TE STARTEN</span>
-            <span className="text-xl font-normal opacity-80">(Activeert geluid voor de rest van de sessie)</span>
-          </div>
+            <span>▶ START / RESUME</span>
+            <span className="text-sm font-normal opacity-80">(Alleen geluid activeren)</span>
+          </button>
+
+          {/* Hard Reset Button */}
+          <button
+            onMouseDown={(e) => e.stopPropagation()} // Prevent global unlock from swallowing click
+            onClick={async () => {
+              // Confirm dialog to prevent accidental wipes
+              if (!window.confirm("WEET JE ZEKER DAT JE ALLES WILT WISSEN?\n\nDit wist alle scores, teamleaders, top 3, top 10 en krakende karakters.")) return;
+
+              soundUnlockedRef.current = true;
+              setUserEnabledSound(true);
+              console.log('[Display] Reset clicked — running hard reset');
+
+              // Audio unlock
+              try {
+                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
+                if (AC) {
+                  const ctx = new AC();
+                  const buf = ctx.createBuffer(1, 1, 22050);
+                  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
+                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
+                }
+              } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
+
+              // HARD RESET AND LOCK
+              const sess = currentSessionRef.current;
+              if (sess) {
+                lockedSessionId.current = sess.id;
+
+                // Step 1: Instant React clear
+                setCurrentSession(prev => prev ? {
+                  ...prev,
+                  teamleaders: {},
+                  current_fase: '01/01',
+                  top3_state: '{}',
+                  top10_state: '{}',
+                  krakende_state: '{}'
+                } as unknown as RankingSession : prev);
+
+                // Step 2: PB Persist
+                try {
+                  await fetch(`/api/krakende-vote?sessionId=${sess.id}`, { method: 'DELETE' });
+                  const patchRes = await fetch('/api/session-state', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      id: sess.id,
+                      data: {
+                        teamleaders: {},
+                        current_fase: '01/01',
+                        top3_state: '{}',
+                        top10_state: '{}',
+                        krakende_state: '{}'
+                      }
+                    })
+                  });
+                  const patchJson = await patchRes.json();
+                  if (patchJson?.session) {
+                    setCurrentSession(patchJson.session as unknown as RankingSession);
+                  }
+                } catch (e) {
+                  console.error('[Display] Hard reset failed:', e);
+                }
+              }
+            }}
+            className="px-10 py-6 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-2xl text-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.5)] flex flex-col items-center gap-2 cursor-pointer"
+            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+          >
+            <span>♻️ NIEUWE SHOW</span>
+            <span className="text-sm font-normal opacity-80">(Wist ALLE score data)</span>
+          </button>
         </div>
-      )}
+      </div>}
     </div>
   );
 }
