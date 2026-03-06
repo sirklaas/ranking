@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v8.5';
+const APP_VERSION = 'v8.6';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -171,9 +171,9 @@ export default function DisplayPage() {
       }, 100);
     };
 
-    // Attach global listeners for touch/click anywhere
-    document.addEventListener('mousedown', forceUnlockAudio, { capture: true, once: true });
-    document.addEventListener('touchstart', forceUnlockAudio, { capture: true, once: true });
+    // Removed global mousedown/touchstart listeners.
+    // The explicit Start buttons on the overlay now handle audio unlocking,
+    // preventing the overlay from unmounting before the click event finishes.
 
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
