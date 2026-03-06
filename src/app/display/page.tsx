@@ -714,17 +714,26 @@ export default function DisplayPage() {
               console.log('[Display] Locked session to:', sess.id);
 
               // Empties scores and teamleaders as requested
+              // Step 1: Immediately clear React state so display is clean
+              setCurrentSession(prev => prev ? {
+                ...prev,
+                teamleaders: null,
+                current_fase: '01/01',
+                top3_state: '{}',
+                top10_state: '{}',
+                krakende_state: '{}'
+              } as unknown as RankingSession : prev);
+
+              // Step 2: Persist to PocketBase
               try {
-                // Delete all krakende votes
                 await fetch(`/api/krakende-vote?sessionId=${sess.id}`, { method: 'DELETE' });
-                // Reset teamleaders, all module states, and fase to 01/01
-                await fetch('/api/session-state', {
+                const patchRes = await fetch('/api/session-state', {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     id: sess.id,
                     data: {
-                      teamleaders: {},
+                      teamleaders: null,
                       current_fase: '01/01',
                       top3_state: '{}',
                       top10_state: '{}',
@@ -732,7 +741,10 @@ export default function DisplayPage() {
                     }
                   })
                 });
-                // Immediately fetch the freshly-cleared session so React state is clean
+                const patchJson = await patchRes.json();
+                console.log('[Display] PATCH result:', patchRes.status, patchJson);
+
+                // Step 3: Re-fetch to sync React with PB
                 const freshRes = await fetch(`/api/session-state?id=${sess.id}`);
                 const freshJson = await freshRes.json();
                 if (freshJson?.session) {
