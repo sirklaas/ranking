@@ -549,6 +549,23 @@ export default function TestPage() {
     // ---------------------------------------------------------------------------
     const simulateTopXVotes = useCallback(async (type: 'top3' | 'top10') => {
         if (!session || !allPlayers.length) return;
+
+        // Check phase
+        const stateStr = type === 'top3' ? session.top3_state : session.top10_state;
+        if (!stateStr) {
+            alert(`Start ${type} on the presenter screen first! (state missing)`);
+            return;
+        }
+        try {
+            const stateObj = typeof stateStr === 'string' ? JSON.parse(stateStr as string) : stateStr;
+            if (stateObj?.currentQuestion?.phase !== 'voting') {
+                alert(`You can only simulate votes when ${type.toUpperCase()} is in the 'voting' phase! Current phase: ${stateObj?.currentQuestion?.phase}`);
+                return;
+            }
+        } catch (e) {
+            console.error("Failed to parse state", e);
+        }
+
         setRunning(true);
         const endpoint = type === 'top3' ? '/api/top3-vote' : '/api/top10-vote';
 
