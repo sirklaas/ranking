@@ -12,9 +12,9 @@ interface Top10PresenterProps {
 }
 
 export default function Top10Presenter({ sessionId, state, onStateChange }: Top10PresenterProps) {
-    const phase = state.currentQuestion.phase;
-    const votes = state.currentQuestion.votes;
-    const totalPlayers = state.allPlayerNames.length;
+    const phase = state?.currentQuestion?.phase || 'intro';
+    const votes = state?.currentQuestion?.votes || [];
+    const totalPlayers = state?.allPlayerNames?.length || 0;
     const votedCount = votes.length;
 
     const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
@@ -73,7 +73,7 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
                     </h3>
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-blue-300">
-                            Fase: {PHASE_LABELS[phase]}
+                            Fase: {PHASE_LABELS[phase as keyof typeof PHASE_LABELS]}
                         </span>
                         <span className={`text-sm font-bold ${votedCount >= totalPlayers ? 'text-blue-400' : 'text-blue-300'}`}>
                             Stemmen: {votedCount}/{totalPlayers}
@@ -105,7 +105,7 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
             </div>
 
             {/* Results Preview (Keep for Presenter to see) */}
-            {phase === 'results' && state.currentQuestion.results.length > 0 && (
+            {phase === 'results' && state?.currentQuestion?.results && state.currentQuestion.results.length > 0 && (
                 <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
                     <h4 className="text-white font-bold text-lg mb-3 tracking-wider">
                         Resultaten ({state.currentQuestion.results.length})

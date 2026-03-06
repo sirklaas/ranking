@@ -31,15 +31,15 @@ export default function Top3Player({
   useEffect(() => {
     setSubmitted(false);
     setSelected(null);
-  }, [state.currentQuestion.questionIndex]);
+  }, [state?.currentQuestion?.questionIndex]);
 
   // Also reset if the server state clears the votes (e.g. game reset / presenter starts vote phase again)
   useEffect(() => {
-    if (state.currentQuestion.votes.length === 0) {
+    if (state?.currentQuestion?.votes?.length === 0) {
       setSubmitted(false);
       setSelected(null);
     }
-  }, [state.currentQuestion.votes.length]);
+  }, [state?.currentQuestion?.votes?.length]);
 
   const alreadyVoted = hasPlayerVoted(state, playerId);
 
@@ -61,8 +61,8 @@ export default function Top3Player({
     `;
     document.head.appendChild(s);
   }, []);
-  const isVoting = state.currentQuestion.phase === 'voting';
-  const isResults = state.currentQuestion.phase === 'results';
+  const isVoting = state?.currentQuestion?.phase === 'voting';
+  const isResults = state?.currentQuestion?.phase === 'results';
 
   // Filter out the current player from the list
   const otherPlayers = state.allPlayerNames.filter(

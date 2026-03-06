@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endgame Presenter | Ranking Control</title>
+  <meta name="description" content="Presenter control interface for Endgame presentation system">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700&family=Inter:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="container">
+    <header class="header">
+      <a href="display.html" target="_blank" class="open-display-btn">Open Display ↗</a>
+      <button id="endTitleBtn" class="endtitle-btn">Show End Title</button>
+      <h1>Endgame Presenter</h1>
+    </header>
+
+    <div id="cardsGrid" class="cards-grid">
+      <!-- Cards will be dynamically inserted here -->
+    </div>
+
+    <div class="instructions">
+      <div class="instruction-item">
+        <span>Click Card</span>
+        <span>Select & Show First Frame</span>
+      </div>
+      <div class="instruction-item">
+        <span class="key">→</span>
+        <span>Play Video</span>
+      </div>
+      <div class="instruction-item">
+        <span class="key">→</span>
+        <span>Return to Grid</span>
+      </div>
+    </div>
+
+    <button id="resetBtn" class="reset-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+      Reset All
+    </button>
+  </div>
+
+  <!-- Hidden audio player for presenter -->
+  <audio id="audioPlayer" style="display: none;"></audio>
+  
+  <!-- End title audio player -->
+  <audio id="endTitleAudioPlayer" style="display: none;">
+    <source src="Lawineboys.m4a" type="audio/mp4">
+  </audio>
+
+  <script src="app.js"></script>
+  <script>
+    // Presenter-specific logic
+    const state = new EndgameState();
+    const cardsGrid = document.getElementById('cardsGrid');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const endTitleAudioPlayer = document.getElementById('endTitleAudioPlayer');
+
+    // Render cards
+    function renderCards() {
+      cardsGrid.innerHTML = cards.map(card => `
+        <div class="card ${state.isCardUsed(card.id) ? 'used' : ''}" data-card-id="${card.id}">
+          <div class="card-content">
+            <img src="${card.image}" alt="${card.name}" class="card-image">
+            <div class="card-label">${card.name}</div>
+          </div>
+        </div>
+      `).join('');
+
+      // Attach click handlers
+      document.querySelectorAll('.card').forEach(cardElement => {
+        cardElement.addEventListener('click', () => {
+          const cardId = cardElement.dataset.cardId;
+          handleCardClick(cardId);
+        });
+      });
+    }
+
+    // Handle card selection
+    function handleCardClick(cardId) {
+      if (state.playbackState !== 'grid') return;
+      if (state.isCardUsed(cardId)) return;
+
+      const card = getCardById(cardId);
+      if (!card) return;
+
+      // Update state - just select, don't show video here
+      if (state.selectCard(cardId)) {
+        updateUI();
+      }
+    }
+
+    // Handle keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleRightArrow();
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        handleReset();
+      }
+    });
+
+    // Reset Button Click Handler
+    document.getElementById('resetBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      handleReset();
+    });
+
+    function handleRightArrow() {
+      console.log('Right arrow pressed. Current state:', state.playbackState);
+      if (state.playbackState === 'paused') {
+        // Play video (on display) and audio (on presenter)
+        console.log('Calling playVideo()');
+        state.playVideo();
+        console.log('State after playVideo():', state.playbackState);
+        
+        // Play audio on presenter
+        const card = getCardById(state.selectedCard);
+        if (card && card.video) {
+          audioPlayer.src = card.video;
+          audioPlayer.currentTime = 0;
+          audioPlayer.play().catch(e => console.error('Error playing audio:', e));
+          console.log('Playing audio on presenter:', card.name);
+        }
+      } else if (state.playbackState === 'playing') {
+        // Return to grid
+        console.log('Returning to grid');
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        state.returnToGrid();
+        updateUI();
+      }
+    }
+
+    function handleReset() {
+      if (confirm('Reset all cards? This will clear all used cards.')) {
+        state.reset();
+        updateUI();
+      }
+    }
+
+    function handleEndTitle() {
+      // Set state to show end title
+      state.showEndTitle();
+      console.log('End title triggered');
+      
+      // Play audio on presenter after 2 second delay
+      setTimeout(() => {
+        endTitleAudioPlayer.currentTime = 0;
+        endTitleAudioPlayer.play().catch(e => console.error('Error playing end title audio:', e));
+        console.log('End title audio playing on presenter');
+      }, 2000);
+    }
+
+    // End Title Button Click Handler
+    document.getElementById('endTitleBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      handleEndTitle();
+    });
+
+    // Update UI based on state
+    function updateUI() {
+      renderCards();
+
+      // Update selected card highlighting
+      document.querySelectorAll('.card').forEach(cardElement => {
+        const cardId = cardElement.dataset.cardId;
+        updateCardVisuals(cardElement, cardId, state);
+      });
+    }
+
+    // Initial render
+    renderCards();
+
+    // Log for debugging
+    console.log('Presenter initialized. State:', state);
+    console.log('Open display.html in another window to see synchronized view');
+  </script>
+
+  // Initial render
+  renderCards();
+
+  // Log for debugging
+  console.log('Presenter initialized. State:', state);
+  console.log('Open display.html in another window to see synchronized view');
+  </script>
+</body>
+
+</html>

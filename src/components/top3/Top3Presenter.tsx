@@ -13,9 +13,9 @@ interface Top3PresenterProps {
 }
 
 export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onStateChange }: Top3PresenterProps) {
-  const phase = state.currentQuestion.phase;
-  const votes = state.currentQuestion.votes;
-  const totalPlayers = state.allPlayerNames.length;
+  const phase = state?.currentQuestion?.phase || 'intro';
+  const votes = state?.currentQuestion?.votes || [];
+  const totalPlayers = state?.allPlayerNames?.length || 0;
   const votedCount = votes.length;
 
   const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
@@ -35,25 +35,21 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
     onStateChange(newState);
   }, [sessionId, state, onStateChange]);
 
-  // Keyboard shortcuts: V = start voting, R = show results
+  // Keyboard shortcuts: V = start voting
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
+      // Don't trigger if user is typing in an input field (though none exist here yet)
       if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
 
       if ((e.key === 'v' || e.key === 'V') && phase !== 'voting' && phase !== 'results') {
         e.preventDefault();
         handleStartVoting();
       }
-      if ((e.key === 'r' || e.key === 'R') && phase === 'voting') {
-        e.preventDefault();
-        handleShowResults();
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [phase, handleStartVoting, handleShowResults]);
+  }, [phase, handleStartVoting]);
 
   const PHASE_LABELS = {
     intro: 'Intro',
@@ -82,7 +78,7 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
         )}
 
         {/* Results preview */}
-        {phase === 'results' && state.currentQuestion.results.length > 0 && (
+        {phase === 'results' && state?.currentQuestion?.results && state.currentQuestion.results.length > 0 && (
           <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
             <h4 className="text-white font-bold text-lg mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
               Top 3 Resultaten
@@ -115,7 +111,7 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
             </h3>
             <div className="flex items-center gap-3">
               <span className="text-sm text-blue-300">
-                Vraag {state.currentQuestion.questionIndex + 1} &bull; Fase: {PHASE_LABELS[phase]}
+                Vraag {(state?.currentQuestion?.questionIndex || 0) + 1} &bull; Fase: {PHASE_LABELS[phase as keyof typeof PHASE_LABELS]}
               </span>
               <span className="text-sm text-blue-300">
                 Stemmen: {votedCount}/{totalPlayers}

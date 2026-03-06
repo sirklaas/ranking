@@ -339,8 +339,8 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
 
 /* ──────── main display component ──────── */
 export default function Top10Display({ state, heading, mediaUrl, faseKey, sessionId }: Top10DisplayProps) {
-    const phase = state.currentQuestion.phase;
-    const votedNames = getVoterNames(state);
+    const phase = state?.currentQuestion?.phase || 'intro';
+    const votedNames = state ? getVoterNames(state) : [];
     const liveTally = useMemo(() => getLiveTally(state), [state]);
     const [animateCloud, setAnimateCloud] = useState(false);
     const prevPhaseRef = useRef(phase);

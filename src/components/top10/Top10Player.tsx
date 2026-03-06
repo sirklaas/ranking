@@ -44,17 +44,19 @@ export default function Top10Player({
     const [query, setQuery] = useState('');
     const [selected, setSelected] = useState<string | null>(null);
     const [submitted, setSubmitted] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
 
     // Reset local submitted state if questionIndex changes (prevents "Je hebt gestemd" lingering on next slide)
     React.useEffect(() => {
         setSubmitted(false);
         setSelected(null);
         setQuery('');
-    }, [state.currentQuestion.questionIndex]);
-    const [showDropdown, setShowDropdown] = useState(false);
+    }, [state?.currentQuestion?.questionIndex]);
+
+    const isVoting = state?.currentQuestion?.phase === 'voting';
+    const isResults = state?.currentQuestion?.phase === 'results';
+
     const alreadyVoted = hasPlayerVoted(state, playerId);
-    const isVoting = state.currentQuestion.phase === 'voting';
-    const isResults = state.currentQuestion.phase === 'results';
 
     // Filter out the current player and match query
     const otherPlayers = useMemo(

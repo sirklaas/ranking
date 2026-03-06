@@ -346,8 +346,8 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
 }
 
 export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3DisplayProps) {
-  const phase = state.currentQuestion.phase;
-  const votedNames = getVoterNames(state);
+  const phase = state?.currentQuestion?.phase || 'intro';
+  const votedNames = state ? getVoterNames(state) : [];
   const [animateResults, setAnimateResults] = useState(false);
 
   const displayHeading = (faseKey && TOP3_HEADINGS[faseKey]) || heading;

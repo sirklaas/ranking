@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endgame Display | Ranking Presentation</title>
+    <meta name="description" content="Display view for Endgame presentation system - for beamer/large screen">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="display-mode">
+    <div class="container">
+        <!-- Header removed for display mode -->
+
+        <div id="cardsGrid" class="cards-grid">
+            <!-- Cards will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <!-- Video Container -->
+    <div id="videoContainer" class="video-container">
+        <div class="video-wrapper">
+            <video id="videoPlayer" class="video-player" playsinline muted></video>
+        </div>
+    </div>
+
+    <!-- End Title Container -->
+    <div id="endTitleContainer" class="endtitle-container">
+        <video id="endTitleVideo" class="endtitle-video" playsinline muted autoplay loop>
+            <source src="end.m4v" type="video/mp4">
+        </video>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Display-specific logic (synchronized with presenter)
+        const state = new EndgameState();
+        const cardsGrid = document.getElementById('cardsGrid');
+        const videoContainer = document.getElementById('videoContainer');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoController = new VideoController(videoPlayer, null);
+        const endTitleContainer = document.getElementById('endTitleContainer');
+        const endTitleVideo = document.getElementById('endTitleVideo');
+
+        let currentState = null;
+
+        // Automatic Fullscreen Logic
+        function enterFullscreen() {
+            const elem = document.documentElement;
+            if (!document.fullscreenElement) {
+                elem.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            }
+        }
+
+        // Attempt on load
+        window.addEventListener('load', () => {
+            setTimeout(enterFullscreen, 1000);
+        });
+
+        // Fallback: Click anywhere to enter fullscreen
+        document.addEventListener('click', () => {
+            enterFullscreen();
+        });
+
+        // Render cards
+        function renderCards() {
+            cardsGrid.innerHTML = cards.map(card => `
+        <div class="card ${state.isCardUsed(card.id) ? 'used' : ''}" data-card-id="${card.id}">
+          <div class="card-content">
+            <img src="${card.image}" alt="${card.name}" class="card-image">
+            <div class="card-label">${card.name}</div>
+          </div>
+        </div>
+      `).join('');
+        }
+
+        // Update UI based on state
+        function updateUI() {
+            console.log('Display updateUI called. State:', state.playbackState, 'Card:', state.selectedCard);
+            renderCards();
+
+            // Update selected card highlighting
+            document.querySelectorAll('.card').forEach(cardElement => {
+                const cardId = cardElement.dataset.cardId;
+                updateCardVisuals(cardElement, cardId, state);
+            });
+
+            const container = document.querySelector('.container');
+
+            // Handle video display
+            if (state.playbackState === 'grid') {
+                console.log('State: grid - resetting video');
+                videoContainer.classList.remove('active');
+                container.classList.remove('video-active');
+                endTitleContainer.classList.remove('active');
+                videoController.reset();
+            } else if (state.playbackState === 'paused') {
+                console.log('State: paused - loading card');
+                const card = getCardById(state.selectedCard);
+                if (card) {
+                    container.classList.add('video-active');
+                    videoContainer.classList.add('active');
+                    endTitleContainer.classList.remove('active');
+                    videoController.loadCard(card);
+                }
+            } else if (state.playbackState === 'playing') {
+                console.log('State: playing - attempting to play video');
+                const card = getCardById(state.selectedCard);
+                if (card) {
+                    container.classList.add('video-active');
+                    videoContainer.classList.add('active');
+                    endTitleContainer.classList.remove('active');
+                    // Ensure card is loaded before playing
+                    if (videoController.currentCard?.id !== card.id) {
+                        console.log('Card not loaded, loading now');
+                        videoController.loadCard(card);
+                    }
+                    console.log('Video element paused?', videoPlayer.paused, 'currentTime:', videoPlayer.currentTime, 'duration:', videoPlayer.duration);
+                    videoController.play();
+                }
+            } else if (state.playbackState === 'endtitle') {
+                console.log('State: endtitle - showing end title');
+                container.classList.add('video-active');
+                videoContainer.classList.remove('active');
+                endTitleContainer.classList.add('active');
+                videoController.reset();
+                
+                // Play end title video
+                endTitleVideo.play().catch(e => {
+                    console.log('End title video autoplay blocked:', e);
+                });
+            }
+        }
+
+        // Listen for storage changes (from presenter)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'endgameState') {
+                // Reload state and update UI
+                state.loadState();
+                updateUI();
+                console.log('Display synced with presenter:', state);
+            }
+        });
+
+        // Also poll state periodically (backup for same-window testing)
+        let lastTimestamp = 0;
+        setInterval(() => {
+            try {
+                const saved = localStorage.getItem('endgameState');
+                if (saved) {
+                    const newState = JSON.parse(saved);
+                    if (newState.timestamp !== lastTimestamp) {
+                        lastTimestamp = newState.timestamp;
+                        state.loadState();
+                        updateUI();
+                    }
+                }
+            } catch (e) {
+                console.error('Error checking state:', e);
+            }
+        }, 100);
+
+        // Video ended - auto return to grid
+        videoPlayer.addEventListener('ended', () => {
+            if (state.playbackState === 'playing') {
+                // This will be triggered by presenter, but handle it anyway
+                videoContainer.classList.remove('active');
+                videoController.reset();
+            }
+        });
+
+        // Initial render
+        updateUI();
+
+        // Log for debugging
+        console.log('Display initialized. Listening for presenter updates...');
+        console.log('Current state:', state);
+    </script>
+</body>
+
+</html>
