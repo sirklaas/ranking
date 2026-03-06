@@ -25,12 +25,12 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     if (!faseKey || !sessionId) return;
     if (state.currentFase === faseKey) return; // already in sync
 
-    if (state.currentQuestion.votes.length > 0 || state.currentQuestion.phase === 'results') {
+    if (state?.currentQuestion?.votes?.length > 0 || state?.currentQuestion?.phase === 'results') {
       const nextState: Top10State = {
         ...state,
         currentFase: faseKey,
         currentQuestion: {
-          questionIndex: state.currentQuestion.questionIndex + 1,
+          questionIndex: (state?.currentQuestion?.questionIndex || 0) + 1,
           phase: 'intro',
           votes: [],
           results: [],

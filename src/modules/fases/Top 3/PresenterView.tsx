@@ -28,12 +28,12 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
 
     // Only wipe votes/results when moving to a genuinely different question.
     // If current slot had real voting activity, clear it for the next round.
-    if (state.currentQuestion.votes.length > 0 || state.currentQuestion.phase === 'results') {
+    if (state?.currentQuestion?.votes?.length > 0 || state?.currentQuestion?.phase === 'results') {
       const nextState: Top3State = {
         ...state,
         currentFase: faseKey,
         currentQuestion: {
-          questionIndex: state.currentQuestion.questionIndex + 1,
+          questionIndex: (state?.currentQuestion?.questionIndex || 0) + 1,
           phase: 'intro',
           votes: [],
           results: [],

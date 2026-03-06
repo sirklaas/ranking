@@ -49,13 +49,13 @@ async function processQueue() {
         }
 
         // 2. Validate vote (has player already voted in the current question)?
-        const alreadyVoted = top3State.currentQuestion.votes.some(
+        const alreadyVoted = top3State?.currentQuestion?.votes?.some(
             (v) => v.voterId === currentReq.voterId
-        );
+        ) || false;
 
         let newState = top3State;
 
-        if (!alreadyVoted) {
+        if (!alreadyVoted && top3State) {
             // 3. Mutate
             const newVote: Top3Vote = {
                 voterId: currentReq.voterId,
@@ -66,11 +66,13 @@ async function processQueue() {
                 timestamp: Date.now(),
             };
 
+            const existingVotes = top3State?.currentQuestion?.votes || [];
+
             newState = {
                 ...top3State,
                 currentQuestion: {
-                    ...top3State.currentQuestion,
-                    votes: [...top3State.currentQuestion.votes, newVote],
+                    ...(top3State?.currentQuestion || { phase: 'intro', questionIndex: 0, results: [] }),
+                    votes: [...existingVotes, newVote],
                 },
             };
 

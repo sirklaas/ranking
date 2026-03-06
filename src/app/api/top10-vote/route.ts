@@ -48,13 +48,13 @@ async function processQueue() {
         }
 
         // 2. Validate vote
-        const alreadyVoted = top10State.currentQuestion.votes.some(
+        const alreadyVoted = top10State?.currentQuestion?.votes?.some(
             (v) => v.voterId === currentReq.voterId
-        );
+        ) || false;
 
         let newState = top10State;
 
-        if (!alreadyVoted) {
+        if (!alreadyVoted && top10State) {
             // 3. Build the new vote
             const newVote: Top10Vote = {
                 voterId: currentReq.voterId,
@@ -73,7 +73,7 @@ async function processQueue() {
             }
 
             // If phase moved past voting, don't overwrite — just return latest state
-            if (latestState && latestState.currentQuestion.phase !== 'voting') {
+            if (latestState && latestState?.currentQuestion?.phase !== 'voting') {
                 currentReq.resolve(latestState);
                 isProcessing = false;
                 processQueue();
@@ -82,14 +82,14 @@ async function processQueue() {
 
             // Merge vote into latest state (preserves concurrent changes)
             const baseState = latestState || top10State;
-            const existingVotes = baseState.currentQuestion.votes;
+            const existingVotes = baseState?.currentQuestion?.votes || [];
             const stillNotVoted = !existingVotes.some((v) => v.voterId === currentReq.voterId);
 
             if (stillNotVoted) {
                 newState = {
                     ...baseState,
                     currentQuestion: {
-                        ...baseState.currentQuestion,
+                        ...(baseState?.currentQuestion || { phase: 'intro', questionIndex: 0, results: [] }),
                         votes: [...existingVotes, newVote],
                     },
                 };
