@@ -690,9 +690,9 @@ export default function DisplayPage() {
       {isMounted && !userEnabledSound && (
         <div
           onClick={async () => {
-            if (soundUnlockedRef.current) return;
             soundUnlockedRef.current = true;
             setUserEnabledSound(true);
+            console.log('[Display] Start clicked — running hard reset');
 
             // Audio unlock
             try {
