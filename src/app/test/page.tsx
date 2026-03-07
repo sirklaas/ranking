@@ -550,8 +550,16 @@ export default function TestPage() {
     const simulateTopXVotes = useCallback(async (type: 'top3' | 'top10') => {
         if (!session || !allPlayers.length) return;
 
+        let latestSession;
+        try {
+            latestSession = await rankingService.getSessionById(session.id) as unknown as SessionData;
+        } catch (e) {
+            alert("Failed to read latest session from database.");
+            return;
+        }
+
         // Check phase
-        const stateStr = type === 'top3' ? session.top3_state : session.top10_state;
+        const stateStr = type === 'top3' ? latestSession.top3_state : latestSession.top10_state;
         if (!stateStr) {
             alert(`Start ${type} on the presenter screen first! (state missing)`);
             return;

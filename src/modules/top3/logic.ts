@@ -30,19 +30,20 @@ export const startVoting = async (
   try {
     const session = await rankingService.getSessionById(sessionId) as Record<string, unknown>;
     if (session?.top3_state) {
-      freshState = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state as string) : session.top3_state as Top3State;
+      const parsed = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state as string) : session.top3_state as Top3State;
+      if (parsed) freshState = parsed;
     }
   } catch (e) { console.warn('[top3] startVoting fresh fetch error:', e); }
 
   const newState: Top3State = {
     ...freshState,
     currentQuestion: {
-      ...freshState.currentQuestion,
+      ...(freshState?.currentQuestion || { questionIndex: 0, phase: 'intro', votes: [], results: [] }),
       phase: 'voting',
       votes: [],
       results: [],
     },
-    allPlayerNames: freshState.allPlayerNames.length > 0 ? freshState.allPlayerNames : (currentState.allPlayerNames || []),
+    allPlayerNames: freshState?.allPlayerNames?.length > 0 ? freshState.allPlayerNames : (currentState.allPlayerNames || []),
   };
   await persistState(sessionId, newState);
   return newState;
@@ -124,7 +125,8 @@ export const showResults = async (
   try {
     const session = await rankingService.getSessionById(sessionId) as Record<string, unknown>;
     if (session?.top3_state) {
-      freshState = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state as string) : session.top3_state as Top3State;
+      const parsed = typeof session.top3_state === 'string' ? JSON.parse(session.top3_state as string) : session.top3_state as Top3State;
+      if (parsed) freshState = parsed;
     }
   } catch (e) { console.warn('[top3] showResults fresh fetch error:', e); }
 
@@ -133,7 +135,7 @@ export const showResults = async (
   const newState: Top3State = {
     ...freshState,
     currentQuestion: {
-      ...freshState.currentQuestion,
+      ...(freshState?.currentQuestion || { questionIndex: 0, phase: 'intro', votes: [], results: [] }),
       phase: 'results',
       results,
     },

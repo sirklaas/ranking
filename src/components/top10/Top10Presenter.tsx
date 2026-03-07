@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { Top10State } from '@/modules/top10/types';
 import * as top10Logic from '@/modules/top10/logic';
 import { rankingService } from '@/lib/pocketbase';
@@ -41,20 +41,35 @@ export default function Top10Presenter({ sessionId, state, onStateChange }: Top1
         }
     }, [phase, votedCount, totalPlayers, handleShowResults]);
 
-    // Keyboard shortcuts: V = start voting
+    const phaseRef = useRef(phase);
+    const handleStartVotingRef = useRef(handleStartVoting);
+    const handleShowResultsRef = useRef(handleShowResults);
+
+    useEffect(() => {
+        phaseRef.current = phase;
+        handleStartVotingRef.current = handleStartVoting;
+        handleShowResultsRef.current = handleShowResults;
+    }, [phase, handleStartVoting, handleShowResults]);
+
+    // Keyboard shortcuts: V = start voting, R = show results
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
 
-            if ((e.key === 'v' || e.key === 'V') && phase !== 'voting' && phase !== 'results') {
+            const currentPhase = phaseRef.current;
+
+            if ((e.key === 'v' || e.key === 'V') && currentPhase !== 'voting' && currentPhase !== 'results') {
                 e.preventDefault();
-                handleStartVoting();
+                handleStartVotingRef.current();
+            } else if ((e.key === 'r' || e.key === 'R') && currentPhase === 'voting') {
+                e.preventDefault();
+                handleShowResultsRef.current();
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [phase, handleStartVoting]);
+    }, []);
 
     const PHASE_LABELS = {
         intro: 'Intro',

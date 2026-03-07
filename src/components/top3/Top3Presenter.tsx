@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { Top3State } from '@/modules/top3/types';
 import * as top3Logic from '@/modules/top3/logic';
 
@@ -35,21 +35,36 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
     onStateChange(newState);
   }, [sessionId, state, onStateChange]);
 
-  // Keyboard shortcuts: V = start voting
+  const phaseRef = useRef(phase);
+  const handleStartVotingRef = useRef(handleStartVoting);
+  const handleShowResultsRef = useRef(handleShowResults);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+    handleStartVotingRef.current = handleStartVoting;
+    handleShowResultsRef.current = handleShowResults;
+  }, [phase, handleStartVoting, handleShowResults]);
+
+  // Keyboard shortcuts: V = start voting, R = show results
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input field (though none exist here yet)
+      // Don't trigger if user is typing in an input field
       if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
 
-      if ((e.key === 'v' || e.key === 'V') && phase !== 'voting' && phase !== 'results') {
+      const currentPhase = phaseRef.current;
+
+      if ((e.key === 'v' || e.key === 'V') && currentPhase !== 'voting' && currentPhase !== 'results') {
         e.preventDefault();
-        handleStartVoting();
+        handleStartVotingRef.current();
+      } else if ((e.key === 'r' || e.key === 'R') && currentPhase === 'voting') {
+        e.preventDefault();
+        handleShowResultsRef.current();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [phase, handleStartVoting]);
+  }, []);
 
   const PHASE_LABELS = {
     intro: 'Intro',
