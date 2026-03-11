@@ -120,190 +120,96 @@ function RenderHeading({ text, font }: { text: string; font: string }) {
     );
 }
 
-function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] {
+function computeCloudSizes(results: Top10Result[]): CloudItem[] {
     if (results.length === 0) return [];
+    
+    // Instead of absolute positioning math, just calculate font sizes and colors.
+    // The browser's flexbox will handle zero-overlap placement natively.
     const maxVotes = results[0].votes;
-    const minFontSize = 80; // MASSIVE
-    const maxFontSize = 240; // MASSIVE
+    const minFontSize = 40; 
+    const maxFontSize = 180; 
 
-    const placed: Rect[] = [];
-    const cloudItems: CloudItem[] = [];
-
-    // Add gutters to prevent clipping at edges
-    const xGutter = 100;
-    const yGutter = 100;
-    const effectiveW = w - 2 * xGutter;
-    const effectiveH = h - 2 * yGutter;
-
-    results.forEach((r, i) => {
+    return results.map((r, i) => {
         const hash = hashStr(r.playerName);
         const nameText = formatName(r.playerName);
         const ratio = maxVotes > 0 ? r.votes / maxVotes : 0;
         const fontSize = minFontSize + ratio * (maxFontSize - minFontSize);
 
-        // Generate initial approximate dimensions - MORE CONSERVATIVE
-        // Nunito is roughly 0.65w per char. Adding extra vertical spacing for glow/shadows
-        const approxW = nameText.length * fontSize * 0.65 + 100;
-        const approxH = fontSize * 1.3 + 100;
-
-        let x = w / 2;
-        let y = h / 2;
-        let rotation = 0;
-
-        if (i === 0) {
-            // #1 is strictly large, centered
-            x = w / 2;
-            y = h / 2;
-            rotation = 0;
-            const bbox = getRotatedBoundingBox(x, y, approxW, approxH, rotation);
-            placed.push(bbox);
-        } else if (i === 1) {
-            // #2 is strictly -45 degrees
-            rotation = -45;
-            
-            let angle = (hash % 360) * (Math.PI / 180);
-            let radius = Math.max(approxW, approxH) / 2 + 50; // push outside center bounds
-            let step = 0;
-
-            while (step < 2000) {
-                const testX = w / 2 + Math.cos(angle) * radius;
-                const testY = h / 2 + Math.sin(angle) * radius;
-
-                const testRect = getRotatedBoundingBox(testX, testY, approxW, approxH, rotation);
-
-                const collision = placed.some(p => intersects(p, testRect)) ||
-                    testX - testRect.w/2 < xGutter || testX + testRect.w/2 > w - xGutter ||
-                    testY - testRect.h/2 < yGutter || testY + testRect.h/2 > h - yGutter;
-
-                if (!collision) {
-                    x = testX;
-                    y = testY;
-                    placed.push(testRect);
-                    break;
-                }
-
-                angle += 0.20;
-                radius += 6;
-                step++;
-            }
-        } else {
-            // Try to place around a spiral until it doesn't intersect
-            let angle = (hash % 360) * (Math.PI / 180);
-            let radius = Math.max(approxW, approxH) / 2 + 80;
-            let step = 0;
-
-            const rotationOptions = [0, 0, 90, -90, -45, 45, 0];
-            rotation = rotationOptions[hash % rotationOptions.length];
-
-            while (step < 2000) { // Many iterations for dense packing
-                const testX = w / 2 + Math.cos(angle) * radius;
-                const testY = h / 2 + Math.sin(angle) * radius;
-
-                const testRect = getRotatedBoundingBox(testX, testY, approxW, approxH, rotation);
-
-                const collision = placed.some(p => intersects(p, testRect)) ||
-                    testX - testRect.w/2 < xGutter || testX + testRect.w/2 > w - xGutter ||
-                    testY - testRect.h/2 < yGutter || testY + testRect.h/2 > h - yGutter;
-
-                if (!collision) {
-                    x = testX;
-                    y = testY;
-                    placed.push(testRect);
-                    break;
-                }
-
-                angle += 0.15; // Tighter spiral increments
-                radius += 4;  // slower radial expansion
-                step++;
-            }
-        }
-
-        // Slow drift parameters
-        const driftX = ((hash % 200) - 100) / 1000;
-        const driftY = (((hash >> 3) % 200) - 100) / 1000;
-        const driftAngle = ((hash % 60) - 30) / 8000;
-
-        cloudItems.push({
+        return {
             name: nameText,
             votes: r.votes,
             percentage: r.percentage,
             fontSize,
-            x,
-            y,
-            rotation,
+            x: 0,
+            y: 0,
+            rotation: i === 1 ? -15 : (hash % 3 === 0 ? 10 : (hash % 2 === 0 ? -10 : 0)),
             color: CLOUD_COLORS[i % CLOUD_COLORS.length],
-            driftX,
-            driftY,
-            driftAngle,
-            opacity: 0.5 + ratio * 0.5,
-        });
+            driftX: 0,
+            driftY: 0,
+            driftAngle: 0,
+            opacity: 0.6 + ratio * 0.4,
+            isWinner: i === 0
+        };
     });
-
-    return cloudItems;
 }
 
 /* ──────── animated word cloud ──────── */
+/* ──────── CSS Flexbox based word cloud ──────── */
 function WordCloud({ results, animate }: { results: Top10Result[]; animate: boolean }) {
-    const containerRef = useRef<HTMLDivElement>(null);
     const [items, setItems] = useState<CloudItem[]>([]);
-    const frameRef = useRef(0);
-    const tickRef = useRef(0);
 
-    // Layout when results change
     useEffect(() => {
-        const w = containerRef.current?.offsetWidth || 900;
-        const h = containerRef.current?.offsetHeight || 600;
-        setItems(layoutCloud(results, w, h));
-        tickRef.current = 0;
+        setItems(computeCloudSizes(results));
     }, [results]);
 
-    // Animation loop for gentle drift
-    useEffect(() => {
-        if (!animate || items.length === 0) return;
+    if (!animate || items.length === 0) return null;
 
-        const loop = () => {
-            tickRef.current += 1;
-            setItems(prev =>
-                prev.map(item => ({
-                    ...item,
-                    // Disabled drift to completely avoid overlap
-                }))
-            );
-            frameRef.current = requestAnimationFrame(loop);
-        };
-        // frameRef.current = requestAnimationFrame(loop);
-        return () => cancelAnimationFrame(frameRef.current);
-    }, [animate, items.length]);
+    // Separate the winner from the rest of the pack so we can force them to be giant and centered
+    const winner = items[0];
+    const others = items.slice(1);
 
     return (
-        <div
-            ref={containerRef}
-            className="relative w-full h-full overflow-visible"
-            style={{ minHeight: '500px' }}
-        >
-            {items.map((item, i) => (
-                <span
-                    key={item.name}
-                    className="absolute whitespace-nowrap transition-all duration-1000 leading-normal p-8"
+        <div className="w-full h-full flex flex-col items-center justify-center pt-10">
+            {/* Massive Winner */}
+            {winner && (
+                <div 
+                    className="mb-8 whitespace-nowrap"
                     style={{
-                        left: `${item.x}px`,
-                        top: `${item.y}px`,
-                        transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
-                        fontSize: `${item.fontSize}px`,
+                        fontSize: `${winner.fontSize}px`,
                         fontFamily: nameFont,
-                        fontWeight: i === 0 ? 900 : 700,
-                        color: item.color,
-                        opacity: item.opacity,
-                        textShadow: i === 0
-                            ? '0 0 50px rgba(255,255,255,0.5), 0 0 100px rgba(255,255,255,0.3)'
-                            : '0 4px 20px rgba(0,0,0,0.6)',
-                        letterSpacing: i === 0 ? '4px' : '1px',
-                        animation: `cloudFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 0.1}s both`,
+                        fontWeight: 900,
+                        color: winner.color,
+                        textShadow: '0 0 50px rgba(255,255,255,0.5), 0 0 100px rgba(255,255,255,0.3)',
+                        letterSpacing: '4px',
+                        animation: 'cloudFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                        zIndex: 50
                     }}
                 >
-                    {item.name}
-                </span>
-            ))}
+                    {winner.name}
+                </div>
+            )}
+            
+            {/* The rest flex-wrapped below to guarantee zero overlap */}
+            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 max-w-full px-8">
+                {others.map((item, i) => (
+                    <div
+                        key={item.name}
+                        className="transition-all duration-1000 inline-block"
+                        style={{
+                            transform: `rotate(${item.rotation}deg)`,
+                            fontSize: `${item.fontSize}px`,
+                            fontFamily: nameFont,
+                            fontWeight: 700,
+                            color: item.color,
+                            opacity: item.opacity,
+                            textShadow: '0 4px 20px rgba(0,0,0,0.6)',
+                            animation: `cloudFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${(i + 1) * 0.1}s both`,
+                        }}
+                    >
+                        {item.name}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -514,7 +420,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                         <div className="flex-1 flex flex-wrap gap-4 items-center justify-center p-8">
                             <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
                         </div>
-                    ) : phase === 'results' ? (
+                    ) : phase === 'results' || phase === 'voting' ? (
                         <>
                             {/* Left: results list - anchored to bottom left 25% */}
                             <div className="absolute left-0 bottom-0 w-1/4" style={{ paddingBottom: '75px', paddingLeft: '32px' }}>
@@ -525,11 +431,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                                 <WordCloud results={liveTally} animate={animateCloud} />
                             </div>
                         </>
-                    ) : (
-                        <div className="absolute right-0 bottom-[75px] w-3/4" style={{ height: '75vh' }}>
-                            <WordCloud results={liveTally} animate={animateCloud} />
-                        </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* Status bar */}
