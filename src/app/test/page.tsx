@@ -566,8 +566,8 @@ export default function TestPage() {
         }
         try {
             const stateObj = typeof stateStr === 'string' ? JSON.parse(stateStr as string) : stateStr;
-            if (stateObj?.currentQuestion?.phase !== 'voting') {
-                alert(`You can only simulate votes when ${type.toUpperCase()} is in the 'voting' phase! Current phase: ${stateObj?.currentQuestion?.phase}`);
+            if (stateObj?.currentQuestion?.phase === 'results') {
+                alert(`You can only simulate votes BEFORE the ${type.toUpperCase()} 'results' phase! Current phase: ${stateObj?.currentQuestion?.phase}`);
                 return;
             }
         } catch (e) {

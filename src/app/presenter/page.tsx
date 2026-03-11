@@ -237,20 +237,29 @@ export default function PresenterPage() {
     setCurrentView('game');
     setCurrentFase('01/01');
 
-    // Persist initial fase AND force a row update by injecting a dummy timestamp
-    // into the headings JSON so the PocketBase `-updated` sorting picks this active game up
-    try {
-      const headingsObj = JSON.parse(selectedSession.headings || '{}');
-      headingsObj._lastActivated = Date.now();
-      rankingService.updateSession(selectedSession.id, {
-        current_fase: '01/01',
-        headings: JSON.stringify(headingsObj)
-      }).then(() => {
-        console.log('Forced PB updated timestamp bump successful');
-      }).catch(e => console.error('Failed to bump PB timestamp:', e));
-    } catch (e) {
-      writeFaseToPB(selectedSession.id, '01/01');
-    }
+    // Claim priority=1 for this session so the Display automatically follows it
+    const claimPriorityAndStart = async () => {
+      try {
+        const all = await rankingService.getAllSessions();
+        for (const s of all) {
+          if ((s as unknown as Record<string, unknown>).priority === 1 && s.id !== selectedSession.id) {
+            await rankingService.updateSession(s.id, { priority: 0 });
+          }
+        }
+        const headingsObj = JSON.parse(selectedSession.headings || '{}');
+        headingsObj._lastActivated = Date.now();
+        await rankingService.updateSession(selectedSession.id, {
+          current_fase: '01/01',
+          headings: JSON.stringify(headingsObj),
+          priority: 1
+        });
+        console.log('Successfully claimed priority=1 for new active game');
+      } catch (e) {
+        console.error('Failed to claim priority:', e);
+        writeFaseToPB(selectedSession.id, '01/01');
+      }
+    };
+    claimPriorityAndStart();
 
     console.log('State updated - should show game interface now');
   };
