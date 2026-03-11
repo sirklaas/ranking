@@ -29,7 +29,7 @@ const EMPTY_TOP10_STATE: Top10State = {
   currentQuestion: { questionIndex: 0, phase: 'intro', votes: [], results: [] },
 };
 
-const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, sessionId, mediaUrl: passedMediaUrl }) => {
+const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, sessionId, mediaUrl: passedMediaUrl, allPlayerNames }) => {
   if (!faseKey) return null;
 
   // Look up hardcoded slide data
@@ -39,6 +39,9 @@ const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, sess
   // Use hardcoded image, or fall back to media passed from display page (trailer video)
   const hardcodedMediaUrl = slide.image ? `/pics/${encodeURIComponent(slide.image)}` : (passedMediaUrl || '');
   const state = safeJsonParse<Top10State>(moduleStateJson) ?? { ...EMPTY_TOP10_STATE, currentFase: faseKey };
+  if (allPlayerNames && allPlayerNames.length > 0) {
+    state.allPlayerNames = allPlayerNames;
+  }
 
   return <Top10Display
     state={state}

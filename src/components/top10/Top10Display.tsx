@@ -84,6 +84,27 @@ interface CloudItem {
     opacity: number;
 }
 
+// Bounding box logic for rotated text to ensure safe collision detection
+function getRotatedBoundingBox(cx: number, cy: number, w: number, h: number, angleDeg: number): Rect {
+    if (angleDeg === 0) {
+        return { x: cx - w/2, y: cy - h/2, w, h };
+    }
+    const angleRad = angleDeg * (Math.PI / 180);
+    const cosA = Math.abs(Math.cos(angleRad));
+    const sinA = Math.abs(Math.sin(angleRad));
+    
+    // Calculate new width and height based on the rotation
+    const newW = w * cosA + h * sinA;
+    const newH = w * sinA + h * cosA;
+    
+    return {
+        x: cx - newW / 2,
+        y: cy - newH / 2,
+        w: newW,
+        h: newH
+    };
+}
+
 /* ──────── common heading renderer ──────── */
 function RenderHeading({ text, font }: { text: string; font: string }) {
     if (!text) return null;
@@ -120,63 +141,82 @@ function layoutCloud(results: Top10Result[], w: number, h: number): CloudItem[] 
         const ratio = maxVotes > 0 ? r.votes / maxVotes : 0;
         const fontSize = minFontSize + ratio * (maxFontSize - minFontSize);
 
-        // Approximate dimensions - BE MORE CONSERVATIVE
-        // Nunito is roughly 0.85w per char at this weight, plus glow space
-        const approxW = nameText.length * fontSize * 0.85 + 180;
-        const approxH = fontSize * 1.5 + 180;
+        // Generate initial approximate dimensions - MORE CONSERVATIVE
+        // Nunito is roughly 0.65w per char. Adding extra vertical spacing for glow/shadows
+        const approxW = nameText.length * fontSize * 0.65 + 100;
+        const approxH = fontSize * 1.3 + 100;
 
         let x = w / 2;
         let y = h / 2;
         let rotation = 0;
 
         if (i === 0) {
-            // First item stays centered
+            // #1 is strictly large, centered
             x = w / 2;
             y = h / 2;
             rotation = 0;
-        } else {
-            // Try to place around a spiral until it doesn't intersect
+            const bbox = getRotatedBoundingBox(x, y, approxW, approxH, rotation);
+            placed.push(bbox);
+        } else if (i === 1) {
+            // #2 is strictly -45 degrees
+            rotation = -45;
+            
             let angle = (hash % 360) * (Math.PI / 180);
-            let radius = 120; // Start further out
+            let radius = Math.max(approxW, approxH) / 2 + 50; // push outside center bounds
             let step = 0;
 
-            const rotationOptions = [0, 0, 90, -90, 0];
-            rotation = rotationOptions[hash % rotationOptions.length];
-
-            // If rotated 90 deg, swap approx dims for intersection check
-            const rectW = Math.abs(rotation) === 90 ? approxH : approxW;
-            const rectH = Math.abs(rotation) === 90 ? approxW : approxH;
-
-            while (step < 400) { // More iterations
+            while (step < 2000) {
                 const testX = w / 2 + Math.cos(angle) * radius;
                 const testY = h / 2 + Math.sin(angle) * radius;
 
-                const testRect: Rect = {
-                    x: testX - rectW / 2,
-                    y: testY - rectH / 2,
-                    w: rectW,
-                    h: rectH
-                };
+                const testRect = getRotatedBoundingBox(testX, testY, approxW, approxH, rotation);
 
                 const collision = placed.some(p => intersects(p, testRect)) ||
-                    testX < xGutter || testX > w - xGutter ||
-                    testY < yGutter || testY > h - yGutter;
+                    testX - testRect.w/2 < xGutter || testX + testRect.w/2 > w - xGutter ||
+                    testY - testRect.h/2 < yGutter || testY + testRect.h/2 > h - yGutter;
 
                 if (!collision) {
                     x = testX;
                     y = testY;
+                    placed.push(testRect);
                     break;
                 }
 
-                angle += 0.25; // Tighter spiral increments
-                radius += 8;  // Faster radial expansion for more space
+                angle += 0.20;
+                radius += 6;
+                step++;
+            }
+        } else {
+            // Try to place around a spiral until it doesn't intersect
+            let angle = (hash % 360) * (Math.PI / 180);
+            let radius = Math.max(approxW, approxH) / 2 + 80;
+            let step = 0;
+
+            const rotationOptions = [0, 0, 90, -90, -45, 45, 0];
+            rotation = rotationOptions[hash % rotationOptions.length];
+
+            while (step < 2000) { // Many iterations for dense packing
+                const testX = w / 2 + Math.cos(angle) * radius;
+                const testY = h / 2 + Math.sin(angle) * radius;
+
+                const testRect = getRotatedBoundingBox(testX, testY, approxW, approxH, rotation);
+
+                const collision = placed.some(p => intersects(p, testRect)) ||
+                    testX - testRect.w/2 < xGutter || testX + testRect.w/2 > w - xGutter ||
+                    testY - testRect.h/2 < yGutter || testY + testRect.h/2 > h - yGutter;
+
+                if (!collision) {
+                    x = testX;
+                    y = testY;
+                    placed.push(testRect);
+                    break;
+                }
+
+                angle += 0.15; // Tighter spiral increments
+                radius += 4;  // slower radial expansion
                 step++;
             }
         }
-
-        const rectW = Math.abs(rotation) === 90 ? approxH : approxW;
-        const rectH = Math.abs(rotation) === 90 ? approxW : approxH;
-        placed.push({ x: x - rectW / 2, y: y - rectH / 2, w: rectW, h: rectH });
 
         // Slow drift parameters
         const driftX = ((hash % 200) - 100) / 1000;
@@ -226,14 +266,12 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
             setItems(prev =>
                 prev.map(item => ({
                     ...item,
-                    x: item.x + item.driftX,
-                    y: item.y + item.driftY,
-                    rotation: item.rotation + item.driftAngle,
+                    // Disabled drift to completely avoid overlap
                 }))
             );
             frameRef.current = requestAnimationFrame(loop);
         };
-        frameRef.current = requestAnimationFrame(loop);
+        // frameRef.current = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(frameRef.current);
     }, [animate, items.length]);
 
@@ -478,17 +516,17 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                         </div>
                     ) : phase === 'results' ? (
                         <>
-                            {/* Left: results list - anchored to bottom */}
-                            <div className="absolute left-0 bottom-0 w-1/2" style={{ paddingBottom: '75px', paddingLeft: '16px' }}>
+                            {/* Left: results list - anchored to bottom left 25% */}
+                            <div className="absolute left-0 bottom-0 w-1/4" style={{ paddingBottom: '75px', paddingLeft: '32px' }}>
                                 <SequentialResults results={state.currentQuestion.results} />
                             </div>
-                            {/* Right: wordcloud — absolutely positioned in right half, below heading */}
-                            <div className="absolute right-0 top-0 bottom-0 w-1/2" style={{ paddingTop: '240px' }}>
+                            {/* Right: wordcloud — absolutely positioned 75% width, 75vh height, bottom-anchored */}
+                            <div className="absolute right-0 bottom-[75px] w-3/4" style={{ height: '75vh' }}>
                                 <WordCloud results={liveTally} animate={animateCloud} />
                             </div>
                         </>
                     ) : (
-                        <div className="absolute right-0 top-0 bottom-0 w-full" style={{ paddingTop: '240px' }}>
+                        <div className="absolute right-0 bottom-[75px] w-3/4" style={{ height: '75vh' }}>
                             <WordCloud results={liveTally} animate={animateCloud} />
                         </div>
                     )}

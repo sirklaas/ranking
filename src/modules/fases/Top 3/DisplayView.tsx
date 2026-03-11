@@ -24,7 +24,7 @@ const EMPTY_TOP3_STATE: Top3State = {
   currentQuestion: { questionIndex: 0, phase: 'intro', votes: [], results: [] },
 };
 
-const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey }) => {
+const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, allPlayerNames }) => {
   // Trailer slot → return null, let media overlay play the video
   if (!faseKey || faseKey === '10/01') return null;
 
@@ -34,6 +34,9 @@ const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey }) =>
 
   const hardcodedMediaUrl = `/pics/${encodeURIComponent(slide.image)}`;
   const state = safeJsonParse<Top3State>(moduleStateJson) ?? { ...EMPTY_TOP3_STATE, currentFase: faseKey };
+  if (allPlayerNames && allPlayerNames.length > 0) {
+    state.allPlayerNames = allPlayerNames;
+  }
 
   return <Top3Display state={state} heading={slide.heading} mediaUrl={hardcodedMediaUrl} faseKey={faseKey} />;
 };

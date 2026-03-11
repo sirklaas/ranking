@@ -178,9 +178,9 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                 <g>
                   {/* Backdrop */}
                   <rect
-                    x={isRightSide ? labelX + 40 : labelX - 540}
+                    x={isRightSide ? labelX + 40 : labelX - 660}
                     y={labelY - 70}
-                    width="500"
+                    width="620"
                     height="180"
                     rx="8"
                     fill="rgba(0,0,0,0.6)"
@@ -193,9 +193,9 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                   />
                   {/* Scanning line effect */}
                   <rect
-                    x={isRightSide ? labelX + 40 : labelX - 540}
+                    x={isRightSide ? labelX + 40 : labelX - 660}
                     y={labelY - 70}
-                    width="500"
+                    width="620"
                     height="180"
                     rx="8"
                     fill={`url(#scanline-${i})`}
@@ -237,7 +237,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
               )}
 
               <text
-                x={isRightSide ? labelX + 70 : labelX - 70}
+                x={isRightSide ? labelX + 80 : labelX - 80}
                 y={labelY + 5}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill="white"
@@ -248,7 +248,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                 {formatName(results[i].playerName)}
               </text>
               <text
-                x={isRightSide ? labelX + 70 : labelX - 70}
+                x={isRightSide ? labelX + 80 : labelX - 80}
                 y={labelY + 65}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill={seg.color}
@@ -330,9 +330,9 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   }, [animate]);
 
   return (
-    <div className="flex items-center justify-center w-full mx-auto pb-10 mt-10">
+    <div className="absolute bottom-[70px] left-0 right-0 flex items-center justify-center w-full mx-auto" style={{ height: '70vh' }}>
       {/* Donut chart - Now full width with labels embedded inside */}
-      <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '100vh' }}>
+      <div className="w-full h-full flex items-center justify-center">
         <AnimatedDonut results={results} animate={animate} />
       </div>
 
@@ -393,7 +393,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
           {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
             <video
               src={mediaUrl}
-              className="w-full h-full object-contain"
+              className="w-[100vw] h-[100vh] object-cover"
               autoPlay
               muted
               playsInline
@@ -405,7 +405,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
               }}
             />
           ) : (
-            <img src={mediaUrl} alt="Media Background" className="w-full h-full object-contain" />
+            <img src={mediaUrl} alt="Media Background" className="w-[100vw] h-[100vh] object-cover" />
           )}
           {/* Subtle dark gradient up from bottom so names/votes stay readable */}
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
@@ -444,8 +444,8 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
         {/* Status bar */}
         <div className="text-center pb-8">
           {phase === 'voting' && (
-            <div className="text-white text-4xl font-bold" style={{ fontFamily: barlowFont, textShadow: '0 3px 12px rgba(0,0,0,0.7)' }}>
-              {votedNames.length} van de {state.allPlayerNames.length} hebben gestemd
+            <div className="text-white text-4xl font-bold tracking-wider" style={{ fontFamily: barlowFont, textShadow: '0 3px 12px rgba(0,0,0,0.7)' }}>
+              {votedNames.length} / {state.allPlayerNames.length} HEBBEN GESTEMD
             </div>
           )}
         </div>

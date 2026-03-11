@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v8.6';
+const APP_VERSION = 'v8.7';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -238,11 +238,9 @@ export default function DisplayPage() {
         const { session: fresh } = await res.json();
         if (!active || !fresh) return;
 
-        // If we queried latest and we are currently locked in (because user clicked start)
-        // ensure we lock to this ID so we don't switch streams mid-show
-        if (!lockedSessionId.current && targetId === 'latest') {
-          lockedSessionId.current = fresh.id;
-        }
+        // Display should always follow 'latest' actively-managed priority=1 session
+        // (if targetId === 'latest'), so there's no need to lock it and ignore presenter updates
+        // to a new session ID if they switch.
 
         const freshFase = fresh.current_fase || '?';
         setPollDebug(prev => ({ ...prev, count: prev.count + 1, lastPbFase: freshFase, error: '' }));
@@ -251,6 +249,8 @@ export default function DisplayPage() {
           if (!prev) return fresh;
           if (fresh.id !== prev.id) {
             console.log(`[Display] Switched to new active game session: ${fresh.id}`);
+            // Force reset when heavily changing sessions dynamically
+            lockedSessionId.current = fresh.id; // update local pointer, but keep polling latest next time
             return fresh;
           }
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings
