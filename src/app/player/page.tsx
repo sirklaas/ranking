@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v8.7';
+const APP_VERSION = 'v8.8';
 
 interface RankingSession {
   id: string;

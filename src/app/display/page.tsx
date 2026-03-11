@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v8.7';
+const APP_VERSION = 'v8.8';
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -251,12 +251,13 @@ export default function DisplayPage() {
             return fresh;
           }
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings
-            && fresh.teamleaders === (prev as Record<string, unknown>).teamleaders) {
+            && JSON.stringify(fresh.teamleaders) === JSON.stringify((prev as Record<string, unknown>).teamleaders)) {
             let changed = false;
             Object.values(FASES).forEach((mod) => {
               const sf = mod.stateField;
               if (!sf) return;
-              if ((fresh as Record<string, unknown>)[sf] !== (prev as Record<string, unknown>)[sf]) changed = true;
+              // Compare the stringified JSON deeply to detect internal module state changes (like Top 3 results arrays)
+              if (JSON.stringify((fresh as Record<string, unknown>)[sf]) !== JSON.stringify((prev as Record<string, unknown>)[sf])) changed = true;
             });
             if (!changed) return prev;
           }
