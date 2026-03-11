@@ -626,7 +626,10 @@ export default function TestPage() {
                 <div className="text-center mb-6">
                     <h1 className="text-3xl font-bold text-white tracking-widest uppercase">📱 Phone Simulator</h1>
                     <p className="text-white/50 text-sm mt-1">Simulates all players through the full on-boarding flow with real PocketBase calls</p>
-                    <div className="mt-1 text-white/30 text-xs font-mono">{APP_VERSION}-test</div>
+                    <div className="mt-1 flex gap-4 justify-center text-white/40 text-xs font-mono">
+                        <div>{APP_VERSION}-test</div>
+                        {session && <div>fase: {String(session.current_fase) || 'none'}</div>}
+                    </div>
                 </div>
 
                 {/* Session Info */}
