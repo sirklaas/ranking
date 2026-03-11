@@ -34,7 +34,7 @@ export async function GET(req: Request) {
       // Priority-based: find the session with priority=1 first
       let records;
       try {
-        records = await pb.collection('ranking').getList(1, 1, { filter: 'priority = 1', $autoCancel: false });
+        records = await pb.collection('ranking').getList(1, 1, { filter: 'priority = 1', sort: '-updated', $autoCancel: false });
       } catch {
         // priority field may not exist yet — ignore
         records = { items: [] };
