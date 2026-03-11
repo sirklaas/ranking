@@ -238,7 +238,6 @@ export default function DisplayPage() {
         const { session: fresh } = await res.json();
         if (!active || !fresh) return;
 
-        // Display should always follow 'latest' actively-managed priority=1 session
         // (if targetId === 'latest'), so there's no need to lock it and ignore presenter updates
         // to a new session ID if they switch.
 
@@ -249,8 +248,6 @@ export default function DisplayPage() {
           if (!prev) return fresh;
           if (fresh.id !== prev.id) {
             console.log(`[Display] Switched to new active game session: ${fresh.id}`);
-            // Force reset when heavily changing sessions dynamically
-            lockedSessionId.current = fresh.id; // update local pointer, but keep polling latest next time
             return fresh;
           }
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings
