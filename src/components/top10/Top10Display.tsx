@@ -24,7 +24,7 @@ const TOP10_HEADINGS: Record<string, string> = {
     '17/04': 'Kies iemand uit een ander team',
     '17/05': 'Je hebt een pijnlijke pukkel op je bil. /n Wie mag hem voor je uitknijpen?',
     '17/06': 'Wie denkt dat ie always gelijk heeft?',
-    '17/07': 'Wie doet tegen betaling de naakte fotoshoot van het Perfecte Plaatje?',
+    '17/07': 'Wie doet tegen betaling de naakte fotoshoot /n van het Perfecte Plaatje?',
     '17/08': 'Wie kan 40 dagen zonder sex?',
     '17/09': 'Wie kan absoluut niet tegen kritiek?',
     '17/10': 'Wie laat weleens een wind?',
@@ -300,7 +300,7 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
 
     // Reverse order: lowest rank at bottom, #1 at top. Reveal from bottom up.
     return (
-        <div className="flex flex-col gap-4 w-full px-4 no-scrollbar">
+        <div className="flex flex-col h-full justify-between items-stretch py-2">
             {results.map((res, i) => {
                 // Reveal from bottom: last index revealed first
                 const revealIndex = results.length - 1 - i;
