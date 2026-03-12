@@ -21,6 +21,51 @@ export const persistState = async (sessionId: string, state: Top3State): Promise
   });
 };
 
+/**
+ * Core update function for Top3State using Optimistic Concurrency Control (OCC) / Jitter Retry.
+ */
+export const updateState = async (sessionId: string, updater: (current: Top3State) => Top3State): Promise<Top3State> => {
+  const maxRetries = 10;
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // 1. Fetch latest session
+      const session = await rankingService.getSessionById(sessionId) as unknown as { top3_state?: string | Top3State };
+      if (!session) throw new Error('Session not found');
+
+      // 2. Extract current state
+      let top3State: Top3State | null = null;
+      if (session.top3_state) {
+        top3State = typeof session.top3_state === 'string'
+          ? JSON.parse(session.top3_state) as Top3State
+          : session.top3_state;
+      }
+
+      const current = top3State || getInitialState();
+
+      // 3. Apply changes via updater function
+      const newState = updater(current);
+
+      // 4. Save to top-level state field
+      await rankingService.updateSession(sessionId, {
+        top3_state: JSON.stringify(newState),
+      });
+
+      return newState;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.warn(`[Top3] Update attempt ${i + 1} failed, retrying...`, err.message);
+        lastError = err;
+      }
+      // Jittered backoff to prevent thundering herd
+      await new Promise(r => setTimeout(r, 100 + Math.random() * 200));
+    }
+  }
+
+  throw lastError || new Error('Failed to update Top3 state after max retries');
+};
+
 export const startVoting = async (
   sessionId: string,
   currentState: Top3State

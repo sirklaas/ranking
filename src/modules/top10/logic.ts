@@ -21,6 +21,51 @@ export const persistState = async (sessionId: string, state: Top10State): Promis
     });
 };
 
+/**
+ * Core update function for Top10State using Optimistic Concurrency Control (OCC) / Jitter Retry.
+ */
+export const updateState = async (sessionId: string, updater: (current: Top10State) => Top10State): Promise<Top10State> => {
+    const maxRetries = 10;
+    let lastError: Error | null = null;
+
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            // 1. Fetch latest session
+            const session = await rankingService.getSessionById(sessionId) as unknown as { top10_state?: string | Top10State };
+            if (!session) throw new Error('Session not found');
+
+            // 2. Extract current state
+            let top10State: Top10State | null = null;
+            if (session.top10_state) {
+                top10State = typeof session.top10_state === 'string'
+                    ? JSON.parse(session.top10_state) as Top10State
+                    : session.top10_state;
+            }
+
+            const current = top10State || getInitialState();
+
+            // 3. Apply changes via updater function
+            const newState = updater(current);
+
+            // 4. Save to top-level state field
+            await rankingService.updateSession(sessionId, {
+                top10_state: JSON.stringify(newState),
+            });
+
+            return newState;
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                console.warn(`[Top10] Update attempt ${i + 1} failed, retrying...`, err.message);
+                lastError = err;
+            }
+            // Jittered backoff to prevent thundering herd
+            await new Promise(r => setTimeout(r, 100 + Math.random() * 200));
+        }
+    }
+
+    throw lastError || new Error('Failed to update Top10 state after max retries');
+};
+
 // Start voting phase
 export const startVoting = async (
     sessionId: string,

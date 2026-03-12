@@ -175,17 +175,21 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                 <div 
                     className="mb-8 whitespace-nowrap"
                     style={{
+                        animation: 'flexFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+                        zIndex: 50
+                    }}
+                >
+                    <span style={{
+                        display: 'inline-block',
                         fontSize: `${winner.fontSize}px`,
                         fontFamily: nameFont,
                         fontWeight: 900,
                         color: winner.color,
                         textShadow: '0 0 50px rgba(255,255,255,0.5), 0 0 100px rgba(255,255,255,0.3)',
                         letterSpacing: '4px',
-                        animation: 'cloudFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-                        zIndex: 50
-                    }}
-                >
-                    {winner.name}
+                    }}>
+                        {winner.name}
+                    </span>
                 </div>
             )}
             
@@ -196,17 +200,21 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                         key={item.name}
                         className="transition-all duration-1000 inline-block"
                         style={{
+                            opacity: item.opacity,
+                            animation: `flexFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${(i + 1) * 0.1}s both`,
+                        }}
+                    >
+                        <span style={{
+                            display: 'inline-block',
                             transform: `rotate(${item.rotation}deg)`,
                             fontSize: `${item.fontSize}px`,
                             fontFamily: nameFont,
                             fontWeight: 700,
                             color: item.color,
-                            opacity: item.opacity,
                             textShadow: '0 4px 20px rgba(0,0,0,0.6)',
-                            animation: `cloudFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${(i + 1) * 0.1}s both`,
-                        }}
-                    >
-                        {item.name}
+                        }}>
+                            {item.name}
+                        </span>
                     </div>
                 ))}
             </div>
@@ -251,13 +259,13 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
 
     return (
         <div
-            className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center gap-3 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+            className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center gap-6 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
             style={{
                 width: '100%',
                 transitionDelay: `${(total - index - 1) * 0.05}s`
             }}
         >
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shrink-0 border-2 border-white/50 ${index === 0 ? 'bg-yellow-400 text-black animate-bounce' : 'bg-white/20 text-white'}`} style={{ fontFamily: barlowFont }}>
+            <div className={`w-32 h-32 rounded-full flex items-center justify-center text-6xl font-black shrink-0 border-4 border-white/50 shadow-2xl ${index === 0 ? 'bg-yellow-400 text-black animate-bounce' : 'bg-white/20 text-white'}`} style={{ fontFamily: barlowFont }}>
                 {index + 1}
             </div>
             <div className="flex-1 min-w-0">
@@ -450,9 +458,9 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
 
             {/* CSS animations */}
             <style jsx>{`
-        @keyframes cloudFadeIn {
-          0% { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(-180deg); filter: blur(20px); }
-          100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); filter: blur(0); }
+        @keyframes flexFadeIn {
+          0% { opacity: 0; transform: scale(0); filter: blur(20px); }
+          100% { opacity: 1; transform: scale(1); filter: blur(0); }
         }
         .no-scrollbar::-webkit-scrollbar {
           display: none;

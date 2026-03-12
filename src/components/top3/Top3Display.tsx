@@ -296,7 +296,8 @@ function NameWall({ allNames = [], votedNames = [] }: { allNames: string[]; vote
   return (
     <div className="flex flex-wrap gap-4 justify-center p-8">
       {(allNames || []).map((name, i) => {
-        const hasVoted = votedSet.has(name);
+        const formattedName = formatName(name);
+        const hasVoted = votedSet.has(formattedName) || votedSet.has(name);
         return (
           <div
             key={name}
