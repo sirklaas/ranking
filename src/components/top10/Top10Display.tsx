@@ -112,7 +112,7 @@ function RenderHeading({ text, font }: { text: string; font: string }) {
     return (
         <>
             {lines.map((line, idx) => (
-                <div key={idx} className="block w-full">
+                <div key={idx} className="block w-full whitespace-nowrap">
                     {line.trim()}
                 </div>
             ))}
@@ -410,11 +410,12 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                 {displayHeading && (
                     <div className={`absolute left-0 right-0 text-center ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[100px]'}`}>
                         <h1
-                            className="text-white px-12 leading-none"
+                            className="text-white px-12"
                             style={{
                                 fontFamily: barlowFont,
                                 fontWeight: 300,
-                                fontSize: '10rem',
+                                fontSize: '130px',
+                                lineHeight: displayHeading.includes('/n') || displayHeading.includes('/N') ? '110px' : 'normal',
                                 textShadow: '0 8px 32px rgba(0,0,0,0.8)'
                             }}
                         >
@@ -426,7 +427,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                 {/* Main content area */}
                 <div className="flex-1 flex items-stretch p-4">
                     {phase === 'intro' ? (
-                        <div className="flex-1 flex flex-wrap gap-4 items-center justify-center p-8">
+                        <div className="flex-1 flex flex-wrap gap-4 items-start justify-center p-8 pt-[320px]">
                             <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
                         </div>
                     ) : phase === 'results' || phase === 'voting' ? (

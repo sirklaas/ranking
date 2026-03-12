@@ -8,7 +8,7 @@ import { safeJsonParse } from '@/lib/jsonUtils';
 // Hardcoded slides — faseKey → heading + image filename
 const TOP3_SLIDES: Record<string, { heading: string; image: string }> = {
   '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: 'verliefd.jpeg' },
-  '10/06': { heading: 'Wie is de ideale schoon- zoon of zus?', image: 'schoonzoon.png' },
+  '10/06': { heading: 'Wie is de ideale schoonzoon of -zus?', image: 'schoonzoon.png' },
   '10/07': { heading: 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?', image: 'andes.jpeg' },
   '10/08': { heading: 'Wie zou je absoluut niet /n op je kinderen laten passen?', image: 'kinderen.png' },
   '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: 'crypto.png' },

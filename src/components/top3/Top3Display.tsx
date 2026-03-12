@@ -417,13 +417,14 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
       <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
         {/* Heading — top 100px for questions, bottom 75px for trailer */}
         {displayHeading && (
-          <div className={`absolute left-0 right-0 text-center z-30 ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[150px]'}`}>
+          <div className={`absolute left-0 right-0 text-center z-30 ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[100px]'}`}>
             <h1
-              className="text-white font-bold px-12 leading-none"
+              className="text-white font-bold px-12"
               style={{
                 fontFamily: barlowFont,
                 fontWeight: 300,
-                fontSize: '10rem',
+                fontSize: '130px',
+                lineHeight: displayHeading.includes('/n') || displayHeading.includes('/N') ? '110px' : 'normal',
                 textShadow: '0 4px 24px rgba(0,0,0,0.8)',
                 animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
               }}
@@ -434,7 +435,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
         )}
 
         {/* Main content */}
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className="flex-1 flex items-start justify-center p-8 pt-[320px]">
           {phase === 'results' ? (
             <ResultsView results={state.currentQuestion.results || []} animate={animateResults} />
           ) : (
