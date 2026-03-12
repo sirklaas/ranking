@@ -259,27 +259,27 @@ function ResultItem({ result, index, show, total }: { result: Top10Result; index
 
     return (
         <div
-            className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center gap-6 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+            className={`transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex items-center gap-4 ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
             style={{
                 width: '100%',
                 transitionDelay: `${(total - index - 1) * 0.05}s`
             }}
         >
-            <div className={`w-32 h-32 rounded-full flex items-center justify-center text-6xl font-black shrink-0 border-4 border-white/50 shadow-2xl ${index === 0 ? 'bg-yellow-400 text-black animate-bounce' : 'bg-white/20 text-white'}`} style={{ fontFamily: barlowFont }}>
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black shrink-0 border-4 border-white/50 shadow-2xl ${index === 0 ? 'bg-yellow-400 text-black animate-bounce' : 'bg-white/20 text-white'}`} style={{ fontFamily: barlowFont }}>
                 {index + 1}
             </div>
-            <div className="flex-1 min-w-0">
-                <div className="text-white tracking-tight" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '5.5rem', lineHeight: 1.2, overflow: 'visible' }}>
+            <div className="flex-1 min-w-0 pr-4">
+                <div className="text-white tracking-tight" style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '3rem', lineHeight: 1.1, overflow: 'visible' }}>
                     {formatName(result.playerName)}
                 </div>
-                <div className="flex items-center gap-3 mt-1">
-                    <div className="h-6 bg-white/10 rounded-full overflow-hidden" style={{ width: '50%' }}>
+                <div className="flex items-center gap-2 mt-0.5">
+                    <div className="h-4 bg-white/10 rounded-full overflow-hidden" style={{ width: '40%' }}>
                         <div
                             className={`h-full rounded-full transition-all duration-1000 delay-500 ${index === 0 ? 'bg-gradient-to-r from-yellow-300 via-white to-yellow-300' : 'bg-gradient-to-r from-cyan-300 to-blue-600'}`}
                             style={{ width: show ? `${result.percentage}%` : '0%' }}
                         />
                     </div>
-                    <span className={`shrink-0 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '5.5rem', whiteSpace: 'nowrap' }}>
+                    <span className={`shrink-0 ${index === 0 ? 'text-yellow-300' : 'text-cyan-300'}`} style={{ fontFamily: barlowFont, fontWeight: 400, fontSize: '3rem', whiteSpace: 'nowrap' }}>
                         {result.percentage}%
                     </span>
                 </div>
@@ -408,14 +408,14 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
             <div className="relative z-20 flex-1 flex flex-col">
                 {/* Heading - POSITION DEPENDENT */}
                 {displayHeading && (
-                    <div className={`absolute left-0 right-0 text-center ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[100px]'}`}>
+                    <div className={`absolute left-0 right-0 text-center ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[75px]'}`}>
                         <h1
                             className="text-white px-12"
                             style={{
                                 fontFamily: barlowFont,
                                 fontWeight: 300,
                                 fontSize: '130px',
-                                lineHeight: displayHeading.includes('/n') || displayHeading.includes('/N') ? '110px' : 'normal',
+                                lineHeight: displayHeading.includes('/n') || displayHeading.includes('/N') ? '130px' : 'normal',
                                 textShadow: '0 8px 32px rgba(0,0,0,0.8)'
                             }}
                         >
@@ -432,8 +432,8 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                         </div>
                     ) : phase === 'results' || phase === 'voting' ? (
                         <>
-                            {/* Left: results list - anchored to bottom left 25% - ONLY SHOW ONCE ALL VOTES IN */}
-                            <div className="absolute left-0 bottom-0 w-1/4" style={{ paddingBottom: '75px', paddingLeft: '32px' }}>
+                            {/* Left: results list - constrained to prevent heading/bottom collisions */}
+                            <div className="absolute left-8 top-[320px] bottom-[75px] w-1/4">
                                 {(phase === 'results' || (phase === 'voting' && votedNames.length >= (state.allPlayerNames.length || 1))) && (
                                     <SequentialResults results={phase === 'results' && state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
                                 )}
