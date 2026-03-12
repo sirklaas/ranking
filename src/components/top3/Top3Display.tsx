@@ -211,33 +211,33 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                   {i === 0 && (
                     <>
                       <circle
-                        cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={40}
-                        fill="none" stroke={seg.color} strokeWidth="3"
-                        strokeDasharray="12 8"
-                        style={{ filter: `drop-shadow(0 0 8px ${seg.color}) drop-shadow(0 0 16px ${seg.color})` }}
+                        cx={isRightSide ? labelX + 60 : labelX - 60} cy={labelY - 12} r={120}
+                        fill="none" stroke={seg.color} strokeWidth="8"
+                        strokeDasharray="36 24"
+                        style={{ filter: `drop-shadow(0 0 24px ${seg.color}) drop-shadow(0 0 48px ${seg.color})` }}
                       >
-                        <animateTransform attributeName="transform" type="rotate" from={`0 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} to={`360 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} dur="3s" repeatCount="indefinite" />
+                        <animateTransform attributeName="transform" type="rotate" from={`0 ${isRightSide ? labelX + 60 : labelX - 60} ${labelY - 12}`} to={`360 ${isRightSide ? labelX + 60 : labelX - 60} ${labelY - 12}`} dur="3s" repeatCount="indefinite" />
                       </circle>
                       <circle
-                        cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={44}
-                        fill="none" stroke={seg.color} strokeWidth="1.5" strokeOpacity="0.4"
-                        strokeDasharray="6 14"
+                        cx={isRightSide ? labelX + 60 : labelX - 60} cy={labelY - 12} r={130}
+                        fill="none" stroke={seg.color} strokeWidth="4" strokeOpacity="0.4"
+                        strokeDasharray="18 42"
                       >
-                        <animateTransform attributeName="transform" type="rotate" from={`360 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} to={`0 ${isRightSide ? labelX + 20 : labelX - 20} ${labelY - 4}`} dur="5s" repeatCount="indefinite" />
+                        <animateTransform attributeName="transform" type="rotate" from={`360 ${isRightSide ? labelX + 60 : labelX - 60} ${labelY - 12}`} to={`0 ${isRightSide ? labelX + 60 : labelX - 60} ${labelY - 12}`} dur="5s" repeatCount="indefinite" />
                       </circle>
                     </>
                   )}
-                  <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={32} fill={seg.color} stroke="rgba(255,255,255,0.2)" strokeWidth="4" />
-                  <text x={isRightSide ? labelX + 20 : labelX - 20} y={labelY + 6} textAnchor="middle" fill="#000" fontSize="30" fontWeight="900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  <circle cx={isRightSide ? labelX + 60 : labelX - 60} cy={labelY - 12} r={96} fill={seg.color} stroke="rgba(255,255,255,0.2)" strokeWidth="12" />
+                  <text x={isRightSide ? labelX + 60 : labelX - 60} y={labelY + 20} textAnchor="middle" fill="#000" fontSize="90" fontWeight="900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                     {i + 1}
                   </text>
                 </>
               ) : (
-                <circle cx={isRightSide ? labelX + 20 : labelX - 20} cy={labelY - 4} r={14} fill={seg.color} />
+                <circle cx={isRightSide ? labelX + 60 : labelX - 60} cy={labelY - 12} r={42} fill={seg.color} />
               )}
 
               <text
-                x={isRightSide ? labelX + 80 : labelX - 80}
+                x={isRightSide ? labelX + 180 : labelX - 180}
                 y={labelY + 5}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill="white"
@@ -248,7 +248,7 @@ function AnimatedDonut({ results, animate }: { results: Top3Result[]; animate: b
                 {formatName(results[i].playerName)}
               </text>
               <text
-                x={isRightSide ? labelX + 80 : labelX - 80}
+                x={isRightSide ? labelX + 180 : labelX - 180}
                 y={labelY + 65}
                 textAnchor={isRightSide ? "start" : "end"}
                 fill={seg.color}

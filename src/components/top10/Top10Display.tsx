@@ -431,9 +431,11 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                         </div>
                     ) : phase === 'results' || phase === 'voting' ? (
                         <>
-                            {/* Left: results list - anchored to bottom left 25% */}
+                            {/* Left: results list - anchored to bottom left 25% - ONLY SHOW ONCE ALL VOTES IN */}
                             <div className="absolute left-0 bottom-0 w-1/4" style={{ paddingBottom: '75px', paddingLeft: '32px' }}>
-                                <SequentialResults results={state.currentQuestion.results} />
+                                {(phase === 'results' || (phase === 'voting' && votedNames.length >= (state.allPlayerNames.length || 1))) && (
+                                    <SequentialResults results={phase === 'results' && state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
+                                )}
                             </div>
                             {/* Right: wordcloud — absolutely positioned 75% width, 75vh height, bottom-anchored */}
                             <div className="absolute right-0 bottom-[75px] w-3/4" style={{ height: '75vh' }}>
