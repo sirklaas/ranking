@@ -150,6 +150,11 @@ export const computeResults = (votes: Top3Vote[]): Top3Result[] => {
   const top3 = sorted.slice(0, 3);
   const otherVotes = sorted.slice(3).reduce((sum, item) => sum + item.votes, 0);
 
+  // Winner Tie-Breaker (v9.4.1): If Rank 1 and 2 are tied in votes, add +1% to Rank 1
+  if (top3.length > 1 && top3[0].votes === top3[1].votes && top3[0].votes > 0) {
+    top3[0].percentage += 1;
+  }
+
   if (otherVotes > 0) {
     top3.push({
       playerName: 'Overige spelers',

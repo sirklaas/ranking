@@ -138,7 +138,14 @@ export const computeResults = (votes: Top10Vote[]): Top10Result[] => {
         }))
         .sort((a, b) => b.votes - a.votes);
 
-    return sorted.slice(0, 10);
+    const results = sorted.slice(0, 10);
+
+    // Winner Tie-Breaker (v9.4.1): If Rank 1 and 2 are tied in votes, add +1% to Rank 1
+    if (results.length > 1 && results[0].votes === results[1].votes && results[0].votes > 0) {
+        results[0].percentage += 1;
+    }
+
+    return results;
 };
 
 // Show results
