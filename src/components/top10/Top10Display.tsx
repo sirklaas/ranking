@@ -153,71 +153,177 @@ function computeCloudSizes(results: Top10Result[]): CloudItem[] {
     });
 }
 
-/* ──────── animated word cloud ──────── */
-/* ──────── CSS Flexbox based word cloud ──────── */
+/* ──────── Cinematic D3 Word Cloud ──────── */
 function WordCloud({ results, animate }: { results: Top10Result[]; animate: boolean }) {
-    const [items, setItems] = useState<CloudItem[]>([]);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [d3Loaded, setD3Loaded] = useState(false);
+    const simulationRef = useRef<any>(null);
+    const nodesRef = useRef<any[]>([]);
+    const frameRef = useRef<number>(0);
 
+    // Load D3 from CDN
     useEffect(() => {
-        setItems(computeCloudSizes(results));
-    }, [results]);
+        if ((window as any).d3) {
+            setD3Loaded(true);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = "https://d3js.org/d3.v7.min.js";
+        script.async = true;
+        script.onload = () => setD3Loaded(true);
+        document.head.appendChild(script);
+        return () => {
+            if (document.head.contains(script)) document.head.removeChild(script);
+        };
+    }, []);
 
-    if (!animate || items.length === 0) return null;
+    // Simulation & Rendering Logic
+    useEffect(() => {
+        if (!d3Loaded || !animate || !results.length || !containerRef.current || !canvasRef.current) return;
 
-    // Separate the winner from the rest of the pack so we can force them to be giant and centered
-    const winner = items[0];
-    const others = items.slice(1);
+        const d3 = (window as any).d3;
+        const container = containerRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        canvas.width = width * window.devicePixelRatio;
+        canvas.height = height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+        // Map results to nodes
+        const maxVotes = results[0].votes || 1;
+        const prevNodes = new Map(nodesRef.current.map(n => [n.playerName, n]));
+
+        const newNodes = results.map((r, i) => {
+            const prev = prevNodes.get(r.playerName);
+            const rank = i + 1;
+            const ratio = r.votes / maxVotes;
+            
+            // Rank-based sizes
+            let baseSize = 40;
+            if (rank === 1) baseSize = 120 + (ratio * 60);
+            else if (rank === 2) baseSize = 80;
+            else baseSize = Math.max(30, 70 - (rank * 4));
+
+            // Rank-based rotation
+            const targetRotation = rank === 2 ? -90 : (rank === 1 ? 0 : (hashStr(r.playerName) % 2 === 0 ? 0 : -90));
+
+            return {
+                ...prev,
+                playerName: r.playerName,
+                id: r.playerName,
+                rank,
+                votes: r.votes,
+                targetSize: baseSize,
+                size: prev?.size || 10, // grow in
+                targetRotation,
+                rotation: prev?.rotation ?? 0,
+                x: prev?.x ?? (width / 2 + (Math.random() - 0.5) * 100),
+                y: prev?.y ?? (height / 2 + (Math.random() - 0.5) * 100),
+                color: CLOUD_COLORS[i % CLOUD_COLORS.length],
+                vx: prev?.vx ?? 0,
+                vy: prev?.vy ?? 0,
+                phase: prev?.phase ?? (Math.random() * Math.PI * 2)
+            };
+        });
+
+        nodesRef.current = newNodes;
+
+        // Force Simulation
+        if (simulationRef.current) simulationRef.current.stop();
+
+        const simulation = d3.forceSimulation(newNodes)
+            .force("charge", d3.forceManyBody().strength(50))
+            .force("collision", d3.forceCollide().radius((d: any) => {
+                // Approximate collision radius based on size and rotation
+                return d.targetSize * (Math.abs(d.targetRotation) === 90 ? 0.8 : 1.2);
+            }).iterations(4))
+            .force("center", d3.forceCenter(width / 2, height / 2).strength(0.01));
+
+        // Rank 1 specific pull to center
+        simulation.force("rank1", (alpha: number) => {
+            const rank1 = newNodes[0];
+            if (rank1) {
+                rank1.vx += (width / 2 - rank1.x) * 0.05 * alpha;
+                rank1.vy += (height / 2 - rank1.y) * 0.05 * alpha;
+            }
+        });
+        
+        // Boundary force
+        simulation.force("boundary", () => {
+            newNodes.forEach(node => {
+                const padding = 50;
+                if (node.x < padding) node.vx += 2;
+                if (node.x > width - padding) node.vx -= 2;
+                if (node.y < padding) node.vy += 2;
+                if (node.y > height - padding) node.vy -= 2;
+            });
+        });
+
+        simulationRef.current = simulation;
+
+        // Render Loop
+        const tick = () => {
+            ctx.clearRect(0, 0, width, height);
+            const time = performance.now() * 0.001;
+
+            newNodes.forEach(node => {
+                // Interpolate size and rotation
+                node.size += (node.targetSize - node.size) * 0.1;
+                
+                // Rotation interpolation (shortest path)
+                let diff = node.targetRotation - node.rotation;
+                if (diff > 180) diff -= 360;
+                if (diff < -180) diff += 360;
+                node.rotation += diff * 0.1;
+
+                // "School of Fish" sinusoidal drift
+                const driftX = Math.sin(time * 0.5 + node.phase) * 0.5;
+                const driftY = Math.cos(time * 0.7 + node.phase) * 0.5;
+                
+                node.x += driftX;
+                node.y += driftY;
+
+                // Draw
+                ctx.save();
+                ctx.translate(node.x, node.y);
+                ctx.rotate(node.rotation * (Math.PI / 180));
+                
+                const name = formatName(node.playerName);
+                ctx.font = `900 ${node.size}px ${nameFont}`;
+                ctx.fillStyle = node.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Glow effect
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = 'rgba(255,255,255,0.3)';
+                
+                ctx.fillText(name, 0, 0);
+                ctx.restore();
+            });
+
+            frameRef.current = requestAnimationFrame(tick);
+        };
+
+        tick();
+
+        return () => {
+            cancelAnimationFrame(frameRef.current);
+            simulation.stop();
+        };
+    }, [d3Loaded, animate, results]);
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center pt-10">
-            {/* Massive Winner */}
-            {winner && (
-                <div 
-                    className="mb-8 whitespace-nowrap"
-                    style={{
-                        animation: 'flexFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-                        zIndex: 50
-                    }}
-                >
-                    <span style={{
-                        display: 'inline-block',
-                        fontSize: `${winner.fontSize}px`,
-                        fontFamily: nameFont,
-                        fontWeight: 900,
-                        color: winner.color,
-                        textShadow: '0 0 50px rgba(255,255,255,0.5), 0 0 100px rgba(255,255,255,0.3)',
-                        letterSpacing: '4px',
-                    }}>
-                        {winner.name}
-                    </span>
-                </div>
-            )}
-            
-            {/* The rest flex-wrapped below to guarantee zero overlap */}
-            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 max-w-full px-8">
-                {others.map((item, i) => (
-                    <div
-                        key={item.name}
-                        className="transition-all duration-1000 inline-block"
-                        style={{
-                            opacity: item.opacity,
-                            animation: `flexFadeIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${(i + 1) * 0.1}s both`,
-                        }}
-                    >
-                        <span style={{
-                            display: 'inline-block',
-                            transform: `rotate(${item.rotation}deg)`,
-                            fontSize: `${item.fontSize}px`,
-                            fontFamily: nameFont,
-                            fontWeight: 700,
-                            color: item.color,
-                            textShadow: '0 4px 20px rgba(0,0,0,0.6)',
-                        }}>
-                            {item.name}
-                        </span>
-                    </div>
-                ))}
-            </div>
+        <div ref={containerRef} className="w-full h-full relative overflow-hidden">
+            <canvas 
+                ref={canvasRef} 
+                className="w-full h-full pointer-events-none"
+            />
         </div>
     );
 }
@@ -298,12 +404,14 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
         return () => clearInterval(timer);
     }, [results.length]);
 
-    // Reverse order: lowest rank at bottom, #1 at top. Reveal from bottom up.
+    // Limit to Top 5 and distribute evenly
+    const top5 = results.slice(0, 5);
+
     return (
-        <div className="flex flex-col h-full justify-between items-stretch py-2">
-            {results.map((res, i) => {
+        <div className="flex flex-col h-full justify-between items-stretch py-8">
+            {top5.map((res, i) => {
                 // Reveal from bottom: last index revealed first
-                const revealIndex = results.length - 1 - i;
+                const revealIndex = top5.length - 1 - i;
                 const show = revealCount > revealIndex;
                 return (
                     <ResultItem
@@ -311,7 +419,7 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
                         result={res}
                         index={i}
                         show={show}
-                        total={results.length}
+                        total={top5.length}
                     />
                 );
             })}
