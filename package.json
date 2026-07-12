@@ -20,7 +20,7 @@
     "framer-motion": "^12.23.9",
     "highcharts": "^12.3.0",
     "highcharts-react-official": "^3.2.2",
-    "next": "^16.0.8",
+    "next": "16.0.10",
     "pocketbase": "^0.26.5",
     "react": "19.1.0",
     "react-dom": "19.1.0",
