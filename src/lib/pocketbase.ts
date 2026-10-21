@@ -2,15 +2,21 @@ import PocketBase from 'pocketbase';
 
 let pbClient: PocketBase | null = null;
 let motherfileRecordId: string | null = null;
+function resolvePocketBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_PB_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL;
+  if (envUrl && !envUrl.includes('pinkmilk.pockethost.io')) {
+    return envUrl;
+  }
+  return (typeof window !== 'undefined' && window.location?.protocol === 'https:')
+    ? 'https://pb.pinkmilk.eu'
+    : 'http://127.0.0.1:8090';
+}
+
 // Client-side only - no build-time PocketBase dependency
 export function getPocketBase(): PocketBase | null {
   if (typeof window === 'undefined') return null;
   if (!pbClient) {
-    const fallback = (typeof window !== 'undefined' && window.location?.protocol === 'https:')
-      ? 'https://pb.pinkmilk.eu'
-      : 'http://127.0.0.1:8090';
-    const baseUrl = process.env.NEXT_PUBLIC_PB_URL || process.env.NEXT_PUBLIC_POCKETBASE_URL || fallback;
-    pbClient = new PocketBase(baseUrl);
+    pbClient = new PocketBase(resolvePocketBaseUrl());
   }
   return pbClient;
 }

@@ -3,9 +3,11 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import PocketBase from 'pocketbase';
+import { resolveServerPocketBaseUrl } from '@/lib/pbServer';
+import { authenticatePocketBaseAdmin } from '@/lib/pbAdminAuth';
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pb.pinkmilk.eu';
+  const baseUrl = resolveServerPocketBaseUrl();
   const email = process.env.PB_ADMIN_EMAIL;
   const password = process.env.PB_ADMIN_PASSWORD;
   const token = process.env.PB_ADMIN_TOKEN;
@@ -19,26 +21,25 @@ export async function GET() {
 
   try {
     const pb = new PocketBase(baseUrl);
+
+    // Prefer password auth against current PocketBase
+    if (email && password) {
+      try {
+        await authenticatePocketBaseAdmin(pb, email, password);
+        await pb.collections.getList(1, 1, { $autoCancel: false });
+        return NextResponse.json({ success: true, mode: 'password', meta });
+      } catch (e) {
+        console.warn('Password auth failed, checking token fallback:', e);
+      }
+    }
+
     if (token) {
       pb.authStore.save(token, null);
-      // try a lightweight admin-only call to verify token works
       try {
-        // list the collections (admin-only)
         await pb.collections.getList(1, 1, { $autoCancel: false });
         return NextResponse.json({ success: true, mode: 'token', meta });
       } catch (e) {
         return NextResponse.json({ success: false, error: 'token_auth_failed', details: String(e), meta }, { status: 500 });
-      }
-    }
-
-    if (email && password) {
-      try {
-        await pb.admins.authWithPassword(email, password);
-        // verify by listing collections (admin-only)
-        await pb.collections.getList(1, 1, { $autoCancel: false });
-        return NextResponse.json({ success: true, mode: 'password', meta });
-      } catch (e) {
-        return NextResponse.json({ success: false, error: 'password_auth_failed', details: String(e), meta }, { status: 500 });
       }
     }
 
