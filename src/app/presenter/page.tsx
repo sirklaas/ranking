@@ -245,7 +245,9 @@ export default function PresenterPage() {
             await rankingService.updateSession(s.id, { priority: 0 });
           }
         }
-        const headingsObj = JSON.parse(selectedSession.headings || '{}');
+        const headingsObj = typeof selectedSession.headings === 'string'
+          ? JSON.parse(selectedSession.headings || '{}')
+          : { ...(selectedSession.headings || {}) };
         headingsObj._lastActivated = Date.now();
         await rankingService.updateSession(selectedSession.id, {
           current_fase: '01/01',

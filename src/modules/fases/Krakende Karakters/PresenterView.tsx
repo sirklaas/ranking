@@ -8,7 +8,8 @@ import { krakendeVoteService } from '@/lib/pocketbase';
 import KrakendePresenter from '@/components/krakende-karakters/KrakendePresenter';
 
 const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, faseKey, moduleStateJson, onModuleStateJson, allPlayerNames = [] }) => {
-  const state: KrakendeState = safeJsonParse<KrakendeState>(moduleStateJson) ?? krakendeLogic.getInitialState();
+  const parsed = safeJsonParse(moduleStateJson);
+  const state: KrakendeState = krakendeLogic.ensureKrakendeState(parsed);
 
   // Auto-persist initial state to PB so display + phone can pick it up immediately.
   // Always reset when entering 13/02 (entry point) to clear stale state + votes.

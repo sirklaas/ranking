@@ -53,7 +53,7 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
 
   const renderPhaseButton = (targetPhase: KrakendePhase, label: string, num: number, color: 'blue' | 'red') => {
     const isActive = state.phase === targetPhase;
-    const isCompleted = state.completedPhases.includes(targetPhase) && !isActive;
+    const isCompleted = (state.completedPhases || []).includes(targetPhase) && !isActive;
     const colorClass = color === 'blue' ? 'blue' : 'red';
 
     return (

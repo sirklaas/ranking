@@ -12,6 +12,22 @@ export const getInitialState = (): KrakendeState => ({
   completedPhases: [],
 });
 
+export const ensureKrakendeState = (raw: unknown): KrakendeState => {
+  const initial = getInitialState();
+  if (!raw || typeof raw !== 'object') return initial;
+  const obj = raw as Partial<KrakendeState>;
+  return {
+    ...initial,
+    ...obj,
+    completedPhases: Array.isArray(obj.completedPhases) ? obj.completedPhases : [],
+    positiveTraits: Array.isArray(obj.positiveTraits) && obj.positiveTraits.length > 0 ? obj.positiveTraits : initial.positiveTraits,
+    negativeTraits: Array.isArray(obj.negativeTraits) && obj.negativeTraits.length > 0 ? obj.negativeTraits : initial.negativeTraits,
+    submissions: Array.isArray(obj.submissions) ? obj.submissions : [],
+    phase: obj.phase || initial.phase,
+    language: obj.language || initial.language,
+  };
+};
+
 // Map global fase key to internal Phase
 export const getPhaseFromFaseKey = (faseKey: string): KrakendePhase | null => {
   switch (faseKey) {
@@ -195,10 +211,10 @@ export const updateState = async (sessionId: string, updater: (current: Krakende
       if (session.krakende_state) {
         krakendeState = typeof session.krakende_state === 'string'
           ? JSON.parse(session.krakende_state) as KrakendeState
-          : session.krakende_state;
+          : session.krakende_state as KrakendeState;
       }
 
-      const current = krakendeState || getInitialState();
+      const current = ensureKrakendeState(krakendeState);
 
       // 3. Apply changes via updater function
       const newState = updater(current);
@@ -265,7 +281,8 @@ export const setRevealed = async (
 export const parseState = (json: string | undefined): KrakendeState | null => {
   if (!json) return null;
   try {
-    return JSON.parse(json) as KrakendeState;
+    const parsed = JSON.parse(json);
+    return ensureKrakendeState(parsed);
   } catch {
     return null;
   }

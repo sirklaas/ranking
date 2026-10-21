@@ -102,7 +102,7 @@ export default function KrakendePlayer({
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = state.phase;
     const fromResults = prev === 'negative-results' || prev === 'positive-results';
-    const freshReset = state.phase === 'positive-voting' && state.completedPhases.length === 0;
+    const freshReset = state.phase === 'positive-voting' && (state.completedPhases || []).length === 0;
     if (state.phase === 'positive-voting' && (fromResults || freshReset)) {
       localStorage.removeItem(LS_POS);
       localStorage.removeItem(LS_NEG);
@@ -112,7 +112,7 @@ export default function KrakendePlayer({
       setSubmitted(false);
       setShowConfirmation(false);
     }
-  }, [state.phase, state.completedPhases.length, LS_POS, LS_NEG]);
+  }, [state.phase, state.completedPhases?.length, LS_POS, LS_NEG]);
 
   const selectedTrait = traits.find((t) => t.id === selected);
 
