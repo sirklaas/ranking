@@ -16,12 +16,26 @@ export const ensureKrakendeState = (raw: unknown): KrakendeState => {
   const initial = getInitialState();
   if (!raw || typeof raw !== 'object') return initial;
   const obj = raw as Partial<KrakendeState>;
+
+  const mergeWithDefaults = (list: unknown, defaults: typeof DEFAULT_POSITIVE_TRAITS) => {
+    if (!Array.isArray(list) || list.length === 0) return defaults;
+    return list.map((item, idx) => {
+      const def = defaults.find((d) => d.id === item?.id) || defaults[idx] || {};
+      return {
+        ...def,
+        ...item,
+        line1: item?.line1 || def.line1,
+        line2: item?.line2 !== undefined ? item.line2 : def.line2,
+      };
+    });
+  };
+
   return {
     ...initial,
     ...obj,
     completedPhases: Array.isArray(obj.completedPhases) ? obj.completedPhases : [],
-    positiveTraits: Array.isArray(obj.positiveTraits) && obj.positiveTraits.length > 0 ? obj.positiveTraits : initial.positiveTraits,
-    negativeTraits: Array.isArray(obj.negativeTraits) && obj.negativeTraits.length > 0 ? obj.negativeTraits : initial.negativeTraits,
+    positiveTraits: mergeWithDefaults(obj.positiveTraits, DEFAULT_POSITIVE_TRAITS),
+    negativeTraits: mergeWithDefaults(obj.negativeTraits, DEFAULT_NEGATIVE_TRAITS),
     submissions: Array.isArray(obj.submissions) ? obj.submissions : [],
     phase: obj.phase || initial.phase,
     language: obj.language || initial.language,
@@ -31,10 +45,11 @@ export const ensureKrakendeState = (raw: unknown): KrakendeState => {
 // Map global fase key to internal Phase
 export const getPhaseFromFaseKey = (faseKey: string): KrakendePhase | null => {
   switch (faseKey) {
+    case '13/02':
     case '13/03': return 'positive-voting';
-    case '13/04': return 'negative-voting';
     case '13/05': return 'positive-results';
-    case '13/06': return 'negative-results';
+    case '13/06': return 'negative-voting';
+    case '13/09': return 'negative-results';
     default: return null;
   }
 };

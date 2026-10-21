@@ -625,9 +625,12 @@ export default function PresenterPage() {
                             src={media.path}
                             className="absolute inset-0 w-full h-full object-contain"
                             preload="auto"
+                            autoPlay
                             muted
                             playsInline
-                            onLoadedMetadata={(e) => { e.currentTarget.currentTime = 0.01; }}
+                            onLoadedMetadata={(e) => {
+                              e.currentTarget.play().catch(() => {});
+                            }}
                           />
                         ) : media?.type === 'image' && media.path ? (
                           <img src={media.path} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />

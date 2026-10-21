@@ -6,6 +6,8 @@ export interface KrakendeTrait {
   id: string;
   nl: string;
   en: string;
+  line1?: string;
+  line2?: string;
 }
 
 export interface KrakendeSubmission {

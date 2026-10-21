@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
-import { getTraitLabel, shuffleTraits, splitLabelForTwoLines } from '@/modules/krakende-karakters/logic';
 
 interface KrakendeDisplayProps {
   state: KrakendeState;
@@ -22,7 +21,7 @@ function playPopSound() {
     osc.frequency.setValueAtTime(600, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
     osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.2);
@@ -32,9 +31,6 @@ function playPopSound() {
   }
 }
 
-// Solid grey color for trait tiles
-const TILE_COLOR = '#808080';
-
 export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId }: KrakendeDisplayProps) {
   // Inject keyframe animations once
   useEffect(() => {
@@ -43,23 +39,20 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
     s.id = 'krakende-kf';
     s.textContent = `
       @keyframes krakendePop {
-        0%   { transform: scale(0); opacity: 0; }
-        60%  { transform: scale(1.2); opacity: 1; }
+        0%   { transform: scale(0.6); opacity: 0; }
+        60%  { transform: scale(1.08); opacity: 1; }
         100% { transform: scale(1); opacity: 1; }
-      }
-      @keyframes krakendeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to   { opacity: 1; transform: translateY(0); }
       }
     `;
     document.head.appendChild(s);
   }, []);
-  const totalPlayers = allPlayerNames.length;
-  const isPositive = state.phase === 'positive-voting' || state.phase === 'positive-results';
-  const isResults = state.phase === 'positive-results' || state.phase === 'negative-results';
-  const traits = isPositive ? state.positiveTraits : state.negativeTraits;
 
-  // Poll vote count from krakende_votes collection (scalable — no shared state writes)
+  const totalPlayers = allPlayerNames.length;
+  const isPositive = state.phase.includes('positive');
+  const isResults = state.phase.endsWith('-results');
+  const traits = (isPositive ? state.positiveTraits : state.negativeTraits).slice(0, 24);
+
+  // Poll vote count from krakende_votes collection
   const [voteCount, setVoteCount] = useState(0);
   useEffect(() => {
     if (!sessionId) return;
@@ -71,28 +64,21 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
         if (!active || !res.ok) return;
         const data = await res.json();
         setVoteCount(data.votes?.length || 0);
-      } catch { /* silent */ }
+      } catch {
+        /* silent */
+      }
     };
     poll();
-    const timer = setInterval(poll, 10000);
-    return () => { active = false; clearInterval(timer); };
+    const timer = setInterval(poll, 4000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
   }, [sessionId, isPositive]);
 
-  const currentSubmissions = voteCount;
-
-  // Shuffle traits once per phase (stable order via ref)
-  const shuffledRef = useRef<typeof traits>([]);
-  const phaseRef = useRef(state.phase);
-  if (phaseRef.current !== state.phase || shuffledRef.current.length === 0) {
-    shuffledRef.current = shuffleTraits(traits);
-    phaseRef.current = state.phase;
-  }
-  const shuffled = shuffledRef.current;
-
-  // Auto-reveal logic for Voting phases
+  // Auto-reveal logic: reveal cards sequentially in voting mode
   const [autoRevealIndex, setAutoRevealIndex] = useState(0);
 
-  // Reset auto-reveal when phase changes, or fast-forward if it's results
   useEffect(() => {
     if (isResults) {
       setAutoRevealIndex(traits.length);
@@ -101,7 +87,6 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
     }
   }, [state.phase, isResults, traits.length]);
 
-  // The interval to auto-reveal traits one by one
   useEffect(() => {
     if (isResults || autoRevealIndex >= traits.length) return;
 
@@ -111,155 +96,92 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
         playPopSound();
         return next;
       });
-    }, 500); // 0.5 seconds between each pop (24 × 0.5s = 12s total)
+    }, 450);
 
     return () => clearInterval(timer);
   }, [isResults, autoRevealIndex, traits.length]);
 
-  // Results view: show all traits purely (no names attached)
-  if (isResults) {
-    return (
-      <div
-        className="min-h-screen flex flex-col relative"
-        style={{
-          fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: 'linear-gradient(to bottom right, #facc15, #ec4899, #9333ea)',
-        }}
-      >
-        {/* Horizontal Band Header */}
-        <div
-          className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center px-6"
-          style={{ backgroundImage: 'url(/assets/band.webp)' }}
+  return (
+    <div
+      className="min-h-screen w-screen flex flex-col justify-between p-8 select-none"
+      style={{
+        background: isPositive
+          ? 'linear-gradient(180deg, #f59e0b 0%, #fbbf24 35%, #fde047 100%)'
+          : 'linear-gradient(180deg, #ea580c 0%, #f97316 40%, #fb923c 100%)',
+        fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
+      }}
+    >
+      {/* Top Banner: Keynote Style Giant White Header */}
+      <div className="flex justify-between items-baseline px-4 pt-2 pb-4">
+        <h1
+          className="text-white font-black tracking-tight uppercase leading-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
+          style={{
+            fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
+            fontSize: 'clamp(3.5rem, 6.5vw, 6.5rem)',
+            letterSpacing: '0.01em',
+          }}
         >
-          {/* Logo - Left */}
-          <div className="flex items-center">
-            <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-24 w-auto object-contain" />
+          {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+        </h1>
+
+        {/* Live Vote Tracker Badge */}
+        {!isResults && (
+          <div className="bg-black/50 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/20 shadow-xl flex items-center gap-3">
+            <span className="text-white/80 font-bold tracking-wider text-sm uppercase">Gekozen:</span>
+            <span className="text-white font-extrabold text-2xl">
+              {voteCount} / {totalPlayers || '–'}
+            </span>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Heading Below Band */}
-        <div className="w-full py-6 text-center px-8">
-          <h1
-            className="text-white drop-shadow-lg leading-tight"
-            style={{
-              fontFamily: 'Barlow Semi Condensed, sans-serif',
-              fontWeight: 300,
-              fontSize: 'clamp(2rem, 6vw, 5rem)',
-            }}
-          >
-            {isPositive ? 'Alle Goede Eigenschappen' : 'Alle Minder Goede Eigenschappen'}
-          </h1>
-        </div>
+      {/* 6 Columns x 4 Rows Keynote Replica Grid */}
+      <div className="flex-1 grid grid-cols-6 grid-rows-4 gap-3 px-4 pb-4">
+        {traits.map((trait, i) => {
+          const isRevealed = isResults || i < autoRevealIndex;
+          const isLatest = i === autoRevealIndex - 1 && !isResults;
 
-        <div className="grid grid-cols-6 gap-6 flex-1 auto-rows-min content-start px-12 pb-12">
-          {shuffled.map((trait, i) => {
+          const line1 = trait.line1 || trait.nl.split(' ')[0] || trait.nl;
+          const line2 =
+            trait.line2 !== undefined
+              ? trait.line2
+              : trait.nl.split(' ').slice(1).join(' ');
+
+          if (!isRevealed) {
             return (
               <div
                 key={trait.id}
-                className="rounded-xl p-4 flex items-center justify-center text-center shadow-lg border-[3px] border-white"
-                style={{
-                  background: 'linear-gradient(45deg, #2563eb, #9333ea)',
-                  minHeight: '160px',
-                  animation: `krakendeIn 3s ease-out both ${i * 0.1}s`
-                }}
-              >
-                <div className="w-full flex justify-center items-center font-barlow text-center flex-col text-white drop-shadow-md" style={{ fontWeight: 300 }}>
-                  {(() => {
-                    const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
-                    return (
-                      <>
-                        <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line1}</span>
-                        {line2 && <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line2}</span>}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
+                className="rounded-lg bg-black/10 border border-black/10 transition-opacity"
+              />
             );
-          })}
-        </div>
-      </div>
-    );
-  }
+          }
 
-  // Voting view: traits appear one by one with pop animation
-  const revealed = shuffled.slice(0, autoRevealIndex);
-
-  return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{
-        fontFamily: 'Barlow Semi Condensed, sans-serif',
-        background: 'linear-gradient(to bottom right, #facc15, #ec4899, #9333ea)',
-      }}
-    >
-      {/* Horizontal Band Header */}
-      <div
-        className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center px-6"
-        style={{ backgroundImage: 'url(/assets/band.webp)' }}
-      >
-        {/* Logo - Left */}
-        <div className="flex items-center">
-          <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-24 w-auto object-contain" />
-        </div>
-      </div>
-
-      {/* Heading Below Band */}
-      <div className="w-full py-6 text-center px-8">
-        <h1
-          className="text-white drop-shadow-lg leading-tight"
-          style={{
-            fontFamily: 'Barlow Semi Condensed, sans-serif',
-            fontWeight: 300,
-            fontSize: 'clamp(2rem, 6vw, 5rem)',
-          }}
-        >
-          {isPositive ? 'Goede Geinige Eigenschappen' : 'Minder Goede Eigenschappen'}
-        </h1>
-      </div>
-
-      <div className="grid grid-cols-6 gap-6 flex-1 auto-rows-min content-start px-12 pb-24">
-        {revealed.map((trait, i) => {
-          const isLatest = i === revealed.length - 1;
           return (
             <div
               key={trait.id}
-              className="rounded-xl p-4 flex items-center justify-center text-center shadow-lg border-[3px] border-white"
+              className={`rounded-lg flex flex-col items-center justify-center p-3 text-center shadow-lg border-2 transition-all ${
+                isPositive
+                  ? 'bg-[#fed766] border-black/30'
+                  : 'bg-[#fb923c] border-black/30'
+              }`}
               style={{
-                background: 'linear-gradient(45deg, #2563eb, #9333ea)',
-                animation: isLatest ? 'krakendePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined,
-                minHeight: '160px',
+                animation: isLatest ? 'krakendePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined,
               }}
             >
-              <div className="w-full flex justify-center items-center font-barlow text-center flex-col text-white drop-shadow-md" style={{ fontWeight: 300 }}>
-                {(() => {
-                  const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
-                  return (
-                    <>
-                      <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line1}</span>
-                      {line2 && <span style={{ fontSize: '4.5rem', lineHeight: '1.1' }}>{line2}</span>}
-                    </>
-                  );
-                })()}
+              <div
+                className="text-black font-extrabold tracking-tight leading-tight"
+                style={{
+                  fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
+                  fontSize: 'clamp(1.1rem, 1.7vw, 1.95rem)',
+                }}
+              >
+                <div>{line1}</div>
+                {line2 && <div className="mt-1">{line2}</div>}
               </div>
             </div>
           );
         })}
       </div>
-
-      <div className="mt-8 flex justify-center fixed bottom-10 left-0 right-0">
-        <div className="bg-black/40 backdrop-blur-md px-10 py-5 rounded-3xl border border-white/20 shadow-2xl flex items-center gap-6">
-          <span className="text-white/80 text-xl font-medium  tracking-widest">
-            Spelers Gekozen
-          </span>
-          <div className="text-5xl font-bold text-white bg-white/10 px-6 py-2 rounded-2xl">
-            <span className={currentSubmissions === totalPlayers ? "text-blue-400" : "text-white"}>{currentSubmissions}</span>
-            <span className="text-white/40 mx-2">/</span>
-            <span className="text-white/80">{totalPlayers}</span>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }

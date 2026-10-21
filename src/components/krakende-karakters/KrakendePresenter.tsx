@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { KrakendeState, KrakendeTrait, KrakendePhase } from '@/modules/krakende-karakters/types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { KrakendeState, KrakendePhase } from '@/modules/krakende-karakters/types';
 import * as krakendeLogic from '@/modules/krakende-karakters/logic';
 import { krakendeVoteService, KrakendeVote } from '@/lib/pocketbase';
 
@@ -12,24 +12,21 @@ interface KrakendePresenterProps {
   totalPlayers: number;
 }
 
-const PHASE_LABELS: Record<KrakendePhase, string> = {
-  'positive-voting': 'Positieve Eigenschappen',
-  'negative-voting': 'Negatieve Eigenschappen',
-  'positive-results': 'Resultaten Positief',
-  'negative-results': 'Resultaten Negatief',
-};
-
-export default function KrakendePresenter({ sessionId, state, onStateChange, totalPlayers }: KrakendePresenterProps) {
-  // Keyboard shortcuts
-  React.useEffect(() => {
+export default function KrakendePresenter({
+  sessionId,
+  state,
+  onStateChange,
+  totalPlayers,
+}: KrakendePresenterProps) {
+  // Keyboard shortcuts (1: pos voting, 2: pos results, 3: neg voting, 4: neg results)
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       const phaseMap: Record<string, KrakendePhase> = {
         '1': 'positive-voting',
-        '2': 'negative-voting',
-        '3': 'positive-results',
+        '2': 'positive-results',
+        '3': 'negative-voting',
         '4': 'negative-results',
       };
 
@@ -45,129 +42,232 @@ export default function KrakendePresenter({ sessionId, state, onStateChange, tot
 
   const handleReset = () => {
     if (window.confirm('Weet je zeker dat je alle keuzes wilt wissen en wilt herstarten?')) {
-      // Clear votes from krakende_votes collection + reset state
       krakendeVoteService.clearVotes(sessionId).catch(() => {});
       krakendeLogic.resetState(sessionId, state).then(onStateChange);
     }
   };
 
-  const renderPhaseButton = (targetPhase: KrakendePhase, label: string, num: number, color: 'blue' | 'red') => {
-    const isActive = state.phase === targetPhase;
-    const isCompleted = (state.completedPhases || []).includes(targetPhase) && !isActive;
-    const colorClass = color === 'blue' ? 'blue' : 'red';
-
-    return (
-      <button
-        onClick={() => krakendeLogic.setPhase(sessionId, state, targetPhase).then(onStateChange)}
-        className={`h-40 flex flex-col items-center justify-center p-4 rounded-xl font-bold tracking-wider transition-all active:scale-95 border-2 ${isActive
-          ? `bg-${colorClass}-500 text-white border-${colorClass}-300 shadow-[0_0_20px_rgba(${color === 'blue' ? '37,99,235' : '239,68,68'},0.6)]`
-          : `bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700 hover:border-gray-500`
-          }`}
-      >
-        <span className="text-4xl mb-2">{num}</span>
-        <span className="text-xs text-center">{label}</span>
-      </button>
-    );
-  };
-
-  // Poll vote counts from krakende_votes collection (scalable)
+  // Poll live votes from krakende_votes collection
   const [posVotes, setPosVotes] = useState<KrakendeVote[]>([]);
   const [negVotes, setNegVotes] = useState<KrakendeVote[]>([]);
   useEffect(() => {
     let active = true;
     const poll = async () => {
-      const [pos, neg] = await Promise.all([
-        krakendeVoteService.getVotes(sessionId, 'positive'),
-        krakendeVoteService.getVotes(sessionId, 'negative'),
-      ]);
-      if (!active) return;
-      setPosVotes(pos);
-      setNegVotes(neg);
+      try {
+        const [pos, neg] = await Promise.all([
+          krakendeVoteService.getVotes(sessionId, 'positive'),
+          krakendeVoteService.getVotes(sessionId, 'negative'),
+        ]);
+        if (!active) return;
+        setPosVotes(pos);
+        setNegVotes(neg);
+      } catch {
+        /* silent */
+      }
     };
     poll();
-    const timer = setInterval(poll, 10000);
-    return () => { active = false; clearInterval(timer); };
+    const timer = setInterval(poll, 4000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
   }, [sessionId]);
 
-  const posSubmissions = posVotes.length;
-  const negSubmissions = negVotes.length;
+  const isPositive = state.phase.includes('positive');
+  const isResults = state.phase.endsWith('-results');
+  const activeVotes = isPositive ? posVotes : negVotes;
+
+  // Map votes by trait_id for fast lookup
+  const votesByTrait = useMemo(() => {
+    const map = new Map<string, KrakendeVote[]>();
+    activeVotes.forEach((v) => {
+      const arr = map.get(v.trait_id) || [];
+      arr.push(v);
+      map.set(v.trait_id, arr);
+    });
+    return map;
+  }, [activeVotes]);
+
+  const traits = isPositive ? state.positiveTraits : state.negativeTraits;
+  const currentSubmissions = activeVotes.length;
 
   return (
-    <div className="flex flex-col gap-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      {/* Top bar: Phase + Metric */}
-      <div className="bg-[#0A1752] p-4 rounded-lg text-white shadow-lg border border-blue-800">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h3 className="text-3xl font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-              Krakende Karakters
-            </h3>
+    <div
+      className="flex flex-col gap-3 rounded-xl overflow-hidden shadow-2xl"
+      style={{ fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif' }}
+    >
+      {/* Top control bar: Phase Switcher & Live Stats */}
+      <div className="bg-[#0b1329] px-5 py-3 border-b border-gray-800 flex flex-wrap items-center justify-between gap-3">
+        {/* Left: Module title + Phase buttons */}
+        <div className="flex items-center gap-3">
+          <span className="text-white font-extrabold text-xl tracking-wide uppercase">
+            Krakende Karakters
+          </span>
+          <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-lg border border-gray-700/60">
             <button
-              onClick={handleReset}
-              className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-md font-bold transition-all active:scale-95 border border-red-400"
+              onClick={() => krakendeLogic.setPhase(sessionId, state, 'positive-voting').then(onStateChange)}
+              className={`px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
+                state.phase === 'positive-voting'
+                  ? 'bg-amber-400 text-black shadow-md font-black scale-105'
+                  : 'text-amber-300/80 hover:text-white hover:bg-white/10'
+              }`}
             >
-              RESET GAME (Leegmaken)
+              1. 24 Goede (Stemmen)
+            </button>
+            <button
+              onClick={() => krakendeLogic.setPhase(sessionId, state, 'positive-results').then(onStateChange)}
+              className={`px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
+                state.phase === 'positive-results'
+                  ? 'bg-amber-400 text-black shadow-md font-black scale-105'
+                  : 'text-amber-300/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              2. Goede Resultaten
+            </button>
+            <button
+              onClick={() => krakendeLogic.setPhase(sessionId, state, 'negative-voting').then(onStateChange)}
+              className={`px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
+                state.phase === 'negative-voting'
+                  ? 'bg-orange-500 text-white shadow-md font-black scale-105'
+                  : 'text-orange-300/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              3. 24 Minder Goede (Stemmen)
+            </button>
+            <button
+              onClick={() => krakendeLogic.setPhase(sessionId, state, 'negative-results').then(onStateChange)}
+              className={`px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
+                state.phase === 'negative-results'
+                  ? 'bg-orange-500 text-white shadow-md font-black scale-105'
+                  : 'text-orange-300/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              4. Minder Goede Resultaten
             </button>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <span className="block text-sm text-blue-300 font-bold tracking-wider">POS Gekozen</span>
-              <span className="text-3xl font-bold">{posSubmissions} / {totalPlayers}</span>
-            </div>
-            <div className="text-center ml-4">
-              <span className="block text-sm text-red-300 font-bold  tracking-wider">NEG Gekozen</span>
-              <span className="text-3xl font-bold">{negSubmissions} / {totalPlayers}</span>
-            </div>
+        </div>
+
+        {/* Right: Vote counter + Reset */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-black/50 px-3 py-1 rounded-md border border-gray-700">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                isPositive ? 'bg-amber-400 animate-pulse' : 'bg-orange-500 animate-pulse'
+              }`}
+            />
+            <span className="text-white/70 text-xs font-semibold uppercase">Gestemd:</span>
+            <span className="text-white font-extrabold text-sm">
+              {currentSubmissions} / {totalPlayers || '–'}
+            </span>
+          </div>
+
+          <button
+            onClick={handleReset}
+            className="bg-red-600/80 hover:bg-red-600 text-white text-xs px-3 py-1 rounded font-bold transition-all border border-red-500/50"
+            title="Herstart en wis alle ontvangen keuzes"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+
+      {/* KEYNOTE REPLICA BOARD */}
+      <div
+        className="relative w-full p-6 transition-colors duration-300 shadow-inner"
+        style={{
+          background: isPositive
+            ? 'linear-gradient(180deg, #f59e0b 0%, #fbbf24 35%, #fde047 100%)'
+            : 'linear-gradient(180deg, #ea580c 0%, #f97316 40%, #fb923c 100%)',
+        }}
+      >
+        {/* Giant Condensed White Title matching Keynote */}
+        <div className="mb-4 flex justify-between items-end">
+          <h1
+            className="text-white font-extrabold tracking-tight uppercase leading-none drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]"
+            style={{
+              fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
+              fontSize: 'clamp(2rem, 3.8vw, 3.75rem)',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+          </h1>
+          <div className="text-black/80 font-bold text-xs uppercase tracking-wider bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm">
+            {isResults ? '🏆 Resultaten Fase' : '📱 Live Speler Stemmen'}
           </div>
         </div>
-      </div>
 
-      {/* Submissions preview (from krakende_votes collection) */}
-      <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4">
-        <h4 className="text-white font-bold text-lg mb-3" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-          Keuzes ({posSubmissions + negSubmissions} stemmen)
-        </h4>
-        <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
-          {/* Show unique players across both phases */}
-          {(() => {
-            const allVotes = [...posVotes, ...negVotes];
-            const playerMap = new Map<string, { name: string; pos?: string; neg?: string }>();
-            allVotes.forEach(v => {
-              const entry = playerMap.get(v.player_id) || { name: v.player_name };
-              if (v.fase === 'positive') entry.pos = v.trait_id;
-              if (v.fase === 'negative') entry.neg = v.trait_id;
-              playerMap.set(v.player_id, entry);
-            });
-            const entries = Array.from(playerMap.entries());
-            if (entries.length === 0) return <div className="text-gray-500 text-sm col-span-3">Nog geen keuzes gemaakt</div>;
-            return entries.map(([pid, info]) => {
-              const posTrait = state.positiveTraits.find(t => t.id === info.pos);
-              const negTrait = state.negativeTraits.find(t => t.id === info.neg);
-              return (
-                <div key={pid} className="bg-gray-800/50 rounded p-2 text-sm">
-                  <div className="text-white font-medium">{info.name}</div>
-                  <div className="text-blue-400 text-xs">
-                    + {posTrait ? krakendeLogic.getTraitLabel(posTrait, state.language) : '—'}
+        {/* 6 Columns x 4 Rows Grid Replica */}
+        <div
+          className="grid grid-cols-6 grid-rows-4 gap-[2px] bg-black/40 p-[2px] rounded-lg overflow-hidden border-2 border-black/40 shadow-2xl"
+          style={{ minHeight: '380px' }}
+        >
+          {traits.slice(0, 24).map((trait) => {
+            const votes = votesByTrait.get(trait.id) || [];
+            const voteCount = votes.length;
+            const hasVotes = voteCount > 0;
+
+            // Split into lines if line1 not set
+            const line1 = trait.line1 || trait.nl.split(' ')[0] || trait.nl;
+            const line2 =
+              trait.line2 !== undefined
+                ? trait.line2
+                : trait.nl.split(' ').slice(1).join(' ');
+
+            return (
+              <div
+                key={trait.id}
+                className={`relative flex flex-col items-center justify-center p-2 text-center transition-all select-none ${
+                  hasVotes
+                    ? isPositive
+                      ? 'bg-[#fef08a] ring-2 ring-blue-600 shadow-md z-10'
+                      : 'bg-[#fed7aa] ring-2 ring-red-600 shadow-md z-10'
+                    : isPositive
+                    ? 'bg-[#fed766] hover:bg-[#fee085]'
+                    : 'bg-[#fb923c] hover:bg-[#f97316]'
+                }`}
+                style={{ minHeight: '90px' }}
+              >
+                {/* Vote Count Badge */}
+                {hasVotes && (
+                  <div
+                    className={`absolute top-1 right-1 flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full font-black text-xs text-white shadow-md ${
+                      isPositive ? 'bg-blue-600 ring-1 ring-white' : 'bg-red-700 ring-1 ring-white'
+                    }`}
+                  >
+                    {voteCount}
                   </div>
-                  <div className="text-red-400 text-xs">
-                    − {negTrait ? krakendeLogic.getTraitLabel(negTrait, state.language) : '—'}
-                  </div>
+                )}
+
+                {/* Trait Text: 2 lines centered bold black */}
+                <div
+                  className="text-black font-extrabold tracking-tight leading-tight"
+                  style={{
+                    fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
+                    fontSize: 'clamp(0.85rem, 1.1vw, 1.25rem)',
+                  }}
+                >
+                  <div>{line1}</div>
+                  {line2 && <div className="mt-0.5">{line2}</div>}
                 </div>
-              );
-            });
-          })()}
-        </div>
-      </div>
 
-      {/* Manual Phase Overrides - 4 IN A ROW */}
-      <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4 mt-2">
-        <h4 className="text-white font-bold text-lg mb-4" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-          Besturingspaneel: Spelverloop
-        </h4>
-        <div className="grid grid-cols-4 gap-4">
-          {renderPhaseButton('positive-voting', '1. Positief Stemmen', 1, 'blue')}
-          {renderPhaseButton('negative-voting', '2. Negatief Stemmen', 2, 'red')}
-          {renderPhaseButton('positive-results', '3. Positief Resultaten', 3, 'blue')}
-          {renderPhaseButton('negative-results', '4. Negatief Resultaten', 4, 'red')}
+                {/* Player Name Chips (shown on presenter screen) */}
+                {hasVotes && (
+                  <div className="mt-1.5 flex flex-wrap justify-center gap-1 max-w-full">
+                    {votes.map((v) => (
+                      <span
+                        key={v.id || v.player_id}
+                        className="bg-black/80 text-white font-bold text-[10px] px-1.5 py-0.5 rounded shadow-sm truncate max-w-[120px]"
+                        title={`${v.player_name} (Team ${v.team_nr})`}
+                      >
+                        {v.player_name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
