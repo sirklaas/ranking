@@ -11,7 +11,6 @@ async function fix() {
     try { headings = JSON.parse(session.headings || '{}'); } catch (e) { }
 
     const map = {
-        'trailerguilty': 'GuiltyPleasure.mp4',
         'trailerzit': 'TrailerZitten.mp4',
         'Super': 'RankingSuperfoods.m4v',
         'Flirt': 'RankingFlirt.m4v',

@@ -164,9 +164,7 @@ On the phone we see the same image and heading
 
 ### Ranking Games
 - 1 Intro
-- 4 Guilty pleasures
-- 7 zitten en staan
-
+- 7 Zitten en staan
 - 10 Top 3
 - 13 Krakende Karakters 
 - 17 Top 10 
@@ -272,7 +270,7 @@ On the phone we see the same image and heading
 - ✅ Reordered layout: Session controls above JSON dashboard
 - ✅ Integrated comprehensive CSV data (44 game phases/questions)
 - ✅ Added "Load New Structure to PB" button for PocketBase JSON updates
-- ✅ All game phases now available: Intro, Guilty Pleasures, Zitten en Staan, De Top 3, Krakende Karakters, Top 10, De Finale
+- ✅ All game phases now available: Intro, Zitten en Staan, De Top 3, Krakende Karakters, Top 10, De Finale
 - ✅ Deployed to https://ranking.pinkmilk.eu/presenter
 
 ### Current JSON Structure

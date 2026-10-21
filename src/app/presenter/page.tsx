@@ -182,7 +182,6 @@ export default function PresenterPage() {
   // Define fase groups
   const faseGroups = {
     '1': { name: 'Intro', fases: ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'] },
-    '4': { name: 'Guilty Pleasures', fases: ['04/01', '04/02'] },
     '7': { name: 'Zitten en Staan', fases: ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'] },
     '10': { name: 'De Top 3', fases: ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'] },
     '13': { name: 'Krakende Karakters', fases: ['13/01', '13/02', '13/03', '13/06', '13/05', '13/09'] },
@@ -451,7 +450,6 @@ export default function PresenterPage() {
   const getOrderedFasesGlobal = useCallback(() => {
     const fg = {
       '1': ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'],
-      '4': ['04/01', '04/02'],
       '7': ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'],
       '10': ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'],
       '13': ['13/01', '13/02', '13/03', '13/06', '13/05', '13/09'],
@@ -459,7 +457,7 @@ export default function PresenterPage() {
       '20': ['20/01']
     };
     const keys: string[] = [];
-    const orderedGroups = ['1', '4', '7', '10', '13', '17', '20'];
+    const orderedGroups = ['1', '7', '10', '13', '17', '20'];
     orderedGroups.forEach(g => {
       keys.push(...(fg[g as keyof typeof fg] || []));
     });
@@ -557,12 +555,11 @@ export default function PresenterPage() {
 
     const phaseButtons = [
       { label: '1', name: 'Intro', fases: faseGroups['1'].fases },
-      { label: '2', name: 'Guilty Pleasures', fases: faseGroups['4'].fases },
-      { label: '3', name: 'Zitten en Staan', fases: faseGroups['7'].fases },
-      { label: '4', name: 'De Top 3', fases: faseGroups['10'].fases },
-      { label: '5', name: 'Krakende Karakters', fases: faseGroups['13'].fases },
-      { label: '6', name: 'Top 10', fases: faseGroups['17'].fases },
-      { label: '7', name: 'De Finale', fases: faseGroups['20'].fases }
+      { label: '2', name: 'Zitten en Staan', fases: faseGroups['7'].fases },
+      { label: '3', name: 'De Top 3', fases: faseGroups['10'].fases },
+      { label: '4', name: 'Krakende Karakters', fases: faseGroups['13'].fases },
+      { label: '5', name: 'Top 10', fases: faseGroups['17'].fases },
+      { label: '6', name: 'De Finale', fases: faseGroups['20'].fases }
     ];
 
     const nextMedia = getNextMedia();

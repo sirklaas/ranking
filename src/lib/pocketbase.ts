@@ -357,8 +357,6 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '01/06': { heading: 'Maak een Selfie Video', image: 'RankingSelfie.mp4' },
   '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
   '02/00': { heading: 'Tijd voor\nronde 2!', image: null },
-  '04/01': { heading: 'Guilty Pleasures', image: 'GuiltyPleasure.mp4' },
-  '04/02': { heading: 'Vul nu jouw "Guilty Pleasure" in', image: '' },
   '07/01': { heading: 'Blijf staan als je het eens bent', image: 'TrailerZitten.mp4' },
   '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'RankingSuperfoods.m4v' },
   '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'RankingFlirt.m4v' },
