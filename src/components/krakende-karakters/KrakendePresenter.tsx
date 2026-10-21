@@ -180,9 +180,9 @@ export default function KrakendePresenter({
             : 'linear-gradient(180deg, #ea580c 0%, #f97316 40%, #fb923c 100%)',
         }}
       >
-        {/* HERO PURPLE BANNER WITH RANKING LOGO AND TITLE */}
+        {/* HERO PURPLE BANNER WITH RANKING LOGO */}
         <div
-          className="relative w-full h-24 md:h-28 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 rounded-xl overflow-hidden shadow-xl border-2 border-purple-300/40"
+          className="relative w-full h-20 md:h-24 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 rounded-xl overflow-hidden shadow-xl border-2 border-purple-300/40"
           style={{ backgroundImage: 'url(/assets/band.webp)' }}
         >
           {/* Logo on the left */}
@@ -190,28 +190,33 @@ export default function KrakendePresenter({
             <img
               src="/assets/ranking_logo.webp"
               alt="Ranking Logo"
-              className="h-16 md:h-20 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+              className="h-14 md:h-18 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
             />
           </div>
 
-          {/* Centered Title */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none z-10">
-            <h1
-              className="text-white font-extrabold tracking-tight uppercase leading-none drop-shadow-[0_3px_6px_rgba(0,0,0,0.7)]"
-              style={{
-                fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
-                fontSize: 'clamp(2rem, 3.4vw, 3.2rem)',
-                letterSpacing: '0.02em',
-              }}
-            >
-              {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
-            </h1>
-          </div>
-
           {/* Status pill on the right */}
-          <div className="z-10 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
-            {isResults ? '🏆 Resultaten' : '📱 Live Stemmen'}
+          <div className="z-10 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 text-white font-bold text-xs uppercase tracking-wider shadow-lg flex items-center gap-2">
+            <span>Gekozen:</span>
+            <span className={isPositive ? 'text-amber-300 font-extrabold text-sm' : 'text-orange-300 font-extrabold text-sm'}>
+              {currentSubmissions} / {totalPlayers || '–'}
+            </span>
+            <span className="text-white/40">|</span>
+            <span className="text-white/90">{isResults ? '🏆 Resultaten' : '📱 Live Stemmen'}</span>
           </div>
+        </div>
+
+        {/* HEADING PLACED DIRECTLY UNDER THE BANNER */}
+        <div className="px-2 pt-1 pb-1">
+          <h1
+            className="text-white font-extrabold tracking-tight uppercase leading-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.45)]"
+            style={{
+              fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
+              fontSize: 'clamp(2.4rem, 4.2vw, 4.2rem)',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+          </h1>
         </div>
 
         {/* 6 Columns x 4 Rows Grid Replica */}

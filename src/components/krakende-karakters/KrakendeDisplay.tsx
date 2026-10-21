@@ -154,9 +154,9 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
         fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
       }}
     >
-      {/* Hero Purple Banner with Ranking Logo and Title */}
+      {/* Hero Purple Banner with Ranking Logo */}
       <div
-        className="relative w-full h-28 md:h-36 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-purple-300/40 mb-4 shrink-0"
+        className="relative w-full h-24 md:h-30 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-purple-300/40 mb-3 shrink-0"
         style={{ backgroundImage: 'url(/assets/band.webp)' }}
       >
         {/* Logo - Left */}
@@ -164,33 +164,33 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
           <img
             src="/assets/ranking_logo.webp"
             alt="Ranking Logo"
-            className="h-20 md:h-28 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
+            className="h-18 md:h-24 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
           />
-        </div>
-
-        {/* Centered Title */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none z-10">
-          <h1
-            className="text-white font-extrabold uppercase tracking-tight leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]"
-            style={{
-              fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
-              fontSize: 'clamp(2.8rem, 4.5vw, 4.8rem)',
-              letterSpacing: '0.02em',
-            }}
-          >
-            {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
-          </h1>
         </div>
 
         {/* Right: Live Vote Tracker Badge */}
         {!isResults && (
-          <div className="z-10 bg-black/60 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/30 shadow-xl flex items-center gap-3">
+          <div className="z-10 bg-black/60 backdrop-blur-md px-6 py-2 rounded-full border border-white/30 shadow-xl flex items-center gap-3">
             <span className="text-white/90 font-bold tracking-wider text-base uppercase">Gekozen:</span>
-            <span className="text-amber-300 font-black text-3xl">
+            <span className={isPositive ? 'text-amber-300 font-black text-3xl' : 'text-orange-300 font-black text-3xl'}>
               {voteCount} / {totalPlayers || '–'}
             </span>
           </div>
         )}
+      </div>
+
+      {/* HEADING PLACED DIRECTLY UNDER THE BANNER */}
+      <div className="px-4 pb-2">
+        <h1
+          className="text-white font-extrabold uppercase tracking-tight leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
+          style={{
+            fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
+            fontSize: 'clamp(3.2rem, 5.2vw, 5.5rem)',
+            letterSpacing: '0.01em',
+          }}
+        >
+          {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+        </h1>
       </div>
 
       {/* 6 Columns x 4 Rows Grid with Random Popups */}
