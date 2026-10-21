@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import PocketBase from 'pocketbase';
 
-const pb = new PocketBase('https://pinkmilk.pockethost.io');
+const pb = new PocketBase('https://pb.pinkmilk.eu');
 const SESSION_ID = 'default_session';
 
 interface Player {

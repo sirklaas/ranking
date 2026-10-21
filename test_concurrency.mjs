@@ -1,6 +1,6 @@
 import PocketBase from 'pocketbase';
 
-const pb = new PocketBase('https://pinkmilk.pockethost.io');
+const pb = new PocketBase('https://pb.pinkmilk.eu');
 // Let's just fetch the session ID directly via HTTP to the user's pocketbase, or we know it from earlier requests.
 // Wait, 'http://localhost:3000/api/pb-auth-test' might give us info, but easier: Just fetch the first session.
 

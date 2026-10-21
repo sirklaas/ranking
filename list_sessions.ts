@@ -2,7 +2,7 @@
 import PocketBase from 'pocketbase';
 
 async function list() {
-    const pb = new PocketBase('https://pinkmilk.pockethost.io');
+    const pb = new PocketBase('https://pb.pinkmilk.eu');
     try {
         const sessions = await pb.collection('ranking').getFullList({ sort: '-created' });
         console.log('SESSIONS:');

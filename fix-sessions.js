@@ -1,5 +1,5 @@
 const PocketBase = require('pocketbase/cjs');
-const pb = new PocketBase('https://pinkmilk.pockethost.io');
+const pb = new PocketBase('https://pb.pinkmilk.eu');
 
 async function fix() {
     const sessions = await pb.collection('ranking').getFullList({ sort: '-created' });

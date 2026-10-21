@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import PocketBase from 'pocketbase';
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io';
+  const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pb.pinkmilk.eu';
   const email = process.env.PB_ADMIN_EMAIL;
   const password = process.env.PB_ADMIN_PASSWORD;
   const token = process.env.PB_ADMIN_TOKEN;

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PocketBase from 'pocketbase';
 
-const pb = new PocketBase('https://pinkmilk.pockethost.io');
+const pb = new PocketBase('https://pb.pinkmilk.eu');
 
 interface Player {
   id: string;
@@ -13,7 +13,7 @@ interface Player {
 }
 
 function getImageUrl(player: Player): string {
-  return `https://pinkmilk.pockethost.io/api/files/${player.collectionId}/${player.id}/${player.image}`;
+  return `https://pb.pinkmilk.eu/api/files/${player.collectionId}/${player.id}/${player.image}`;
 }
 
 function shuffleArray<T>(array: T[]): T[] {

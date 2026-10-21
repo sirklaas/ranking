@@ -1,7 +1,7 @@
 # PocketBase Configuration
 
 ## Connection Details
-- **PocketHost URL**: https://pinkmilk.pockethost.io
+- **PocketHost URL**: https://pb.pinkmilk.eu
 - **Collection**: ranking
 - **Environment Variable**: NEXT_PUBLIC_POCKETBASE_URL
 
@@ -16,7 +16,7 @@
 ## Environment Setup
 To override the default PocketHost URL, create a `.env.local` file:
 ```
-NEXT_PUBLIC_POCKETBASE_URL=https://pinkmilk.pockethost.io
+NEXT_PUBLIC_POCKETBASE_URL=https://pb.pinkmilk.eu
 ```
 
 ## API Endpoints Used

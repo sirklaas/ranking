@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     const ctx = await getMotherfileContext(pb);
     meta = { collection: ctx.collection, recordId: ctx.recordId };
     const rec = await pb.collection(ctx.collection).getOne(ctx.recordId, { $autoCancel: false });
-    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io';
+    const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pb.pinkmilk.eu';
     const debug = req.nextUrl.searchParams.get('debug');
     return NextResponse.json({ success: true, data: rec, meta: { ...meta, baseUrl, trace: debug ? ctx.trace : undefined } });
   } catch (error) {

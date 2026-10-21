@@ -22,7 +22,7 @@ async function authenticateAdmin(pb: PocketBase): Promise<void> {
 }
 
 export async function getServerPocketBase(): Promise<PocketBase> {
-  const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pinkmilk.pockethost.io';
+  const baseUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://pb.pinkmilk.eu';
 
   if (!serverPb) {
     serverPb = new PocketBase(baseUrl);

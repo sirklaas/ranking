@@ -220,7 +220,7 @@ On the phone we see the same image and heading
 **Next Steps**: Verify live Display/Presenter sync on production; optionally add Presenter upload to Ranking record or rely on `/pics` files with headings
 
 ### Recent Updates (2025-08-11)
-- ✅ Image delivery: configured `next.config.ts` to allow `next/image` from `pinkmilk.pockethost.io` (PocketBase).
+- ✅ Image delivery: configured `next.config.ts` to allow `next/image` from `pb.pinkmilk.eu` (PocketBase).
 - ✅ Motherfile media upload hardening in Presenter (`src/app/presenter/page.tsx`):
   - Robust JSON parsing/guard for `POST /api/pb-motherfile` responses.
   - After successful upload, immediate `GET /api/pb-motherfile` to retrieve and cache `meta.recordId` via `motherfileService.setRecordId()`.
@@ -232,7 +232,7 @@ On the phone we see the same image and heading
   - Auto-fills the uploaded filename into the fase’s `image` value.
   - Shows success/failure banner; refreshes the global media list (previews).
 - ✅ PocketBase as single source of truth confirmed: Presenter, Player, and Display read/write directly to Motherfile singleton. No local `/assets/fases.json`.
-- ✅ Production safety: PocketBase base URL defaults to HTTPS `https://pinkmilk.pockethost.io` to prevent mixed content on `ranking.pinkmilk.eu`.
+- ✅ Production safety: PocketBase base URL defaults to HTTPS `https://pb.pinkmilk.eu` to prevent mixed content on `ranking.pinkmilk.eu`.
 - ✅ Presenter Save Global verifies PB update and shows inline feedback.
 - ℹ️ Make sure Vercel envs are set: `NEXT_PUBLIC_POCKETBASE_URL`, and PB admin creds/token for server routes.
 
@@ -315,7 +315,7 @@ Implement a deterministic "Current/Next" control loop for Phase 01 where the Pre
 
 ### Heading rules
 - Input may be a full PocketBase URL like:
-  `https://pinkmilk.pockethost.io/api/files/motherfile/<recId>/<fileName>`
+  `https://pb.pinkmilk.eu/api/files/motherfile/<recId>/<fileName>`
 - Display/presenter should strip and show only `<fileName>`.
 - Combined heading pattern everywhere: `NN/TT / <filename>`.
 

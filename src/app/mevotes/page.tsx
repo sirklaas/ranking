@@ -11,7 +11,7 @@ const barlowSemiCondensed = Barlow_Semi_Condensed({
   display: 'swap',
 });
 
-const pb = new PocketBase('https://pinkmilk.pockethost.io');
+const pb = new PocketBase('https://pb.pinkmilk.eu');
 pb.autoCancellation(false);
 
 const SESSION_ID = 'default_session';

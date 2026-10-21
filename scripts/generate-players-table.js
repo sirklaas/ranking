@@ -5,7 +5,7 @@ const path = require('path');
 const https = require('https');
 
 // PocketBase connection
-const pb = new PocketBase('https://pinkmilk.pockethost.io');
+const pb = new PocketBase('https://pb.pinkmilk.eu');
 
 // Table dimensions - 5 wide x 8 high for bigger names
 const COLS = 5;

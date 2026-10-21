@@ -6,7 +6,7 @@ const https = require('https');
 const http = require('http');
 
 // PocketBase connection
-const pb = new PocketBase('https://pinkmilk.pockethost.io');
+const pb = new PocketBase('https://pb.pinkmilk.eu');
 
 // Table dimensions - 5 wide x 8 high, 16:9 cells, same canvas width
 const COLS = 5;
@@ -61,7 +61,7 @@ async function fetchPlayersWithImages() {
 
 function getImageUrl(player) {
   // PocketBase file URL format
-  return `https://pinkmilk.pockethost.io/api/files/${player.collectionId}/${player.id}/${player.image}`;
+  return `https://pb.pinkmilk.eu/api/files/${player.collectionId}/${player.id}/${player.image}`;
 }
 
 async function generateTable(players) {

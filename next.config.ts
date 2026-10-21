@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'pinkmilk.pockethost.io',
+        hostname: 'pb.pinkmilk.eu',
       },
       {
         protocol: 'https',
