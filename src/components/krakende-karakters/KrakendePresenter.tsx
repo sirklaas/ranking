@@ -171,35 +171,52 @@ export default function KrakendePresenter({
         </div>
       </div>
 
-      {/* KEYNOTE REPLICA BOARD */}
+      {/* KEYNOTE REPLICA BOARD CONTAINER */}
       <div
-        className="relative w-full p-6 transition-colors duration-300 shadow-inner"
+        className="relative w-full p-5 transition-colors duration-300 shadow-inner flex flex-col gap-4"
         style={{
           background: isPositive
             ? 'linear-gradient(180deg, #f59e0b 0%, #fbbf24 35%, #fde047 100%)'
             : 'linear-gradient(180deg, #ea580c 0%, #f97316 40%, #fb923c 100%)',
         }}
       >
-        {/* Giant Condensed White Title matching Keynote */}
-        <div className="mb-4 flex justify-between items-end">
-          <h1
-            className="text-white font-extrabold tracking-tight uppercase leading-none drop-shadow-[0_3px_5px_rgba(0,0,0,0.35)]"
-            style={{
-              fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
-              fontSize: 'clamp(2rem, 3.8vw, 3.75rem)',
-              letterSpacing: '0.02em',
-            }}
-          >
-            {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
-          </h1>
-          <div className="text-black/80 font-bold text-xs uppercase tracking-wider bg-white/40 px-3 py-1 rounded-full backdrop-blur-sm">
-            {isResults ? '🏆 Resultaten Fase' : '📱 Live Speler Stemmen'}
+        {/* HERO PURPLE BANNER WITH RANKING LOGO AND TITLE */}
+        <div
+          className="relative w-full h-24 md:h-28 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 rounded-xl overflow-hidden shadow-xl border-2 border-purple-300/40"
+          style={{ backgroundImage: 'url(/assets/band.webp)' }}
+        >
+          {/* Logo on the left */}
+          <div className="flex items-center z-10">
+            <img
+              src="/assets/ranking_logo.webp"
+              alt="Ranking Logo"
+              className="h-16 md:h-20 w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+            />
+          </div>
+
+          {/* Centered Title */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none z-10">
+            <h1
+              className="text-white font-extrabold tracking-tight uppercase leading-none drop-shadow-[0_3px_6px_rgba(0,0,0,0.7)]"
+              style={{
+                fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
+                fontSize: 'clamp(2rem, 3.4vw, 3.2rem)',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+            </h1>
+          </div>
+
+          {/* Status pill on the right */}
+          <div className="z-10 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 text-white font-bold text-xs uppercase tracking-wider shadow-lg">
+            {isResults ? '🏆 Resultaten' : '📱 Live Stemmen'}
           </div>
         </div>
 
         {/* 6 Columns x 4 Rows Grid Replica */}
         <div
-          className="grid grid-cols-6 grid-rows-4 gap-[2px] bg-black/40 p-[2px] rounded-lg overflow-hidden border-2 border-black/40 shadow-2xl"
+          className="grid grid-cols-6 grid-rows-4 gap-[2px] bg-black/40 p-[2px] rounded-xl overflow-hidden border-2 border-black/40 shadow-2xl"
           style={{ minHeight: '380px' }}
         >
           {traits.slice(0, 24).map((trait) => {
@@ -207,7 +224,7 @@ export default function KrakendePresenter({
             const voteCount = votes.length;
             const hasVotes = voteCount > 0;
 
-            // Split into lines if line1 not set
+            // Split into lines
             const line1 = trait.line1 || trait.nl.split(' ')[0] || trait.nl;
             const line2 =
               trait.line2 !== undefined
@@ -239,12 +256,13 @@ export default function KrakendePresenter({
                   </div>
                 )}
 
-                {/* Trait Text: 2 lines centered bold black */}
+                {/* Trait Text: 2 lines centered font weight 400 */}
                 <div
-                  className="text-black font-extrabold tracking-tight leading-tight"
+                  className="text-black font-normal tracking-tight leading-tight"
                   style={{
                     fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
-                    fontSize: 'clamp(0.85rem, 1.1vw, 1.25rem)',
+                    fontWeight: 400,
+                    fontSize: 'clamp(0.9rem, 1.15vw, 1.3rem)',
                   }}
                 >
                   <div>{line1}</div>

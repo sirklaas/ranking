@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { KrakendeState } from '@/modules/krakende-karakters/types';
 
 interface KrakendeDisplayProps {
@@ -9,37 +9,51 @@ interface KrakendeDisplayProps {
   sessionId?: string;
 }
 
-// Popup sound effect (Web Audio API)
-function playPopSound() {
+const SFX_LIST = [
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Wood_Pluck.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Perc.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Point.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Steel_Hit.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Underwater.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Glass.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Can.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Digi.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Sting.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Dream.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Dissonant.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Fright.m4a',
+];
+
+function playKeynoteSound(idx: number) {
   try {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(600, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.08);
-    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.2);
-    setTimeout(() => ctx.close(), 300);
+    const src = SFX_LIST[idx % SFX_LIST.length];
+    const audio = new Audio(src);
+    audio.volume = 0.7;
+    audio.play().catch(() => {});
   } catch {
     // silent
   }
 }
 
+// Generate an array of 24 indices shuffled randomly: e.g. [14, 2, 21, 5, ...]
+function generateRandomOrder(length: number): number[] {
+  const arr = Array.from({ length }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId }: KrakendeDisplayProps) {
-  // Inject keyframe animations once
+  // Inject keyframe animation once
   useEffect(() => {
     if (document.getElementById('krakende-kf')) return;
     const s = document.createElement('style');
     s.id = 'krakende-kf';
     s.textContent = `
       @keyframes krakendePop {
-        0%   { transform: scale(0.6); opacity: 0; }
+        0%   { transform: scale(0.3); opacity: 0; }
         60%  { transform: scale(1.08); opacity: 1; }
         100% { transform: scale(1); opacity: 1; }
       }
@@ -52,7 +66,7 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
   const isResults = state.phase.endsWith('-results');
   const traits = (isPositive ? state.positiveTraits : state.negativeTraits).slice(0, 24);
 
-  // Poll vote count from krakende_votes collection
+  // Poll live vote count
   const [voteCount, setVoteCount] = useState(0);
   useEffect(() => {
     if (!sessionId) return;
@@ -76,30 +90,59 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
     };
   }, [sessionId, isPositive]);
 
-  // Auto-reveal logic: reveal cards sequentially in voting mode
-  const [autoRevealIndex, setAutoRevealIndex] = useState(0);
+  // RANDOM POPUP LOGIC:
+  // We keep a random permutation of indices, and reveal one random tile at a time
+  const randomOrderRef = useRef<number[]>([]);
+  const [revealedSet, setRevealedSet] = useState<Set<number>>(new Set());
+  const [latestRevealedIndex, setLatestRevealedIndex] = useState<number | null>(null);
 
+  // Reset or initialize random sequence when phase changes
   useEffect(() => {
     if (isResults) {
-      setAutoRevealIndex(traits.length);
+      // Results: all 24 tiles immediately visible
+      setRevealedSet(new Set(Array.from({ length: traits.length }, (_, i) => i)));
+      setLatestRevealedIndex(null);
     } else {
-      setAutoRevealIndex(0);
+      // Voting: start random build
+      const order = generateRandomOrder(traits.length);
+      randomOrderRef.current = order;
+      setRevealedSet(new Set());
+      setLatestRevealedIndex(null);
+
+      // Play intro sound if positive
+      try {
+        const intro = new Audio('/sfx/krakende/Agile_Funk_Synth_Lead.m4a');
+        intro.volume = 0.5;
+        intro.play().catch(() => {});
+      } catch {
+        /* silent */
+      }
     }
   }, [state.phase, isResults, traits.length]);
 
+  // Interval: reveal the next random tile one by one
   useEffect(() => {
-    if (isResults || autoRevealIndex >= traits.length) return;
+    if (isResults) return;
+    if (revealedSet.size >= traits.length) return;
 
     const timer = setInterval(() => {
-      setAutoRevealIndex((prev) => {
-        const next = prev + 1;
-        playPopSound();
-        return next;
+      const order = randomOrderRef.current;
+      const currentCount = revealedSet.size;
+      if (currentCount >= order.length) return;
+
+      const nextTileIndex = order[currentCount];
+      playKeynoteSound(currentCount);
+
+      setLatestRevealedIndex(nextTileIndex);
+      setRevealedSet((prev) => {
+        const updated = new Set(prev);
+        updated.add(nextTileIndex);
+        return updated;
       });
-    }, 450);
+    }, 450); // ~0.45s between each random pop
 
     return () => clearInterval(timer);
-  }, [isResults, autoRevealIndex, traits.length]);
+  }, [isResults, revealedSet, traits.length]);
 
   return (
     <div
@@ -111,35 +154,50 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
         fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
       }}
     >
-      {/* Top Banner: Keynote Style Giant White Header */}
-      <div className="flex justify-between items-baseline px-4 pt-2 pb-4">
-        <h1
-          className="text-white font-black tracking-tight uppercase leading-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
-          style={{
-            fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
-            fontSize: 'clamp(3.5rem, 6.5vw, 6.5rem)',
-            letterSpacing: '0.01em',
-          }}
-        >
-          {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
-        </h1>
+      {/* Hero Purple Banner with Ranking Logo and Title */}
+      <div
+        className="relative w-full h-28 md:h-36 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-purple-300/40 mb-4 shrink-0"
+        style={{ backgroundImage: 'url(/assets/band.webp)' }}
+      >
+        {/* Logo - Left */}
+        <div className="flex items-center z-10">
+          <img
+            src="/assets/ranking_logo.webp"
+            alt="Ranking Logo"
+            className="h-20 md:h-28 w-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
+          />
+        </div>
 
-        {/* Live Vote Tracker Badge */}
+        {/* Centered Title */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none z-10">
+          <h1
+            className="text-white font-extrabold uppercase tracking-tight leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.8)]"
+            style={{
+              fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
+              fontSize: 'clamp(2.8rem, 4.5vw, 4.8rem)',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+          </h1>
+        </div>
+
+        {/* Right: Live Vote Tracker Badge */}
         {!isResults && (
-          <div className="bg-black/50 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/20 shadow-xl flex items-center gap-3">
-            <span className="text-white/80 font-bold tracking-wider text-sm uppercase">Gekozen:</span>
-            <span className="text-white font-extrabold text-2xl">
+          <div className="z-10 bg-black/60 backdrop-blur-md px-6 py-2.5 rounded-full border border-white/30 shadow-xl flex items-center gap-3">
+            <span className="text-white/90 font-bold tracking-wider text-base uppercase">Gekozen:</span>
+            <span className="text-amber-300 font-black text-3xl">
               {voteCount} / {totalPlayers || '–'}
             </span>
           </div>
         )}
       </div>
 
-      {/* 6 Columns x 4 Rows Keynote Replica Grid */}
+      {/* 6 Columns x 4 Rows Grid with Random Popups */}
       <div className="flex-1 grid grid-cols-6 grid-rows-4 gap-3 px-4 pb-4">
         {traits.map((trait, i) => {
-          const isRevealed = isResults || i < autoRevealIndex;
-          const isLatest = i === autoRevealIndex - 1 && !isResults;
+          const isRevealed = isResults || revealedSet.has(i);
+          const isLatest = i === latestRevealedIndex && !isResults;
 
           const line1 = trait.line1 || trait.nl.split(' ')[0] || trait.nl;
           const line2 =
@@ -168,10 +226,12 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
                 animation: isLatest ? 'krakendePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined,
               }}
             >
+              {/* Font Weight: 400 (regular) per request */}
               <div
-                className="text-black font-extrabold tracking-tight leading-tight"
+                className="text-black font-normal tracking-tight leading-tight"
                 style={{
                   fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
+                  fontWeight: 400,
                   fontSize: 'clamp(1.1rem, 1.7vw, 1.95rem)',
                 }}
               >
