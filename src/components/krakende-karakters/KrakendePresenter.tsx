@@ -18,15 +18,15 @@ export default function KrakendePresenter({
   onStateChange,
   totalPlayers,
 }: KrakendePresenterProps) {
-  // Keyboard shortcuts (1: pos voting, 2: pos results, 3: neg voting, 4: neg results)
+  // Keyboard shortcuts (1: 13/02 pos voting, 2: 13/03 neg voting, 3: 13/04 pos results, 4: 13/05 neg results)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       const phaseMap: Record<string, KrakendePhase> = {
         '1': 'positive-voting',
-        '2': 'positive-results',
-        '3': 'negative-voting',
+        '2': 'negative-voting',
+        '3': 'positive-results',
         '4': 'negative-results',
       };
 
@@ -115,16 +115,6 @@ export default function KrakendePresenter({
               1. 24 Goede (Stemmen)
             </button>
             <button
-              onClick={() => krakendeLogic.setPhase(sessionId, state, 'positive-results').then(onStateChange)}
-              className={`px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
-                state.phase === 'positive-results'
-                  ? 'bg-amber-400 text-black shadow-md font-black scale-105'
-                  : 'text-amber-300/80 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              2. Goede Resultaten
-            </button>
-            <button
               onClick={() => krakendeLogic.setPhase(sessionId, state, 'negative-voting').then(onStateChange)}
               className={`px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
                 state.phase === 'negative-voting'
@@ -132,7 +122,17 @@ export default function KrakendePresenter({
                   : 'text-orange-300/80 hover:text-white hover:bg-white/10'
               }`}
             >
-              3. 24 Minder Goede (Stemmen)
+              2. 24 Minder Goede (Stemmen)
+            </button>
+            <button
+              onClick={() => krakendeLogic.setPhase(sessionId, state, 'positive-results').then(onStateChange)}
+              className={`px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wider transition-all ${
+                state.phase === 'positive-results'
+                  ? 'bg-amber-400 text-black shadow-md font-black scale-105'
+                  : 'text-amber-300/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              3. Goede Resultaten
             </button>
             <button
               onClick={() => krakendeLogic.setPhase(sessionId, state, 'negative-results').then(onStateChange)}
@@ -215,7 +215,13 @@ export default function KrakendePresenter({
               letterSpacing: '0.02em',
             }}
           >
-            {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+            {isResults
+              ? isPositive
+                ? 'RESULTATEN GOEDE EIGENSCHAPPEN'
+                : 'RESULTATEN MINDER GOEDE EIGENSCHAPPEN'
+              : isPositive
+              ? '24 GOEDE EIGENSCHAPPEN'
+              : '24 MINDER GOEDE EIGENSCHAPPEN'}
           </h1>
         </div>
 

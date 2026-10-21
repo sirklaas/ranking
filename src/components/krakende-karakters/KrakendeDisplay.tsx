@@ -22,6 +22,9 @@ const SFX_LIST = [
   '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Dream.m4a',
   '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Dissonant.m4a',
   '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Fright.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_80s.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Aah.m4a',
+  '/sfx/krakende/FLSM_CIN_Fx_One_Shot_Accent_Deep.m4a',
 ];
 
 function playKeynoteSound(idx: number) {
@@ -189,7 +192,13 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
             letterSpacing: '0.01em',
           }}
         >
-          {isPositive ? '24 GOEDE EIGENSCHAPPEN' : '24 MINDER GOEDE EIGENSCHAPPEN'}
+          {isResults
+            ? isPositive
+              ? 'RESULTATEN GOEDE EIGENSCHAPPEN'
+              : 'RESULTATEN MINDER GOEDE EIGENSCHAPPEN'
+            : isPositive
+            ? '24 GOEDE EIGENSCHAPPEN'
+            : '24 MINDER GOEDE EIGENSCHAPPEN'}
         </h1>
       </div>
 

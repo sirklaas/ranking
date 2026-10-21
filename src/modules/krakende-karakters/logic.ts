@@ -34,8 +34,8 @@ export const ensureKrakendeState = (raw: unknown): KrakendeState => {
     ...initial,
     ...obj,
     completedPhases: Array.isArray(obj.completedPhases) ? obj.completedPhases : [],
-    positiveTraits: mergeWithDefaults(obj.positiveTraits, DEFAULT_POSITIVE_TRAITS),
-    negativeTraits: mergeWithDefaults(obj.negativeTraits, DEFAULT_NEGATIVE_TRAITS),
+    positiveTraits: DEFAULT_POSITIVE_TRAITS,
+    negativeTraits: DEFAULT_NEGATIVE_TRAITS,
     submissions: Array.isArray(obj.submissions) ? obj.submissions : [],
     phase: obj.phase || initial.phase,
     language: obj.language || initial.language,
@@ -45,11 +45,10 @@ export const ensureKrakendeState = (raw: unknown): KrakendeState => {
 // Map global fase key to internal Phase
 export const getPhaseFromFaseKey = (faseKey: string): KrakendePhase | null => {
   switch (faseKey) {
-    case '13/02':
-    case '13/03': return 'positive-voting';
-    case '13/05': return 'positive-results';
-    case '13/06': return 'negative-voting';
-    case '13/09': return 'negative-results';
+    case '13/02': return 'positive-voting';
+    case '13/03': return 'negative-voting';
+    case '13/04': return 'positive-results';
+    case '13/05': return 'negative-results';
     default: return null;
   }
 };
