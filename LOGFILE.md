@@ -1,5 +1,12 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.3 (2026-10-23)
+- **Barlow Semi Condensed Font Delivery:**
+  - Added `next/font/google` Barlow_Semi_Condensed loader to `src/app/layout.tsx` so font files are optimized, self-hosted, and loaded on all mobile browsers (iOS Safari, Android Chrome).
+  - Added Google Font CDN `<link>` preconnect in `<head>` and `@import url` in `globals.css` as layered fallback.
+  - Set default body font to `var(--font-barlow), 'Barlow Semi Condensed', sans-serif`.
+  - Bumped version to `v9.4.3`.
+
 ## Version 9.4.2 (2026-10-23)
 
 ### Phone App (Player)
