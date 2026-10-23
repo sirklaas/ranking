@@ -1,5 +1,14 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.4 (2026-10-23)
+- **Krakende Reveal Screen for 80-Person Audience Visibility:**
+  - Designed the positive & negative reveal container to be exactly 85% wide (`w-[85vw]`) and 85% high (`h-[85vh]`).
+  - Added a prominent 6px solid pure white border (`border: '6px solid #FFFFFF'`) with a glowing white drop shadow.
+  - Formatted the trait text inside using `Barlow Semi Condensed` weight 900 (ultra bold black), uppercase, tight leading (`0.98`), dynamically clamped to the maximum possible font size so it is clearly legible across a crowded room of 80 people.
+  - Used high-contrast vibrant yellow gradient (`#fef08a` to `#fed766`) for positives and energetic orange gradient (`#fed7aa` to `#fb923c`) for negatives with pitch black text.
+  - Reduced reveal readiness delay from 6s to 1s.
+  - Bumped version to `v9.4.4`.
+
 ## Version 9.4.3 (2026-10-23)
 - **Barlow Semi Condensed Font Delivery:**
   - Added `next/font/google` Barlow_Semi_Condensed loader to `src/app/layout.tsx` so font files are optimized, self-hosted, and loaded on all mobile browsers (iOS Safari, Android Chrome).

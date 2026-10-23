@@ -120,7 +120,7 @@ export default function KrakendePlayer({
   useEffect(() => {
     setReadyForReveal(false);
     if (isRevealPhase) {
-      const timer = setTimeout(() => setReadyForReveal(true), 6000);
+      const timer = setTimeout(() => setReadyForReveal(true), 1000);
       return () => clearTimeout(timer);
     }
   }, [state.phase, isRevealPhase]);
@@ -146,35 +146,55 @@ export default function KrakendePlayer({
           ? chosenTrait.line2
           : chosenTrait.nl.split(' ').slice(1).join(' ');
 
+      const isPositive = state.phase === 'positive-results';
+      const longest = Math.max(line1.length, line2 ? line2.length : 0);
+
+      // Dynamically calculate font size so it's as big as possible for 80 people to see across a room
+      // In Barlow Semi Condensed, characters are narrow (~0.45em wide).
+      const fontSizeClamped = line2
+        ? `clamp(2.6rem, min(calc(75vw / ${Math.max(longest * 0.48, 4)}), calc(35vh / 2)), 6.5rem)`
+        : `clamp(3.2rem, min(calc(75vw / ${Math.max(longest * 0.48, 4)}), 42vh), 7.5rem)`;
+
       return (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden select-none"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden select-none bg-black/90 backdrop-blur-md"
           style={{
-            background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
+            background: 'linear-gradient(135deg, #181829 0%, #0d0f18 100%)',
             fontFamily: '"Barlow Semi Condensed", sans-serif',
           }}
           onClick={() => setShowReveal(false)}
         >
-          {/* Rotated 90deg container sized safely to 88dvh x 85dvw so it never cuts off on any phone */}
+          {/* Container with a white border that is 85% high and 85% wide */}
           <div
-            className="flex flex-col items-center justify-center w-[88dvh] h-[85dvw] rotate-90 origin-center text-center p-4 pointer-events-none"
+            className="w-[85vw] h-[85vh] max-w-[85%] max-h-[85%] rounded-3xl flex flex-col items-center justify-center p-6 text-center relative shadow-2xl transition-transform active:scale-[0.99]"
+            style={{
+              border: '6px solid #FFFFFF',
+              background: isPositive
+                ? 'linear-gradient(135deg, #fef08a 0%, #fed766 50%, #facc15 100%)'
+                : 'linear-gradient(135deg, #fed7aa 0%, #fb923c 50%, #f97316 100%)',
+              boxShadow: '0 0 50px rgba(255, 255, 255, 0.45), 0 20px 40px rgba(0,0,0,0.85)',
+            }}
           >
+            {/* Massive text - Barlow Semi Condensed 900 black, uppercase for 80 people visibility */}
             <div
-              className="text-white font-normal uppercase tracking-tight leading-tight w-full flex flex-col items-center justify-center"
+              className="text-black font-black uppercase tracking-tight leading-none w-full flex flex-col items-center justify-center select-none"
               style={{
                 fontFamily: '"Barlow Semi Condensed", sans-serif',
-                fontWeight: 500,
-                fontSize: 'clamp(2rem, 5.5dvh, 4rem)',
-                textShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                fontWeight: 900,
+                fontSize: fontSizeClamped,
+                lineHeight: 0.98,
                 wordBreak: 'break-word',
+                textShadow: '0 1px 2px rgba(255,255,255,0.4)',
               }}
             >
               <div>{line1}</div>
-              {line2 && <div className="mt-1">{line2}</div>}
+              {line2 && <div className="mt-3">{line2}</div>}
             </div>
-            <p className="text-white/60 absolute bottom-4 text-xs font-light tracking-widest uppercase">
+
+            {/* Subtle dismiss indicator */}
+            <div className="absolute bottom-4 left-0 right-0 text-center text-black/50 text-xs font-bold tracking-widest uppercase">
               Tik om te sluiten
-            </p>
+            </div>
           </div>
         </div>
       );
@@ -210,10 +230,11 @@ export default function KrakendePlayer({
         <button
           onClick={() => setShowReveal(true)}
           disabled={!readyForReveal}
-          className={`w-full py-10 px-6 rounded-3xl text-4xl font-bold shadow-2xl transition-transform border-4 border-white ${readyForReveal ? 'active:scale-95' : 'opacity-40 grayscale cursor-not-allowed'}`}
+          className={`w-full py-10 px-6 rounded-3xl text-4xl font-black shadow-2xl transition-transform border-4 border-white ${readyForReveal ? 'active:scale-95 animate-pulse' : 'opacity-40 grayscale cursor-not-allowed'}`}
           style={{
-            backgroundColor: !readyForReveal ? '#666' : (state.phase === 'positive-results' ? '#4ECDC4' : '#FF6B6B'),
-            color: '#0A1752',
+            fontFamily: '"Barlow Semi Condensed", sans-serif',
+            backgroundColor: !readyForReveal ? '#666' : (state.phase === 'positive-results' ? '#fed766' : '#fb923c'),
+            color: '#000000',
           }}
         >
           {readyForReveal
