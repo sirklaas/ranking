@@ -149,14 +149,14 @@ export default function KrakendePlayer({
       const isPositive = state.phase === 'positive-results';
       const longest = Math.max(line1.length, line2 ? line2.length : 0);
 
-      // Dynamically calculate font size across the rotated 85vh width so text is as huge as possible for 80 people
+      // Dynamically calculate font size so it's as big as possible in both portrait and landscape
       const fontSizeClamped = line2
-        ? `clamp(2.8rem, min(calc(76vh / ${Math.max(longest * 0.46, 4)}), calc(70vw / 2.2)), 8rem)`
-        : `clamp(3.4rem, min(calc(76vh / ${Math.max(longest * 0.46, 4)}), calc(70vw / 1.25)), 10rem)`;
+        ? `clamp(2.4rem, min(calc(75vw / ${Math.max(longest * 0.48, 3.5)}), calc(32vh)), 6.5rem)`
+        : `clamp(2.8rem, min(calc(75vw / ${Math.max(longest * 0.48, 3.5)}), calc(50vh)), 8rem)`;
 
       return (
         <div
-          className="fixed inset-0 z-[100] overflow-hidden select-none bg-black/95 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden select-none bg-black/95 backdrop-blur-md"
           style={{
             background: 'linear-gradient(135deg, #181829 0%, #0d0f18 100%)',
             fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
@@ -169,23 +169,16 @@ export default function KrakendePlayer({
             href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap"
           />
 
-          {/* Rotated 90 degrees full-height container: exactly 85vh long by 85vw wide, positioned absolute so flex cannot squash it */}
+          {/* Container with a white border that is 85% height and 85% wide (natural orientation for portrait and landscape) */}
           <div
-            className="rounded-3xl flex flex-col items-center justify-center p-6 text-center shadow-2xl"
+            className="rounded-3xl flex flex-col items-center justify-center p-6 text-center shadow-2xl relative transition-transform active:scale-[0.99]"
             style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              width: '85vh',
-              height: '85vw',
-              minWidth: '85vh',
-              minHeight: '85vw',
-              maxWidth: '85vh',
-              maxHeight: '85vw',
-              transform: 'translate(-50%, -50%) rotate(90deg)',
-              WebkitTransform: 'translate(-50%, -50%) rotate(90deg)',
-              transformOrigin: 'center center',
-              WebkitTransformOrigin: 'center center',
+              width: '85vw',
+              height: '85vh',
+              minWidth: '85vw',
+              minHeight: '85vh',
+              maxWidth: '85vw',
+              maxHeight: '85vh',
               border: '6px solid #FFFFFF',
               background: isPositive
                 ? 'linear-gradient(135deg, #fef08a 0%, #fed766 50%, #facc15 100%)'
@@ -201,12 +194,12 @@ export default function KrakendePlayer({
                 fontWeight: 500,
                 color: '#1f2937',
                 fontSize: fontSizeClamped,
-                lineHeight: 0.95,
+                lineHeight: 0.98,
                 wordBreak: 'break-word',
               }}
             >
               <div>{line1}</div>
-              {line2 && <div className="mt-2">{line2}</div>}
+              {line2 && <div className="mt-3">{line2}</div>}
             </div>
 
             {/* Subtle dismiss indicator */}

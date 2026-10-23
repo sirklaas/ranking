@@ -1,5 +1,13 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.8 (2026-10-23)
+- **Natural Device Orientation for Reveal Container:**
+  - Removed artificial CSS `transform: rotate(90deg)` so the phone can be held naturally in portrait or turned physically to landscape without the text appearing sideways.
+  - Sized container to `85vw` width by `85vh` height (`border: 6px solid #FFFFFF`).
+  - In portrait: spans 85% width and 85% height of the portrait screen.
+  - In landscape: when turned horizontally to show 80 people, it spans 85% width and 85% height of the landscape screen with upright, huge Barlow Semi Condensed 500 text.
+  - Bumped version to `v9.4.8`.
+
 ## Version 9.4.7 (2026-10-23)
 - **Krakende Reveal Screen Absolute Full-Height Geometry:**
   - Resolved flexbox container squashing the rotated element's width (which made it appear like a 330px square).
