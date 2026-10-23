@@ -159,14 +159,28 @@ export default function KrakendePlayer({
           className="fixed inset-0 z-[100] flex items-center justify-center p-0 overflow-hidden select-none bg-black/95 backdrop-blur-md"
           style={{
             background: 'linear-gradient(135deg, #181829 0%, #0d0f18 100%)',
-            fontFamily: '"Barlow Semi Condensed", sans-serif',
+            fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
           }}
           onClick={() => setShowReveal(false)}
         >
+          {/* Ensure Google Font Barlow Semi Condensed is explicitly loaded */}
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap"
+          />
+
           {/* Rotated 90 degrees container: 85% of screen height wide x 85% of screen width high with white border */}
           <div
-            className="w-[85dvh] h-[85dvw] rounded-3xl flex flex-col items-center justify-center p-6 text-center relative shadow-2xl rotate-90 origin-center transition-transform active:scale-[0.99]"
+            className="rounded-3xl flex flex-col items-center justify-center p-6 text-center relative shadow-2xl transition-transform active:scale-[0.99]"
             style={{
+              width: '85vh',
+              height: '85vw',
+              maxWidth: '85vh',
+              maxHeight: '85vw',
+              transform: 'rotate(90deg)',
+              WebkitTransform: 'rotate(90deg)',
+              transformOrigin: 'center center',
+              WebkitTransformOrigin: 'center center',
               border: '6px solid #FFFFFF',
               background: isPositive
                 ? 'linear-gradient(135deg, #fef08a 0%, #fed766 50%, #facc15 100%)'
@@ -176,10 +190,11 @@ export default function KrakendePlayer({
           >
             {/* Massive text - Barlow Semi Condensed weight 500, uppercase */}
             <div
-              className="text-black uppercase tracking-tight leading-none w-full flex flex-col items-center justify-center select-none"
+              className="uppercase tracking-tight leading-none w-full flex flex-col items-center justify-center select-none"
               style={{
-                fontFamily: '"Barlow Semi Condensed", sans-serif',
+                fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
                 fontWeight: 500,
+                color: '#1f2937',
                 fontSize: fontSizeClamped,
                 lineHeight: 0.95,
                 wordBreak: 'break-word',
@@ -190,7 +205,7 @@ export default function KrakendePlayer({
             </div>
 
             {/* Subtle dismiss indicator */}
-            <div className="absolute bottom-3 left-0 right-0 text-center text-black/50 text-xs font-semibold tracking-widest uppercase">
+            <div className="absolute bottom-3 left-0 right-0 text-center text-gray-700/60 text-xs font-semibold tracking-widest uppercase">
               Tik om te sluiten
             </div>
           </div>

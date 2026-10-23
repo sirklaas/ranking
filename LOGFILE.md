@@ -1,5 +1,13 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.6 (2026-10-23)
+- **Inline WebKit/CSS Rotation & Guaranteed Barlow 500 Font Delivery:**
+  - Fixed mobile Safari ignoring Tailwind `rotate-90` by directly applying `transform: rotate(90deg)` and `-webkit-transform: rotate(90deg)` with explicit transform origins in inline styles.
+  - Sized container to `85vh` width by `85vw` height rotated 90 degrees so the text fits along the full height of the device.
+  - Set text color to `#1f2937` with weight `500` (Barlow Semi Condensed 500) and injected `<link>` tags directly into `PlayerPage` and `KrakendePlayer` to guarantee font delivery on iOS Safari and Android Chrome.
+  - Fixed CSS `@import` order in `globals.css` so Google Fonts `@import` is parsed before Tailwind.
+  - Bumped version to `v9.4.6`.
+
 ## Version 9.4.5 (2026-10-23)
 - **Krakende Rotated Reveal Sign (90° Rotation + Barlow 500):**
   - Rotated the reveal container 90 degrees (`rotate-90 origin-center`) spanning `85dvh` width by `85dvw` height across the long edge of the phone.

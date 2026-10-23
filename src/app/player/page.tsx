@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v9.4.5';
+const APP_VERSION = 'v9.4.6';
 
 interface RankingSession {
   id: string;
@@ -547,10 +547,14 @@ export default function PlayerPage() {
     <div
       className="min-h-screen relative overflow-hidden"
       style={{
-        fontFamily: 'Barlow Semi Condensed, sans-serif',
+        fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
         background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
       }}
     >
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700;800;900&display=swap"
+      />
       <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>{APP_VERSION} | {currentSession?.current_fase || ''}</div>
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
