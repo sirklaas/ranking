@@ -11,6 +11,7 @@ interface Top10PlayerProps {
     teamNumber: number;
     heading?: string;
     mediaUrl?: string;
+    allPlayerNames?: string[];
     onVote: (chosenPlayerId: string, chosenPlayerName: string) => void;
 }
 
@@ -35,6 +36,7 @@ export default function Top10Player({
     teamNumber,
     heading: propHeading,
     mediaUrl,
+    allPlayerNames,
     onVote,
 }: Top10PlayerProps) {
     // Determine the active heading from hardcoded list or prop
@@ -56,15 +58,26 @@ export default function Top10Player({
     const isVoting = state?.currentQuestion?.phase === 'voting';
     const isResults = state?.currentQuestion?.phase === 'results';
 
-    const alreadyVoted = hasPlayerVoted(state, playerId);
+    const alreadyVoted = hasPlayerVoted(state, playerId || '');
+
+    const rawPool: string[] = Array.isArray(state?.allPlayerNames) && state.allPlayerNames.length > 0
+        ? state.allPlayerNames
+        : Array.isArray(allPlayerNames)
+        ? allPlayerNames
+        : [];
 
     // Filter out the current player and match query
     const otherPlayers = useMemo(
-        () => state.allPlayerNames.filter((name) => name !== playerName),
-        [state.allPlayerNames, playerName]
+        () => rawPool
+            .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+            .filter((name) => name !== playerName),
+        [rawPool, playerName]
     );
 
-    const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+    const formatName = (name: unknown) => {
+        if (typeof name !== 'string') return '';
+        return name.replace(/^\s*\d+[\s_-]*/, '');
+    };
 
     const filteredPlayers = useMemo(() => {
         if (!query.trim()) return otherPlayers;

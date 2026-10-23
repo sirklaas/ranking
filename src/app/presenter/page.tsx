@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.1";
+const APP_VERSION = "v9.4.2";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -503,8 +503,8 @@ export default function PresenterPage() {
 
   const formatHeading = (text?: string) => {
     if (!text) return '';
-    // Replace '/n' tokens with new lines
-    return text.replaceAll('/n', '\n');
+    // Replace '/n' or '/N' tokens with new lines
+    return text.replace(/\/n/gi, '\n');
   };
   // Generic Arrow navigation globally
   useEffect(() => {
@@ -604,80 +604,100 @@ export default function PresenterPage() {
             );
           })()}
           {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
-          <div
-            className="grid mt-4 gap-4 pr-6"
-            style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
-          >
-            {/* Current Display (43%) */}
-            <div className="flex flex-col">
-              {/* Current Display - Left screen (16:9) */}
-              <div>
-                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
-                  {(() => {
-                    const media = getMediaForFase(currentFase);
-                    const headingText = getHeadingsSource()[currentFase]?.heading || `Fase ${currentFase}`;
-                    return (
-                      <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#1a1a2e' }}>
-                        {/* Media: video or image */}
-                        {media?.type === 'video' && media.path ? (
-                          <video
-                            ref={currentVideoRef}
-                            src={media.path}
-                            className="absolute inset-0 w-full h-full object-contain"
-                            preload="auto"
-                            autoPlay
-                            muted
-                            playsInline
-                            onLoadedMetadata={(e) => {
-                              e.currentTarget.play().catch(() => {});
-                            }}
-                          />
-                        ) : media?.type === 'image' && media.path ? (
-                          <img src={media.path} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
-                        ) : null}
-                        {/* Heading overlay in top 1/3 */}
-                        <div className="absolute top-0 left-0 right-0 flex items-center justify-center px-4 text-center" style={{ height: '33%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}>
-                          <div className="text-white text-xl whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
-                            {formatHeading(headingText)}
+          {currentFase.startsWith('13/') ? (
+            <div className="mt-4 flex justify-end pr-6">
+              <div className="space-y-3 flex flex-col w-[8%] min-w-[120px]">
+                {phaseButtons.map((phase) => (
+                  <button
+                    key={phase.label}
+                    onClick={() => handlePhaseNavigation(phase.fases[0])}
+                    className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
+                      ? 'bg-orange-600 shadow-lg'
+                      : 'bg-orange-400 hover:bg-orange-500'
+                      }`}
+                  >
+                    <div>{phase.label}</div>
+                    <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div
+              className="grid mt-4 gap-4 pr-6"
+              style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
+            >
+              {/* Current Display (43%) */}
+              <div className="flex flex-col">
+                {/* Current Display - Left screen (16:9) */}
+                <div>
+                  <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
+                    {(() => {
+                      const media = getMediaForFase(currentFase);
+                      const headingText = getHeadingsSource()[currentFase]?.heading || `Fase ${currentFase}`;
+                      return (
+                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#1a1a2e' }}>
+                          {/* Media: video or image */}
+                          {media?.type === 'video' && media.path ? (
+                            <video
+                              ref={currentVideoRef}
+                              src={media.path}
+                              className="absolute inset-0 w-full h-full object-contain"
+                              preload="auto"
+                              autoPlay
+                              muted
+                              playsInline
+                              onLoadedMetadata={(e) => {
+                                e.currentTarget.play().catch(() => {});
+                              }}
+                            />
+                          ) : media?.type === 'image' && media.path ? (
+                            <img src={media.path} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
+                          ) : null}
+                          {/* Heading overlay in top 1/3 */}
+                          <div className="absolute top-0 left-0 right-0 flex items-center justify-center px-4 text-center" style={{ height: '33%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}>
+                            <div className="text-white text-xl whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
+                              {formatHeading(headingText)}
+                            </div>
                           </div>
+                          {/* Fase indicator */}
+                          <div className="absolute bottom-1 right-2 text-white/50 text-xs" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{currentFase}</div>
                         </div>
-                        {/* Fase indicator */}
-                        <div className="absolute bottom-1 right-2 text-white/50 text-xs" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{currentFase}</div>
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()}
+                  </div>
+                  <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
                 </div>
-                <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
+              </div>
+
+              {/* Next Display (43%) */}
+              <div className="flex flex-col">
+                <div>
+                  <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
+                    {renderNextPreview(nextMedia)}
+                  </div>
+                  <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
+                </div>
+              </div>
+
+              {/* Fases (8%) */}
+              <div className="space-y-3 flex flex-col">
+                {phaseButtons.map((phase) => (
+                  <button
+                    key={phase.label}
+                    onClick={() => handlePhaseNavigation(phase.fases[0])}
+                    className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
+                      ? 'bg-orange-600 shadow-lg'
+                      : 'bg-orange-400 hover:bg-orange-500'
+                      }`}
+                  >
+                    <div>{phase.label}</div>
+                    <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
+                  </button>
+                ))}
               </div>
             </div>
-
-            {/* Next Display (43%) */}
-            <div className="flex flex-col">
-              <div>
-                <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
-                  {renderNextPreview(nextMedia)}
-                </div>
-                <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
-              </div>
-            </div>
-
-            {/* Fases (8%) */}
-            <div className="space-y-3 flex flex-col">
-              {phaseButtons.map((phase) => (
-                <button
-                  key={phase.label}
-                  onClick={() => handlePhaseNavigation(phase.fases[0])}
-                  className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
-                    ? 'bg-orange-600 shadow-lg'
-                    : 'bg-orange-400 hover:bg-orange-500'
-                    }`}
-                >
-                  <div>{phase.label}</div>
-                  <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </div>
     );

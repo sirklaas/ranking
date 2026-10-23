@@ -185,9 +185,10 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
       {/* HEADING PLACED DIRECTLY UNDER THE BANNER */}
       <div className="px-4 pb-2">
         <h1
-          className="text-white font-extrabold uppercase tracking-tight leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
+          className="text-white font-normal uppercase tracking-tight leading-none drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
           style={{
-            fontFamily: '"DIN Condensed", "Barlow Semi Condensed", "Impact", sans-serif',
+            fontFamily: '"Barlow Semi Condensed", sans-serif',
+            fontWeight: 400,
             fontSize: 'clamp(3.2rem, 5.2vw, 5.5rem)',
             letterSpacing: '0.01em',
           }}
@@ -218,7 +219,7 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
             return (
               <div
                 key={trait.id}
-                className="rounded-lg bg-black/10 border border-black/10 transition-opacity"
+                className="rounded-lg opacity-0 pointer-events-none"
               />
             );
           }

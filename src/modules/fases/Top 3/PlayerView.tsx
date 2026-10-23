@@ -20,10 +20,29 @@ const TOP3_HEADINGS: Record<string, string> = {
 };
 
 const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, playerInfo, allPlayerNames, heading, mediaUrl, faseKey }) => {
-  if (!sessionId || !moduleStateJson || !playerInfo) return null;
+  if (!sessionId || !playerInfo) return null;
 
-  const state = safeJsonParse<Top3State>(moduleStateJson);
-  if (!state) return null;
+  const parsed = safeJsonParse<Top3State>(moduleStateJson);
+  const state: Top3State = {
+    allPlayerNames: Array.isArray(allPlayerNames) ? allPlayerNames : [],
+    currentFase: faseKey || '',
+    currentQuestion: { questionIndex: 0, phase: 'intro', votes: [], results: [] },
+    ...(parsed || {}),
+  };
+
+  if (!Array.isArray(state.allPlayerNames) || state.allPlayerNames.length === 0) {
+    state.allPlayerNames = Array.isArray(allPlayerNames) ? allPlayerNames : [];
+  }
+
+  if (!state.currentQuestion || typeof state.currentQuestion !== 'object') {
+    state.currentQuestion = { questionIndex: 0, phase: 'intro', votes: [], results: [] };
+  }
+  if (!Array.isArray(state.currentQuestion.votes)) {
+    state.currentQuestion.votes = [];
+  }
+  if (!Array.isArray(state.currentQuestion.results)) {
+    state.currentQuestion.results = [];
+  }
 
   const displayHeading = (faseKey && TOP3_HEADINGS[faseKey]) || heading;
 
@@ -35,6 +54,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onM
       teamNumber={playerInfo.teamNumber}
       heading={displayHeading}
       mediaUrl={mediaUrl}
+      allPlayerNames={allPlayerNames}
       onVote={async (chosenPlayerId, chosenPlayerName) => {
         const newState = await top3Logic.submitVote(
           sessionId,

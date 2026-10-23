@@ -140,27 +140,39 @@ export default function KrakendePlayer({
     const chosenTrait = traits.find((t) => t.id === effectiveChoice);
 
     if (showReveal && chosenTrait) {
+      const line1 = chosenTrait.line1 || chosenTrait.nl.split(' ')[0] || chosenTrait.nl;
+      const line2 =
+        chosenTrait.line2 !== undefined
+          ? chosenTrait.line2
+          : chosenTrait.nl.split(' ').slice(1).join(' ');
+
       return (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)' }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden select-none"
+          style={{
+            background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)',
+            fontFamily: '"Barlow Semi Condensed", sans-serif',
+          }}
           onClick={() => setShowReveal(false)}
         >
-          {/* Rotated container for landscape text */}
+          {/* Rotated 90deg container sized safely to 88dvh x 85dvw so it never cuts off on any phone */}
           <div
-            className="flex flex-col items-center justify-center w-[100vh] h-[100vw] rotate-90 origin-center"
+            className="flex flex-col items-center justify-center w-[88dvh] h-[85dvw] rotate-90 origin-center text-center p-4 pointer-events-none"
           >
-            <h2 className="text-white text-center font-bold tracking-tighter px-8 w-full"
+            <div
+              className="text-white font-normal uppercase tracking-tight leading-tight w-full flex flex-col items-center justify-center"
               style={{
-                fontSize: 'clamp(3rem, 18vh, 12rem)',
-                fontFamily: 'Barlow Semi Condensed, sans-serif',
-                fontWeight: 400,
-                textTransform: 'uppercase',
-                lineHeight: 0.95,
-              }}>
-              {getTraitLabel(chosenTrait, 'nl')}
-            </h2>
-            <p className="text-white/40 absolute bottom-4 text-sm font-light tracking-widest uppercase">
+                fontFamily: '"Barlow Semi Condensed", sans-serif',
+                fontWeight: 500,
+                fontSize: 'clamp(2rem, 5.5dvh, 4rem)',
+                textShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                wordBreak: 'break-word',
+              }}
+            >
+              <div>{line1}</div>
+              {line2 && <div className="mt-1">{line2}</div>}
+            </div>
+            <p className="text-white/60 absolute bottom-4 text-xs font-light tracking-widest uppercase">
               Tik om te sluiten
             </p>
           </div>
@@ -288,36 +300,39 @@ export default function KrakendePlayer({
         </p>
       </div>
 
-      {/* Trait grid — matches step 1/2: grid-cols-2 gap-2 px-4, scrollable */}
-      <div className="grid grid-cols-2 gap-2 px-4 overflow-y-auto flex-1 pb-20 content-start">
-        {traits.map((trait, i) => {
+      {/* Trait grid — yellow gradient like presenter, dark grey Barlow text in 1 line */}
+      <div className="grid grid-cols-2 gap-2.5 px-4 overflow-y-auto flex-1 pb-24 content-start">
+        {traits.map((trait) => {
           const isSelected = selected === trait.id;
-          const baseColor = isPositive ? '#4ECDC4' : '#FF6B6B';
           return (
             <button
               key={trait.id}
               onClick={() => handleSelect(trait.id)}
               disabled={submitted}
-              className="rounded-lg px-3 py-2 text-center font-semibold transition-all active:scale-95 leading-tight shadow-md border-2 border-white overflow-hidden"
+              className="rounded-xl px-2.5 py-3 text-center transition-all active:scale-95 shadow-md border-2 overflow-hidden flex items-center justify-center"
               style={{
-                backgroundColor: isSelected ? baseColor : 'rgba(255,255,255,0.1)',
-                color: isSelected ? '#0A1752' : 'white',
-                borderColor: isSelected ? baseColor : 'rgba(255,255,255,0.5)',
-                opacity: submitted && !isSelected ? 0.3 : 1,
-                fontSize: '0.9rem',
+                background: isSelected
+                  ? 'linear-gradient(135deg, #fef08a 0%, #fde047 50%, #eab308 100%)'
+                  : 'linear-gradient(135deg, #fef9c3 0%, #fed766 50%, #fcd34d 100%)',
+                borderColor: isSelected ? '#1d4ed8' : 'rgba(0,0,0,0.2)',
+                boxShadow: isSelected
+                  ? '0 0 0 3px rgba(37,99,235,0.6), 0 4px 10px rgba(0,0,0,0.2)'
+                  : '0 2px 5px rgba(0,0,0,0.08)',
+                opacity: submitted && !isSelected ? 0.35 : 1,
               }}
             >
-              <div className="flex flex-col items-center justify-center w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
-                {(() => {
-                  const [line1, line2] = splitLabelForTwoLines(getTraitLabel(trait, 'nl'));
-                  return (
-                    <>
-                      <span>{line1}</span>
-                      {line2 && <span>{line2}</span>}
-                    </>
-                  );
-                })()}
-              </div>
+              <span
+                className="truncate w-full block text-center"
+                style={{
+                  fontFamily: '"Barlow Semi Condensed", sans-serif',
+                  fontWeight: 500,
+                  fontSize: 'clamp(0.82rem, 3.2vw, 0.98rem)',
+                  color: '#262626',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {getTraitLabel(trait, 'nl')}
+              </span>
             </button>
           );
         })}

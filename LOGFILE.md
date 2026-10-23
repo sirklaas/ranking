@@ -1,0 +1,49 @@
+# Ranking Project Changelog & Log
+
+## Version 9.4.2 (2026-10-23)
+
+### Phone App (Player)
+- **Presenter Synchronization in Intro (01/01 – 01/07):**
+  - Connected `currentSession.current_fase` directly to phone onboarding phases so the phone automatically follows the presenter's lead.
+  - `01/01`: 'In welk team zit je?' team selection input.
+  - `01/02`: PhotoCircle account check ('Heb je een PhotoCircle account aangemaakt?'). Shows confirmation state (`✅ PhotoCircle account bevestigd!`) once selected and waits for presenter.
+  - `01/03`: 'Wat is jouw naam?' player selection screen. Includes fallback team selector if joined late.
+  - `01/04`: 'Wat wordt jullie Teamnaam?' team briefing card.
+  - `01/05`: 'Wat wordt jullie Teamyell? Kort maar Krachtig' team briefing card.
+  - `01/06`: 'Maak een Selfie Video en upload die naar PhotoCircle' team briefing card.
+  - `01/07`: 'Wie kies jij als Teamleider?' voting buttons.
+  - Automatic transition to game modules as soon as presenter advances past `01/*`.
+- **Top 3 & Top 10 Fixes:**
+  - Resolved `TypeError: undefined is not an object (evaluating 'e.allPlayerNames.filter')` on phones.
+  - Added safe parsing and fallbacks for `playerPool`, `allPlayerNames`, and `localStorage`.
+- **Typography & Layout:**
+  - Standardized font on `Barlow Semi Condensed` across all views.
+  - Removed persistent 'Afmelden' button from player screen.
+  - Clamped reveal screen dimensions (`w-[88dvh] h-[85dvw]`) in Krakende Karakters to prevent cutoff on mobile screens.
+
+### Krakende Karakters (13/*)
+- **Presenter Screen:**
+  - Removed the 24-trait keynote replica grid ("eigenschappen container") from the presenter view.
+  - Removed the 16:9 black preview container underneath the controls.
+  - Retained the top phase controls (1: 24 Goede, 2: 24 Minder Goede, 3: Goede Resultaten, 4: Minder Goede Resultaten), Gestemd counter, and Reset button.
+- **Display Screen:**
+  - Removed pre-render tile shadows (`opacity-0 pointer-events-none`) to prevent ghost rectangles during initial load.
+  - Set headings font to Barlow Semi Condensed 400.
+- **Player Screen:**
+  - Tile styling updated to presenter yellow gradient with dark grey text in single line.
+
+### Zitten en Staan (07/*)
+- **Stellingen & Headings:**
+  - Standardized two-line splitting with `/n` / `/N` across all stellingen.
+  - Updated `07/06` stelling to: `Ik flirt soms /n om iets te krijgen`.
+  - Updated `07/01` trailer heading to: `Blijf staan als je het eens /n bent met de volgende stelling:`.
+  - Updated `07/11` grammar to: `Sauna /n Ik vind dat zo vies`.
+  - Case-insensitive `/n` regex parsing across pocketbase, presenter, and player views.
+  - Phone stelling reveal delayed to match video durations (~14.5s – 22s).
+
+### Top 3 (10/*)
+- **Trailer Screen:**
+  - Suppressed the "Kies iemand..." heading overlay on Display during the `10/01` trailer.
+
+### Version Alignment
+- Bumped all sub-applications (Player, Presenter, Display, Test, and package.json) to `v9.4.2`.

@@ -254,10 +254,12 @@ export const setPlayerNames = async (
 
 // Get voters who have already voted (for display: remove from name wall)
 export const getVoterNames = (state: Top3State): string[] => {
-  return state?.currentQuestion?.votes?.map((v) => v.voterName) || [];
+  const votes = state?.currentQuestion?.votes;
+  return Array.isArray(votes) ? votes.map((v) => v.voterName) : [];
 };
 
 // Check if a specific player has voted
 export const hasPlayerVoted = (state: Top3State, playerId: string): boolean => {
-  return state?.currentQuestion?.votes?.some((v) => v.voterId === playerId) || false;
+  const votes = state?.currentQuestion?.votes;
+  return Array.isArray(votes) ? votes.some((v) => v.voterId === playerId) : false;
 };

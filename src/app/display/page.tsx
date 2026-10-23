@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = "v9.4.1";
+const APP_VERSION = "v9.4.2";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -445,7 +445,8 @@ export default function DisplayPage() {
           {(() => {
             // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
             // 01/04-01/06: heading only on phones, not on display.
-            if (currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
+            // Top 3 trailer (10/01): no heading on display per request
+            if (currentSession?.current_fase === '10/01' || currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
             if (['01/04', '01/05', '01/06'].includes(currentSession?.current_fase || '')) return null;
 
             // Hardcoded heading overrides for fases that need text over their trailer video

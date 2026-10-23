@@ -357,19 +357,19 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '01/06': { heading: 'Maak een Selfie Video', image: 'RankingSelfie.mp4' },
   '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
   '02/00': { heading: 'Tijd voor\nronde 2!', image: null },
-  '07/01': { heading: 'Blijf staan als je het eens bent', image: 'TrailerZitten.mp4' },
-  '07/05': { heading: 'Superfoods Ik zweer erbij', image: 'RankingSuperfoods.m4v' },
-  '07/06': { heading: 'Ik flirt soms Om iets te krijgen', image: 'RankingFlirt.m4v' },
-  '07/07': { heading: 'Houseparty Niks leukers dan', image: 'RankingHouseparty.m4v' },
-  '07/08': { heading: 'Socials checken Het eerste wat ik doe', image: 'RankingSocials.m4v' },
-  '07/09': { heading: 'Kleding Mijn hele salaris gaat op aan', image: 'RankingKleding.m4v' },
-  '07/10': { heading: 'In een \'all-in\' vakantie', image: 'All-In.m4v' },
-  '07/11': { heading: 'Sauna Ik vindt dat zo vies', image: 'RankingSauna.m4v' },
-  '07/12': { heading: 'Met een collega Heb ik weleens wat gehad', image: 'RankingCollega.m4v' },
-  '07/13': { heading: 'Billen Ik val echt op', image: 'RankingBillen.m4v' },
-  '07/14': { heading: 'Gat in mijn hand Ik heb een enorm', image: 'RankingGat.m4v' },
-  '07/15': { heading: 'Teveel Ik drink nooit', image: 'RankingDrink.m4v' },
-  '10/01': { heading: 'Kies iemand uit een ander team!', image: 'TrailerTop3.mp4' },
+  '07/01': { heading: 'Blijf staan als je het eens /n bent met de volgende stelling:', image: 'TrailerZitten.mp4' },
+  '07/05': { heading: 'Superfoods /n Ik zweer erbij', image: 'RankingSuperfoods.m4v' },
+  '07/06': { heading: 'Ik flirt soms /n om iets te krijgen', image: 'RankingFlirt.m4v' },
+  '07/07': { heading: 'Houseparty /n Niks leukers dan', image: 'RankingHouseparty.m4v' },
+  '07/08': { heading: 'Socials checken /n Het eerste wat ik doe', image: 'RankingSocials.m4v' },
+  '07/09': { heading: 'Kleding /n Mijn hele salaris gaat op aan', image: 'RankingKleding.m4v' },
+  '07/10': { heading: "In een 'all-in' /n Ik zweer bij een vakantie", image: 'All-In.m4v' },
+  '07/11': { heading: 'Sauna /n Ik vind dat zo vies', image: 'RankingSauna.m4v' },
+  '07/12': { heading: 'Met een collega /n Heb ik weleens wat gehad', image: 'RankingCollega.m4v' },
+  '07/13': { heading: 'Billen /n Ik val echt op', image: 'RankingBillen.m4v' },
+  '07/14': { heading: 'Gat in mijn hand /n Ik heb een enorm', image: 'RankingGat.m4v' },
+  '07/15': { heading: 'Teveel /n Ik drink nooit', image: 'RankingDrink.m4v' },
+  '10/01': { heading: '', image: 'TrailerTop3.mp4' },
   '10/05': { heading: 'Wie wordt er heel snel verliefd', image: 'verliefd.jpeg' },
   '10/06': { heading: 'Wie is de ideale schoonzoon of zus?', image: 'schoonzoon.png' },
   '10/07': { heading: 'Vliegtuig neer in de Andes. Wie eet je eerst op?', image: 'andes.jpeg' },
@@ -475,9 +475,10 @@ export const faseService = {
     return headings[currentFase]?.heading || 'In welk team zit je?';
   },
 
-  // Convert "/n" to line breaks for display
+  // Convert "/n" or "/N" to line breaks for display
   formatHeadingText: (headingText: string): string[] => {
-    return headingText.split('/n').map(line => line.trim());
+    if (!headingText) return [];
+    return headingText.split(/\/n/i).map(line => line.trim());
   },
 
   // Get image path for current fase

@@ -7,7 +7,14 @@ import Top3Presenter from '@/components/top3/Top3Presenter';
 import { safeJsonParse } from '@/lib/jsonUtils';
 
 const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, allPlayerNames, heading, mediaUrl, faseKey }) => {
-  const state: Top3State = safeJsonParse<Top3State>(moduleStateJson) ?? top3Logic.getInitialState(allPlayerNames || []);
+  const parsed = safeJsonParse<Top3State>(moduleStateJson);
+  const state: Top3State = {
+    ...top3Logic.getInitialState(allPlayerNames || []),
+    ...(parsed || {}),
+  };
+  if (!state.allPlayerNames || state.allPlayerNames.length === 0) {
+    state.allPlayerNames = allPlayerNames || [];
+  }
 
   const prevFaseRef = useRef(faseKey);
   const didInit = useRef(false);

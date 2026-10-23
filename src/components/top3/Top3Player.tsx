@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Top3State } from '@/modules/top3/types';
 import { hasPlayerVoted } from '@/modules/top3/logic';
 
@@ -12,6 +11,7 @@ interface Top3PlayerProps {
   teamNumber: number;
   heading?: string;
   mediaUrl?: string;
+  allPlayerNames?: string[];
   onVote: (chosenPlayerId: string, chosenPlayerName: string) => void;
 }
 
@@ -22,6 +22,7 @@ export default function Top3Player({
   teamNumber,
   heading,
   mediaUrl,
+  allPlayerNames,
   onVote,
 }: Top3PlayerProps) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -65,11 +66,19 @@ export default function Top3Player({
   const isResults = state?.currentQuestion?.phase === 'results';
 
   // Filter out the current player from the list
-  const otherPlayers = state.allPlayerNames.filter(
-    (name) => name !== playerName
-  );
+  const rawPool: string[] = Array.isArray(state?.allPlayerNames) && state.allPlayerNames.length > 0
+    ? state.allPlayerNames
+    : Array.isArray(allPlayerNames)
+    ? allPlayerNames
+    : [];
+  const otherPlayers = rawPool
+    .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+    .filter((name) => name !== playerName);
 
-  const formatName = (name: string) => name.replace(/^\s*\d+[\s_-]*/, '');
+  const formatName = (name: unknown) => {
+    if (typeof name !== 'string') return '';
+    return name.replace(/^\s*\d+[\s_-]*/, '');
+  };
 
   const handleSelect = (name: string) => {
     if (submitted || alreadyVoted) return;
@@ -164,7 +173,7 @@ export default function Top3Player({
           style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
-            <Image src="/assets/ranking_logo.webp" alt="Ranking Logo" width={256} height={128} className="h-full max-h-28 w-auto object-contain p-2" priority />
+            <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-full max-h-28 w-auto object-contain p-2" />
           </div>
         </div>
 

@@ -3,28 +3,62 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import type { FaseCommonProps } from '@/types/fases';
 
-const DELAY_MS = 3000; // wait for display video to finish
+// Exact video durations on Display (in ms) so phone does not reveal stelling until video completes
+const ZITTEN_DURATIONS: Record<string, number> = {
+  '07/01': 22000, // TrailerZitten.mp4 (21.6s)
+  '07/05': 16000, // RankingSuperfoods.m4v (15.8s)
+  '07/06': 14500, // RankingFlirt.m4v (14.3s)
+  '07/07': 14500, // RankingHouseparty.m4v (14.3s)
+  '07/08': 15500, // RankingSocials.m4v (15.3s)
+  '07/09': 15500, // RankingKleding.m4v (15.3s)
+  '07/10': 17000, // All-In.m4v (16.8s)
+  '07/11': 15500, // RankingSauna.m4v (15.3s)
+  '07/12': 15500, // RankingCollega.m4v (15.3s)
+  '07/13': 15500, // RankingBillen.m4v (15.3s)
+  '07/14': 15500, // RankingGat.m4v (15.3s)
+  '07/15': 15500, // RankingDrink.m4v (15.3s)
+};
+
+// All stellingen strictly split into two lines using /n
+const ZITTEN_STELLINGEN: Record<string, string> = {
+  '07/01': 'Blijf staan als je het eens /n bent met de volgende stelling:',
+  '07/05': 'Superfoods /n Ik zweer erbij',
+  '07/06': 'Ik flirt soms /n om iets te krijgen',
+  '07/07': 'Houseparty /n Niks leukers dan',
+  '07/08': 'Socials checken /n Het eerste wat ik doe',
+  '07/09': 'Kleding /n Mijn hele salaris gaat op aan',
+  '07/10': "In een 'all-in' /n Ik zweer bij een vakantie",
+  '07/11': 'Sauna /n Ik vind dat zo vies',
+  '07/12': 'Met een collega /n Heb ik weleens wat gehad',
+  '07/13': 'Billen /n Ik val echt op',
+  '07/14': 'Gat in mijn hand /n Ik heb een enorm',
+  '07/15': 'Teveel /n Ik drink nooit',
+};
 
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
-  const [buttonsReady, setButtonsReady] = useState(false);
-  const [headingReady, setHeadingReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const prevFaseRef = useRef(faseKey);
-  const headingText = heading || 'Zitten en Staan';
 
-  // Reset choice + delay when faseKey changes (next question)
+  // Determine two-line stelling text
+  const rawText = (faseKey && ZITTEN_STELLINGEN[faseKey]) || heading || 'Zitten en Staan';
+  const lines = rawText.split(/\/[nN]/);
+
+  // Reset choice + wait until the display video finishes before revealing stelling and buttons
   useEffect(() => {
     if (faseKey !== prevFaseRef.current) {
       setChoice(null);
-      setButtonsReady(false);
-      setHeadingReady(false);
+      setIsReady(false);
       prevFaseRef.current = faseKey;
     }
-    const btnTimer = setTimeout(() => setButtonsReady(true), 3000);
-    const headingTimer = setTimeout(() => setHeadingReady(true), 6000);
+
+    const duration = (faseKey && ZITTEN_DURATIONS[faseKey]) || 15500;
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, duration);
+
     return () => {
-      clearTimeout(btnTimer);
-      clearTimeout(headingTimer);
+      clearTimeout(timer);
     };
   }, [faseKey]);
 
@@ -105,22 +139,26 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
         </div>
       </div>
 
-      {/* Heading */}
+      {/* Heading - strictly two lines, revealed only after display video is finished */}
       <div
-        className="text-center px-6 pt-6 pb-2 transition-opacity duration-1000"
-        style={{ opacity: headingReady ? 1 : 0 }}
+        className="text-center px-6 pt-6 pb-2 transition-opacity duration-700 min-h-[90px] flex items-center justify-center"
+        style={{ opacity: isReady ? 1 : 0 }}
       >
         <h1
-          className="text-white text-3xl leading-snug"
-          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
+          className="text-white text-2xl min-[380px]:text-3xl font-light leading-snug"
+          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.6)' }}
         >
-          {headingText}
+          {lines.map((line, idx) => (
+            <span key={idx} className="block w-full">
+              {line.trim()}
+            </span>
+          ))}
         </h1>
       </div>
 
-      {/* Red / Blue buttons */}
+      {/* Red / Blue buttons - revealed only after display video is finished */}
       <div className="flex-1 flex items-center justify-center px-6">
-        {buttonsReady ? (
+        {isReady ? (
           <div
             className="flex gap-6 w-full max-w-md"
             style={{ animation: 'zsFadeUp 0.5s ease-out both' }}
@@ -168,7 +206,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
             </div>
           </div>
         ) : (
-          <div className="text-white/60 text-lg text-center" style={{ animation: 'zsPulse 1.5s ease-in-out infinite' }}>
+          <div className="text-white/60 text-xl text-center" style={{ animation: 'zsPulse 1.5s ease-in-out infinite' }}>
             Kijk naar het scherm…
           </div>
         )}

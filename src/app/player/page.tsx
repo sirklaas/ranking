@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v8.8';
+const APP_VERSION = 'v9.4.2';
 
 interface RankingSession {
   id: string;
@@ -133,7 +133,7 @@ export default function PlayerPage() {
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Player onboarding flow states
-  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'photocircle_ask' | 'photocircle_popup' | 'name' | 'teamleader' | 'complete'>('team');
+  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'photocircle_ask' | 'photocircle_popup' | 'name' | 'intro_step' | 'teamleader' | 'complete'>('team');
   const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
   const [, setPlayerData] = useState<{ teamNumber: string, playerName: string, hasPhotoCircle: boolean } | null>(null);
   const [votedTeamLeader, setVotedTeamLeader] = useState<string | null>(null);
@@ -146,6 +146,36 @@ export default function PlayerPage() {
 
   // Generic module states (keyed by stateField name)
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
+
+  // Ensure teamMembers is kept in sync with teamNumber and session player names
+  useEffect(() => {
+    if (teamNumber && currentSession?.playernames) {
+      const playerNames = teamService.parsePlayerNames(currentSession.playernames);
+      const members = playerNames[teamNumber] || [];
+      setTeamMembers(members);
+    }
+  }, [teamNumber, currentSession?.playernames]);
+
+  // Follow presenter lead during intro fases (01/01 to 01/07) and auto-switch to game when leaving 01
+  useEffect(() => {
+    if (!currentSession?.current_fase) return;
+    const fase = currentSession.current_fase;
+
+    if (fase === '01/01') {
+      setCurrentPhase('team');
+    } else if (fase === '01/02') {
+      setCurrentPhase('photocircle_ask');
+    } else if (fase === '01/03') {
+      setCurrentPhase('name');
+    } else if (fase === '01/04' || fase === '01/05' || fase === '01/06') {
+      setCurrentPhase('intro_step');
+    } else if (fase === '01/07') {
+      setCurrentPhase('teamleader');
+    } else {
+      // Game phases (07/*, 10/*, 13/*, 17/*, 20/*)
+      setCurrentPhase('complete');
+    }
+  }, [currentSession?.current_fase]);
 
   // Load PocketBase session based on URL code or latest
   useEffect(() => {
@@ -390,8 +420,16 @@ export default function PlayerPage() {
 
   const handlePhotoCircleResponse = (hasAccount: boolean) => {
     setHasPhotoCircleAccount(hasAccount);
-    // Both JA and NEE advance to name selection according to the new flow
-    advancePhase('name');
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = JSON.parse(localStorage.getItem('rankingPlayerData') || '{}');
+        localStorage.setItem('rankingPlayerData', JSON.stringify({ ...saved, hasPhotoCircle: hasAccount }));
+      } catch {}
+    }
+    // If presenter is already past 01/02, advance to name
+    if (currentSession?.current_fase && currentSession.current_fase > '01/02') {
+      advancePhase('name');
+    }
   };
 
   const submitTeamLeaderVote = async (leaderName: string) => {
@@ -448,8 +486,8 @@ export default function PlayerPage() {
   };
 
   // Render module PlayerView if a registered fase module matches the current fase
-  // GUARD: Only show game modules if onboarding is complete
-  if (currentSession?.current_fase && currentPhase === 'complete') {
+  // Always render game modules (outside 01/) so players are never locked out
+  if (currentSession?.current_fase && (!currentSession.current_fase.startsWith('01/') || currentPhase === 'complete')) {
     const mod = findFaseModule(currentSession.current_fase);
     if (mod?.PlayerView) {
       const allPlayerNames = teamService.parsePlayerNames(currentSession.playernames as string);
@@ -460,35 +498,32 @@ export default function PlayerPage() {
 
 
       const mediaUrl = imageName ? motherfileService.fileUrl(imageName) : '';
+
+      let savedPlayerId: string | null = null;
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('rankingPlayerData');
+          if (raw) savedPlayerId = JSON.parse(raw)?.playerId || null;
+        } catch {
+          savedPlayerId = null;
+        }
+      }
+
       return (
-        <>
-          <mod.PlayerView
-            faseKey={currentSession.current_fase}
-            sessionId={currentSession.id}
-            moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-            onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
-            heading={heading}
-            mediaUrl={mediaUrl}
-            playerInfo={{
-              playerId: (typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('rankingPlayerData') || '{}').playerId : null) || selectedPlayerName || `anon_${teamNumber}`,
-              playerName: selectedPlayerName || 'Speler',
-              teamNumber: parseInt(teamNumber) || 0,
-            }}
-            allPlayerNames={allPlayerNames}
-          />
-          <div className="fixed top-4 right-4 z-[9999]">
-            <button
-              onClick={() => {
-                localStorage.removeItem('rankingPlayerData');
-                window.location.reload();
-              }}
-              className="bg-black/30 hover:bg-black/50 text-white/50 hover:text-white px-3 py-1 rounded text-xs backdrop-blur-sm transition-colors border border-white/20"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              Afmelden
-            </button>
-          </div>
-        </>
+        <mod.PlayerView
+          faseKey={currentSession.current_fase}
+          sessionId={currentSession.id}
+          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+          onModuleStateJson={(json) => { if (mod.stateField) setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); }}
+          heading={heading}
+          mediaUrl={mediaUrl}
+          playerInfo={{
+            playerId: savedPlayerId || selectedPlayerName || `anon_${teamNumber}`,
+            playerName: selectedPlayerName || 'Speler',
+            teamNumber: parseInt(teamNumber) || 0,
+          }}
+          allPlayerNames={allPlayerNames}
+        />
       );
     }
   }
@@ -547,12 +582,23 @@ export default function PlayerPage() {
         <div className="row-span-2 flex items-center justify-center px-4">
           <MemoTypewriterHeading
             lines={
-              currentPhase === 'team' ? ['In welk team zit je?', 'Kijk op het grote scherm,', 'en vul dit hier in:'] :
-                currentPhase === 'photocircle_ask' ? ['Heb je een PhotoCircle', 'account aangemaakt?'] :
-                  currentPhase === 'name' ? ['Wat is jouw naam?'] :
-                    currentPhase === 'teamleader' ? ['Wie kies jij', 'als Teamleider?'] :
-                      (currentPhase === 'complete' && currentSession?.current_fase?.startsWith('01/')) ? ['Heel veel plezier vandaag', 'met de show!'] :
-                        currentHeading
+              currentSession?.current_fase === '01/01' || currentPhase === 'team'
+                ? ['In welk team zit je?', 'Kijk op het grote scherm,', 'en vul dit hier in:']
+                : currentSession?.current_fase === '01/02' || currentPhase === 'photocircle_ask'
+                ? ['Heb je een PhotoCircle', 'account aangemaakt?']
+                : currentSession?.current_fase === '01/03' || currentPhase === 'name'
+                ? ['Wat is jouw naam?']
+                : currentSession?.current_fase === '01/04'
+                ? ['Wat wordt jullie', 'Teamnaam?']
+                : currentSession?.current_fase === '01/05'
+                ? ['Wat wordt jullie Teamyell?', 'Kort maar Krachtig']
+                : currentSession?.current_fase === '01/06'
+                ? ['Maak een Selfie Video', 'en upload die naar PhotoCircle']
+                : currentSession?.current_fase === '01/07' || currentPhase === 'teamleader'
+                ? ['Wie kies jij', 'als Teamleider?']
+                : (currentPhase === 'complete' && currentSession?.current_fase?.startsWith('01/'))
+                ? ['Heel veel plezier vandaag', 'met de show!']
+                : currentHeading
             }
             visible={headingVisible}
             animate={true}
@@ -608,30 +654,89 @@ export default function PlayerPage() {
 
         {/* PhotoCircle Account Check Phase */}
         {currentPhase === 'photocircle_ask' && (
-          <div className="row-span-6 flex items-center justify-center px-4 gap-8">
-            <button
-              onClick={() => handlePhotoCircleResponse(true)}
-              className="text-white w-32 h-32 rounded-full text-3xl font-bold transition-all border-4 border-white active:scale-95 shadow-lg flex flex-col items-center justify-center"
-              style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
-            >
-              JA
-              <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center -ml-1">Ik heb een<br />account</span>
-            </button>
-            <button
-              onClick={() => handlePhotoCircleResponse(false)}
-              className="bg-red-600 text-white w-32 h-32 rounded-full text-3xl font-bold hover:bg-red-700 transition-all border-4 border-white active:scale-95 shadow-lg flex flex-col items-center justify-center"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              NEE
-              <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center">Probeer<br />opnieuw</span>
-            </button>
+          <div className="row-span-6 flex flex-col items-center justify-center px-4 gap-4">
+            {hasPhotoCircleAccount !== null ? (
+              <div className="bg-white/20 backdrop-blur-md px-6 py-4 rounded-2xl border-2 border-white/40 shadow-xl text-white text-center animate-fade-in">
+                <div className="text-3xl mb-1">✅</div>
+                <div className="text-xl font-bold">
+                  {hasPhotoCircleAccount ? 'PhotoCircle account bevestigd!' : 'Geen account geregistreerd'}
+                </div>
+                <div className="text-sm opacity-80 mt-2 font-normal">
+                  Wacht even tot de presentator verdergaat...
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-8">
+                <button
+                  onClick={() => handlePhotoCircleResponse(true)}
+                  className="text-white w-32 h-32 rounded-full text-3xl font-bold transition-all border-4 border-white active:scale-95 shadow-lg flex flex-col items-center justify-center"
+                  style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#08134A')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#0A1752')}
+                >
+                  JA
+                  <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center -ml-1">
+                    Ik heb een<br />account
+                  </span>
+                </button>
+                <button
+                  onClick={() => handlePhotoCircleResponse(false)}
+                  className="bg-red-600 text-white w-32 h-32 rounded-full text-3xl font-bold hover:bg-red-700 transition-all border-4 border-white active:scale-95 shadow-lg flex flex-col items-center justify-center"
+                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                >
+                  NEE
+                  <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center">
+                    Probeer<br />opnieuw
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Intro steps (Teamnaam, Teamyell, Selfie) */}
+        {currentPhase === 'intro_step' && (
+          <div className="row-span-6 flex flex-col items-center justify-center px-4 text-center">
+            <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border-2 border-white/40 shadow-xl text-white max-w-xs w-full animate-fade-in">
+              <div className="text-3xl font-black tracking-wide">
+                {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'}
+              </div>
+              {selectedPlayerName && (
+                <div className="text-xl font-semibold opacity-95 mt-1">{selectedPlayerName}</div>
+              )}
+              <div className="text-sm opacity-80 mt-3 font-normal border-t border-white/20 pt-2">
+                Overleg nu met je teamgenoten!
+              </div>
+            </div>
           </div>
         )}
 
         {/* Sections 6-12: Team Members Display (Name & Teamleader selection) */}
         <div className="row-span-7 overflow-hidden w-full flex flex-col px-2 pt-1">
+          {(currentPhase === 'name' || currentPhase === 'teamleader') && teamMembers.length === 0 && (
+            <div className="flex flex-col items-center justify-center pt-4 gap-3 text-white text-center">
+              <div className="text-xl font-bold">Vul eerst je teamnummer in:</div>
+              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '8px solid black' }}>
+                <input
+                  type="number"
+                  value={teamNumber}
+                  onChange={(e) => setTeamNumber(e.target.value)}
+                  className="w-16 h-16 text-3xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
+                  placeholder="?"
+                  min="1"
+                  max={currentSession?.nr_teams || 10}
+                />
+              </div>
+              {teamNumber && (
+                <button
+                  onClick={handleTeamSubmit}
+                  className="px-6 py-2 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-md active:scale-95"
+                >
+                  Bevestig Team {teamNumber}
+                </button>
+              )}
+            </div>
+          )}
           {(currentPhase === 'name' || currentPhase === 'teamleader') && teamMembers.length > 0 && (
             <div className="w-full h-full flex flex-col">
               <div

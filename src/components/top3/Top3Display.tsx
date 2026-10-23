@@ -14,7 +14,6 @@ interface Top3DisplayProps {
 const barlowFont = '"Barlow Semi Condensed", sans-serif';
 
 const TOP3_HEADINGS: Record<string, string> = {
-  '10/01': 'Kies iemand uit een van de andere teams!',
   '10/05': 'Wie wordt er echt heel erg snel verliefd',
   '10/06': 'Wie is de ideale schoon- zoon of zus?',
   '10/07': 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?',
@@ -439,7 +438,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
           {phase === 'results' ? (
             <ResultsView results={state.currentQuestion.results || []} animate={animateResults} />
           ) : (
-            <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
+            <NameWall allNames={state?.allPlayerNames || []} votedNames={votedNames} />
           )}
         </div>
 
@@ -447,7 +446,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
         <div className="text-center pb-8">
           {phase === 'voting' && (
             <div className="text-white text-4xl font-bold tracking-wider" style={{ fontFamily: barlowFont, textShadow: '0 3px 12px rgba(0,0,0,0.7)' }}>
-              {votedNames.length} / {state.allPlayerNames.length} HEBBEN GESTEMD
+              {votedNames.length} / {(state?.allPlayerNames || []).length} HEBBEN GESTEMD
             </div>
           )}
         </div>
