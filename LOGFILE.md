@@ -1,5 +1,12 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.5 (2026-10-23)
+- **Krakende Rotated Reveal Sign (90° Rotation + Barlow 500):**
+  - Rotated the reveal container 90 degrees (`rotate-90 origin-center`) spanning `85dvh` width by `85dvw` height across the long edge of the phone.
+  - Switched font weight from 900 to `500` (Barlow Semi Condensed 500).
+  - Maximized font size across the rotated dimensions (`clamp(3rem, min(...), 11rem)`), providing nearly double the horizontal display area so words appear massive when the phone is held up for 80 people.
+  - Bumped version to `v9.4.5`.
+
 ## Version 9.4.4 (2026-10-23)
 - **Krakende Reveal Screen for 80-Person Audience Visibility:**
   - Designed the positive & negative reveal container to be exactly 85% wide (`w-[85vw]`) and 85% high (`h-[85vh]`).

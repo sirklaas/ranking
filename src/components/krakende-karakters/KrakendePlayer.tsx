@@ -149,24 +149,23 @@ export default function KrakendePlayer({
       const isPositive = state.phase === 'positive-results';
       const longest = Math.max(line1.length, line2 ? line2.length : 0);
 
-      // Dynamically calculate font size so it's as big as possible for 80 people to see across a room
-      // In Barlow Semi Condensed, characters are narrow (~0.45em wide).
+      // Dynamically calculate font size across the rotated 85dvh width so text is as huge as possible for 80 people
       const fontSizeClamped = line2
-        ? `clamp(2.6rem, min(calc(75vw / ${Math.max(longest * 0.48, 4)}), calc(35vh / 2)), 6.5rem)`
-        : `clamp(3.2rem, min(calc(75vw / ${Math.max(longest * 0.48, 4)}), 42vh), 7.5rem)`;
+        ? `clamp(3rem, min(calc(76dvh / ${Math.max(longest * 0.46, 4)}), calc(72dvw / 2.3)), 9rem)`
+        : `clamp(3.5rem, min(calc(76dvh / ${Math.max(longest * 0.46, 4)}), calc(72dvw / 1.3)), 11rem)`;
 
       return (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden select-none bg-black/90 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-0 overflow-hidden select-none bg-black/95 backdrop-blur-md"
           style={{
             background: 'linear-gradient(135deg, #181829 0%, #0d0f18 100%)',
             fontFamily: '"Barlow Semi Condensed", sans-serif',
           }}
           onClick={() => setShowReveal(false)}
         >
-          {/* Container with a white border that is 85% high and 85% wide */}
+          {/* Rotated 90 degrees container: 85% of screen height wide x 85% of screen width high with white border */}
           <div
-            className="w-[85vw] h-[85vh] max-w-[85%] max-h-[85%] rounded-3xl flex flex-col items-center justify-center p-6 text-center relative shadow-2xl transition-transform active:scale-[0.99]"
+            className="w-[85dvh] h-[85dvw] rounded-3xl flex flex-col items-center justify-center p-6 text-center relative shadow-2xl rotate-90 origin-center transition-transform active:scale-[0.99]"
             style={{
               border: '6px solid #FFFFFF',
               background: isPositive
@@ -175,24 +174,23 @@ export default function KrakendePlayer({
               boxShadow: '0 0 50px rgba(255, 255, 255, 0.45), 0 20px 40px rgba(0,0,0,0.85)',
             }}
           >
-            {/* Massive text - Barlow Semi Condensed 900 black, uppercase for 80 people visibility */}
+            {/* Massive text - Barlow Semi Condensed weight 500, uppercase */}
             <div
-              className="text-black font-black uppercase tracking-tight leading-none w-full flex flex-col items-center justify-center select-none"
+              className="text-black uppercase tracking-tight leading-none w-full flex flex-col items-center justify-center select-none"
               style={{
                 fontFamily: '"Barlow Semi Condensed", sans-serif',
-                fontWeight: 900,
+                fontWeight: 500,
                 fontSize: fontSizeClamped,
-                lineHeight: 0.98,
+                lineHeight: 0.95,
                 wordBreak: 'break-word',
-                textShadow: '0 1px 2px rgba(255,255,255,0.4)',
               }}
             >
               <div>{line1}</div>
-              {line2 && <div className="mt-3">{line2}</div>}
+              {line2 && <div className="mt-2">{line2}</div>}
             </div>
 
             {/* Subtle dismiss indicator */}
-            <div className="absolute bottom-4 left-0 right-0 text-center text-black/50 text-xs font-bold tracking-widest uppercase">
+            <div className="absolute bottom-3 left-0 right-0 text-center text-black/50 text-xs font-semibold tracking-widest uppercase">
               Tik om te sluiten
             </div>
           </div>
