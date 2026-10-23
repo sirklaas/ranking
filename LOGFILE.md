@@ -1,5 +1,12 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.7 (2026-10-23)
+- **Krakende Reveal Screen Absolute Full-Height Geometry:**
+  - Resolved flexbox container squashing the rotated element's width (which made it appear like a 330px square).
+  - Switched rotated container to absolute positioning (`position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(90deg)`).
+  - Explicitly locked container dimensions to `85vh` length (span of the phone height) and `85vw` width with `minWidth`/`maxWidth`, guaranteeing a full-height rectangular sign covering 85% of the phone screen.
+  - Bumped version to `v9.4.7`.
+
 ## Version 9.4.6 (2026-10-23)
 - **Inline WebKit/CSS Rotation & Guaranteed Barlow 500 Font Delivery:**
   - Fixed mobile Safari ignoring Tailwind `rotate-90` by directly applying `transform: rotate(90deg)` and `-webkit-transform: rotate(90deg)` with explicit transform origins in inline styles.

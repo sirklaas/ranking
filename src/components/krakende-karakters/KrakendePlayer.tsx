@@ -149,14 +149,14 @@ export default function KrakendePlayer({
       const isPositive = state.phase === 'positive-results';
       const longest = Math.max(line1.length, line2 ? line2.length : 0);
 
-      // Dynamically calculate font size across the rotated 85dvh width so text is as huge as possible for 80 people
+      // Dynamically calculate font size across the rotated 85vh width so text is as huge as possible for 80 people
       const fontSizeClamped = line2
-        ? `clamp(3rem, min(calc(76dvh / ${Math.max(longest * 0.46, 4)}), calc(72dvw / 2.3)), 9rem)`
-        : `clamp(3.5rem, min(calc(76dvh / ${Math.max(longest * 0.46, 4)}), calc(72dvw / 1.3)), 11rem)`;
+        ? `clamp(2.8rem, min(calc(76vh / ${Math.max(longest * 0.46, 4)}), calc(70vw / 2.2)), 8rem)`
+        : `clamp(3.4rem, min(calc(76vh / ${Math.max(longest * 0.46, 4)}), calc(70vw / 1.25)), 10rem)`;
 
       return (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-0 overflow-hidden select-none bg-black/95 backdrop-blur-md"
+          className="fixed inset-0 z-[100] overflow-hidden select-none bg-black/95 backdrop-blur-md"
           style={{
             background: 'linear-gradient(135deg, #181829 0%, #0d0f18 100%)',
             fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
@@ -169,16 +169,21 @@ export default function KrakendePlayer({
             href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap"
           />
 
-          {/* Rotated 90 degrees container: 85% of screen height wide x 85% of screen width high with white border */}
+          {/* Rotated 90 degrees full-height container: exactly 85vh long by 85vw wide, positioned absolute so flex cannot squash it */}
           <div
-            className="rounded-3xl flex flex-col items-center justify-center p-6 text-center relative shadow-2xl transition-transform active:scale-[0.99]"
+            className="rounded-3xl flex flex-col items-center justify-center p-6 text-center shadow-2xl"
             style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
               width: '85vh',
               height: '85vw',
+              minWidth: '85vh',
+              minHeight: '85vw',
               maxWidth: '85vh',
               maxHeight: '85vw',
-              transform: 'rotate(90deg)',
-              WebkitTransform: 'rotate(90deg)',
+              transform: 'translate(-50%, -50%) rotate(90deg)',
+              WebkitTransform: 'translate(-50%, -50%) rotate(90deg)',
               transformOrigin: 'center center',
               WebkitTransformOrigin: 'center center',
               border: '6px solid #FFFFFF',
