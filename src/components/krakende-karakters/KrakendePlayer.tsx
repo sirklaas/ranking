@@ -41,6 +41,23 @@ export default function KrakendePlayer({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showReveal, setShowReveal] = useState(false);
 
+  // Orientation tracking: portrait vs landscape
+  const [isLandscape, setIsLandscape] = useState(false);
+  useEffect(() => {
+    const updateOrientation = () => {
+      if (typeof window !== 'undefined') {
+        setIsLandscape(window.innerWidth > window.innerHeight);
+      }
+    };
+    updateOrientation();
+    window.addEventListener('resize', updateOrientation);
+    window.addEventListener('orientationchange', updateOrientation);
+    return () => {
+      window.removeEventListener('resize', updateOrientation);
+      window.removeEventListener('orientationchange', updateOrientation);
+    };
+  }, []);
+
   // Persistence keys
   const LS_POS = `krakende_${playerId}_pos`;
   const LS_NEG = `krakende_${playerId}_neg`;
@@ -149,14 +166,14 @@ export default function KrakendePlayer({
       const isPositive = state.phase === 'positive-results';
       const longest = Math.max(line1.length, line2 ? line2.length : 0);
 
-      // Dynamically calculate font size so it's as big as possible in both portrait and landscape
+      // In both states, reading direction spans ~85% of the long edge (vmax) and ~85% of the short edge (vmin)
       const fontSizeClamped = line2
-        ? `clamp(2.4rem, min(calc(75vw / ${Math.max(longest * 0.48, 3.5)}), calc(32vh)), 6.5rem)`
-        : `clamp(2.8rem, min(calc(75vw / ${Math.max(longest * 0.48, 3.5)}), calc(50vh)), 8rem)`;
+        ? `clamp(2.6rem, min(calc(76vmax / ${Math.max(longest * 0.46, 4)}), calc(72vmin / 2.3)), 8.5rem)`
+        : `clamp(3.2rem, min(calc(76vmax / ${Math.max(longest * 0.46, 4)}), calc(72vmin / 1.3)), 11rem)`;
 
       return (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden select-none bg-black/95 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-0 overflow-hidden select-none bg-black/95 backdrop-blur-md"
           style={{
             background: 'linear-gradient(135deg, #181829 0%, #0d0f18 100%)',
             fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
@@ -169,16 +186,29 @@ export default function KrakendePlayer({
             href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap"
           />
 
-          {/* Container with a white border that is 85% height and 85% wide (natural orientation for portrait and landscape) */}
+          {/* 
+            Two states:
+            1. Portrait: rotated 90 degrees (width: 85vh, height: 85vw).
+               Forces users to hold their phone sideways in landscape to show it to the audience!
+            2. Landscape: no rotation (width: 85vw, height: 85vh).
+               Native landscape display spanning the full wide screen without double-rotation!
+          */}
           <div
-            className="rounded-3xl flex flex-col items-center justify-center p-6 text-center shadow-2xl relative transition-transform active:scale-[0.99]"
+            className="reveal-card rounded-3xl flex flex-col items-center justify-center p-6 text-center shadow-2xl relative"
             style={{
-              width: '85vw',
-              height: '85vh',
-              minWidth: '85vw',
-              minHeight: '85vh',
-              maxWidth: '85vw',
-              maxHeight: '85vh',
+              position: isLandscape ? 'relative' : 'absolute',
+              top: isLandscape ? 'auto' : '50%',
+              left: isLandscape ? 'auto' : '50%',
+              width: isLandscape ? '85vw' : '85vh',
+              height: isLandscape ? '85vh' : '85vw',
+              minWidth: isLandscape ? '85vw' : '85vh',
+              minHeight: isLandscape ? '85vh' : '85vw',
+              maxWidth: isLandscape ? '85vw' : '85vh',
+              maxHeight: isLandscape ? '85vh' : '85vw',
+              transform: isLandscape ? 'none' : 'translate(-50%, -50%) rotate(90deg)',
+              WebkitTransform: isLandscape ? 'none' : 'translate(-50%, -50%) rotate(90deg)',
+              transformOrigin: 'center center',
+              WebkitTransformOrigin: 'center center',
               border: '6px solid #FFFFFF',
               background: isPositive
                 ? 'linear-gradient(135deg, #fef08a 0%, #fed766 50%, #facc15 100%)'
@@ -194,12 +224,12 @@ export default function KrakendePlayer({
                 fontWeight: 500,
                 color: '#1f2937',
                 fontSize: fontSizeClamped,
-                lineHeight: 0.98,
+                lineHeight: 0.95,
                 wordBreak: 'break-word',
               }}
             >
               <div>{line1}</div>
-              {line2 && <div className="mt-3">{line2}</div>}
+              {line2 && <div className="mt-2">{line2}</div>}
             </div>
 
             {/* Subtle dismiss indicator */}
@@ -207,6 +237,39 @@ export default function KrakendePlayer({
               Tik om te sluiten
             </div>
           </div>
+
+          <style jsx>{`
+            @media (orientation: landscape) {
+              .reveal-card {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                width: 85vw !important;
+                height: 85vh !important;
+                min-width: 85vw !important;
+                min-height: 85vh !important;
+                max-width: 85vw !important;
+                max-height: 85vh !important;
+                transform: none !important;
+                -webkit-transform: none !important;
+              }
+            }
+            @media (orientation: portrait) {
+              .reveal-card {
+                position: absolute !important;
+                top: 50% !important;
+                left: 50% !important;
+                width: 85vh !important;
+                height: 85vw !important;
+                min-width: 85vh !important;
+                min-height: 85vw !important;
+                max-width: 85vh !important;
+                max-height: 85vw !important;
+                transform: translate(-50%, -50%) rotate(90deg) !important;
+                -webkit-transform: translate(-50%, -50%) rotate(90deg) !important;
+              }
+            }
+          `}</style>
         </div>
       );
     }

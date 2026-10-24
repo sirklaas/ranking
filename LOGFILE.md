@@ -1,5 +1,12 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.9 (2026-10-24)
+- **Two-State Reveal Orientation (Portrait 90° Tilt / Landscape No Tilt):**
+  - **Portrait State:** Signs are rotated 90 degrees (`translate(-50%, -50%) rotate(90deg)`) spanning `85vh` length by `85vw` width with a 6px white border. This forces users to hold their phone in landscape orientation when showing it to the 80-person audience, making the text upright and massive.
+  - **Landscape State:** When the browser viewport rotates into landscape (or when physically turned without orientation lock), tilt is disabled (`transform: none`) so the sign sits upright and wide at `85vw` by `85vh` without double-rotation.
+  - Implemented both via React orientation tracking (`resize` / `orientationchange`) and CSS `@media (orientation: landscape/portrait)`.
+  - Bumped version to `v9.4.9`.
+
 ## Version 9.4.8 (2026-10-23)
 - **Natural Device Orientation for Reveal Container:**
   - Removed artificial CSS `transform: rotate(90deg)` so the phone can be held naturally in portrait or turned physically to landscape without the text appearing sideways.
