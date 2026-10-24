@@ -1,6 +1,36 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Home() {
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    // If opened on mobile (iPhone, Android, small screen), redirect straight to /player
+    const isMobile =
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+      (typeof window !== 'undefined' && window.innerWidth < 768);
+
+    if (isMobile) {
+      router.replace('/player' + window.location.search);
+      return;
+    }
+    setChecking(false);
+  }, [router]);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center text-white">
+        <div className="animate-pulse text-lg" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+          Laden...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 text-white">
       <div className="container mx-auto px-8 py-16">

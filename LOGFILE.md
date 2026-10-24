@@ -1,5 +1,11 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.10 (2026-10-24)
+- **Automatic Mobile Redirect to `/player` from Root `/`:**
+  - Added user agent and viewport width detection on the root landing page (`/`) to automatically redirect iPhones and mobile devices straight to `/player` (preserving query params).
+  - Prevents players from seeing developer cards/URLs (`/presenter`, `/player`, `/display`, `/me/...`) when typing `ranking.pinkmilk.eu`.
+  - Bumped version to `v9.4.10`.
+
 ## Version 9.4.9 (2026-10-24)
 - **Two-State Reveal Orientation (Portrait 90° Tilt / Landscape No Tilt):**
   - **Portrait State:** Signs are rotated 90 degrees (`translate(-50%, -50%) rotate(90deg)`) spanning `85vh` length by `85vw` width with a 6px white border. This forces users to hold their phone in landscape orientation when showing it to the 80-person audience, making the text upright and massive.
