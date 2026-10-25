@@ -330,8 +330,14 @@ function ResultsView({ results, animate }: { results: Top3Result[]; animate: boo
   }, [animate]);
 
   return (
-    <div className="absolute bottom-[70px] left-0 right-0 flex items-center justify-center w-full mx-auto" style={{ height: '70vh' }}>
-      {/* Donut chart - Now full width with labels embedded inside */}
+    <div
+      className="absolute left-0 right-0 flex items-center justify-center w-full mx-auto"
+      style={{
+        top: 'clamp(140px, 20vh, 180px)',
+        bottom: 'clamp(40px, 5vh, 70px)',
+      }}
+    >
+      {/* Donut chart - positioned strictly below heading */}
       <div className="w-full h-full flex items-center justify-center">
         <AnimatedDonut results={results} animate={animate} />
       </div>
@@ -414,16 +420,23 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
 
       {/* Relative content layer */}
       <div className="relative z-10 flex flex-col w-full h-full min-h-screen">
-        {/* Heading — top 75px for questions, bottom 75px for trailer */}
+        {/* Heading — allocated top section, starts higher on screen, clamped width & font */}
         {displayHeading && (
-          <div className={`absolute left-0 right-0 text-center z-30 ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[75px]'}`}>
+          <div
+            className={`absolute left-0 right-0 text-center z-30 flex items-center justify-center ${
+              faseKey?.endsWith('/01') ? 'bottom-[40px]' : 'top-[clamp(16px,2.8vh,36px)]'
+            }`}
+            style={{
+              height: faseKey?.endsWith('/01') ? 'auto' : 'clamp(110px, 17vh, 160px)',
+            }}
+          >
             <h1
-              className="text-white font-bold px-12"
+              className="text-white font-bold px-6 max-w-[92vw] mx-auto"
               style={{
                 fontFamily: barlowFont,
                 fontWeight: 300,
-                fontSize: '130px',
-                lineHeight: displayHeading.includes('/n') || displayHeading.includes('/N') ? '130px' : 'normal',
+                fontSize: 'clamp(36px, 4.4vw, 78px)',
+                lineHeight: 1.1,
                 textShadow: '0 4px 24px rgba(0,0,0,0.8)',
                 animation: 'top3HeadIn 0.8s cubic-bezier(0.34,1.56,0.64,1) both',
               }}
@@ -433,8 +446,8 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
           </div>
         )}
 
-        {/* Main content */}
-        <div className="flex-1 flex items-start justify-center p-8 pt-[320px]">
+        {/* Main content — starts below allocated heading height */}
+        <div className="flex-1 flex items-start justify-center p-8 pt-[clamp(150px,21vh,190px)]">
           {phase === 'results' ? (
             <ResultsView results={state.currentQuestion.results || []} animate={animateResults} />
           ) : (

@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Top10State } from '@/modules/top10/types';
 import { hasPlayerVoted } from '@/modules/top10/logic';
+import TrailerTitleCard from '@/components/common/TrailerTitleCard';
 
 interface Top10PlayerProps {
     state: Top10State;
@@ -16,7 +17,6 @@ interface Top10PlayerProps {
 }
 
 const TOP10_HEADINGS: Record<string, string> = {
-    '17/01': 'Kies iemand uit een ander team!',
     '17/05': 'Je hebt een pijnlijke pukkel op je bil waar je niet bij kan. \n Wie mag hem voor je uitknijpen?',
     '17/06': 'Wie denkt dat ie always gelijk heeft?',
     '17/07': 'Wie zou meedoen [tegen betaling uiteraard] \n aan de naakte fotoshoot van het Perfecte Plaatje?',
@@ -66,18 +66,32 @@ export default function Top10Player({
         ? allPlayerNames
         : [];
 
-    // Filter out the current player and match query
-    const otherPlayers = useMemo(
-        () => rawPool
-            .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
-            .filter((name) => name !== playerName),
-        [rawPool, playerName]
-    );
-
     const formatName = (name: unknown) => {
         if (typeof name !== 'string') return '';
         return name.replace(/^\s*\d+[\s_-]*/, '');
     };
+
+    // Filter out the current player and show ONLY players from OTHER teams
+    const otherPlayers = useMemo(
+        () => rawPool
+            .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+            .filter((name) => {
+                const cleanName = formatName(name).toLowerCase();
+                const myCleanName = formatName(playerName).toLowerCase();
+                // 1. Exclude player's own name
+                if (cleanName === myCleanName) return false;
+
+                // 2. Exclude players from player's own team (only other teams)
+                if (teamNumber) {
+                    const match = name.match(/^\s*(\d+)[\s_-]/);
+                    if (match && parseInt(match[1], 10) === Number(teamNumber)) {
+                        return false;
+                    }
+                }
+                return true;
+            }),
+        [rawPool, playerName, teamNumber]
+    );
 
     const filteredPlayers = useMemo(() => {
         if (!query.trim()) return otherPlayers;
@@ -114,19 +128,7 @@ export default function Top10Player({
 
     // Video phase (trailer) on phone - Never play videos or show voting lists here!
     if (isVideoMedia) {
-        return (
-            <div
-                className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
-                style={{
-                    fontFamily: 'Barlow Semi Condensed, sans-serif',
-                    background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
-                }}
-            >
-                <div className="text-5xl mb-4 animate-pulse">🍿</div>
-                <h2 className="text-white text-3xl font-bold mb-2">Kijk naar het grote scherm!</h2>
-                <p className="text-white/70 text-lg">De trailer speelt daar af.</p>
-            </div>
-        );
+        return <TrailerTitleCard title="Top 10" fase="17/01" />;
     }
 
     // Already voted or just submitted

@@ -166,10 +166,10 @@ export default function KrakendePlayer({
       const isPositive = state.phase === 'positive-results';
       const longest = Math.max(line1.length, line2 ? line2.length : 0);
 
-      // In both states, reading direction spans ~85% of the long edge (vmax) and ~85% of the short edge (vmin)
+      // Strict font size clamp based on longest word to fit in 1-2 lines with zero mid-word breaking
       const fontSizeClamped = line2
-        ? `clamp(2.6rem, min(calc(76vmax / ${Math.max(longest * 0.46, 4)}), calc(72vmin / 2.3)), 8.5rem)`
-        : `clamp(3.2rem, min(calc(76vmax / ${Math.max(longest * 0.46, 4)}), calc(72vmin / 1.3)), 11rem)`;
+        ? `clamp(1.6rem, min(calc(72vmax / ${Math.max(longest * 0.56, 5)}), calc(65vmin / 2.3)), 6.2rem)`
+        : `clamp(2.0rem, min(calc(72vmax / ${Math.max(longest * 0.56, 5)}), calc(65vmin / 1.3)), 8.0rem)`;
 
       return (
         <div
@@ -180,10 +180,10 @@ export default function KrakendePlayer({
           }}
           onClick={() => setShowReveal(false)}
         >
-          {/* Ensure Google Font Barlow Semi Condensed is explicitly loaded */}
+          {/* Ensure Google Font Barlow Semi Condensed is explicitly loaded with bold & black weights */}
           <link
             rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;600;700;800;900&display=swap"
           />
 
           {/* 
@@ -216,20 +216,19 @@ export default function KrakendePlayer({
               boxShadow: '0 0 50px rgba(255, 255, 255, 0.45), 0 20px 40px rgba(0,0,0,0.85)',
             }}
           >
-            {/* Massive text - Barlow Semi Condensed weight 500, uppercase */}
+            {/* Massive bold text - Barlow Semi Condensed 900 (NOT Barlow 400), uppercase, strictly 1-2 lines */}
             <div
-              className="uppercase tracking-tight leading-none w-full flex flex-col items-center justify-center select-none"
+              className="uppercase tracking-tight leading-none w-full flex flex-col items-center justify-center select-none px-2"
               style={{
                 fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
-                fontWeight: 500,
-                color: '#1f2937',
+                fontWeight: 900,
+                color: '#111827',
                 fontSize: fontSizeClamped,
-                lineHeight: 0.95,
-                wordBreak: 'break-word',
+                lineHeight: 1.0,
               }}
             >
-              <div>{line1}</div>
-              {line2 && <div className="mt-2">{line2}</div>}
+              <div className="w-full text-center whitespace-nowrap overflow-hidden">{line1}</div>
+              {line2 && <div className="w-full text-center whitespace-nowrap overflow-hidden mt-2">{line2}</div>}
             </div>
 
             {/* Subtle dismiss indicator */}

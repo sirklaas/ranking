@@ -15,13 +15,9 @@ interface Top10DisplayProps {
 }
 
 const barlowFont = '"Barlow Semi Condensed", sans-serif';
-const nameFont = 'Nunito, sans-serif';
+const nameFont = '"Barlow Semi Condensed", sans-serif';
 
 const TOP10_HEADINGS: Record<string, string> = {
-    '17/01': 'Kies iemand uit een ander team',
-    '17/02': 'Kies iemand uit een ander team',
-    '17/03': 'Kies iemand uit een ander team',
-    '17/04': 'Kies iemand uit een ander team',
     '17/05': 'Je hebt een pijnlijke pukkel op je bil. /n Wie mag hem voor je uitknijpen?',
     '17/06': 'Wie denkt dat ie always gelijk heeft?',
     '17/07': 'Wie doet tegen betaling de naakte fotoshoot /n van het Perfecte Plaatje?',
@@ -153,7 +149,7 @@ function computeCloudSizes(results: Top10Result[]): CloudItem[] {
     });
 }
 
-/* ──────── Cinematic D3 Word Cloud ──────── */
+/* ──────── Modern Fluid D3 Word Cloud ──────── */
 function WordCloud({ results, animate }: { results: Top10Result[]; animate: boolean }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -195,35 +191,45 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
         ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
         // Map results to nodes
-        const maxVotes = results[0].votes || 1;
+        const maxVotes = results[0]?.votes || 1;
         const prevNodes = new Map(nodesRef.current.map(n => [n.playerName, n]));
 
         const newNodes = results.map((r, i) => {
             const prev = prevNodes.get(r.playerName);
             const rank = i + 1;
             const ratio = r.votes / maxVotes;
-            
-            // Rank-based sizes
-            let baseSize = 40;
-            if (rank === 1) baseSize = 120 + (ratio * 60);
-            else if (rank === 2) baseSize = 80;
-            else baseSize = Math.max(30, 70 - (rank * 4));
+            const name = formatName(r.playerName);
 
-            // Rank-based rotation
-            const targetRotation = rank === 2 ? -90 : (rank === 1 ? 0 : (hashStr(r.playerName) % 2 === 0 ? 0 : -90));
+            // Responsive font size: rank 1 is prominent, 2-3 medium, others compact
+            let targetSize = 32;
+            if (rank === 1) targetSize = Math.round(52 + ratio * 24);
+            else if (rank === 2) targetSize = 44;
+            else if (rank === 3) targetSize = 38;
+            else targetSize = Math.max(24, 34 - rank);
+
+            // Accurately measure pill dimensions based on text length to prevent overlap
+            ctx.font = `800 ${targetSize}px ${barlowFont}`;
+            const textMetrics = ctx.measureText(name);
+            const textWidth = textMetrics.width;
+            const pillW = textWidth + (rank === 1 ? 52 : 36);
+            const pillH = targetSize + (rank === 1 ? 24 : 16);
+            // Strict collision circle enclosing the rectangular pill
+            const collisionRadius = Math.hypot(pillW / 2, pillH / 2) + 10;
 
             return {
                 ...prev,
                 playerName: r.playerName,
                 id: r.playerName,
+                displayName: name,
                 rank,
                 votes: r.votes,
-                targetSize: baseSize,
-                size: prev?.size || 10, // grow in
-                targetRotation,
-                rotation: prev?.rotation ?? 0,
-                x: prev?.x ?? (width / 2 + (Math.random() - 0.5) * 100),
-                y: prev?.y ?? (height / 2 + (Math.random() - 0.5) * 100),
+                targetSize,
+                size: prev?.size || 10,
+                pillW,
+                pillH,
+                collisionRadius,
+                x: prev?.x ?? (width / 2 + (Math.random() - 0.5) * 120),
+                y: prev?.y ?? (height / 2 + (Math.random() - 0.5) * 120),
                 color: CLOUD_COLORS[i % CLOUD_COLORS.length],
                 vx: prev?.vx ?? 0,
                 vy: prev?.vy ?? 0,
@@ -233,77 +239,87 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
 
         nodesRef.current = newNodes;
 
-        // Force Simulation
+        // Force Simulation with strict collision radii preventing any overlapping
         if (simulationRef.current) simulationRef.current.stop();
 
         const simulation = d3.forceSimulation(newNodes)
-            .force("charge", d3.forceManyBody().strength(50))
-            .force("collision", d3.forceCollide().radius((d: any) => {
-                // Approximate collision radius based on size and rotation
-                return d.targetSize * (Math.abs(d.targetRotation) === 90 ? 0.8 : 1.2);
-            }).iterations(4))
-            .force("center", d3.forceCenter(width / 2, height / 2).strength(0.01));
+            .force("charge", d3.forceManyBody().strength(-30))
+            .force("collision", d3.forceCollide().radius((d: any) => d.collisionRadius || 50).iterations(8))
+            .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
+            .alphaDecay(0.015);
 
-        // Rank 1 specific pull to center
+        // Rank 1 slight pull to center
         simulation.force("rank1", (alpha: number) => {
             const rank1 = newNodes[0];
             if (rank1) {
-                rank1.vx += (width / 2 - rank1.x) * 0.05 * alpha;
-                rank1.vy += (height / 2 - rank1.y) * 0.05 * alpha;
+                rank1.vx += (width / 2 - rank1.x) * 0.04 * alpha;
+                rank1.vy += (height / 2 - rank1.y) * 0.04 * alpha;
             }
         });
-        
-        // Boundary force
+
+        // Boundary force to keep all pills strictly inside canvas
         simulation.force("boundary", () => {
             newNodes.forEach(node => {
-                const padding = 50;
-                if (node.x < padding) node.vx += 2;
-                if (node.x > width - padding) node.vx -= 2;
-                if (node.y < padding) node.vy += 2;
-                if (node.y > height - padding) node.vy -= 2;
+                const pad = (node.collisionRadius || 40) + 10;
+                if (node.x < pad) node.vx += 1.8;
+                if (node.x > width - pad) node.vx -= 1.8;
+                if (node.y < pad) node.vy += 1.8;
+                if (node.y > height - pad) node.vy -= 1.8;
             });
         });
 
         simulationRef.current = simulation;
 
-        // Render Loop
+        // Modern Fluid Render Loop
         const tick = () => {
             ctx.clearRect(0, 0, width, height);
             const time = performance.now() * 0.001;
 
             newNodes.forEach(node => {
-                // Interpolate size and rotation
-                node.size += (node.targetSize - node.size) * 0.1;
-                
-                // Rotation interpolation (shortest path)
-                let diff = node.targetRotation - node.rotation;
-                if (diff > 180) diff -= 360;
-                if (diff < -180) diff += 360;
-                node.rotation += diff * 0.1;
+                // Smooth interpolation for size
+                node.size += (node.targetSize - node.size) * 0.12;
 
-                // "School of Fish" sinusoidal drift
-                const driftX = Math.sin(time * 0.5 + node.phase) * 0.5;
-                const driftY = Math.cos(time * 0.7 + node.phase) * 0.5;
-                
-                node.x += driftX;
-                node.y += driftY;
+                // Fluid organic Lissajous harmonic floating
+                const driftX = Math.sin(time * 0.8 + node.phase) * 1.5;
+                const driftY = Math.cos(time * 0.6 + node.phase * 1.3) * 1.5;
 
-                // Draw
+                const drawX = node.x + driftX;
+                const drawY = node.y + driftY;
+
+                // Re-calculate pill size with interpolated font size
+                ctx.font = `800 ${node.size}px ${barlowFont}`;
+                const curMetrics = ctx.measureText(node.displayName);
+                const curTextW = curMetrics.width;
+                const curPillW = curTextW + (node.rank === 1 ? 52 : 36);
+                const curPillH = node.size + (node.rank === 1 ? 24 : 16);
+                const cornerR = curPillH / 2;
+
                 ctx.save();
-                ctx.translate(node.x, node.y);
-                ctx.rotate(node.rotation * (Math.PI / 180));
-                
-                const name = formatName(node.playerName);
-                ctx.font = `900 ${node.size}px ${nameFont}`;
-                ctx.fillStyle = node.color;
+                ctx.translate(drawX, drawY);
+
+                // Modern Pill Glass Background
+                ctx.beginPath();
+                ctx.roundRect(-curPillW / 2, -curPillH / 2, curPillW, curPillH, cornerR);
+                ctx.fillStyle = node.rank === 1
+                    ? 'rgba(250, 204, 21, 0.22)'
+                    : 'rgba(10, 23, 82, 0.72)';
+                ctx.fill();
+
+                // Glowing border
+                ctx.strokeStyle = node.rank === 1 ? '#facc15' : node.color;
+                ctx.lineWidth = node.rank === 1 ? 3 : 2;
+                ctx.shadowColor = node.color;
+                ctx.shadowBlur = node.rank === 1 ? 24 : 12;
+                ctx.stroke();
+
+                // Text rendering
+                ctx.fillStyle = node.rank === 1 ? '#fef08a' : '#FFFFFF';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                
-                // Glow effect
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = 'rgba(255,255,255,0.3)';
-                
-                ctx.fillText(name, 0, 0);
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 6;
+                ctx.fillText(node.displayName, 0, 1);
+
                 ctx.restore();
             });
 
@@ -319,7 +335,7 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
     }, [d3Loaded, animate, results]);
 
     return (
-        <div ref={containerRef} className="w-full h-full relative overflow-hidden">
+        <div ref={containerRef} className="w-full h-full relative overflow-hidden flex items-center justify-center">
             <canvas 
                 ref={canvasRef} 
                 className="w-full h-full pointer-events-none"
@@ -513,17 +529,22 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
             )}
 
             {/* Content Container */}
-            <div className="relative z-20 flex-1 flex flex-col">
-                {/* Heading - POSITION DEPENDENT */}
-                {displayHeading && (
-                    <div className={`absolute left-0 right-0 text-center ${faseKey?.endsWith('/01') ? 'bottom-[75px]' : 'top-[75px]'}`}>
+            <div className="relative z-20 flex-1 flex flex-col min-h-screen w-full">
+                {/* Heading - Allocated height & clamped font/width */}
+                {displayHeading && !faseKey?.endsWith('/01') && (
+                    <div
+                        className="absolute left-0 right-0 text-center top-[clamp(16px,2.8vh,36px)] z-30 flex items-center justify-center"
+                        style={{
+                            height: 'clamp(110px, 17vh, 160px)',
+                        }}
+                    >
                         <h1
-                            className="text-white px-12"
+                            className="text-white font-bold px-6 max-w-[92vw] mx-auto"
                             style={{
                                 fontFamily: barlowFont,
                                 fontWeight: 300,
-                                fontSize: '130px',
-                                lineHeight: displayHeading.includes('/n') || displayHeading.includes('/N') ? '130px' : 'normal',
+                                fontSize: 'clamp(36px, 4.4vw, 78px)',
+                                lineHeight: 1.1,
                                 textShadow: '0 8px 32px rgba(0,0,0,0.8)'
                             }}
                         >
@@ -532,26 +553,32 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                     </div>
                 )}
 
-                {/* Main content area */}
-                <div className="flex-1 flex items-stretch p-4">
+                {/* Main content area — strictly below allocated heading height */}
+                <div
+                    className="absolute left-0 right-0 flex items-stretch px-8"
+                    style={{
+                        top: 'clamp(140px, 20vh, 180px)',
+                        bottom: 'clamp(50px, 6vh, 80px)',
+                    }}
+                >
                     {phase === 'intro' ? (
-                        <div className="flex-1 flex flex-wrap gap-4 items-start justify-center p-8 pt-[320px]">
+                        <div className="flex-1 flex flex-wrap gap-4 items-start justify-center p-8">
                             <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
                         </div>
-                    ) : phase === 'results' || phase === 'voting' ? (
-                        <>
-                            {/* Left: results list - constrained to prevent heading/bottom collisions */}
-                            <div className="absolute left-8 top-[320px] bottom-[75px] w-1/4">
-                                {(phase === 'results' || (phase === 'voting' && votedNames.length >= (state.allPlayerNames.length || 1))) && (
-                                    <SequentialResults results={phase === 'results' && state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
-                                )}
-                            </div>
-                            {/* Right: wordcloud — absolutely positioned 75% width, 75vh height, bottom-anchored */}
-                            <div className="absolute right-0 bottom-[75px] w-3/4" style={{ height: '75vh' }}>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center relative">
+                            {/* Left: SequentialResults if results phase */}
+                            {phase === 'results' && (
+                                <div className="w-[30%] h-full shrink-0 pr-6">
+                                    <SequentialResults results={state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
+                                </div>
+                            )}
+                            {/* WordCloud: takes full width during voting (100% centered!), or 70% during results */}
+                            <div className={`${phase === 'results' ? 'w-[70%]' : 'w-full'} h-full flex items-center justify-center relative transition-all duration-700`}>
                                 <WordCloud results={liveTally} animate={animateCloud} />
                             </div>
-                        </>
-                    ) : null}
+                        </div>
+                    )}
                 </div>
 
                 {/* Status bar */}

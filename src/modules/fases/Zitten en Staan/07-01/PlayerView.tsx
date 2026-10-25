@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import type { FaseCommonProps } from '@/types/fases';
+import TrailerTitleCard from '@/components/common/TrailerTitleCard';
 
 // Exact video durations on Display (in ms) so phone does not reveal stelling until video completes
 const ZITTEN_DURATIONS: Record<string, number> = {
@@ -36,6 +37,10 @@ const ZITTEN_STELLINGEN: Record<string, string> = {
 };
 
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
+  if (faseKey === '07/01') {
+    return <TrailerTitleCard title="Zitten & Staan" fase="07/01" />;
+  }
+
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [isReady, setIsReady] = useState(false);
   const prevFaseRef = useRef(faseKey);

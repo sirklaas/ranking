@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = "v9.4.17";
+const APP_VERSION = "v9.4.18";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -469,20 +469,12 @@ export default function DisplayPage() {
           {(() => {
             // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
             // 01/04-01/06: heading only on phones, not on display.
-            // Top 3 trailer (10/01): no heading on display per request
-            if (currentSession?.current_fase === '10/01' || currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
+            // Top 3 trailer (10/01) and Top 10 trailer (17/01): no heading on display per request
+            if (['10/01', '17/01'].includes(currentSession?.current_fase || '') || currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
             if (['01/04', '01/05', '01/06'].includes(currentSession?.current_fase || '')) return null;
 
-            // Hardcoded heading overrides for fases that need text over their trailer video
-            const TRAILER_HEADING_OVERRIDES: Record<string, string> = {
-              '17/01': 'Kies iemand uit een ander team!',
-              '17/02': 'Kies iemand uit een ander team!',
-              '17/03': 'Kies iemand uit een ander team!',
-              '17/04': 'Kies iemand uit een ander team!',
-            };
-            const overrideHeading = TRAILER_HEADING_OVERRIDES[currentSession?.current_fase || ''];
             const headings = faseService.parseHeadings(currentSession?.headings || '{}');
-            const headingText = overrideHeading || headings[currentSession?.current_fase || '']?.heading || '';
+            const headingText = headings[currentSession?.current_fase || '']?.heading || '';
             const isTrailer = currentSession?.current_fase?.endsWith('/01');
             return headingText ? (
               <div

@@ -136,7 +136,7 @@ export default function TestPhonesPage() {
                 className="fixed z-[9999] text-white/40 text-[11px]"
                 style={{ fontFamily: 'monospace', bottom: '15px', left: '100px' }}
             >
-                v9.4.17 | 6 phones | fase: {sessionFase} | {nrTeams} teams
+                v9.4.18 | 6 phones | fase: {sessionFase} | {nrTeams} teams
             </div>
 
             {/* Header */}

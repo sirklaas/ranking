@@ -1,5 +1,23 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.18 (2026-10-25)
+- **Top 3 & Top 10 Display Layout & Heading Clamping:**
+  - **Gereserveerde Hoogte & Hogere Startpositie:** De koppen starten nu hoger op het scherm (`top: clamp(16px, 2.8vh, 36px)`) in een gereserveerde container (`clamp(110px, 17vh, 160px)`).
+  - **Donut & WordCloud onder de Kop:** De Animated Donut (Top 3) en de WordCloud (Top 10) zijn strikt gepositioneerd vanaf `clamp(140px, 20vh, 180px)`, waardoor koppen en grafieken elkaar nooit meer overlappen.
+  - **Responsieve Font & Breedte Clamp:** Koppen gebruiken nu `clamp(36px, 4.4vw, 78px)` met `max-w-[92vw] mx-auto`, zodat lange teksten nooit meer aan de rechterkant van het scherm afsnijden.
+- **Top 10 Display & WordCloud Modernisering:**
+  - **Centrering van de WordCloud:** Tijdens het stemmen (`voting`) vult de WordCloud het volledige scherm en staat 100% horizontaal en verticaal gecentreerd. Pas bij `results` verschijnt de Top 5 aan de linkerkant en schuift de cloud soepel naar de rechter 70%.
+  - **Moderne Vloeiende Pill-Animatie:** Ouderwetse verticale (-90°) tekst is vervangen door moderne, horizontale semi-transparante glazen pills met een subtiele neon glow en rank-styling (#1 gouden rand & gloed).
+  - **Geen Overlappende Namen:** D3 collision physics berekent nu de werkelijke bounding box per speler (`Math.hypot(pillW / 2, pillH / 2)`), waardoor namen elkaar fysiek nooit meer kunnen overlappen.
+  - **Verwijderen "Kies een ander" & Sla 17/02 over:** De oude introductiedia `17/02` is volledig uit de presentator- en displaynavigatie gehaald; na de trailer `17/01` gaat de show direct door naar de eerste vraag (`17/05`).
+- **Top 10 Phone Stemlijst Filters:**
+  - De speler ziet op zijn telefoon **niet** zijn eigen naam en **alleen namen van andere teams** (teamgenoten van het eigen team worden automatisch weggefilterd).
+- **Universele Trailer Title Cards op Telefoons:**
+  - Zodra er een trailer/introvideo speelt (`07/01` Zitten & Staan, `10/01` Top 3, `13/01` Krakende Karakters, `17/01` Top 10, `20/01` De Finale), toont de telefoon nu een stijlvolle geanimeerde show-titelkaart met glowing badge en de subtitel *"Kijk naar het grote scherm"*.
+- **Krakende Karakters Reveal Kaart (Positief / Negatief):**
+  - **Strikte Barlow 900:** De getoonde eigenschappen gebruiken nu `font-weight: 900` (black/bold) in plaats van de dunne 400/500 variant.
+  - **Geen Afgebroken Woorden / 3 Regels:** `word-break: break-word` is vervangen door `white-space: nowrap` en dynamische font-scaling; woorden als "Ongeduldig" of "Geweldig" breken nooit meer af over 3 regels.
+
 ## Version 9.4.17 (2026-10-25)
 - **Eigen PhotoApp Link op Fase 01/06:**
   - De link naar PhotoCircle is op `/player` vervangen door de eigen PinkMilk PhotoApp:

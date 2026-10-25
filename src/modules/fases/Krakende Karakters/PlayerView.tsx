@@ -5,9 +5,14 @@ import * as krakendeLogic from '@/modules/krakende-karakters/logic';
 import KrakendePlayer from '@/components/krakende-karakters/KrakendePlayer';
 import { safeJsonParse } from '@/lib/jsonUtils';
 import { krakendeVoteService } from '@/lib/pocketbase';
+import TrailerTitleCard from '@/components/common/TrailerTitleCard';
 
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, moduleStateJson, playerInfo }) => {
-  if (!sessionId || !moduleStateJson || !playerInfo || faseKey === '13/01') return null;
+  if (faseKey === '13/01') {
+    return <TrailerTitleCard title="Krakende Karakters" fase="13/01" />;
+  }
+
+  if (!sessionId || !moduleStateJson || !playerInfo) return null;
 
   const parsed = safeJsonParse(moduleStateJson);
   const state = krakendeLogic.ensureKrakendeState(parsed);

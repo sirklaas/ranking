@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Top3State } from '@/modules/top3/types';
 import { hasPlayerVoted } from '@/modules/top3/logic';
+import TrailerTitleCard from '@/components/common/TrailerTitleCard';
 
 interface Top3PlayerProps {
   state: Top3State;
@@ -103,19 +104,7 @@ export default function Top3Player({
 
   // Video phase (trailer) on phone - Never play videos or show voting lists here!
   if (isVideoMedia) {
-    return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center p-6 text-center"
-        style={{
-          fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: 'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
-        }}
-      >
-        <div className="text-5xl mb-4 animate-pulse">🍿</div>
-        <h2 className="text-white text-3xl font-bold mb-2">Kijk naar het grote scherm!</h2>
-        <p className="text-white/70 text-lg">De trailer speelt daar af.</p>
-      </div>
-    );
+    return <TrailerTitleCard title="Top 3" fase="10/01" />;
   }
 
   // Already voted or just submitted (Show popup)
