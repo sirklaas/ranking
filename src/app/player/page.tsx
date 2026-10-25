@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v9.4.13';
+const APP_VERSION = 'v9.4.14';
 
 function getPlayerStorageKey(baseKey: string): string {
   if (typeof window === 'undefined') return baseKey;
@@ -424,13 +424,25 @@ export default function PlayerPage() {
         }
 
         parseModuleStates(fresh as Record<string, unknown>);
-        if (fresh.current_fase) {
-          setCurrentSession((prev: RankingSession | null) => {
-            if (!prev) return prev;
-            if (fresh.current_fase === prev.current_fase) return prev;
-            return { ...prev, current_fase: fresh.current_fase as string };
-          });
-        }
+        setCurrentSession((prev: RankingSession | null) => {
+          if (!prev) return fresh;
+          const prevJoined = JSON.stringify(prev.joined_players || []);
+          const freshJoined = JSON.stringify(fresh.joined_players || []);
+          const prevLeaders = JSON.stringify((prev as Record<string, unknown>).teamleaders || {});
+          const freshLeaders = JSON.stringify((fresh as Record<string, unknown>).teamleaders || {});
+          
+          if (
+            prev.current_fase === fresh.current_fase &&
+            prevJoined === freshJoined &&
+            prevLeaders === freshLeaders
+          ) {
+            return prev;
+          }
+          return {
+            ...prev,
+            ...fresh,
+          };
+        });
       } catch { /* silent */ }
     };
     const timer = setInterval(poll, 1000);

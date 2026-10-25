@@ -85,18 +85,17 @@ export default function TestPhonesPage() {
     const [resetKey, setResetKey] = useState<number>(1);
     const [sessionFase, setSessionFase] = useState<string>('01/01');
     const [nrTeams, setNrTeams] = useState<number>(4);
+    const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
     const handleResetAll = async () => {
         setResetKey((k) => k + 1);
         try {
-            const sessions = await rankingService.getAllSessions();
-            if (sessions && sessions[0]) {
-                await fetch('/api/session-state', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: sessions[0].id, action: 'reset_joined_players' })
-                });
-            }
+            const sid = activeSessionId || code || 'latest';
+            await fetch('/api/session-state', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: sid, action: 'reset_joined_players' })
+            });
         } catch (err) {
             console.warn('Failed to reset server joined players', err);
         }
@@ -108,21 +107,25 @@ export default function TestPhonesPage() {
             const urlCode = params.get('code');
             setCode(urlCode);
 
-            rankingService.getAllSessions().then((sessions) => {
-                if (!sessions || !sessions.length) return;
-                let active = sessions[0] as unknown as { id: string; current_fase?: string; nr_teams?: number };
-                if (urlCode) {
-                    const match = sessions.find((s: unknown) => {
-                        const item = s as { id: string };
-                        return item.id === urlCode || item.id.startsWith(urlCode);
-                    });
-                    if (match) active = match as unknown as typeof active;
-                }
-                if (active.current_fase) setSessionFase(active.current_fase);
-                if (active.nr_teams) setNrTeams(active.nr_teams);
-            }).catch((err) => {
-                console.error('Failed to load session:', err);
-            });
+            let active = true;
+            const poll = async () => {
+                if (!active) return;
+                try {
+                    const targetId = urlCode || 'latest';
+                    const res = await fetch(`/api/session-state?id=${encodeURIComponent(targetId)}`);
+                    if (!active || !res.ok) return;
+                    const { session } = await res.json();
+                    if (!active || !session) return;
+                    if (session.id) setActiveSessionId(session.id);
+                    if (session.current_fase) setSessionFase(session.current_fase);
+                    if (session.nr_teams) setNrTeams(session.nr_teams);
+                } catch { /* silent */ }
+            };
+
+            const timer = setInterval(poll, 1000);
+            poll();
+
+            return () => { active = false; clearInterval(timer); };
         }
     }, []);
 
@@ -133,7 +136,7 @@ export default function TestPhonesPage() {
                 className="fixed z-[9999] text-white/40 text-[11px]"
                 style={{ fontFamily: 'monospace', bottom: '15px', left: '100px' }}
             >
-                v9.4.13 | 6 phones | fase: {sessionFase} | {nrTeams} teams
+                v9.4.14 | 6 phones | fase: {sessionFase} | {nrTeams} teams
             </div>
 
             {/* Header */}

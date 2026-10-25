@@ -1,5 +1,11 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.14 (2026-10-25)
+- **Live Sync Fix for Test-Phones & Real-Time Player State:**
+  - **Test-Phones Polling:** `TestPhonesPage` (`/test-phones`) pollt nu elke seconde `/api/session-state`. Hierdoor lopen de header-fase-badge (`Fase: 01/01`, `Fase: 10/05`) en teaminformatie realtime synchroon mee met de presentator/display.
+  - **Player `joined_players` State Sync:** De polling loop op de telefoons (`/player`) update nu ook `joined_players` dynamisch. Zodra één telefoon (of speler) een naam claimt, verdwijnt die naam direct realtime op alle andere telefoons in de simulator.
+  - **Reset All to '?'**: Reset knop stuurt actie direct door naar de actieve sessie zodat server state en schermen naadloos synchroon gereset worden.
+
 ## Version 9.4.13 (2026-10-25)
 - **Top 3 Phone Layout 2-Column Grid & Styling Upgrade:**
   - **2 Kolommen Gradient Blokken:** De kandidatenlijst op de telefoon is opgebouwd in een 2-koloms raster (`grid grid-cols-2 gap-2.5`). Elk naam-blok heeft de zachte pastel gradient gekregen (`bg-gradient-to-r from-pink-300 to-purple-400` met `text-gray-800`), identiek aan de onboarding naamkeuze.
