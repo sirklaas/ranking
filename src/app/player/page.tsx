@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v9.4.16';
+const APP_VERSION = 'v9.4.17';
 
 function getPlayerStorageKey(baseKey: string): string {
   if (typeof window === 'undefined') return baseKey;
@@ -551,11 +551,6 @@ export default function PlayerPage() {
     } catch (e) {
       console.error('Failed to save team leader vote', e);
     }
-
-    // Move to complete
-    setShowWelcomePopup(true);
-    setCurrentPhase('complete');
-    setShowTeamInfo(true);
   };
 
   const handleNameSelection = async (name: string) => {
@@ -707,7 +702,7 @@ export default function PlayerPage() {
                 : currentPhase === 'name'
                 ? (selectedPlayerName ? [`Welkom ${selectedPlayerName}!`, 'Je zit in:'] : ['Hoe heet je ?'])
                 : currentPhase === 'teamleader' || currentSession?.current_fase === '01/07'
-                ? ['Wie kies jij', 'als Teamleider?']
+                ? ['Wie is jullie', 'Teamleider?']
                 : currentSession?.current_fase === '01/01' || currentSession?.current_fase === '01/02'
                 ? ['In welk team zit je?']
                 : currentSession?.current_fase === '01/03'
@@ -820,7 +815,7 @@ export default function PlayerPage() {
               {currentSession?.current_fase === '01/06' ? (
                 <div className="w-full flex flex-col items-center mt-3 pt-3 border-t border-white/20 gap-3">
                   <a
-                    href={currentSession?.photocircle || 'https://join.photocircleapp.com'}
+                    href={`https://www.pinkmilk.eu/phone/media.html?showId=${currentSession?.id || ''}&playerName=${encodeURIComponent(selectedPlayerName || '')}&team=${teamNumber || '1'}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full py-3.5 px-4 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
@@ -840,7 +835,7 @@ export default function PlayerPage() {
 
         {/* Sections 6-12: Team Members Display (Name & Teamleader selection) */}
         <div className="row-span-7 overflow-hidden w-full flex flex-col px-2 pt-1">
-          {(currentPhase === 'name' || currentPhase === 'teamleader') && (!teamNumber || teamMembers.length === 0) && (
+          {(currentPhase === 'name' || currentPhase === 'teamleader' || currentSession?.current_fase === '01/07') && (!teamNumber || teamMembers.length === 0) && (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-white text-center">
               <p className="text-lg font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                 Geen team geselecteerd
@@ -881,10 +876,34 @@ export default function PlayerPage() {
             </div>
           )}
 
-          {/* Grid of names: shown during 'name' phase (if player hasn't chosen yet) OR during 'teamleader' phase */}
-          {((currentPhase === 'name' && !selectedPlayerName) || currentPhase === 'teamleader') && teamNumber && teamMembers.length > 0 && (
+          {/* Confirmed Team Leader Vote View */}
+          {(currentPhase === 'teamleader' || currentSession?.current_fase === '01/07') && votedTeamLeader && (
+            <div className="w-full h-full flex flex-col items-center justify-center px-4 text-center">
+              <div className="bg-white/20 backdrop-blur-md px-6 py-6 rounded-2xl border-2 border-white/40 shadow-xl text-white max-w-xs w-full animate-fade-in flex flex-col items-center">
+                <div className="w-16 h-16 rounded-2xl bg-blue-600 border border-white/40 flex items-center justify-center shadow-lg mb-3">
+                  <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="text-sm uppercase tracking-wider opacity-80 font-bold">Je hebt gestemd op:</div>
+                <div className="text-3xl font-black tracking-wide mt-1 text-yellow-300 uppercase" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  {votedTeamLeader}
+                </div>
+                <div className="text-base opacity-95 mt-4 font-bold border-t border-white/20 pt-3">
+                  Teamleider Team {teamNumber}
+                </div>
+                <div className="text-xs opacity-75 mt-1 font-normal">
+                  Kijk op het grote scherm voor de uitslag!
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Grid of names: shown during 'name' phase (if player hasn't chosen yet) OR during 'teamleader' phase (if not voted yet) */}
+          {((currentPhase === 'name' && !selectedPlayerName) || ((currentPhase === 'teamleader' || currentSession?.current_fase === '01/07') && !votedTeamLeader)) && teamNumber && teamMembers.length > 0 && (
             <div className="w-full h-full flex flex-col overflow-y-auto">
               {(() => {
+                const isLeaderPhase = currentPhase === 'teamleader' || currentSession?.current_fase === '01/07';
                 // Names already claimed by another phone (from session.joined_players)
                 const joinedSet = new Set<string>(
                   Array.isArray(currentSession?.joined_players)
@@ -897,7 +916,7 @@ export default function PlayerPage() {
                 // Available members for this screen:
                 // - In 'name' phase: exclude names already claimed by another phone (1 phone per player)
                 // - In 'teamleader' phase: exclude self (cannot vote for yourself)
-                const availableMembers = currentPhase === 'teamleader'
+                const availableMembers = isLeaderPhase
                   ? teamMembers.filter(m => m !== selectedPlayerName)
                   : teamMembers.filter(m => !joinedSet.has(m) || m === selectedPlayerName);
 
@@ -906,18 +925,22 @@ export default function PlayerPage() {
                 if (availableMembers.length === 0) {
                   return (
                     <div className="flex flex-col items-center justify-center h-full text-white text-center px-4">
-                      <p className="text-lg font-bold">Alle spelers in Team {teamNumber} zijn al ingelogd!</p>
-                      <button
-                        onClick={() => {
-                          setTeamNumber('');
-                          setTeamMembers([]);
-                          advancePhase('team');
-                        }}
-                        className="mt-4 text-white/80 hover:text-white text-xs underline font-medium active:opacity-75 transition-all"
-                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                      >
-                        ← Kies een ander team
-                      </button>
+                      <p className="text-lg font-bold">
+                        {isLeaderPhase ? 'Geen andere teamleden gevonden' : `Alle spelers in Team ${teamNumber} zijn al ingelogd!`}
+                      </p>
+                      {!isLeaderPhase && (
+                        <button
+                          onClick={() => {
+                            setTeamNumber('');
+                            setTeamMembers([]);
+                            advancePhase('team');
+                          }}
+                          className="mt-4 text-white/80 hover:text-white text-xs underline font-medium active:opacity-75 transition-all"
+                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                        >
+                          ← Kies een ander team
+                        </button>
+                      )}
                     </div>
                   );
                 }
@@ -931,8 +954,8 @@ export default function PlayerPage() {
                       {availableMembers.map((member, index) => {
                         return (
                           <button
-                            key={`${member}-${currentPhase}`}
-                            onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
+                            key={`${member}-${isLeaderPhase ? 'leader' : 'name'}`}
+                            onClick={() => isLeaderPhase ? submitTeamLeaderVote(member) : handleNameSelection(member)}
                             className="w-full h-full bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight"
                             style={{
                               fontFamily: 'Barlow Semi Condensed, sans-serif',
@@ -947,7 +970,7 @@ export default function PlayerPage() {
                         );
                       })}
                     </div>
-                    {currentPhase === 'name' && (
+                    {!isLeaderPhase && currentPhase === 'name' && (
                       <div className="flex justify-center pt-2">
                         <button
                           onClick={() => {

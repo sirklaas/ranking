@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.16";
+const APP_VERSION = "v9.4.17";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -135,7 +135,17 @@ export default function PresenterPage() {
       return (
         <div className="w-full h-full flex flex-col items-center justify-center text-white">
           <div className="text-4xl mb-2">⏭️</div>
-          <div className="text-sm opacity-80">No upcoming media</div>
+          <div className="text-sm opacity-80">Einde van de show</div>
+        </div>
+      );
+    }
+    if (!media.path) {
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center text-white px-4 text-center" style={{ backgroundColor: '#1a1a2e' }}>
+          <div className="text-xs uppercase tracking-wider text-yellow-400 font-bold mb-2">Fase {media.fase} (Volgende)</div>
+          <div className="text-2xl font-light whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+            {formatHeading(media.heading || '')}
+          </div>
         </div>
       );
     }
@@ -330,65 +340,28 @@ export default function PresenterPage() {
       return null;
     }
 
+    const nextFaseKey = getNextFaseGlobal(currentFase);
+    if (!nextFaseKey || nextFaseKey === currentFase) {
+      return null;
+    }
+
     // Use currently edited headings as source of truth (falls back to session JSON)
     const headings = Object.keys(editingHeadings).length
       ? editingHeadings
       : faseService.parseHeadings(selectedSession.headings || '{}');
 
-    // If headings are empty, use fallback data for testing
-    if (Object.keys(headings).length === 0) {
-      const fallbackHeadings = {
-        '01/01': { heading: 'Welkom', image: '' },
-        '01/02': { heading: 'In welk team zit je?', image: '' },
-        '01/03': { heading: 'Wat is jouw naam?', image: '' },
-        '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' }
-      };
+    const item = headings[nextFaseKey] || { heading: `Fase ${nextFaseKey}`, image: '' };
+    const fileName = item.image || '';
+    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(fileName);
+    const path = fileName ? motherfileService.fileUrl(fileName) : '';
 
-      // Find the next fase with a non-empty image/Picture field
-      const currentFaseIndex = Object.keys(fallbackHeadings).indexOf(currentFase);
-      const faseKeys = Object.keys(fallbackHeadings).slice(currentFaseIndex + 1);
-
-      for (const faseKey of faseKeys) {
-        const faseData = fallbackHeadings[faseKey as keyof typeof fallbackHeadings];
-        if (faseData?.image && faseData.image.trim() !== '') {
-          // Determine file type
-          const fileName = faseData.image;
-          const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
-          const path = fileName.startsWith('/') ? fileName : `/pics/${fileName}`;
-
-          return {
-            type: isVideo ? 'video' as const : 'image' as const,
-            path: path,
-            name: fileName,
-            heading: faseData.heading || `Fase ${faseKey}`,
-            fase: faseKey
-          };
-        }
-      }
-    }
-
-    // Find the next fase with a non-empty image/Picture field
-    const currentFaseIndex = Object.keys(headings).indexOf(currentFase);
-    const faseKeys = Object.keys(headings).slice(currentFaseIndex + 1);
-
-    for (const faseKey of faseKeys) {
-      const faseData = headings[faseKey];
-      if (faseData?.image && faseData.image.trim() !== '') {
-        // Determine file type
-        const fileName = faseData.image;
-        const isVideo = fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.avi');
-        const path = motherfileService.fileUrl(fileName);
-
-        return {
-          type: isVideo ? 'video' as const : 'image' as const,
-          path: path,
-          name: fileName,
-          heading: faseData.heading || `Fase ${faseKey}`,
-          fase: faseKey
-        };
-      }
-    }
-    return null;
+    return {
+      type: isVideo ? ('video' as const) : ('image' as const),
+      path,
+      name: fileName,
+      heading: item.heading || `Fase ${nextFaseKey}`,
+      fase: nextFaseKey,
+    };
   };
 
 

@@ -1,5 +1,15 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.17 (2026-10-25)
+- **Eigen PhotoApp Link op Fase 01/06:**
+  - De link naar PhotoCircle is op `/player` vervangen door de eigen PinkMilk PhotoApp:
+    `https://www.pinkmilk.eu/phone/media.html?showId=${currentSession.id}&playerName=${playerName}&team=${teamNumber}`
+  - Spelers openen via de knop `Photo App [ Team X ]` direct de gepersonaliseerde media-uploader met automatische toewijzing aan hun sessie, naam en team.
+- **Herstel Fase 01/07 ("Wie is jullie Teamleider?") in Presenter Preview & Phone Stemflow:**
+  - **Presenter "Next" Preview Fix:** `getNextMedia()` in `/presenter` zocht voorheen enkel naar dia's met een gevulde `image`/video-bestandsnaam. Omdat fase `01/07` geen media-bestand heeft (`image: ''`), werd deze dia overgeslagen en toonde de preview ten onrechte `07/01` (Zitten en Staan).
+  - De logica is gerefactord om strikt naar de direct opvolgende fase (`getNextFaseGlobal(currentFase)`) te kijken. Voor dia's zonder media rendert de preview nu een strakke weergave: *"Fase 01/07 (Volgende) - Wie is jullie Teamleider?"*.
+  - **Telefoon Stembevestiging op 01/07:** Zodra een speler stemt op zijn teamleider, toont de telefoon nu net als bij Top 3 een heldere bevestigingskaart met een blauwe tickbox (`bg-blue-600`), de gekozen naam in geel en de tekst *"Je hebt gestemd op: [Naam] - Teamleider Team X - Kijk op het grote scherm voor de uitslag!"*.
+
 ## Version 9.4.16 (2026-10-25)
 - **Reset Game Data Knop op Presentator Scherm & Display Dots Reset op 01/01:**
   - **Presentator "Reset Game Data" Knop:**
