@@ -263,57 +263,77 @@ export default function Top10Player({
                     'linear-gradient(135deg, #0A1752 0%, #1a2a6c 50%, #2d3a8c 100%)',
             }}
         >
-            {/* Header - NOW AT THE TOP */}
-            <div className="text-center mb-6 pt-4">
-                <h2 className="text-white text-3xl font-bold tracking-tight">Kies iemand!</h2>
-                <div className="w-16 h-1 bg-white/20 mx-auto mt-2 rounded-full" />
-                <p className="text-white/60 text-sm mt-3">
+            {/* Header — compact, consistent with Top 3 */}
+            <div className="text-center mb-4 pt-2">
+                <h2
+                    className="text-white text-3xl sm:text-4xl uppercase tracking-wider font-normal"
+                    style={{ fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif', fontWeight: 400 }}
+                >
+                    Kies iemand!
+                </h2>
+                <div className="w-16 h-1 bg-white/30 mx-auto mt-2 rounded-full" />
+                <p
+                    className="text-white/70 text-base mt-2 font-normal"
+                    style={{ fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif' }}
+                >
                     {formatName(playerName)}, wie kies jij?
                 </p>
             </div>
 
-            {/* Quick-pick list (scrollable) - PRIMARY INTERACTION */}
-            <div className="flex-1 overflow-y-auto space-y-2 max-w-sm mx-auto w-full px-4 pt-4">
-                {otherPlayers.map((name) => {
-                    const isSelected = selected === name;
-                    return (
-                        <button
-                            key={name}
-                            onClick={() => handleSelect(name)}
-                            className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg"
-                            style={{
-                                backgroundColor: isSelected
-                                    ? 'rgba(255,255,255,0.25)'
-                                    : 'rgba(255,255,255,0.08)',
-                                border: isSelected
-                                    ? '2px solid rgba(255,255,255,0.6)'
-                                    : '2px solid rgba(255,255,255,0.1)',
-                            }}
-                        >
-                            <div
-                                className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+            {/* Player list in 2 columns with gradient name blocks (matching Top 3) */}
+            <div className="flex-1 overflow-y-auto pb-24">
+                <div className="grid grid-cols-2 gap-2.5 max-w-md mx-auto w-full">
+                    {otherPlayers.map((name) => {
+                        const isSelected = selected === name;
+                        return (
+                            <label
+                                key={name}
+                                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all select-none cursor-pointer border border-white/80 shadow-md active:scale-95 ${
+                                    isSelected
+                                        ? 'bg-gradient-to-r from-pink-400 to-purple-500 shadow-white/40'
+                                        : 'bg-gradient-to-r from-pink-300 to-purple-400 hover:from-pink-400 hover:to-purple-500'
+                                }`}
                                 style={{
-                                    borderColor: isSelected
-                                        ? '#4ECDC4'
-                                        : 'rgba(255,255,255,0.4)',
-                                    backgroundColor: isSelected ? '#4ECDC4' : 'transparent',
+                                    fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
+                                    fontWeight: 400,
+                                    boxShadow: isSelected ? '0 0 10px rgba(255, 255, 255, 0.6)' : undefined,
                                 }}
                             >
-                                {isSelected && (
-                                    <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                                )}
-                            </div>
-                            <span
-                                className="text-lg font-bold"
-                                style={{
-                                    color: isSelected ? 'white' : 'rgba(255,255,255,0.9)',
-                                }}
-                            >
-                                {formatName(name)}
-                            </span>
-                        </button>
-                    );
-                })}
+                                <input
+                                    type="radio"
+                                    name="top10vote"
+                                    value={name}
+                                    checked={isSelected}
+                                    onChange={() => handleSelect(name)}
+                                    className="hidden"
+                                />
+
+                                {/* Custom radio circle */}
+                                <div
+                                    className="w-4 h-4 rounded-full border border-gray-700/60 flex items-center justify-center flex-shrink-0 transition-all bg-white/40"
+                                    style={{
+                                        borderColor: isSelected ? '#1f2937' : 'rgba(31, 41, 55, 0.5)',
+                                    }}
+                                >
+                                    {isSelected && (
+                                        <div className="w-2 h-2 rounded-full bg-gray-900" />
+                                    )}
+                                </div>
+
+                                {/* Player name in Barlow 400 */}
+                                <span
+                                    className="text-base sm:text-lg truncate flex-1 uppercase tracking-wide leading-tight text-gray-800 font-normal"
+                                    style={{
+                                        fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
+                                        fontWeight: 400,
+                                    }}
+                                >
+                                    {formatName(name)}
+                                </span>
+                            </label>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );

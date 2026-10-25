@@ -207,14 +207,17 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
             else if (rank === 3) targetSize = 38;
             else targetSize = Math.max(24, 34 - rank);
 
-            // Accurately measure pill dimensions based on text length to prevent overlap
-            ctx.font = `800 ${targetSize}px ${barlowFont}`;
+            // Accurately measure pill dimensions using Barlow 400 font
+            ctx.font = `400 ${targetSize}px ${barlowFont}`;
             const textMetrics = ctx.measureText(name);
             const textWidth = textMetrics.width;
             const pillW = textWidth + (rank === 1 ? 52 : 36);
             const pillH = targetSize + (rank === 1 ? 24 : 16);
-            // Strict collision circle enclosing the rectangular pill
-            const collisionRadius = Math.hypot(pillW / 2, pillH / 2) + 10;
+            // Invariant collision radius enclosing the pill at any rotation angle (0° to 90°)
+            const collisionRadius = Math.hypot(pillW / 2, pillH / 2) + 14;
+
+            // Rotation rule: Rank 1 is always horizontal (0°), Rank 2 is vertical (-90°), others 50/50 alternating
+            const targetRotation = rank === 1 ? 0 : rank === 2 ? -90 : (hashStr(r.playerName) % 2 === 0 ? 0 : -90);
 
             return {
                 ...prev,
@@ -227,6 +230,8 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                 size: prev?.size || 10,
                 pillW,
                 pillH,
+                targetRotation,
+                rotation: prev?.rotation ?? targetRotation,
                 collisionRadius,
                 x: prev?.x ?? (width / 2 + (Math.random() - 0.5) * 120),
                 y: prev?.y ?? (height / 2 + (Math.random() - 0.5) * 120),
@@ -257,20 +262,21 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
             }
         });
 
-        // Boundary force to keep all pills strictly inside canvas
+        // Boundary force to keep all pills strictly inside canvas, preserving bottom margin for vote counter
         simulation.force("boundary", () => {
             newNodes.forEach(node => {
                 const pad = (node.collisionRadius || 40) + 10;
+                const padBottom = (node.collisionRadius || 40) + 40;
                 if (node.x < pad) node.vx += 1.8;
                 if (node.x > width - pad) node.vx -= 1.8;
                 if (node.y < pad) node.vy += 1.8;
-                if (node.y > height - pad) node.vy -= 1.8;
+                if (node.y > height - padBottom) node.vy -= 2.2;
             });
         });
 
         simulationRef.current = simulation;
 
-        // Modern Fluid Render Loop
+        // Modern Fluid Render Loop with 90° rotation & Barlow 400
         const tick = () => {
             ctx.clearRect(0, 0, width, height);
             const time = performance.now() * 0.001;
@@ -279,6 +285,12 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                 // Smooth interpolation for size
                 node.size += (node.targetSize - node.size) * 0.12;
 
+                // Smooth rotation interpolation (shortest path)
+                let diff = node.targetRotation - node.rotation;
+                if (diff > 180) diff -= 360;
+                if (diff < -180) diff += 360;
+                node.rotation += diff * 0.12;
+
                 // Fluid organic Lissajous harmonic floating
                 const driftX = Math.sin(time * 0.8 + node.phase) * 1.5;
                 const driftY = Math.cos(time * 0.6 + node.phase * 1.3) * 1.5;
@@ -286,8 +298,8 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                 const drawX = node.x + driftX;
                 const drawY = node.y + driftY;
 
-                // Re-calculate pill size with interpolated font size
-                ctx.font = `800 ${node.size}px ${barlowFont}`;
+                // Re-calculate pill size with interpolated font size using Barlow 400
+                ctx.font = `400 ${node.size}px ${barlowFont}`;
                 const curMetrics = ctx.measureText(node.displayName);
                 const curTextW = curMetrics.width;
                 const curPillW = curTextW + (node.rank === 1 ? 52 : 36);
@@ -296,6 +308,7 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
 
                 ctx.save();
                 ctx.translate(drawX, drawY);
+                ctx.rotate(node.rotation * (Math.PI / 180));
 
                 // Modern Pill Glass Background
                 ctx.beginPath();
@@ -312,7 +325,8 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
                 ctx.shadowBlur = node.rank === 1 ? 24 : 12;
                 ctx.stroke();
 
-                // Text rendering
+                // Barlow 400 text inside the pill
+                ctx.font = `400 ${node.size}px ${barlowFont}`;
                 ctx.fillStyle = node.rank === 1 ? '#fef08a' : '#FFFFFF';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -530,35 +544,46 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
 
             {/* Content Container */}
             <div className="relative z-20 flex-1 flex flex-col min-h-screen w-full">
-                {/* Heading - Allocated height & clamped font/width */}
+                {/* Heading - Allocated height, dynamic font clamp & wide width */}
                 {displayHeading && !faseKey?.endsWith('/01') && (
                     <div
                         className="absolute left-0 right-0 text-center top-[clamp(16px,2.8vh,36px)] z-30 flex items-center justify-center"
                         style={{
-                            height: 'clamp(110px, 17vh, 160px)',
+                            height: 'clamp(110px, 17vh, 165px)',
                         }}
                     >
-                        <h1
-                            className="text-white font-bold px-6 max-w-[92vw] mx-auto"
-                            style={{
-                                fontFamily: barlowFont,
-                                fontWeight: 300,
-                                fontSize: 'clamp(36px, 4.4vw, 78px)',
-                                lineHeight: 1.1,
-                                textShadow: '0 8px 32px rgba(0,0,0,0.8)'
-                            }}
-                        >
-                            <RenderHeading text={displayHeading} font={barlowFont} />
-                        </h1>
+                        {(() => {
+                            const longestLine = Math.max(...displayHeading.split(/\/[nN]/).map(l => l.trim().length), 1);
+                            const dynamicFontSize = longestLine <= 24
+                                ? 'clamp(62px, 6.8vw, 118px)'
+                                : longestLine <= 38
+                                ? 'clamp(48px, 5.2vw, 94px)'
+                                : 'clamp(38px, 4.2vw, 76px)';
+
+                            return (
+                                <h1
+                                    className="text-white font-bold px-4 max-w-[96vw] mx-auto"
+                                    style={{
+                                        fontFamily: barlowFont,
+                                        fontWeight: 300,
+                                        fontSize: dynamicFontSize,
+                                        lineHeight: 1.08,
+                                        textShadow: '0 8px 32px rgba(0,0,0,0.8)'
+                                    }}
+                                >
+                                    <RenderHeading text={displayHeading} font={barlowFont} />
+                                </h1>
+                            );
+                        })()}
                     </div>
                 )}
 
-                {/* Main content area — strictly below allocated heading height */}
+                {/* Main content area — strictly below heading and above x/20 gestemd status bar */}
                 <div
                     className="absolute left-0 right-0 flex items-stretch px-8"
                     style={{
-                        top: 'clamp(140px, 20vh, 180px)',
-                        bottom: 'clamp(50px, 6vh, 80px)',
+                        top: 'clamp(140px, 20vh, 185px)',
+                        bottom: 'clamp(95px, 13vh, 125px)',
                     }}
                 >
                     {phase === 'intro' ? (

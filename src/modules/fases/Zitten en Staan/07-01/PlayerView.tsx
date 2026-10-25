@@ -37,10 +37,6 @@ const ZITTEN_STELLINGEN: Record<string, string> = {
 };
 
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
-  if (faseKey === '07/01') {
-    return <TrailerTitleCard title="Zitten & Staan" fase="07/01" />;
-  }
-
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [isReady, setIsReady] = useState(false);
   const prevFaseRef = useRef(faseKey);
@@ -91,6 +87,11 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
     `;
     document.head.appendChild(style);
   }, []);
+
+  // Trailer phase: show trailer title card on phone
+  if (faseKey === '07/01') {
+    return <TrailerTitleCard title="Zitten & Staan" fase="07/01" />;
+  }
 
   // ── Full-screen colour after pressing ──
   if (choice) {

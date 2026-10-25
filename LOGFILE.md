@@ -1,5 +1,20 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.19 (2026-10-25)
+- **Zitten en Staan Phone React Hook Fix:**
+  - Opgelost: De vroege return voor de trailer op `07/01` stond vóór de `useState`, `useRef` en `useEffect` hooks, wat in Next.js/React leidde tot een *"Rendered fewer hooks than expected"* runtime error. Alle hooks staan nu conform React-standaarden bovenaan.
+- **Ranking Logo Band op Telefoons tijdens Trailers:**
+  - `TrailerTitleCard` toont nu aan de bovenkant van het telefoonscherm de officiële Ranking logo-band (`/assets/band.webp` + `/assets/ranking_logo.webp`).
+- **Top 3 & Top 10 Display Dynamic Clamping & Riser Sound:**
+  - **Dynamische Font-Clamping per Vraag:** Vragen worden nu op basis van de lengte van de langste regel dynamisch geschaald (`clamp(62px, 6.8vw, 118px)` voor korte vragen, `clamp(48px, 5.2vw, 94px)` voor middellange vragen) en benutten tot `96vw` van de schermbreedte.
+  - **Cinematische Donut Riser Sound:** Zodra de Animated Donut in Top 3 ontvouwt (2.5s animatie), klinkt via de Web Audio API een cinematische spanning-riser (oplopende resonantie en pitch van 70Hz naar 480Hz) met een impact-climax zodra de donut compleet is.
+- **Top 10 Telefoon — 2-Koloms Gradient Grid (Top 3 Look & Feel):**
+  - De enkelvoudige lijst op de telefoon is vervangen door exact hetzelfde 2-koloms gradient grid als in Top 3 (`grid grid-cols-2 gap-2.5`, pastel gradient blokken, 1px witte rand, custom radio-indicator en Barlow 400).
+- **Top 10 Display WordCloud — 90° Rotatie, Barlow 400 & Bottom Margin:**
+  - **90° Rotatie Hersteld:** De #1 winnaar blijft dominant horizontaal (0°), de #2 draait verticaal (-90°), en de overige namen wisselen 50/50 af.
+  - **Strikt Barlow 400:** De namen in de moderne glazen pills gebruiken nu `font-weight: 400` conform design-regels.
+  - **Gegarandeerde Bottom Margin:** De WordCloud houdt nu een strikte onder-marge van `clamp(95px, 13vh, 125px)` aan, zodat pillen nooit overlappen met de `x/20 gestemd` statusbalk.
+
 ## Version 9.4.18 (2026-10-25)
 - **Top 3 & Top 10 Display Layout & Heading Clamping:**
   - **Gereserveerde Hoogte & Hogere Startpositie:** De koppen starten nu hoger op het scherm (`top: clamp(16px, 2.8vh, 36px)`) in een gereserveerde container (`clamp(110px, 17vh, 160px)`).

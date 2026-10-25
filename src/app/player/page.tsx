@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v9.4.18';
+const APP_VERSION = 'v9.4.19';
 
 function getPlayerStorageKey(baseKey: string): string {
   if (typeof window === 'undefined') return baseKey;
