@@ -138,7 +138,7 @@ export default function PlayerPage() {
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Player onboarding flow states
-  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'name' | 'intro_step' | 'teamleader' | 'complete'>('team');
+  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'team_wait' | 'name' | 'intro_step' | 'teamleader' | 'complete'>('team');
   const [, setPlayerData] = useState<{ teamNumber: string, playerName: string } | null>(null);
   const [votedTeamLeader, setVotedTeamLeader] = useState<string | null>(null);
 
@@ -166,14 +166,35 @@ export default function PlayerPage() {
     if (!currentSession?.current_fase) return;
     const fase = currentSession.current_fase;
 
-    if (fase === '01/01' || fase === '01/02') {
-      // In team onboarding slides, let player complete the team -> confirm -> name selection flow
-      if (currentPhase !== 'team' && currentPhase !== 'name' && currentPhase !== 'complete') {
-        setCurrentPhase(teamNumber ? 'name' : 'team');
+    if (fase === '01/01') {
+      if (selectedPlayerName) {
+        if (currentPhase !== 'name' && currentPhase !== 'complete') {
+          setCurrentPhase('name');
+        }
+      } else if (teamNumber) {
+        // Player confirmed team on 01/01 -> show waiting screen (no names to accidentally double-click)
+        if (currentPhase !== 'team_wait') {
+          setCurrentPhase('team_wait');
+        }
+      } else {
+        if (currentPhase !== 'team') {
+          setCurrentPhase('team');
+        }
       }
-    } else if (fase === '01/03') {
-      if (currentPhase !== 'name' && currentPhase !== 'complete') {
-        setCurrentPhase('name');
+    } else if (fase === '01/02' || fase === '01/03') {
+      if (selectedPlayerName) {
+        if (currentPhase !== 'name' && currentPhase !== 'complete') {
+          setCurrentPhase('name');
+        }
+      } else if (teamNumber) {
+        // Quizmaster asks "Wat is jouw naam?" -> unlock name selection!
+        if (currentPhase !== 'name') {
+          setCurrentPhase('name');
+        }
+      } else {
+        if (currentPhase !== 'team') {
+          setCurrentPhase('team');
+        }
       }
     } else if (fase === '01/04' || fase === '01/05' || fase === '01/06') {
       setCurrentPhase('intro_step');
@@ -183,7 +204,7 @@ export default function PlayerPage() {
       // Game phases (07/*, 10/*, 13/*, 17/*, 20/*)
       setCurrentPhase('complete');
     }
-  }, [currentSession?.current_fase]);
+  }, [currentSession?.current_fase, teamNumber, selectedPlayerName, currentPhase]);
 
   // Load PocketBase session based on URL code or latest
   useEffect(() => {
@@ -226,8 +247,8 @@ export default function PlayerPage() {
       console.error('Error parsing session headings:', err);
       setMotherfile({
         '01/01': { heading: 'In welk team zit je?' },
-        '01/02': { heading: 'In welk team zit je?' },
-        '01/03': { heading: 'Hoe heet je ?' }
+        '01/02': { heading: 'Wat is jouw naam?' },
+        '01/03': { heading: 'Wat is jouw naam?' }
       });
     }
   }, [currentSession]);
@@ -413,8 +434,15 @@ export default function PlayerPage() {
       } catch {}
     }
 
-    advancePhase('name');
     setIsLoading(false);
+
+    // If session is on 01/01, wait until quizmaster asks "Wat is jouw naam?" (01/02)
+    // This stops rapid taps from accidentally double-clicking player names!
+    if (currentSession.current_fase === '01/01') {
+      advancePhase('team_wait');
+    } else {
+      advancePhase('name');
+    }
   };
 
   // Poll session state via cached server proxy (no direct PB connections from phones)
@@ -699,13 +727,15 @@ export default function PlayerPage() {
             lines={
               currentPhase === 'team'
                 ? ['In welk team zit je?']
+                : currentPhase === 'team_wait'
+                ? [`Team ${teamNumber} gekozen!`, 'Wacht op quizmaster...']
                 : currentPhase === 'name'
                 ? (selectedPlayerName ? [`Welkom ${selectedPlayerName}!`, 'Je zit in:'] : ['Hoe heet je ?'])
                 : currentPhase === 'teamleader' || currentSession?.current_fase === '01/07'
                 ? ['Wie is jullie', 'Teamleider?']
-                : currentSession?.current_fase === '01/01' || currentSession?.current_fase === '01/02'
+                : currentSession?.current_fase === '01/01'
                 ? ['In welk team zit je?']
-                : currentSession?.current_fase === '01/03'
+                : currentSession?.current_fase === '01/02' || currentSession?.current_fase === '01/03'
                 ? (selectedPlayerName ? [`Welkom ${selectedPlayerName}!`, 'Je zit in:'] : ['Hoe heet je ?'])
                 : currentSession?.current_fase === '01/04'
                 ? ['Wat wordt jullie', 'Teamnaam?']
@@ -799,6 +829,40 @@ export default function PlayerPage() {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* Waiting for Quizmaster to advance to "Wat is jouw naam?" (Fase 01/02) */}
+        {currentPhase === 'team_wait' && (
+          <div className="row-span-7 flex flex-col items-center justify-center px-4 py-2 gap-4 text-center">
+            <div className="bg-white/20 backdrop-blur-md px-6 py-6 rounded-2xl border-2 border-white/40 shadow-xl text-white max-w-xs w-full animate-fade-in flex flex-col items-center">
+              <div
+                className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg mb-3"
+                style={{ border: '8px solid black' }}
+              >
+                <span className="text-5xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  {teamNumber}
+                </span>
+              </div>
+              <div className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                Team {teamNumber} bevestigd!
+              </div>
+              <p className="text-white/90 text-sm font-medium mb-5 leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                Wacht tot de quizmaster vraagt:<br />
+                <span className="text-yellow-300 font-bold text-base">&quot;Wat is jouw naam?&quot;</span>
+              </p>
+              <button
+                onClick={() => {
+                  setTeamNumber('');
+                  setTeamMembers([]);
+                  advancePhase('team');
+                }}
+                className="text-white/80 hover:text-white underline text-xs font-semibold active:opacity-75 transition-all"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                ← Kies een ander team
+              </button>
+            </div>
           </div>
         )}
 

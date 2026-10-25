@@ -68,8 +68,35 @@ export const motherfileService = {
     if (!fileName) return '';
     if (/^https?:\/\//i.test(fileName)) return fileName;
 
-    const clean = fileName.trim();
+    let clean = fileName.trim();
     if (clean.startsWith('/')) return clean;
+
+    const aliasMap: Record<string, string> = {
+      'teamnaam': 'RankingNaam.mp4',
+      'teamyell': 'RankingKreet.mp4',
+      'selfie': 'RankingSelfie.mp4',
+      'trailerzit': 'TrailerZitten.mp4',
+      'trailerzitten': 'TrailerZitten.mp4',
+      'trailertop3': 'TrailerTop3.mp4',
+      'trailerkrakende': 'KrakendeKarakters.mp4',
+      'trailertop10': 'Top10.mp4',
+      'trailerfinale': 'end.m4v',
+      'super': 'RankingSuperfoods.m4v',
+      'flirt': 'RankingFlirt.m4v',
+      'houseparty': 'RankingHouseparty.m4v',
+      'socials': 'RankingSocials.m4v',
+      'kleding': 'RankingKleding.m4v',
+      'all-in': 'All-In.m4v',
+      'sauna': 'RankingSauna.m4v',
+      'collega': 'RankingCollega.m4v',
+      'billen': 'RankingBillen.m4v',
+      'gat': 'RankingGat.m4v',
+      'teveel': 'RankingDrink.m4v',
+    };
+
+    if (aliasMap[clean.toLowerCase()]) {
+      clean = aliasMap[clean.toLowerCase()];
+    }
 
     const webpName = clean.replace(/\.(png|jpe?g)$/i, '.webp');
     const lower = webpName.toLowerCase();
@@ -374,7 +401,7 @@ export const teamService = {
 export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string | null }> = {
   '01/00': { heading: 'In welk team zit je?', image: null },
   '01/01': { heading: 'In welk team zit je?', image: null },
-  '01/02': { heading: 'In welk team zit je?', image: '' },
+  '01/02': { heading: 'Wat is jouw naam?', image: '' },
   '01/03': { heading: 'Wat is jouw naam?', image: '' },
   '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' },
   '01/05': { heading: 'Wat wordt jullie Teamyell?', image: 'RankingKreet.mp4' },
@@ -477,9 +504,24 @@ export const faseService = {
         // Auto-fix other specific legacy mapping names previously saved to DB
         const extraMappings: Record<string, string> = {
           'trailerzitten': 'TrailerZitten.mp4',
+          'trailerzit': 'TrailerZitten.mp4',
           'trailertop3': 'TrailerTop3.mp4',
           'trailerkrakende': 'KrakendeKarakters.mp4',
-          'trailertop10': 'Top10.mp4'
+          'trailertop10': 'Top10.mp4',
+          'teamnaam': 'RankingNaam.mp4',
+          'teamyell': 'RankingKreet.mp4',
+          'selfie': 'RankingSelfie.mp4',
+          'super': 'RankingSuperfoods.m4v',
+          'flirt': 'RankingFlirt.m4v',
+          'houseparty': 'RankingHouseparty.m4v',
+          'socials': 'RankingSocials.m4v',
+          'kleding': 'RankingKleding.m4v',
+          'all-in': 'All-In.m4v',
+          'sauna': 'RankingSauna.m4v',
+          'collega': 'RankingCollega.m4v',
+          'billen': 'RankingBillen.m4v',
+          'gat': 'RankingGat.m4v',
+          'teveel': 'RankingDrink.m4v',
         };
         if (extraMappings[fixedImage.toLowerCase()]) {
           fixedImage = extraMappings[fixedImage.toLowerCase()];

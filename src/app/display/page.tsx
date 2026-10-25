@@ -219,14 +219,19 @@ export default function DisplayPage() {
 
   // Play video only when the media URL actually changes AND user has clicked start
   useEffect(() => {
+    if (!currentMedia) {
+      lastPlayedUrl.current = '';
+      return;
+    }
     const v = videoRef.current;
     if (!userEnabledSound) return; // Don't play until user clicks start button
-    if (!currentMedia || currentMedia.type !== 'video' || !v) return;
+    if (currentMedia.type !== 'video' || !v) return;
     if (currentMedia.url === lastPlayedUrl.current) return; // already playing this URL
     lastPlayedUrl.current = currentMedia.url;
 
     console.log(`[Display ${APP_VERSION}] Playing new video: ${currentMedia.name}`);
     try {
+      v.currentTime = 0;
       v.muted = false;
       v.volume = 1;
       const p = v.play();
@@ -323,8 +328,8 @@ export default function DisplayPage() {
       return;
     }
 
-    const isVideo = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(fileName);
     const mediaUrl = resolveMedia(fileName);
+    const isVideo = /(\.mp4|\.mov|\.avi|\.m4v|\.webm)$/i.test(mediaUrl || fileName);
 
     console.log('[Display] Resolved media from local pics folder', { faseKey, fileName, isVideo, mediaUrl });
     setCurrentMedia({ url: mediaUrl, name: fileName, type: isVideo ? 'video' : 'image', fallbackLocalUrl: mediaUrl });
@@ -436,6 +441,20 @@ export default function DisplayPage() {
               src={currentMedia.url}
               className="w-full h-full object-contain"
               playsInline
+              autoPlay
+              onCanPlay={(e) => {
+                if (userEnabledSound) {
+                  const vid = e.currentTarget;
+                  if (vid.paused) {
+                    vid.muted = false;
+                    vid.volume = 1;
+                    vid.play().catch(() => {
+                      vid.muted = true;
+                      vid.play().catch(() => {});
+                    });
+                  }
+                }
+              }}
               onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
               onPlay={() => console.log('[Display] video play', currentMedia)}
               onError={(e) => {

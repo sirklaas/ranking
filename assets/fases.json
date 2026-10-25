@@ -6,7 +6,7 @@
     "faseNaam": "Intro"
   },
   "01/02": {
-    "heading": "Heb je 'n PhotoCircle account?",
+    "heading": "Wat is jouw naam?",
     "image": "",
     "fase": "1",
     "faseNaam": "Intro"
@@ -19,19 +19,19 @@
   },
   "01/04": {
     "heading": "Wat wordt jullie Teamnaam?",
-    "image": "teamnaam",
+    "image": "RankingNaam.mp4",
     "fase": "1",
     "faseNaam": "Intro"
   },
   "01/05": {
     "heading": "Wat wordt jullie Teamyell? /n Kort maar Krachtig",
-    "image": "teamyell",
+    "image": "RankingKreet.mp4",
     "fase": "1",
     "faseNaam": "Intro"
   },
   "01/06": {
     "heading": "Maak een Selfie Video /n en upload die naar PhotoCircle",
-    "image": "selfie",
+    "image": "RankingSelfie.mp4",
     "fase": "1",
     "faseNaam": "Intro"
   },

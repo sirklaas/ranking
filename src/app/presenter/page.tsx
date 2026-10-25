@@ -269,7 +269,7 @@ export default function PresenterPage() {
 
   // Define fase groups
   const faseGroups = {
-    '1': { name: 'Intro', fases: ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'] },
+    '1': { name: 'Intro', fases: ['01/01', '01/02', '01/04', '01/05', '01/06', '01/07'] },
     '7': { name: 'Zitten en Staan', fases: ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'] },
     '10': { name: 'De Top 3', fases: ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'] },
     '13': { name: 'Krakende Karakters', fases: ['13/01', '13/02', '13/03', '13/04', '13/05'] },
@@ -388,8 +388,8 @@ export default function PresenterPage() {
 
     const item = headings[nextFaseKey] || { heading: `Fase ${nextFaseKey}`, image: '' };
     const fileName = item.image || '';
-    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(fileName);
     const path = fileName ? motherfileService.fileUrl(fileName) : '';
+    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(path || fileName);
 
     return {
       type: isVideo ? ('video' as const) : ('image' as const),
@@ -579,7 +579,7 @@ export default function PresenterPage() {
   // Ordered fase keys globally across explicitly configured groups
   const getOrderedFasesGlobal = useCallback(() => {
     const fg = {
-      '1': ['01/01', '01/02', '01/03', '01/04', '01/05', '01/06', '01/07'],
+      '1': ['01/01', '01/02', '01/04', '01/05', '01/06', '01/07'],
       '7': ['07/01', '07/05', '07/06', '07/07', '07/08', '07/09', '07/10', '07/11', '07/12', '07/13', '07/14', '07/15'],
       '10': ['10/01', '10/05', '10/06', '10/07', '10/08', '10/09', '10/10', '10/11', '10/12', '10/13'],
       '13': ['13/01', '13/02', '13/03', '13/04', '13/05'],
@@ -601,12 +601,11 @@ export default function PresenterPage() {
     if (!item?.image || item.image.trim() === '') return null;
     let fileName = item.image;
 
-
-
-    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(fileName);
+    const path = motherfileService.fileUrl(fileName);
+    const isVideo = /\.(mp4|mov|avi|m4v|webm)$/i.test(path || fileName);
     return {
       type: isVideo ? 'video' as const : 'image' as const,
-      path: motherfileService.fileUrl(fileName),
+      path,
       name: fileName,
       heading: item.heading || `Fase ${faseKey}`,
       fase: faseKey,
