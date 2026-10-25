@@ -29,6 +29,16 @@ export default function PresenterPage() {
   const [resetStatus, setResetStatus] = useState<string | null>(null);
   const localWriteTs = useRef<number>(0); // timestamp of last local module state write
 
+  // Show name and player management state
+  const [sessionShowName, setSessionShowName] = useState('');
+  const [showNameSaveStatus, setShowNameSaveStatus] = useState<string | null>(null);
+  const [playerItems, setPlayerItems] = useState<Array<{ id: string; team: number; name: string }>>([]);
+  const [activeTeamFilter, setActiveTeamFilter] = useState<number | 'all'>('all');
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [newPlayerTeam, setNewPlayerTeam] = useState<number>(1);
+  const [isSavingPlayers, setIsSavingPlayers] = useState(false);
+  const [playerSaveStatus, setPlayerSaveStatus] = useState<string | null>(null);
+
   // Auto-load latest session when view=game or fase is passed in URL
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -401,6 +411,83 @@ export default function PresenterPage() {
 
     setEditingHeadings(headings);
     setCurrentFase(session.current_fase || '01/01');
+    setSessionShowName(session.showname || '');
+
+    const rawList = teamService.parsePlayerNames(session.playernames || '');
+    const items = rawList.map((raw, idx) => {
+      const teamNum = teamService.getPlayerTeamNumber(raw) || ((idx % (session.nr_teams || 4)) + 1);
+      const cleanName = teamService.getDisplayPlayerName(raw);
+      return { id: `p_${idx}_${Date.now()}_${raw}`, team: teamNum, name: cleanName };
+    });
+    setPlayerItems(items);
+  };
+
+  const handlePlayerNameChange = (id: string, newName: string) => {
+    setPlayerItems(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+  };
+
+  const handlePlayerTeamChange = (id: string, newTeam: number) => {
+    setPlayerItems(prev => prev.map(p => p.id === id ? { ...p, team: newTeam } : p));
+  };
+
+  const handleDeletePlayer = (id: string) => {
+    setPlayerItems(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleAddPlayer = () => {
+    if (!newPlayerName.trim()) return;
+    const newId = `p_new_${Date.now()}`;
+    setPlayerItems(prev => [...prev, { id: newId, team: newPlayerTeam, name: newPlayerName.trim() }]);
+    setNewPlayerName('');
+  };
+
+  const handleSavePlayers = async () => {
+    if (!selectedSession) return;
+    setIsSavingPlayers(true);
+    setPlayerSaveStatus('Opslaan...');
+    try {
+      const formatted = playerItems
+        .filter(p => p.name.trim().length > 0)
+        .map(p => `${p.team.toString().padStart(3, '0')} ${p.name.trim()}`)
+        .join(', ');
+
+      await rankingService.updateSession(selectedSession.id, {
+        playernames: formatted,
+        nr_players: playerItems.length,
+      });
+
+      setSelectedSession(prev => prev ? {
+        ...prev,
+        playernames: formatted,
+        nr_players: playerItems.length,
+      } : null);
+
+      setPlayerSaveStatus('✓ Spelerslijst opgeslagen!');
+      setTimeout(() => setPlayerSaveStatus(null), 3000);
+    } catch (e) {
+      console.error('Failed to save players:', e);
+      setPlayerSaveStatus('Fout bij opslaan');
+    } finally {
+      setIsSavingPlayers(false);
+    }
+  };
+
+  const handleSaveShowName = async () => {
+    if (!selectedSession || !sessionShowName.trim()) return;
+    try {
+      await rankingService.updateSession(selectedSession.id, {
+        showname: sessionShowName.trim(),
+      });
+      setSelectedSession(prev => prev ? {
+        ...prev,
+        showname: sessionShowName.trim(),
+      } : null);
+      setShowNameSaveStatus('✓ Naam opgeslagen!');
+      setTimeout(() => setShowNameSaveStatus(null), 3000);
+    } catch (e) {
+      console.error('Failed to save show name:', e);
+      setShowNameSaveStatus('Fout bij opslaan');
+    }
   };
 
   const handleHeadingUpdate = (fase: string, heading: string, image?: string) => {
@@ -762,9 +849,31 @@ export default function PresenterPage() {
 
     return (
       <div className="bg-white rounded-lg shadow-md p-6" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-2xl font-medium text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{selectedSession.showname || 'Game Session'} - {selectedSession.city || 'City'}</h2>
+        <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Show Naam:</label>
+              {showNameSaveStatus && <span className="text-xs font-bold text-green-600 animate-fade-in">{showNameSaveStatus}</span>}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={sessionShowName}
+                onChange={(e) => setSessionShowName(e.target.value)}
+                className="text-2xl font-bold text-gray-900 border border-gray-300 rounded-lg px-3 py-1 bg-white hover:border-[#0A1752] focus:border-[#0A1752] focus:ring-2 focus:ring-[#0A1752]/20 outline-none transition-all min-w-[260px]"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                placeholder="Voer show naam in"
+              />
+              <button
+                onClick={handleSaveShowName}
+                className="bg-[#0A1752] hover:bg-[#0A1752]/90 text-white text-sm font-semibold px-3.5 py-1.5 rounded-lg transition-colors shadow-sm"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                title="Sla show naam op in PocketBase"
+              >
+                Opslaan
+              </button>
+              <span className="text-gray-500 text-sm ml-2">({selectedSession.city || 'Stad'})</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -825,6 +934,143 @@ export default function PresenterPage() {
 
 
 
+
+        {/* Player Management Card */}
+        <div className="mb-6 bg-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="flex flex-wrap justify-between items-center gap-4 mb-4 pb-3 border-b border-gray-200">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                👥 Spelerslijst Beheer
+                <span className="text-sm font-normal text-gray-500">({playerItems.length} spelers)</span>
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Pas namen aan, verwijder spelers of voeg nieuwe toe. Klik op &quot;Spelerslijst Opslaan&quot; om te synchroniseren.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {playerSaveStatus && (
+                <span className="text-sm font-bold text-green-600 animate-fade-in">{playerSaveStatus}</span>
+              )}
+              <button
+                onClick={handleSavePlayers}
+                disabled={isSavingPlayers}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-bold text-sm transition-all shadow-sm flex items-center gap-2"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                💾 {isSavingPlayers ? 'Bezig met opslaan...' : 'Spelerslijst Opslaan'}
+              </button>
+            </div>
+          </div>
+
+          {/* Add Player Bar */}
+          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-white rounded-lg border border-gray-200">
+            <span className="text-sm font-semibold text-gray-700">Nieuwe speler:</span>
+            <input
+              type="text"
+              value={newPlayerName}
+              onChange={(e) => setNewPlayerName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddPlayer(); }}
+              placeholder="Spelersnaam..."
+              className="flex-1 min-w-[160px] px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-[#0A1752] focus:border-[#0A1752] outline-none"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">Team:</span>
+              <select
+                value={newPlayerTeam}
+                onChange={(e) => setNewPlayerTeam(Number(e.target.value))}
+                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                {Array.from({ length: selectedSession.nr_teams || 4 }, (_, i) => i + 1).map((t) => (
+                  <option key={t} value={t}>Team {t}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleAddPlayer}
+              className="bg-[#0A1752] hover:bg-[#0A1752]/90 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors shadow-sm"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              + Toevoegen
+            </button>
+          </div>
+
+          {/* Team Filter Tabs */}
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            <button
+              onClick={() => setActiveTeamFilter('all')}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${activeTeamFilter === 'all'
+                ? 'bg-[#0A1752] text-white shadow-sm'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              Alle ({playerItems.length})
+            </button>
+            {Array.from({ length: selectedSession.nr_teams || 4 }, (_, i) => i + 1).map((t) => {
+              const count = playerItems.filter(p => p.team === t).length;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setActiveTeamFilter(t)}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${activeTeamFilter === t
+                    ? 'bg-[#0A1752] text-white shadow-sm'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                >
+                  Team {t} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Player Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-[380px] overflow-y-auto p-1 bg-white rounded-lg border border-gray-200">
+            {playerItems
+              .filter(p => activeTeamFilter === 'all' || p.team === activeTeamFilter)
+              .map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between gap-2 p-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <select
+                      value={p.team}
+                      onChange={(e) => handlePlayerTeamChange(p.id, Number(e.target.value))}
+                      className="px-1.5 py-0.5 text-xs font-bold bg-[#0A1752] text-white rounded cursor-pointer border-none outline-none"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      title="Wijzig team"
+                    >
+                      {Array.from({ length: selectedSession.nr_teams || 4 }, (_, i) => i + 1).map((t) => (
+                        <option key={t} value={t}>T{t}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={p.name}
+                      onChange={(e) => handlePlayerNameChange(p.id, e.target.value)}
+                      className="w-full px-2 py-1 text-sm font-semibold text-gray-900 bg-white border border-gray-300 rounded focus:border-[#0A1752] focus:ring-1 focus:ring-[#0A1752] outline-none"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleDeletePlayer(p.id)}
+                    className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors text-sm"
+                    title="Verwijder speler"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            {playerItems.length === 0 && (
+              <div className="col-span-full text-center py-6 text-gray-400 text-sm">
+                Geen spelers in deze lijst. Voeg er een toe met de balk hierboven.
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* JSON Heading Editor */}
         <div className="mb-6 bg-gray-50 rounded-lg p-6">
