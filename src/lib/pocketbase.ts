@@ -354,7 +354,7 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '01/03': { heading: 'Wat is jouw naam?', image: '' },
   '01/04': { heading: 'Wat wordt jullie Teamnaam?', image: 'RankingNaam.mp4' },
   '01/05': { heading: 'Wat wordt jullie Teamyell?', image: 'RankingKreet.mp4' },
-  '01/06': { heading: 'Maak een Teamfoto', image: 'RankingSelfie.mp4' },
+  '01/06': { heading: 'Maak een selfie Video en zet die in de Photo App', image: 'RankingSelfie.mp4' },
   '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
   '02/00': { heading: 'Tijd voor\nronde 2!', image: null },
   '07/01': { heading: 'Blijf staan als je het eens /n bent met de volgende stelling:', image: 'TrailerZitten.mp4' },

@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v9.4.14';
+const APP_VERSION = 'v9.4.15';
 
 function getPlayerStorageKey(baseKey: string): string {
   if (typeof window === 'undefined') return baseKey;
@@ -167,13 +167,14 @@ export default function PlayerPage() {
     const fase = currentSession.current_fase;
 
     if (fase === '01/01' || fase === '01/02') {
-      if (teamNumber) {
-        setCurrentPhase('name');
-      } else {
-        setCurrentPhase('team');
+      // In team onboarding slides, let player complete the team -> confirm -> name selection flow
+      if (currentPhase !== 'team' && currentPhase !== 'name' && currentPhase !== 'complete') {
+        setCurrentPhase(teamNumber ? 'name' : 'team');
       }
     } else if (fase === '01/03') {
-      setCurrentPhase('name');
+      if (currentPhase !== 'name' && currentPhase !== 'complete') {
+        setCurrentPhase('name');
+      }
     } else if (fase === '01/04' || fase === '01/05' || fase === '01/06') {
       setCurrentPhase('intro_step');
     } else if (fase === '01/07') {
@@ -182,7 +183,7 @@ export default function PlayerPage() {
       // Game phases (07/*, 10/*, 13/*, 17/*, 20/*)
       setCurrentPhase('complete');
     }
-  }, [currentSession?.current_fase, teamNumber]);
+  }, [currentSession?.current_fase]);
 
   // Load PocketBase session based on URL code or latest
   useEffect(() => {
@@ -226,7 +227,7 @@ export default function PlayerPage() {
       setMotherfile({
         '01/01': { heading: 'In welk team zit je?' },
         '01/02': { heading: 'In welk team zit je?' },
-        '01/03': { heading: 'Wat is jouw naam?' }
+        '01/03': { heading: 'Hoe heet je ?' }
       });
     }
   }, [currentSession]);
@@ -274,8 +275,18 @@ export default function PlayerPage() {
         return; // Skip localStorage for test accounts
       }
 
-      // Load real player from localStorage
-      const savedStr = localStorage.getItem(getPlayerStorageKey('rankingPlayerData'));
+      // Load real player from localStorage (skipped on 01/01 so phone always starts fresh)
+      const isFase0101 = currentSession?.current_fase === '01/01';
+      if (isFase0101) {
+        try {
+          localStorage.removeItem(getPlayerStorageKey('rankingPlayerData'));
+          localStorage.removeItem('krakende_pos_choice');
+          localStorage.removeItem('krakende_neg_choice');
+          localStorage.removeItem('me_player_data');
+        } catch (e) {}
+      }
+
+      const savedStr = isFase0101 ? null : localStorage.getItem(getPlayerStorageKey('rankingPlayerData'));
       let currentPlayerData = null;
 
       if (savedStr) {
@@ -299,11 +310,29 @@ export default function PlayerPage() {
       // Finished loading session state from localStorage
       setIsInitializing(false);
     }
-  }, []);
+  }, [currentSession?.current_fase]);
 
-  // Effect to handle session change invalidation
+  // Effect to handle session change invalidation and automatic 01/01 reset
   useEffect(() => {
     if (!currentSession || typeof window === 'undefined') return;
+
+    // Auto-clear player data whenever on 01/01
+    if (currentSession.current_fase === '01/01') {
+      try {
+        localStorage.removeItem(getPlayerStorageKey('rankingPlayerData'));
+        localStorage.removeItem('krakende_pos_choice');
+        localStorage.removeItem('krakende_neg_choice');
+        localStorage.removeItem('me_player_data');
+      } catch (e) {}
+      if (currentPhase === 'complete') {
+        setTeamNumber('');
+        setSelectedPlayerName('');
+        setTeamMembers([]);
+        setShowTeamInfo(false);
+        setCurrentPhase('team');
+      }
+    }
+
     const lastSessionId = localStorage.getItem(getPlayerStorageKey('rankingSessionId'));
     if (lastSessionId && lastSessionId !== currentSession.id) {
       console.log('New game session detected. Clearing player data.');
@@ -431,6 +460,21 @@ export default function PlayerPage() {
           const prevLeaders = JSON.stringify((prev as Record<string, unknown>).teamleaders || {});
           const freshLeaders = JSON.stringify((fresh as Record<string, unknown>).teamleaders || {});
           
+          if (fresh.current_fase === '01/01' && prev.current_fase !== '01/01') {
+            try {
+              localStorage.removeItem(getPlayerStorageKey('rankingPlayerData'));
+              localStorage.removeItem('krakende_pos_choice');
+              localStorage.removeItem('krakende_neg_choice');
+              localStorage.removeItem('me_player_data');
+            } catch (e) {}
+            setTeamNumber('');
+            setSelectedPlayerName('');
+            setTeamMembers([]);
+            setShowTeamInfo(false);
+            setVotedTeamLeader(null);
+            setCurrentPhase('team');
+          }
+
           if (
             prev.current_fase === fresh.current_fase &&
             prevJoined === freshJoined &&
@@ -658,18 +702,22 @@ export default function PlayerPage() {
         <div className="row-span-2 flex items-center justify-center px-4">
           <MemoTypewriterHeading
             lines={
-              currentSession?.current_fase === '01/01' || currentSession?.current_fase === '01/02' || currentPhase === 'team'
-                ? ['In welk team zit je?', 'Kijk op het grote scherm,', 'en vul dit hier in:']
-                : currentSession?.current_fase === '01/03' || currentPhase === 'name'
-                ? (selectedPlayerName ? [`Welkom ${selectedPlayerName}!`, 'Je zit in:'] : ['Wat is jouw naam?'])
+              currentPhase === 'team'
+                ? ['In welk team zit je?']
+                : currentPhase === 'name'
+                ? (selectedPlayerName ? [`Welkom ${selectedPlayerName}!`, 'Je zit in:'] : ['Hoe heet je ?'])
+                : currentPhase === 'teamleader' || currentSession?.current_fase === '01/07'
+                ? ['Wie kies jij', 'als Teamleider?']
+                : currentSession?.current_fase === '01/01' || currentSession?.current_fase === '01/02'
+                ? ['In welk team zit je?']
+                : currentSession?.current_fase === '01/03'
+                ? (selectedPlayerName ? [`Welkom ${selectedPlayerName}!`, 'Je zit in:'] : ['Hoe heet je ?'])
                 : currentSession?.current_fase === '01/04'
                 ? ['Wat wordt jullie', 'Teamnaam?']
                 : currentSession?.current_fase === '01/05'
                 ? ['Wat wordt jullie Teamyell?', 'Kort maar Krachtig']
                 : currentSession?.current_fase === '01/06'
-                ? ['Maak een Teamfoto', 'met je hele team!']
-                : currentSession?.current_fase === '01/07' || currentPhase === 'teamleader'
-                ? ['Wie kies jij', 'als Teamleider?']
+                ? ['Maak een selfie Video', 'en zet die in de Photo App']
                 : (currentPhase === 'complete' && currentSession?.current_fase?.startsWith('01/'))
                 ? ['Heel veel plezier vandaag', 'met de show!']
                 : currentHeading
@@ -679,66 +727,113 @@ export default function PlayerPage() {
           />
         </div>
 
-        {/* Sections 7-12: Team Number Input Circle & Action Button */}
+        {/* Sections 6-12: Team Selection Buttons & Actions */}
         {currentPhase === 'team' && (
-          <div className="row-span-6 flex flex-col items-center justify-start pt-4 gap-8">
-            {!showTeamInfo ? (
-              <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
-                <input
-                  type="number"
-                  value={teamNumber}
-                  onChange={(e) => {
-                    setTeamNumber(e.target.value);
-                  }}
-                  onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
-                  className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 placeholder-pink-500 no-spinner"
-                  style={{
-                    fontFamily: 'Barlow Semi Condensed, sans-serif',
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'textfield'
-                  }}
-                  placeholder="?"
-                  min="1"
-                  max={currentSession?.nr_teams || 10}
-                />
-              </div>
-            ) : (
-              <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '12px solid black' }}>
-                <span className="text-5xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{teamNumber}</span>
-              </div>
-            )}
+          <div className="row-span-7 flex flex-col items-center justify-center px-4 py-2 gap-4">
+            {(() => {
+              const nrTeams = Math.max(1, currentSession?.nr_teams || 4);
+              const teams = Array.from({ length: nrTeams }, (_, i) => i + 1);
 
-            {/* Section 6: Dynamic Action Button */}
-            {!showTeamInfo && teamNumber && (
-              <button
-                onClick={handleTeamSubmit}
-                disabled={!teamNumber || isLoading}
-                className="text-white w-48 h-48 rounded-full text-4xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border-[8px] border-white active:scale-95 flex items-center justify-center animate-scale-in"
-                style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#08134A'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0A1752'}
-              >
-                <div className="flex flex-col items-center">
-                  <span>Enter</span>
-                </div>
-              </button>
-            )}
+              let gridCols = 'grid-cols-2 gap-4 max-w-[260px]';
+              let badgeSize = 'w-24 h-24 text-5xl border-[6px]';
+              if (nrTeams > 4 && nrTeams <= 6) {
+                gridCols = 'grid-cols-3 gap-3 max-w-[300px]';
+                badgeSize = 'w-20 h-20 text-4xl border-[5px]';
+              } else if (nrTeams > 6 && nrTeams <= 8) {
+                gridCols = 'grid-cols-4 gap-2.5 max-w-[320px]';
+                badgeSize = 'w-16 h-16 text-3xl border-[4px]';
+              } else if (nrTeams > 8) {
+                gridCols = 'grid-cols-4 sm:grid-cols-5 gap-2 max-w-[340px]';
+                badgeSize = 'w-14 h-14 text-2xl border-[3px]';
+              }
+
+              return (
+                <>
+                  <div className={`grid ${gridCols} w-full place-items-center`}>
+                    {teams.map((t) => {
+                      const isSelected = teamNumber === String(t);
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => setTeamNumber(String(t))}
+                          className={`rounded-full flex items-center justify-center font-bold transition-all active:scale-95 shadow-xl ${
+                            isSelected
+                              ? 'bg-yellow-50 border-black ring-4 ring-yellow-400 scale-105'
+                              : 'bg-white border-black hover:scale-105'
+                          } ${badgeSize}`}
+                          style={{
+                            fontFamily: 'Barlow Semi Condensed, sans-serif',
+                            color: '#ec4899',
+                          }}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Confirm & Go Back / Change controls */}
+                  <div className="w-full max-w-xs flex flex-col items-center gap-2 mt-2 min-h-[85px] justify-center">
+                    {teamNumber ? (
+                      <>
+                        <button
+                          onClick={handleTeamSubmit}
+                          disabled={isLoading}
+                          className="w-full py-3 px-6 rounded-full text-2xl font-bold bg-[#0A1752] text-white border-2 border-white shadow-xl active:scale-95 transition-all animate-scale-in flex items-center justify-center hover:bg-[#08134A]"
+                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                        >
+                          Bevestig Team {teamNumber}
+                        </button>
+                        <button
+                          onClick={() => setTeamNumber('')}
+                          className="text-white/80 hover:text-white underline text-sm font-semibold tracking-wide active:opacity-75 transition-all"
+                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                        >
+                          Kies een ander team
+                        </button>
+                      </>
+                    ) : (
+                      <p
+                        className="text-white/70 text-sm font-medium tracking-wide text-center"
+                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      >
+                        Tik op jouw teamnummer
+                      </p>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
         {/* Intro steps (Teamnaam, Teamyell, Selfie) */}
         {currentPhase === 'intro_step' && (
           <div className="row-span-6 flex flex-col items-center justify-center px-4 text-center">
-            <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border-2 border-white/40 shadow-xl text-white max-w-xs w-full animate-fade-in">
+            <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border-2 border-white/40 shadow-xl text-white max-w-xs w-full animate-fade-in flex flex-col items-center">
               <div className="text-3xl font-black tracking-wide">
                 {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'}
               </div>
               {selectedPlayerName && (
                 <div className="text-xl font-semibold opacity-95 mt-1">{selectedPlayerName}</div>
               )}
-              <div className="text-sm opacity-80 mt-3 font-normal border-t border-white/20 pt-2">
-                Overleg nu met je teamgenoten!
-              </div>
+              {currentSession?.current_fase === '01/06' ? (
+                <div className="w-full flex flex-col items-center mt-3 pt-3 border-t border-white/20 gap-3">
+                  <a
+                    href={currentSession?.photocircle || 'https://join.photocircleapp.com'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3.5 px-4 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
+                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                  >
+                    <span>Photo App [ {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'} ]</span>
+                  </a>
+                </div>
+              ) : (
+                <div className="text-sm opacity-80 mt-3 font-normal border-t border-white/20 pt-2">
+                  Overleg nu met je teamgenoten!
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -746,36 +841,21 @@ export default function PlayerPage() {
         {/* Sections 6-12: Team Members Display (Name & Teamleader selection) */}
         <div className="row-span-7 overflow-hidden w-full flex flex-col px-2 pt-1">
           {(currentPhase === 'name' || currentPhase === 'teamleader') && (!teamNumber || teamMembers.length === 0) && (
-            <div className="flex flex-col items-center justify-center pt-4 gap-3 text-white text-center">
-              <div className="text-xl font-bold">In welk team zit je?</div>
-              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '8px solid black' }}>
-                <input
-                  type="number"
-                  value={teamNumber}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setTeamNumber(val);
-                    if (val && currentSession?.playernames) {
-                      const playerNames = teamService.parsePlayerNames(currentSession.playernames);
-                      const teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams || 1);
-                      const members = teamAssignments[parseInt(val)] || [];
-                      setTeamMembers(members);
-                    }
-                  }}
-                  className="w-16 h-16 text-3xl font-bold text-center border-none outline-none bg-transparent text-pink-500 placeholder-pink-500 no-spinner"
-                  placeholder="?"
-                  min="1"
-                  max={currentSession?.nr_teams || 10}
-                />
-              </div>
-              {teamNumber && (
-                <button
-                  onClick={handleTeamSubmit}
-                  className="px-6 py-2 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-md active:scale-95"
-                >
-                  Bevestig Team {teamNumber}
-                </button>
-              )}
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-white text-center">
+              <p className="text-lg font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                Geen team geselecteerd
+              </p>
+              <button
+                onClick={() => {
+                  setTeamNumber('');
+                  setTeamMembers([]);
+                  advancePhase('team');
+                }}
+                className="px-6 py-2.5 rounded-full bg-[#0A1752] text-white text-lg font-bold border-2 border-white shadow-md active:scale-95"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                Kies je team
+              </button>
             </div>
           )}
           {/* Confirmed Player View: Once a player assigns their name, that phone is assigned to that player. Rest of the names are not there anymore! */}
@@ -827,33 +907,61 @@ export default function PlayerPage() {
                   return (
                     <div className="flex flex-col items-center justify-center h-full text-white text-center px-4">
                       <p className="text-lg font-bold">Alle spelers in Team {teamNumber} zijn al ingelogd!</p>
+                      <button
+                        onClick={() => {
+                          setTeamNumber('');
+                          setTeamMembers([]);
+                          advancePhase('team');
+                        }}
+                        className="mt-4 text-white/80 hover:text-white text-xs underline font-medium active:opacity-75 transition-all"
+                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      >
+                        ← Kies een ander team
+                      </button>
                     </div>
                   );
                 }
 
                 return (
-                  <div
-                    className="grid grid-cols-2 gap-2 max-w-sm mx-auto w-full h-full pb-2"
-                    style={{ gridTemplateRows: `repeat(${rowCount}, 1fr)` }}
-                  >
-                    {availableMembers.map((member, index) => {
-                      return (
+                  <div className="flex flex-col h-full w-full justify-between pb-2">
+                    <div
+                      className="grid grid-cols-2 gap-2 max-w-sm mx-auto w-full flex-1"
+                      style={{ gridTemplateRows: `repeat(${rowCount}, 1fr)` }}
+                    >
+                      {availableMembers.map((member, index) => {
+                        return (
+                          <button
+                            key={`${member}-${currentPhase}`}
+                            onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
+                            className="w-full h-full bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight"
+                            style={{
+                              fontFamily: 'Barlow Semi Condensed, sans-serif',
+                              fontSize: `clamp(14px, calc(45vh / ${rowCount} * 0.4), 28px)`,
+                              animationDelay: `${index * 80}ms`,
+                              animationFillMode: 'both',
+                              padding: '4px'
+                            }}
+                          >
+                            <span className="truncate w-full px-1">{member}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {currentPhase === 'name' && (
+                      <div className="flex justify-center pt-2">
                         <button
-                          key={`${member}-${currentPhase}`}
-                          onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
-                          className="w-full h-full bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight"
-                          style={{
-                            fontFamily: 'Barlow Semi Condensed, sans-serif',
-                            fontSize: `clamp(14px, calc(45vh / ${rowCount} * 0.4), 28px)`,
-                            animationDelay: `${index * 80}ms`,
-                            animationFillMode: 'both',
-                            padding: '4px'
+                          onClick={() => {
+                            setTeamNumber('');
+                            setTeamMembers([]);
+                            advancePhase('team');
                           }}
+                          className="text-white/80 hover:text-white text-xs underline font-medium active:opacity-75 transition-all"
+                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                         >
-                          <span className="truncate w-full px-1">{member}</span>
+                          ← Kies een ander team (nu in Team {teamNumber})
                         </button>
-                      );
-                    })}
+                      </div>
+                    )}
                   </div>
                 );
               })()}

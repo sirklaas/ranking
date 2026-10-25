@@ -1,5 +1,20 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.15 (2026-10-25)
+- **Fase 01/01 Teamknoppen & Dynamic Heading Transitions:**
+  - **Team Selectie Knoppen i.p.v. Input:** De numerieke invoer en het `?` cirkeltje zijn vervangen door responsieve teamknoppen in show-badge stijl (witte cirkel met dikke zwarte rand en opvallend roze cijfer).
+  - **Dynamische Schaalbaarheid:** Het raster past zich automatisch aan het aantal teams (`nr_teams`) aan (2 kolommen bij 4 teams, 3 kolommen bij 6 teams, 4 kolommen bij 8+ teams), waardoor de knoppen altijd 100% passend op elk telefoonscherm blijven zonder scrollen.
+  - **Confirm & Herstel Controls:**
+    - Tikken op een teamnummer highlight de knop met een gele ring (`ring-4 ring-yellow-400 bg-yellow-50`).
+    - Daaronder verschijnt een grote donkerblauwe bevestigknop (*"Bevestig Team X"* in `#0A1752` met witte rand) en een hersteloptie (*"Kies een ander team"*).
+    - Bevestigen brengt de speler naar de namenlijst met een vloeiende typewriter-kopovergang: *"In welk team zit je?"* -> *"Hoe heet je ?"*.
+    - In het namenscherm is tevens een subtiele terugknop toegevoegd (*"← Kies een ander team"*), zodat een verkeerde keuze altijd direct gecorrigeerd kan worden.
+- **Automatische LocalStorage Reset op 01/01:**
+  - Zodra de sessie op fase `01/01` staat (of wanneer de telefoon op `01/01` opent), wordt `localStorage` op de telefoon automatisch gewist. Spelers starten zo bij elke nieuwe introductie altijd met een schone lei bij de teamselectie.
+- **Fase 01/06 Selfie Video & Photo App Knop:**
+  - **Heading Update:** Koptekst op `01/06` gewijzigd naar *"Maak een selfie Video en zet die in de Photo App"*.
+  - **Directe Photo App Link:** Op de telefoon verschijnt in fase `01/06` een opvallende knop `Photo App [ Team X ]` die direct doorlinkt naar de PhotoCircle/Photo app van de sessie.
+
 ## Version 9.4.14 (2026-10-25)
 - **Live Sync Fix for Test-Phones & Real-Time Player State:**
   - **Test-Phones Polling:** `TestPhonesPage` (`/test-phones`) pollt nu elke seconde `/api/session-state`. Hierdoor lopen de header-fase-badge (`Fase: 01/01`, `Fase: 10/05`) en teaminformatie realtime synchroon mee met de presentator/display.
