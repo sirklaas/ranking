@@ -91,6 +91,34 @@ function playRiserSound() {
     impactGain.connect(ctx.destination);
     impactOsc.start(impactTime);
     impactOsc.stop(impactTime + 0.65);
+
+    // ✨ TJING ✨ (Crisp bell chime + audio sample triggered right at impactTime!)
+    // 1. Audio sample trigger
+    setTimeout(() => {
+      try {
+        const audio = new Audio('/sfx/tjing.wav');
+        audio.volume = 0.9;
+        audio.play().catch(() => {});
+      } catch {}
+    }, duration * 1000);
+
+    // 2. Synthesized bell harmonics (pure crystal chime)
+    const bellFrequencies = [2093, 2637, 3136, 4186];
+    bellFrequencies.forEach((freq, idx) => {
+      const bOsc = ctx.createOscillator();
+      const bGain = ctx.createGain();
+      bOsc.type = 'sine';
+      bOsc.frequency.setValueAtTime(freq, impactTime);
+      
+      const bellVol = 0.16 / (idx + 1);
+      bGain.gain.setValueAtTime(bellVol, impactTime);
+      bGain.gain.exponentialRampToValueAtTime(0.0001, impactTime + 1.8);
+
+      bOsc.connect(bGain);
+      bGain.connect(ctx.destination);
+      bOsc.start(impactTime);
+      bOsc.stop(impactTime + 1.85);
+    });
   } catch (err) {
     console.warn('[Top3Display] playRiserSound prevented:', err);
   }

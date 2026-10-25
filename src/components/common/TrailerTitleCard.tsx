@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 interface TrailerTitleCardProps {
@@ -14,6 +14,45 @@ export default function TrailerTitleCard({
   subtitle = 'Kijk naar het grote scherm',
   fase,
 }: TrailerTitleCardProps) {
+  const [photoUrl, setPhotoUrl] = useState<string>('https://www.pinkmilk.eu/phone/media.html');
+  const [teamNum, setTeamNum] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedData = JSON.parse(localStorage.getItem('rankingPlayerData') || '{}');
+      const team = savedData.teamNumber || '';
+      const name = savedData.playerName || '';
+      const sessionId = localStorage.getItem('rankingSessionId') || '';
+
+      if (team) setTeamNum(team);
+
+      const buildUrl = (sId: string) =>
+        `https://www.pinkmilk.eu/phone/media.html?showId=${encodeURIComponent(sId)}&playerName=${encodeURIComponent(name)}&team=${encodeURIComponent(team || '1')}`;
+
+      if (sessionId) {
+        setPhotoUrl(buildUrl(sessionId));
+      }
+
+      fetch('/api/session-state?id=latest')
+        .then(res => res.json())
+        .then(data => {
+          if (data?.session) {
+            let sId = data.session.id;
+            if (data.session.photocircle) {
+              const m = data.session.photocircle.match(/showId=([a-zA-Z0-9]+)/);
+              if (m) sId = m[1];
+              else if (!data.session.photocircle.includes('http') && data.session.photocircle.trim().length > 5) {
+                sId = data.session.photocircle.trim();
+              }
+            }
+            if (sId) setPhotoUrl(buildUrl(sId));
+          }
+        })
+        .catch(() => {});
+    } catch {}
+  }, []);
+
   return (
     <div
       className="min-h-screen w-full relative overflow-hidden flex flex-col justify-between select-none"
@@ -99,6 +138,28 @@ export default function TrailerTitleCard({
               Fase {fase}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Bottom Photo App section */}
+      <div className="w-full max-w-sm px-4 pb-6 mx-auto flex flex-col items-center text-center z-20 shrink-0">
+        <a
+          href={photoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-3.5 px-6 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
+          style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}
+        >
+          <span>Photo App {teamNum ? `[ Team ${teamNum} ]` : ''}</span>
+          <svg className="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+        <div className="mt-3 text-white/95 text-base font-bold leading-snug drop-shadow" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
+          Vergeet niet om filmpjes en foto&apos;s te delen.
+        </div>
+        <div className="text-yellow-300 text-sm font-bold drop-shadow tracking-wide mt-0.5" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
+          [ vooral van de quizmaster want die tellen dubbel ]
         </div>
       </div>
 

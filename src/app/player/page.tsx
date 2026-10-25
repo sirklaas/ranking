@@ -555,6 +555,11 @@ export default function PlayerPage() {
 
   const submitTeamLeaderVote = async (leaderName: string) => {
     if (!currentSession) return;
+    const clean = (n: string) => (n || '').replace(/^\d+[\s_-]*/, '').trim().toLowerCase();
+    if (selectedPlayerName && clean(leaderName) === clean(selectedPlayerName)) {
+      console.warn('Cannot vote for yourself as team leader');
+      return;
+    }
     setVotedTeamLeader(leaderName);
 
     try {
@@ -890,15 +895,26 @@ export default function PlayerPage() {
                     }
                     const photoAppHref = `https://www.pinkmilk.eu/phone/media.html?showId=${photoShowId}&playerName=${encodeURIComponent(selectedPlayerName || '')}&team=${teamNumber || '1'}`;
                     return (
-                      <a
-                        href={photoAppHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full py-3.5 px-4 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
-                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                      >
-                        <span>Photo App [ {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'} ]</span>
-                      </a>
+                      <div className="w-full flex flex-col items-center gap-2">
+                        <a
+                          href={photoAppHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-3.5 px-4 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
+                          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                        >
+                          <span>Photo App [ {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'} ]</span>
+                          <svg className="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                        <div className="mt-1 text-white/95 text-sm font-bold leading-snug drop-shadow" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                          Vergeet niet om filmpjes en foto&apos;s te delen.
+                        </div>
+                        <div className="text-yellow-300 text-xs font-bold drop-shadow tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                          [ vooral van de quizmaster want die tellen dubbel ]
+                        </div>
+                      </div>
                     );
                   })()}
                 </div>
@@ -907,6 +923,19 @@ export default function PlayerPage() {
                   Overleg nu met je teamgenoten!
                 </div>
               )}
+              <button
+                onClick={() => {
+                  setTeamNumber('');
+                  setSelectedPlayerName('');
+                  setTeamMembers([]);
+                  setShowTeamInfo(false);
+                  advancePhase('team');
+                }}
+                className="mt-3 text-white/80 hover:text-white underline text-xs font-semibold active:opacity-75 transition-all"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              >
+                ← Kies een ander team / naam
+              </button>
             </div>
           </div>
         )}
@@ -991,12 +1020,20 @@ export default function PlayerPage() {
                         : [])
                 );
 
+                const cleanName = (n: string) => (n || '').replace(/^\d+[\s_-]*/, '').trim().toLowerCase();
+                const myCleanName = cleanName(selectedPlayerName || (() => {
+                  try {
+                    const s = localStorage.getItem(getPlayerStorageKey('rankingPlayerData'));
+                    return s ? JSON.parse(s).playerName : '';
+                  } catch { return ''; }
+                })());
+
                 // Available members for this screen:
                 // - In 'name' phase: exclude names already claimed by another phone (1 phone per player)
-                // - In 'teamleader' phase: exclude self (cannot vote for yourself)
+                // - In 'teamleader' phase: strictly exclude self (cannot vote for yourself)
                 const availableMembers = isLeaderPhase
-                  ? teamMembers.filter(m => m !== selectedPlayerName)
-                  : teamMembers.filter(m => !joinedSet.has(m) || m === selectedPlayerName);
+                  ? teamMembers.filter(m => cleanName(m) !== myCleanName)
+                  : teamMembers.filter(m => !joinedSet.has(m) || cleanName(m) === myCleanName);
 
                 const rowCount = Math.max(Math.ceil(availableMembers.length / 2), 1);
 

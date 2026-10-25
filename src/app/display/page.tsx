@@ -481,7 +481,8 @@ export default function DisplayPage() {
             // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
             // 01/04-01/06: heading only on phones, not on display.
             // Top 3 trailer (10/01) and Top 10 trailer (17/01): no heading on display per request
-            if (['10/01', '17/01'].includes(currentSession?.current_fase || '') || currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/')) return null;
+            // End game (20/01): no headings on display per request
+            if (['10/01', '17/01', '20/01'].includes(currentSession?.current_fase || '') || currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/') || currentSession?.current_fase?.startsWith('20/')) return null;
             if (['01/04', '01/05', '01/06'].includes(currentSession?.current_fase || '')) return null;
 
             const headings = faseService.parseHeadings(currentSession?.headings || '{}');

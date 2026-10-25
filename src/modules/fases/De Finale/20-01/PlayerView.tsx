@@ -298,6 +298,27 @@ const PlayerView: React.FC<FaseCommonProps> = ({
                 </div>
               </div>
             )}
+            {/* Photo App Button & Reminder */}
+            <div className="mt-5 w-full max-w-xs flex flex-col items-center text-center">
+              <a
+                href={`https://www.pinkmilk.eu/phone/media.html?showId=${encodeURIComponent(sessionId || '')}&playerName=${encodeURIComponent(playerName || '')}&team=${encodeURIComponent(teamNumber || '1')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-5 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-lg"
+                style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}
+              >
+                <span>Photo App {teamNumber ? `[ Team ${teamNumber} ]` : ''}</span>
+                <svg className="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+              <div className="mt-2.5 text-white/90 text-sm font-semibold leading-snug drop-shadow" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
+                Vergeet niet om filmpjes en foto&apos;s te delen.
+              </div>
+              <div className="text-yellow-300 text-xs font-bold drop-shadow tracking-wide mt-0.5" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
+                [ vooral van de quizmaster want die tellen dubbel ]
+              </div>
+            </div>
           </div>
         )}
       </div>

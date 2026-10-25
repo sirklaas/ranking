@@ -226,19 +226,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
       >
         {activeCard && (
           <div className="relative w-full h-full flex items-center justify-center">
-            {/* Title overlay - visible in paused state, hides when playing */}
-            <div
-              className={`absolute top-10 left-1/2 -translate-x-1/2 z-50 text-white font-normal uppercase tracking-wider transition-opacity duration-500 ${
-                state.playbackState === 'paused' ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{
-                fontSize: 'clamp(44px, 5.5vw, 84px)',
-                textShadow: '0 4px 24px rgba(0,0,0,0.9)'
-              }}
-            >
-              {activeCard.name}
-            </div>
-
             <video
               ref={videoPlayerRef}
               className="w-full h-full object-contain"
