@@ -1,5 +1,31 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.13 (2026-10-25)
+- **Top 3 Phone Layout 2-Column Grid & Styling Upgrade:**
+  - **2 Kolommen Gradient Blokken:** De kandidatenlijst op de telefoon is opgebouwd in een 2-koloms raster (`grid grid-cols-2 gap-2.5`). Elk naam-blok heeft de zachte pastel gradient gekregen (`bg-gradient-to-r from-pink-300 to-purple-400` met `text-gray-800`), identiek aan de onboarding naamkeuze.
+  - **Verfijnde 1px Witte Rand:** De omlijning is subtieler en eleganter gemaakt met een lichte 1px rand (`border border-white/80`) in plaats van de zware 2px rand.
+  - **Blauwe Tickbox in "Je hebt gestemd":** Het groene `✅` icoon is vervangen door een moderne blauwe tickbox (`w-16 h-16 rounded-2xl bg-blue-600 border border-white/40`) met een strakke witte checkmark SVG.
+  - **Typografie (Barlow 400):** Heading (*"KIES IEMAND!"*), subtitel en bevestigingsscherm (*"JE HEBT GESTEMD!"*) gebruiken strikt `Barlow Semi Condensed 400` in hoofdletters.
+
+## Version 9.4.12 (2026-10-24)
+- **Top 3 Phone Voting Fix & Instant Voting Mode:**
+  - **Auto-Open Voting on Question Slides:** Top 3 question slides (`10/05` t/m `10/13`) start directly in `'voting'` phase. Players on their phones immediately see the full list of candidates to vote for without requiring the presenter to press 'V'.
+  - **Player Pool Synchronization:** Top 3 player list prioritizes all active session players from `currentSession.playernames` (20 spelers), eliminating issues where outdated or partial state arrays hid player choices.
+  - **Self-Vote Filter:** Cleaned candidate filtering with `formatName(name).toLowerCase() !== cleanPlayerName` so the voting list neatly hides the logged-in player's own name (e.g. Olivia cannot vote for herself) while displaying all other candidates cleanly without numeric prefixes (`William`, `Emma`, etc.).
+  - **Fase Transitions & Vote Reset:** Advancing to the next question automatically resets local `submitted` and `selected` states and clears previous votes so players immediately see candidates for the next question.
+  - **API Vote Handling:** `/api/top3-vote` now accepts votes reliably on active question slides and prevents mutations once in `'results'` phase.
+
+## Version 9.4.11 (2026-10-24)
+- **1 Telefoon = 1 Speler Flow & Display Sync:**
+  - **Telefoon (`/player`):** Zodra een speler zijn naam kiest, verdwijnen alle andere namen direct van zijn scherm. Hij ziet enkel nog zijn bevestigde team en naam (*"Je bent ingelogd!"*). De naam wordt direct opgeslagen in `joined_players` in PocketBase en gefilterd voor andere telefoons in dat team.
+  - **Display (`/display`):**
+    - Subtiele blauwe stip (`w-3 h-3 bg-blue-600`) in de rechterbenedenhoek van de spelerskaart zodra hij ingelogd is. Rustig en subtiel: geen knipperen, geen afwijkende kaders.
+    - Barlow Semi Condensed strikt op gewicht `400` ingesteld op alle kaarten en teksten.
+    - Subtitel direct onder de rechthoeken geplaatst: *"Iedereen in het juiste team!"* (`Barlow Semi Condensed 400`).
+    - Kaarten gecompacteerd zodat het hele scherm binnen `100vh` past zonder afkapping door `overflow-hidden`.
+  - **PhotoCircle Uitfasering:** Volledig overgezet naar eigen TeamX mediasysteem. Photocircle verplichting verwijderd uit sessie-aanmaak; fase `01/06` heet *"Maak een Teamfoto met je hele team!"*.
+  - **Obsidian Archivering:** Alle regels, concepten en fasestructuur vastgelegd in `/Users/mac/Vault/03 Projects/RankingNW.md`.
+
 ## Version 9.4.10 (2026-10-24)
 - **Automatic Mobile Redirect to `/player` from Root `/`:**
   - Added user agent and viewport width detection on the root landing page (`/`) to automatically redirect iPhones and mobile devices straight to `/player` (preserving query params).

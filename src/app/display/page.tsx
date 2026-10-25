@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = "v9.4.10";
+const APP_VERSION = "v9.4.13";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -94,17 +94,28 @@ export default function DisplayPage() {
       }
 
       const latestShallow = sessions[0] as unknown as RankingSession;
-      // Fetch full record to ensure fields like current_fase are present
+      // Fetch fresh session via server API to ensure joined_players & latest state
       try {
-        const full = await rankingService.getSessionById(latestShallow.id);
-        setCurrentSession(full as unknown as RankingSession);
+        const res = await fetch('/api/session-state?id=latest');
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.session) {
+            setCurrentSession(json.session);
+            const teamAssignments = getTeamAssignments(json.session);
+            setPlayersByTeam(teamAssignments);
+          }
+        }
       } catch {
-        // Fallback to shallow if detail fetch fails
-        setCurrentSession(latestShallow);
+        // Fallback to PB client direct if API route is unavailable
+        try {
+          const full = await rankingService.getSessionById(latestShallow.id);
+          setCurrentSession(full as unknown as RankingSession);
+        } catch {
+          setCurrentSession(latestShallow);
+        }
+        const teamAssignments = getTeamAssignments(latestShallow);
+        setPlayersByTeam(teamAssignments);
       }
-
-      const teamAssignments = getTeamAssignments(latestShallow);
-      setPlayersByTeam(teamAssignments);
 
       // Generate game code if not exists
       if (!gameCode) {
@@ -251,7 +262,8 @@ export default function DisplayPage() {
             return fresh;
           }
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings
-            && JSON.stringify(fresh.teamleaders) === JSON.stringify((prev as Record<string, unknown>).teamleaders)) {
+            && JSON.stringify(fresh.teamleaders) === JSON.stringify((prev as Record<string, unknown>).teamleaders)
+            && JSON.stringify((fresh as Record<string, unknown>).joined_players) === JSON.stringify((prev as Record<string, unknown>).joined_players)) {
             let changed = false;
             Object.values(FASES).forEach((mod) => {
               const sf = mod.stateField;
@@ -268,7 +280,7 @@ export default function DisplayPage() {
       }
     };
 
-    const timer = setInterval(poll, 3000);
+    const timer = setInterval(poll, 1500);
     poll(); // immediate first poll
     return () => { active = false; clearInterval(timer); };
   }, []);
@@ -578,102 +590,134 @@ export default function DisplayPage() {
                       padding: '0 4px'
                     }}
                   >
-                    {/* Team Circle with 15px outline */}
+                    {/* Team Circle with outline */}
                     <div
-                      className="bg-white rounded-full flex items-center justify-center mb-4 shadow-lg"
+                      className="bg-white rounded-full flex items-center justify-center mb-2 shadow-lg"
                       style={{
-                        width: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
-                        height: `min(150px, calc((100vw - 8rem) / ${currentSession.nr_teams}))`,
-                        border: '12px solid black',
-                        minWidth: '80px',
-                        minHeight: '80px'
+                        width: `min(100px, calc((100vw - 6rem) / ${currentSession.nr_teams}))`,
+                        height: `min(100px, calc((100vw - 6rem) / ${currentSession.nr_teams}))`,
+                        border: '8px solid black',
+                        minWidth: '60px',
+                        minHeight: '60px'
                       }}
                     >
                       <span
-                        className="font-bold text-black text-2xl"
+                        className="font-bold text-black"
                         style={{
-                          fontSize: `min(3rem, calc((100vw - 12rem) / ${currentSession.nr_teams} * 0.35))`
+                          fontSize: `min(2.5rem, calc((100vw - 12rem) / ${currentSession.nr_teams} * 0.35))`
                         }}
                       >
                         {teamNumber}
                       </span>
                     </div>
 
-                    {/* Player Names — animated via transform, not array reorder */}
-                    <div className="relative w-full px-1 pb-4" style={{ height: '70vh' }}>
-                      {(() => {
-                        const playerCount = Math.max(maxPlayersInAnyTeam, 1);
-                        // Single consistent slot unit: total height / player count
-                        // Each slot = slotH tall. Card fills most of it, with a small gap.
-                        const gapPx = 4;
+                    {/* Player Names — dynamic height ensuring entire view and subheading fit on screen */}
+                    {(() => {
+                      const playerCount = Math.max(maxPlayersInAnyTeam, 1);
+                      const gapPx = 4;
+                      // Each slot is capped at 65px or fits within 45vh so everything stays on screen
+                      const slotHeight = Math.min(65, Math.floor((45 * (typeof window !== 'undefined' ? window.innerHeight : 900) / 100) / playerCount));
 
-                        // Build a sorted index map: for each player, what visual slot should they be in?
-                        const teamVotes = ((currentSession.teamleaders as Record<string, Record<string, number>> | null)?.[`team_${teamNumber}`]) || {};
+                      // Build a sorted index map: only sort by votes if in teamleader fase or votes exist
+                      const teamVotes = ((currentSession.teamleaders as Record<string, Record<string, number>> | null)?.[`team_${teamNumber}`]) || {};
+                      const hasAnyVotes = Object.values(teamVotes).some(v => v > 0);
 
-                        // Create sorted order by votes
-                        const sortedPlayers = [...teamPlayers].sort((a, b) => {
-                          const votesA = teamVotes[a] || 0;
-                          const votesB = teamVotes[b] || 0;
-                          if (votesB !== votesA) return votesB - votesA;
-                          if (a === topPlayer) return -1;
-                          if (b === topPlayer) return 1;
-                          return a.localeCompare(b);
-                        });
+                      const sortedPlayers = (hasAnyVotes || currentSession.current_fase === '01/07')
+                        ? [...teamPlayers].sort((a, b) => {
+                            const votesA = teamVotes[a] || 0;
+                            const votesB = teamVotes[b] || 0;
+                            if (votesB !== votesA) return votesB - votesA;
+                            if (a === topPlayer) return -1;
+                            if (b === topPlayer) return 1;
+                            return a.localeCompare(b);
+                          })
+                        : [...teamPlayers]; // Keep original team order during onboarding!
 
-                        // Map each player to their target visual slot index
-                        const slotMap: Record<string, number> = {};
-                        sortedPlayers.forEach((p, i) => slotMap[p] = i);
+                      const slotMap: Record<string, number> = {};
+                      sortedPlayers.forEach((p, i) => slotMap[p] = i);
 
-                        return teamPlayers.map((player) => {
-                          const isLeader = player === topPlayer && highestVotes > 0;
-                          const targetSlot = slotMap[player] ?? 0;
-                          const originalSlot = teamPlayers.indexOf(player);
-                          const slotDiff = targetSlot - originalSlot;
+                      // Set of player names that have joined via their phone (normalized for robust matching)
+                      const joinedRaw = (currentSession as Record<string, unknown>)?.joined_players;
+                      const joinedList: string[] = Array.isArray(joinedRaw)
+                        ? (joinedRaw as string[])
+                        : (typeof joinedRaw === 'object' && joinedRaw !== null
+                            ? Object.keys(joinedRaw as Record<string, unknown>)
+                            : []);
+                      const joinedSet = new Set<string>(joinedList.map(n => String(n).trim().toLowerCase()));
 
-                          // slotH = 70vh / playerCount — one consistent unit
-                          // card top = originalSlot * slotH, card height = slotH - gapPx
-                          return (
-                            <div
-                              key={player}
-                              className={`absolute left-1 right-1 rounded-lg text-center border-2 border-white shadow-md overflow-hidden flex items-center justify-center ${isLeader
-                                ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black z-10'
-                                : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
+                      return (
+                        <div
+                          className="relative w-full px-1"
+                          style={{ height: `${playerCount * slotHeight}px` }}
+                        >
+                          {teamPlayers.map((player) => {
+                            const isLeader = player === topPlayer && highestVotes > 0;
+                            const isJoined = joinedSet.has(player.trim().toLowerCase());
+                            const targetSlot = slotMap[player] ?? 0;
+                            const originalSlot = teamPlayers.indexOf(player);
+                            const slotDiff = targetSlot - originalSlot;
+
+                            return (
+                              <div
+                                key={player}
+                                className={`absolute left-1 right-1 rounded-lg text-center border-2 border-white shadow-md overflow-hidden flex items-center justify-center ${isLeader
+                                  ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black z-10'
+                                  : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
                                 }`}
-                              style={{
-                                fontFamily: 'Barlow Semi Condensed, sans-serif',
-                                fontWeight: 400,
-                                fontSize: `min(32px, 4vh, calc(70vh / ${playerCount} * 0.5))`,
-                                height: `calc(min(100px, 70vh / ${playerCount}) - ${gapPx}px)`,
-                                padding: '0 4px',
-                                lineHeight: '1',
-                                top: `calc(${originalSlot} * min(100px, 70vh / ${playerCount}))`,
-                                transform: `translateY(calc(${slotDiff} * min(100px, 70vh / ${playerCount})))`,
-                                transition: 'transform 1.5s cubic-bezier(0.4, 0, 0.2, 1), background 1s ease, box-shadow 1s ease',
-                                boxShadow: isLeader ? '0 0 20px rgba(234, 179, 8, 0.5)' : undefined,
-                              }}
-                            >
-                              <span className="block truncate w-full" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                                {isLeader && <span className="mr-2" style={{
-                                  display: 'inline-block',
-                                  animation: isLeader ? 'crownReveal 1s ease-out' : 'none'
-                                }}>👑</span>}
-                                {player}
-                              </span>
-                            </div>
-                          );
-                        });
-                      })()}
+                                style={{
+                                  fontFamily: 'Barlow Semi Condensed, sans-serif',
+                                  fontWeight: 400,
+                                  fontSize: `min(28px, calc(${slotHeight}px * 0.45))`,
+                                  height: `${slotHeight - gapPx}px`,
+                                  padding: '0 8px',
+                                  lineHeight: '1',
+                                  top: `${originalSlot * slotHeight}px`,
+                                  transform: `translateY(${slotDiff * slotHeight}px)`,
+                                  transition: 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), background 1s ease, box-shadow 1s ease',
+                                  boxShadow: isLeader ? '0 0 20px rgba(234, 179, 8, 0.5)' : undefined,
+                                }}
+                              >
+                                <span className="block truncate w-full px-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+                                  {isLeader && <span className="mr-2" style={{
+                                    display: 'inline-block',
+                                    animation: isLeader ? 'crownReveal 1s ease-out' : 'none'
+                                  }}>👑</span>}
+                                  {player}
+                                </span>
 
-                      {/* Empty slots if team has fewer players */}
-                      {teamPlayers.length === 0 && (
-                        <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                          No players yet
+                                {/* Subtle, simple dark blue dot in lower right corner when player has joined (60% size, dark blue #0A1752) */}
+                                {isJoined && (
+                                  <span
+                                    className="absolute bottom-2 right-2 w-[7px] h-[7px] rounded-full bg-[#0A1752]"
+                                    title={`${player} is ingelogd`}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Empty slots if team has fewer players */}
+                          {teamPlayers.length === 0 && (
+                            <div className="bg-gray-200 text-gray-500 px-2 py-1 rounded-lg text-center italic border-2 border-gray-300 text-sm" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+                              No players yet
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
+            </div>
+
+            {/* Subheading under the rectangles */}
+            <div className="w-full text-center mt-6 mb-2 z-20">
+              <h2
+                className="text-2xl md:text-3xl text-white tracking-wide drop-shadow-md"
+                style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}
+              >
+                Iedereen in het juiste team!
+              </h2>
             </div>
           </div>
         </>

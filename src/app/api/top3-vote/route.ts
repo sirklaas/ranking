@@ -38,10 +38,10 @@ export async function POST(req: Request) {
                 }
 
                 const existingVotes = top3State?.currentQuestion?.votes || [];
-                const alreadyVoted = existingVotes.some((v) => v.voterId === voterId);
+                const alreadyVoted = existingVotes.some((v) => v.voterId === voterId || (voterName && voterName !== 'Speler' && v.voterName === voterName));
 
-                // If already voted or not in voting phase, bypass mutation
-                if (alreadyVoted || top3State?.currentQuestion?.phase !== 'voting') {
+                // If already voted or in results phase, bypass mutation
+                if (alreadyVoted || top3State?.currentQuestion?.phase === 'results') {
                     finalState = top3State;
                     break;
                 }
@@ -58,7 +58,8 @@ export async function POST(req: Request) {
                 const newState: Top3State = {
                     ...top3State,
                     currentQuestion: {
-                        ...(top3State?.currentQuestion || { phase: 'intro', questionIndex: 0, results: [] }),
+                        ...(top3State?.currentQuestion || { questionIndex: 0, results: [] }),
+                        phase: 'voting',
                         votes: [...existingVotes, newVote],
                     },
                 };

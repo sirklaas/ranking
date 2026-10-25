@@ -21,7 +21,7 @@ const TOP3_SLIDES: Record<string, { heading: string; image: string }> = {
 const EMPTY_TOP3_STATE: Top3State = {
   allPlayerNames: [],
   currentFase: '',
-  currentQuestion: { questionIndex: 0, phase: 'intro', votes: [], results: [] },
+  currentQuestion: { questionIndex: 0, phase: 'voting', votes: [], results: [] },
 };
 
 const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, allPlayerNames }) => {

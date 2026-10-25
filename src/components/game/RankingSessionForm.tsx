@@ -88,9 +88,6 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
       if (!formData.city.trim()) {
         throw new Error('City is required');
       }
-      if (!formData.photocircle.trim()) {
-        throw new Error('Photocircle link is required');
-      }
 
       // Calculate nr_players from playernames and assign team numbers by prefixing names
       const playerNames = formData.playernames.split(',').map(name => name.trim()).filter(name => name);
@@ -161,7 +158,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="photocircle" className="block text-sm font-medium text-gray-700 mb-2">
-              Photocircle Link *
+              Team Foto / Media Link (TeamX)
             </label>
             <input
               type="url"
@@ -170,8 +167,7 @@ export default function RankingSessionForm({ onSessionCreated, onCancel }: Ranki
               value={formData.photocircle}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 font-medium"
-              placeholder="https://join.photocircleapp.com/..."
-              required
+              placeholder="https://www.pinkmilk.eu/phone/media.html (optioneel)"
             />
           </div>
 

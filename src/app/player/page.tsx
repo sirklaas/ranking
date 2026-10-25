@@ -7,7 +7,13 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v9.4.10';
+const APP_VERSION = 'v9.4.13';
+
+function getPlayerStorageKey(baseKey: string): string {
+  if (typeof window === 'undefined') return baseKey;
+  const slot = new URLSearchParams(window.location.search).get('slot');
+  return slot ? `${baseKey}_slot${slot}` : baseKey;
+}
 
 interface RankingSession {
   id: string;
@@ -126,16 +132,14 @@ export default function PlayerPage() {
   const [currentSession, setCurrentSession] = useState<RankingSession | null>(null);
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
   const [showTeamInfo, setShowTeamInfo] = useState(false);
-  const [showPopup, setShowPopup] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [selectedPlayerName, setSelectedPlayerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Player onboarding flow states
-  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'photocircle_ask' | 'photocircle_popup' | 'name' | 'intro_step' | 'teamleader' | 'complete'>('team');
-  const [hasPhotoCircleAccount, setHasPhotoCircleAccount] = useState<boolean | null>(null);
-  const [, setPlayerData] = useState<{ teamNumber: string, playerName: string, hasPhotoCircle: boolean } | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<'intro' | 'team' | 'name' | 'intro_step' | 'teamleader' | 'complete'>('team');
+  const [, setPlayerData] = useState<{ teamNumber: string, playerName: string } | null>(null);
   const [votedTeamLeader, setVotedTeamLeader] = useState<string | null>(null);
 
   // Dynamic heading states
@@ -151,20 +155,23 @@ export default function PlayerPage() {
   useEffect(() => {
     if (teamNumber && currentSession?.playernames) {
       const playerNames = teamService.parsePlayerNames(currentSession.playernames);
-      const members = playerNames[teamNumber] || [];
+      const teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams || 1);
+      const members = teamAssignments[parseInt(teamNumber)] || [];
       setTeamMembers(members);
     }
-  }, [teamNumber, currentSession?.playernames]);
+  }, [teamNumber, currentSession?.playernames, currentSession?.nr_teams]);
 
   // Follow presenter lead during intro fases (01/01 to 01/07) and auto-switch to game when leaving 01
   useEffect(() => {
     if (!currentSession?.current_fase) return;
     const fase = currentSession.current_fase;
 
-    if (fase === '01/01') {
-      setCurrentPhase('team');
-    } else if (fase === '01/02') {
-      setCurrentPhase('photocircle_ask');
+    if (fase === '01/01' || fase === '01/02') {
+      if (teamNumber) {
+        setCurrentPhase('name');
+      } else {
+        setCurrentPhase('team');
+      }
     } else if (fase === '01/03') {
       setCurrentPhase('name');
     } else if (fase === '01/04' || fase === '01/05' || fase === '01/06') {
@@ -175,7 +182,7 @@ export default function PlayerPage() {
       // Game phases (07/*, 10/*, 13/*, 17/*, 20/*)
       setCurrentPhase('complete');
     }
-  }, [currentSession?.current_fase]);
+  }, [currentSession?.current_fase, teamNumber]);
 
   // Load PocketBase session based on URL code or latest
   useEffect(() => {
@@ -218,7 +225,7 @@ export default function PlayerPage() {
       console.error('Error parsing session headings:', err);
       setMotherfile({
         '01/01': { heading: 'In welk team zit je?' },
-        '01/02': { heading: "Heb je 'n PhotoCircle account?" },
+        '01/02': { heading: 'In welk team zit je?' },
         '01/03': { heading: 'Wat is jouw naam?' }
       });
     }
@@ -228,6 +235,34 @@ export default function PlayerPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
+
+      // Support quick URL reset (?reset, ?reset=1, ?reset=true) for testing
+      if (params.has('reset')) {
+        console.log('[Player] Quick reset triggered via URL parameter (?reset)');
+        try {
+          localStorage.removeItem(getPlayerStorageKey('rankingPlayerData'));
+          localStorage.removeItem(getPlayerStorageKey('rankingSessionId'));
+          localStorage.removeItem('krakende_pos_choice');
+          localStorage.removeItem('krakende_neg_choice');
+          localStorage.removeItem('me_player_data');
+        } catch (e) {
+          console.warn('[Player] Error clearing localStorage:', e);
+        }
+        setTeamNumber('');
+        setSelectedPlayerName('');
+        setTeamMembers([]);
+        setShowTeamInfo(false);
+        setVotedTeamLeader(null);
+        setCurrentPhase('team');
+
+        // Remove ?reset parameter from URL cleanly without page reload
+        params.delete('reset');
+        const remainingQuery = params.toString() ? `?${params.toString()}` : '';
+        window.history.replaceState({}, '', `${window.location.pathname}${remainingQuery}`);
+        setIsInitializing(false);
+        return;
+      }
+
       const testName = params.get('testName');
       const testTeam = params.get('testTeam');
       if (testName && testTeam) {
@@ -235,11 +270,12 @@ export default function PlayerPage() {
         setSelectedPlayerName(testName);
         setShowTeamInfo(true);
         setCurrentPhase('complete');
+        setIsInitializing(false);
         return; // Skip localStorage for test accounts
       }
 
       // Load real player from localStorage
-      const savedStr = localStorage.getItem('rankingPlayerData');
+      const savedStr = localStorage.getItem(getPlayerStorageKey('rankingPlayerData'));
       let currentPlayerData = null;
 
       if (savedStr) {
@@ -248,7 +284,6 @@ export default function PlayerPage() {
           if (currentPlayerData.playerName && currentPlayerData.teamNumber) {
             setTeamNumber(currentPlayerData.teamNumber);
             setSelectedPlayerName(currentPlayerData.playerName);
-            setHasPhotoCircleAccount(currentPlayerData.hasPhotoCircle);
             setShowTeamInfo(true);
             setCurrentPhase('complete');
           }
@@ -259,7 +294,7 @@ export default function PlayerPage() {
       if (!currentPlayerData?.playerId) {
         const newId = Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
         const data = { ...currentPlayerData, playerId: newId };
-        localStorage.setItem('rankingPlayerData', JSON.stringify(data));
+        localStorage.setItem(getPlayerStorageKey('rankingPlayerData'), JSON.stringify(data));
       }
       // Finished loading session state from localStorage
       setIsInitializing(false);
@@ -269,24 +304,23 @@ export default function PlayerPage() {
   // Effect to handle session change invalidation
   useEffect(() => {
     if (!currentSession || typeof window === 'undefined') return;
-    const lastSessionId = localStorage.getItem('rankingSessionId');
+    const lastSessionId = localStorage.getItem(getPlayerStorageKey('rankingSessionId'));
     if (lastSessionId && lastSessionId !== currentSession.id) {
       console.log('New game session detected. Clearing player data.');
-      localStorage.removeItem('rankingPlayerData');
+      localStorage.removeItem(getPlayerStorageKey('rankingPlayerData'));
       setTeamNumber('');
       setSelectedPlayerName('');
       setTeamMembers([]);
       setShowTeamInfo(false);
       setCurrentPhase('team');
     }
-    localStorage.setItem('rankingSessionId', currentSession.id);
+    localStorage.setItem(getPlayerStorageKey('rankingSessionId'), currentSession.id);
   }, [currentSession]);
 
   // Track which heading keys have animated, so we never animate the same content twice
   const animatedKeysRef = useRef<Set<string>>(new Set());
   const startedKeysRef = useRef<Set<string>>(new Set());
   const [currentHeadingKey, setCurrentHeadingKey] = useState<string>('');
-  const [popupFadingOut, setPopupFadingOut] = useState(false);
   const [welcomePopupFadingOut, setWelcomePopupFadingOut] = useState(false);
 
   // Update heading when phase or motherfile changes – guard to avoid redundant updates
@@ -297,7 +331,6 @@ export default function PlayerPage() {
     let faseKey = '';
     if (currentPhase === 'intro') faseKey = ''; // Handled manually
     if (currentPhase === 'team') faseKey = ''; // Handled manually
-    if (currentPhase === 'photocircle_ask' || currentPhase === 'photocircle_popup') faseKey = ''; // Handled manually
     if (currentPhase === 'name') faseKey = ''; // Handled manually
     if (currentPhase === 'teamleader') faseKey = ''; // Handled manually
 
@@ -338,13 +371,20 @@ export default function PlayerPage() {
 
     // Get team assignments from prefixed player names (rock-solid approach)
     const playerNames = teamService.parsePlayerNames(currentSession.playernames);
-    const teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams);
+    const teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams || 1);
 
     const selectedTeamMembers = teamAssignments[parseInt(teamNumber)] || [];
 
     setTeamMembers(selectedTeamMembers);
-    setShowPopup(true);
-    advancePhase('photocircle_popup');
+
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = JSON.parse(localStorage.getItem(getPlayerStorageKey('rankingPlayerData')) || '{}');
+        localStorage.setItem(getPlayerStorageKey('rankingPlayerData'), JSON.stringify({ ...saved, teamNumber }));
+      } catch {}
+    }
+
+    advancePhase('name');
     setIsLoading(false);
   };
 
@@ -399,16 +439,6 @@ export default function PlayerPage() {
     return () => { active = false; clearInterval(timer); };
   }, [currentSession?.id]);
 
-  const closePopup = () => {
-    // Fade out popup, then move to photocircle check
-    setPopupFadingOut(true);
-    setTimeout(() => {
-      setShowPopup(false);
-      setPopupFadingOut(false);
-      advancePhase('photocircle_ask');
-    }, 1000);
-  };
-
   // Fade out and close the welcome popup (1s)
   const closeWelcomePopup = () => {
     setWelcomePopupFadingOut(true);
@@ -418,17 +448,24 @@ export default function PlayerPage() {
     }, 1000);
   };
 
-  const handlePhotoCircleResponse = (hasAccount: boolean) => {
-    setHasPhotoCircleAccount(hasAccount);
+  const handleManualReset = () => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = JSON.parse(localStorage.getItem('rankingPlayerData') || '{}');
-        localStorage.setItem('rankingPlayerData', JSON.stringify({ ...saved, hasPhotoCircle: hasAccount }));
-      } catch {}
-    }
-    // If presenter is already past 01/02, advance to name
-    if (currentSession?.current_fase && currentSession.current_fase > '01/02') {
-      advancePhase('name');
+        localStorage.removeItem(getPlayerStorageKey('rankingPlayerData'));
+        localStorage.removeItem(getPlayerStorageKey('rankingSessionId'));
+        localStorage.removeItem('krakende_pos_choice');
+        localStorage.removeItem('krakende_neg_choice');
+        localStorage.removeItem('me_player_data');
+      } catch (e) {
+        console.warn('[Player] Error clearing localStorage:', e);
+      }
+      setTeamNumber('');
+      setSelectedPlayerName('');
+      setTeamMembers([]);
+      setShowTeamInfo(false);
+      setVotedTeamLeader(null);
+      setCurrentPhase('team');
+      window.location.reload();
     }
   };
 
@@ -465,24 +502,36 @@ export default function PlayerPage() {
     setShowTeamInfo(true);
   };
 
-
-  const handleNameSelection = (name: string) => {
+  const handleNameSelection = async (name: string) => {
     setSelectedPlayerName(name);
     // Store in localStorage for persistence
-    const savedStr = localStorage.getItem('rankingPlayerData');
+    const savedStr = localStorage.getItem(getPlayerStorageKey('rankingPlayerData'));
     let existing = {};
     try { existing = JSON.parse(savedStr || '{}'); } catch (e) { }
     const data = {
       ...existing,
       teamNumber,
-      playerName: name,
-      hasPhotoCircle: hasPhotoCircleAccount || false
+      playerName: name
     };
     setPlayerData(data as any);
-    localStorage.setItem('rankingPlayerData', JSON.stringify(data));
+    localStorage.setItem(getPlayerStorageKey('rankingPlayerData'), JSON.stringify(data));
 
-    // Move to team leader voting
-    advancePhase('teamleader');
+    // Register this player on the server session so the display shows the blue dot
+    if (currentSession?.id) {
+      try {
+        await fetch('/api/session-state', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: currentSession.id,
+            action: 'join_player',
+            playerName: name
+          }),
+        });
+      } catch (err) {
+        console.warn('Failed to notify server of player join:', err);
+      }
+    }
   };
 
   // Render module PlayerView if a registered fase module matches the current fase
@@ -502,7 +551,7 @@ export default function PlayerPage() {
       let savedPlayerId: string | null = null;
       if (typeof window !== 'undefined') {
         try {
-          const raw = localStorage.getItem('rankingPlayerData');
+          const raw = localStorage.getItem(getPlayerStorageKey('rankingPlayerData'));
           if (raw) savedPlayerId = JSON.parse(raw)?.playerId || null;
         } catch {
           savedPlayerId = null;
@@ -555,7 +604,18 @@ export default function PlayerPage() {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@300;400;500;600;700;800;900&display=swap"
       />
-      <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>{APP_VERSION} | {currentSession?.current_fase || ''}</div>
+      <div
+        onClick={() => {
+          if (window.confirm('Reset iPhone local storage for this session?')) {
+            handleManualReset();
+          }
+        }}
+        className="fixed z-[9999] text-white/40 text-xs cursor-pointer select-none active:opacity-100 hover:text-white"
+        style={{ fontFamily: 'monospace', bottom: '20px', left: '100px' }}
+        title="Tap to reset player data"
+      >
+        {APP_VERSION} | {currentSession?.current_fase || ''}
+      </div>
       {/* 12-Section Grid Container */}
       <div className="h-screen grid grid-rows-12 gap-0 relative z-10">
 
@@ -586,18 +646,16 @@ export default function PlayerPage() {
         <div className="row-span-2 flex items-center justify-center px-4">
           <MemoTypewriterHeading
             lines={
-              currentSession?.current_fase === '01/01' || currentPhase === 'team'
+              currentSession?.current_fase === '01/01' || currentSession?.current_fase === '01/02' || currentPhase === 'team'
                 ? ['In welk team zit je?', 'Kijk op het grote scherm,', 'en vul dit hier in:']
-                : currentSession?.current_fase === '01/02' || currentPhase === 'photocircle_ask'
-                ? ['Heb je een PhotoCircle', 'account aangemaakt?']
                 : currentSession?.current_fase === '01/03' || currentPhase === 'name'
-                ? ['Wat is jouw naam?']
+                ? (selectedPlayerName ? [`Welkom ${selectedPlayerName}!`, 'Je zit in:'] : ['Wat is jouw naam?'])
                 : currentSession?.current_fase === '01/04'
                 ? ['Wat wordt jullie', 'Teamnaam?']
                 : currentSession?.current_fase === '01/05'
                 ? ['Wat wordt jullie Teamyell?', 'Kort maar Krachtig']
                 : currentSession?.current_fase === '01/06'
-                ? ['Maak een Selfie Video', 'en upload die naar PhotoCircle']
+                ? ['Maak een Teamfoto', 'met je hele team!']
                 : currentSession?.current_fase === '01/07' || currentPhase === 'teamleader'
                 ? ['Wie kies jij', 'als Teamleider?']
                 : (currentPhase === 'complete' && currentSession?.current_fase?.startsWith('01/'))
@@ -621,7 +679,7 @@ export default function PlayerPage() {
                     setTeamNumber(e.target.value);
                   }}
                   onKeyPress={(e) => e.key === 'Enter' && handleTeamSubmit()}
-                  className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
+                  className="w-20 h-20 text-5xl font-bold text-center border-none outline-none bg-transparent text-pink-500 placeholder-pink-500 no-spinner"
                   style={{
                     fontFamily: 'Barlow Semi Condensed, sans-serif',
                     WebkitAppearance: 'none',
@@ -656,48 +714,6 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {/* PhotoCircle Account Check Phase */}
-        {currentPhase === 'photocircle_ask' && (
-          <div className="row-span-6 flex flex-col items-center justify-center px-4 gap-4">
-            {hasPhotoCircleAccount !== null ? (
-              <div className="bg-white/20 backdrop-blur-md px-6 py-4 rounded-2xl border-2 border-white/40 shadow-xl text-white text-center animate-fade-in">
-                <div className="text-3xl mb-1">✅</div>
-                <div className="text-xl font-bold">
-                  {hasPhotoCircleAccount ? 'PhotoCircle account bevestigd!' : 'Geen account geregistreerd'}
-                </div>
-                <div className="text-sm opacity-80 mt-2 font-normal">
-                  Wacht even tot de presentator verdergaat...
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-8">
-                <button
-                  onClick={() => handlePhotoCircleResponse(true)}
-                  className="text-white w-32 h-32 rounded-full text-3xl font-bold transition-all border-4 border-white active:scale-95 shadow-lg flex flex-col items-center justify-center"
-                  style={{ backgroundColor: '#0A1752', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#08134A')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#0A1752')}
-                >
-                  JA
-                  <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center -ml-1">
-                    Ik heb een<br />account
-                  </span>
-                </button>
-                <button
-                  onClick={() => handlePhotoCircleResponse(false)}
-                  className="bg-red-600 text-white w-32 h-32 rounded-full text-3xl font-bold hover:bg-red-700 transition-all border-4 border-white active:scale-95 shadow-lg flex flex-col items-center justify-center"
-                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                >
-                  NEE
-                  <span className="text-sm font-normal opacity-70 mt-1 uppercase tracking-widest block text-center">
-                    Probeer<br />opnieuw
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Intro steps (Teamnaam, Teamyell, Selfie) */}
         {currentPhase === 'intro_step' && (
           <div className="row-span-6 flex flex-col items-center justify-center px-4 text-center">
@@ -717,15 +733,24 @@ export default function PlayerPage() {
 
         {/* Sections 6-12: Team Members Display (Name & Teamleader selection) */}
         <div className="row-span-7 overflow-hidden w-full flex flex-col px-2 pt-1">
-          {(currentPhase === 'name' || currentPhase === 'teamleader') && teamMembers.length === 0 && (
+          {(currentPhase === 'name' || currentPhase === 'teamleader') && (!teamNumber || teamMembers.length === 0) && (
             <div className="flex flex-col items-center justify-center pt-4 gap-3 text-white text-center">
-              <div className="text-xl font-bold">Vul eerst je teamnummer in:</div>
+              <div className="text-xl font-bold">In welk team zit je?</div>
               <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg" style={{ border: '8px solid black' }}>
                 <input
                   type="number"
                   value={teamNumber}
-                  onChange={(e) => setTeamNumber(e.target.value)}
-                  className="w-16 h-16 text-3xl font-bold text-center border-none outline-none bg-transparent text-pink-500 no-spinner"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setTeamNumber(val);
+                    if (val && currentSession?.playernames) {
+                      const playerNames = teamService.parsePlayerNames(currentSession.playernames);
+                      const teamAssignments = teamService.generateTeamAssignments(playerNames, currentSession.nr_teams || 1);
+                      const members = teamAssignments[parseInt(val)] || [];
+                      setTeamMembers(members);
+                    }
+                  }}
+                  className="w-16 h-16 text-3xl font-bold text-center border-none outline-none bg-transparent text-pink-500 placeholder-pink-500 no-spinner"
                   placeholder="?"
                   min="1"
                   max={currentSession?.nr_teams || 10}
@@ -741,97 +766,89 @@ export default function PlayerPage() {
               )}
             </div>
           )}
-          {(currentPhase === 'name' || currentPhase === 'teamleader') && teamMembers.length > 0 && (
-            <div className="w-full h-full flex flex-col">
-              <div
-                className="grid grid-cols-2 gap-2 max-w-sm mx-auto w-full h-full pb-2"
-                style={{ gridTemplateRows: `repeat(${Math.ceil(teamMembers.filter(m => !(currentPhase === 'teamleader' && m === selectedPlayerName)).length / 2)}, 1fr)` }}
-              >
-                {teamMembers.map((member, index) => {
-                  // In teamleader phase, don't show the player's own name
-                  if (currentPhase === 'teamleader' && member === selectedPlayerName) {
-                    return null;
-                  }
-
-                  const visibleCount = currentPhase === 'teamleader'
-                    ? teamMembers.filter(m => m !== selectedPlayerName).length
-                    : teamMembers.length;
-                  const rowCount = Math.max(Math.ceil(visibleCount / 2), 1);
-
-                  return (
-                    <button
-                      key={`${member}-${currentPhase}`}
-                      onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
-                      className="w-full h-full bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight"
-                      style={{
-                        fontFamily: 'Barlow Semi Condensed, sans-serif',
-                        fontSize: `clamp(14px, calc(45vh / ${rowCount} * 0.4), 28px)`,
-                        animationDelay: `${index * 80}ms`,
-                        animationFillMode: 'both',
-                        padding: '4px'
-                      }}
-                    >
-                      <span className="truncate w-full px-1">{member}</span>
-                    </button>
-                  );
-                })}
+          {/* Confirmed Player View: Once a player assigns their name, that phone is assigned to that player. Rest of the names are not there anymore! */}
+          {currentPhase === 'name' && selectedPlayerName && (
+            <div className="w-full h-full flex flex-col items-center justify-center px-4 text-center">
+              <div className="bg-white/20 backdrop-blur-md px-6 py-6 rounded-2xl border-2 border-white/40 shadow-xl text-white max-w-xs w-full animate-fade-in flex flex-col items-center">
+                <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg mb-4" style={{ border: '8px solid black' }}>
+                  <span className="text-5xl font-bold text-pink-500" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                    {teamNumber}
+                  </span>
+                </div>
+                <div className="text-sm uppercase tracking-wider opacity-80 font-bold">Team {teamNumber}</div>
+                <div className="text-3xl font-black tracking-wide mt-1 text-yellow-300 uppercase" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+                  {selectedPlayerName}
+                </div>
+                <div className="text-base opacity-95 mt-4 font-bold border-t border-white/20 pt-3 flex items-center justify-center">
+                  <span>Je bent ingelogd!</span>
+                </div>
+                <div className="text-xs opacity-75 mt-1 font-normal">
+                  Kijk op het grote scherm.
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* Grid of names: shown during 'name' phase (if player hasn't chosen yet) OR during 'teamleader' phase */}
+          {((currentPhase === 'name' && !selectedPlayerName) || currentPhase === 'teamleader') && teamNumber && teamMembers.length > 0 && (
+            <div className="w-full h-full flex flex-col overflow-y-auto">
+              {(() => {
+                // Names already claimed by another phone (from session.joined_players)
+                const joinedSet = new Set<string>(
+                  Array.isArray(currentSession?.joined_players)
+                    ? currentSession.joined_players
+                    : (typeof currentSession?.joined_players === 'object' && currentSession?.joined_players !== null
+                        ? Object.keys(currentSession.joined_players)
+                        : [])
+                );
+
+                // Available members for this screen:
+                // - In 'name' phase: exclude names already claimed by another phone (1 phone per player)
+                // - In 'teamleader' phase: exclude self (cannot vote for yourself)
+                const availableMembers = currentPhase === 'teamleader'
+                  ? teamMembers.filter(m => m !== selectedPlayerName)
+                  : teamMembers.filter(m => !joinedSet.has(m) || m === selectedPlayerName);
+
+                const rowCount = Math.max(Math.ceil(availableMembers.length / 2), 1);
+
+                if (availableMembers.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center h-full text-white text-center px-4">
+                      <p className="text-lg font-bold">Alle spelers in Team {teamNumber} zijn al ingelogd!</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    className="grid grid-cols-2 gap-2 max-w-sm mx-auto w-full h-full pb-2"
+                    style={{ gridTemplateRows: `repeat(${rowCount}, 1fr)` }}
+                  >
+                    {availableMembers.map((member, index) => {
+                      return (
+                        <button
+                          key={`${member}-${currentPhase}`}
+                          onClick={() => currentPhase === 'name' ? handleNameSelection(member) : submitTeamLeaderVote(member)}
+                          className="w-full h-full bg-gradient-to-r from-pink-300 to-purple-400 text-gray-800 rounded-lg text-center font-bold border-2 border-white shadow-md overflow-hidden animate-fade-in hover:from-pink-400 hover:to-purple-500 transition-all active:scale-95 flex items-center justify-center uppercase tracking-wide leading-tight"
+                          style={{
+                            fontFamily: 'Barlow Semi Condensed, sans-serif',
+                            fontSize: `clamp(14px, calc(45vh / ${rowCount} * 0.4), 28px)`,
+                            animationDelay: `${index * 80}ms`,
+                            animationFillMode: 'both',
+                            padding: '4px'
+                          }}
+                        >
+                          <span className="truncate w-full px-1">{member}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
       </div>
-
-      {/* PhotoCircle Popup */}
-      {showPopup && (
-        <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-1000 ${popupFadingOut ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="flex items-center justify-center px-4">
-            <div
-              className="p-8 rounded-2xl shadow-2xl max-w-md w-full relative animate-popup-grow"
-              style={{
-                background: 'linear-gradient(135deg, #cc6344 0%, #cc8f5d 25%, #6782bb 50%, #6262ab 75%, #6fb7b3 100%)',
-                border: '4px solid white',
-                minHeight: '320px'
-              }}
-            >
-              {/* Close X button - centered and thinner */}
-              <button
-                onClick={closePopup}
-                className="absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors z-10 leading-none border border-white/60"
-                style={{ fontSize: '2.5rem', fontWeight: 300, lineHeight: 1 }}
-                aria-label="Close"
-              >
-                ×
-              </button>
-
-              <div className="text-center text-white space-y-6 pt-16 px-2">
-                <h3 className="text-3xl" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>
-                  Download nu deze App:
-                </h3>
-
-                {currentSession?.photocircle && (
-                  <a
-                    href={currentSession.photocircle}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', backgroundColor: '#0A1752' }}
-                  >
-                    PhotoCircle App
-                  </a>
-                )}
-
-                <div className="text-lg leading-relaxed" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                  <p>Maak daar een account aan</p>
-                  <p>en kom dan hier terug.</p>
-                  <p></p>
-                  <p>Als je hulp nodig hebt laat het me weten</p>
-                  <p>en dan kom ik je graag helpen.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Welcome Popup - Shows after name selection */}
       {showWelcomePopup && (

@@ -74,15 +74,48 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { id, data } = body as { id: string; data: Record<string, unknown> };
+    const id = body.id;
 
-    if (!id || !data) {
-      return NextResponse.json({ error: 'Missing id or data' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    }
+
+    const pb = await getServerPocketBase();
+
+    // Specific action: A player claims/joins on their phone
+    if (body.action === 'join_player' && body.playerName) {
+      const current = await pb.collection('ranking').getOne(id, { $autoCancel: false });
+      const existing: string[] = Array.isArray(current.joined_players)
+        ? [...current.joined_players]
+        : (typeof current.joined_players === 'object' && current.joined_players !== null
+            ? Object.keys(current.joined_players)
+            : []);
+
+      if (!existing.includes(body.playerName)) {
+        existing.push(body.playerName);
+        const updated = await pb.collection('ranking').update(id, { joined_players: existing }, { $autoCancel: false });
+        cachedSession = null;
+        console.log(`[session-state] Player joined: "${body.playerName}", total joined: ${existing.length}`);
+        return NextResponse.json({ success: true, session: updated });
+      }
+      return NextResponse.json({ success: true, session: current });
+    }
+
+    // Specific action: Reset all joined players (e.g. for testing / new run)
+    if (body.action === 'reset_joined_players') {
+      const updated = await pb.collection('ranking').update(id, { joined_players: [] }, { $autoCancel: false });
+      cachedSession = null;
+      console.log('[session-state] Reset joined_players');
+      return NextResponse.json({ success: true, session: updated });
+    }
+
+    const data = body.data as Record<string, unknown>;
+    if (!data) {
+      return NextResponse.json({ error: 'Missing data' }, { status: 400 });
     }
 
     console.log('[session-state] PATCH input:', id, JSON.stringify(data));
 
-    const pb = await getServerPocketBase();
     const updated = await pb.collection('ranking').update(id, data, { $autoCancel: false });
 
     console.log('[session-state] PATCH updated teamleaders:', JSON.stringify((updated as Record<string, unknown>).teamleaders));

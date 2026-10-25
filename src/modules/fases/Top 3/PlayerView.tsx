@@ -23,14 +23,25 @@ const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onM
   if (!sessionId || !playerInfo) return null;
 
   const parsed = safeJsonParse<Top3State>(moduleStateJson);
+  const isQuestionFase = faseKey && faseKey !== '10/01';
+  const defaultPhase = isQuestionFase ? 'voting' : 'intro';
+
   const state: Top3State = {
     allPlayerNames: Array.isArray(allPlayerNames) ? allPlayerNames : [],
     currentFase: faseKey || '',
-    currentQuestion: { questionIndex: 0, phase: 'intro', votes: [], results: [] },
+    currentQuestion: { questionIndex: 0, phase: defaultPhase, votes: [], results: [] },
     ...(parsed || {}),
   };
 
-  if (!Array.isArray(state.allPlayerNames) || state.allPlayerNames.length === 0) {
+  // On question slides, ensure phase is 'voting' if it's currently 'intro' or unset
+  if (isQuestionFase && (!state.currentQuestion?.phase || state.currentQuestion.phase === 'intro')) {
+    state.currentQuestion = {
+      ...state.currentQuestion,
+      phase: 'voting',
+    };
+  }
+
+  if (!Array.isArray(state.allPlayerNames) || state.allPlayerNames.length < (allPlayerNames?.length || 0)) {
     state.allPlayerNames = Array.isArray(allPlayerNames) ? allPlayerNames : [];
   }
 
@@ -55,6 +66,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onM
       heading={displayHeading}
       mediaUrl={mediaUrl}
       allPlayerNames={allPlayerNames}
+      faseKey={faseKey}
       onVote={async (chosenPlayerId, chosenPlayerName) => {
         const newState = await top3Logic.submitVote(
           sessionId,

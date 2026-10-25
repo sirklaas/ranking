@@ -15,6 +15,7 @@ export interface RankingSession extends PocketBaseRecord {
   teamname: string;
   playernames: string; // comma-separated string
   photocircle: string; // URL for Photocircle app download
+  joined_players?: string[]; // Array of player names that have joined via their phone
   team_assignments: string; // JSON string of team assignments {"1": ["player1", "player2"], "2": ["player3", "player4"]}
   headings: string; // JSON string for fase headings {"01/00": {"heading": "Text", "image": "pic.jpg"}}
   current_fase: string; // Current fase (e.g., "01/00")

@@ -1,16 +1,16 @@
 import { Top3State, Top3Phase, Top3Vote, Top3Result, Top3QuestionState } from './types';
 import { rankingService } from '@/lib/pocketbase';
 
-const createEmptyQuestion = (questionIndex: number): Top3QuestionState => ({
+const createEmptyQuestion = (questionIndex: number, phase: Top3Phase = 'voting'): Top3QuestionState => ({
   questionIndex,
-  phase: 'intro',
+  phase,
   votes: [],
   results: [],
 });
 
 export const getInitialState = (allPlayerNames: string[] = []): Top3State => ({
   currentFase: '',
-  currentQuestion: createEmptyQuestion(0),
+  currentQuestion: createEmptyQuestion(0, 'voting'),
   allPlayerNames,
 });
 
@@ -259,7 +259,12 @@ export const getVoterNames = (state: Top3State): string[] => {
 };
 
 // Check if a specific player has voted
-export const hasPlayerVoted = (state: Top3State, playerId: string): boolean => {
+export const hasPlayerVoted = (state: Top3State, playerId: string, playerName?: string): boolean => {
   const votes = state?.currentQuestion?.votes;
-  return Array.isArray(votes) ? votes.some((v) => v.voterId === playerId) : false;
+  if (!Array.isArray(votes)) return false;
+  return votes.some((v) => {
+    if (playerId && v.voterId === playerId) return true;
+    if (playerName && playerName !== 'Speler' && v.voterName === playerName) return true;
+    return false;
+  });
 };

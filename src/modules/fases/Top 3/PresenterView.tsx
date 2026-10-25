@@ -35,13 +35,14 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
 
     // Only wipe votes/results when moving to a genuinely different question.
     // If current slot had real voting activity, clear it for the next round.
+    const defaultPhase = faseKey === '10/01' ? 'intro' : 'voting';
     if (state?.currentQuestion?.votes?.length > 0 || state?.currentQuestion?.phase === 'results') {
       const nextState: Top3State = {
         ...state,
         currentFase: faseKey,
         currentQuestion: {
           questionIndex: (state?.currentQuestion?.questionIndex || 0) + 1,
-          phase: 'intro',
+          phase: defaultPhase,
           votes: [],
           results: [],
         },
@@ -50,7 +51,14 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
       top3Logic.persistState(sessionId, nextState).catch(() => { });
     } else {
       // No votes yet — just update the tracker, keep voting phase intact
-      const syncState: Top3State = { ...state, currentFase: faseKey };
+      const syncState: Top3State = {
+        ...state,
+        currentFase: faseKey,
+        currentQuestion: {
+          ...state.currentQuestion,
+          phase: defaultPhase,
+        },
+      };
       onModuleStateJson?.(JSON.stringify(syncState));
       top3Logic.persistState(sessionId, syncState).catch(() => { });
     }

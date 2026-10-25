@@ -1,37 +1,182 @@
 'use client';
-import React from 'react';
 
-export default function TestPhonesPage() {
-    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const code = params?.get('code');
+import React, { useState, useEffect, useRef } from 'react';
+import { rankingService } from '@/lib/pocketbase';
+
+function ScaledPhone({
+    phoneNum,
+    code,
+    resetKey,
+}: {
+    phoneNum: number;
+    code?: string | null;
+    resetKey: number;
+}) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState<number>(0.75);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const updateScale = () => {
+            if (containerRef.current) {
+                const w = containerRef.current.clientWidth;
+                if (w > 0) {
+                    setScale(w / 375);
+                }
+            }
+        };
+
+        updateScale();
+        const ro = new ResizeObserver(updateScale);
+        ro.observe(containerRef.current);
+        return () => ro.disconnect();
+    }, []);
+
+    const phoneHeight = Math.round(812 * scale);
+
+    // Exact copy of real phone: loads /player with isolated slot for localStorage.
+    // resetKey triggers clean fresh state (showing '?') on initial load and reset.
+    const iframeSrc = `/player?slot=${phoneNum}&reset=${resetKey}${code ? `&code=${code}` : ''}`;
 
     return (
-        <div className="min-h-screen bg-gray-900 p-8 flex flex-col items-center">
-            <div className="fixed z-[9999] text-white/40 text-xs" style={{ fontFamily: 'monospace', bottom: '50px', left: '50px' }}>v4.1</div>
-            <h1 className="text-white text-3xl mb-8 font-bold" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-                6 Test Phones {code && <span className="text-gray-500 font-light text-xl">({code})</span>}
-            </h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex flex-col items-center">
-                        <h2 className="text-gray-400 text-sm mb-2 uppercase tracking-widest">Phone {i}</h2>
-                        <div
-                            className="bg-black rounded-[3rem] p-2 shadow-2xl overflow-hidden border-4 border-gray-700 relative"
-                            style={{ width: '375px', height: '812px', transform: 'scale(0.8)', transformOrigin: 'top center' }}
-                        >
-                            {/* Notch simulation */}
-                            <div className="absolute top-0 inset-x-0 h-6 bg-black rounded-b-xl w-40 mx-auto z-10 pointer-events-none"></div>
-
-                            <iframe
-                                src={`/player?testName=TestSpeler${i}&testTeam=${i}${code ? `&code=${code}` : ''}`}
-                                className="w-full h-full rounded-[2.5rem] bg-white"
-                                style={{ border: 'none' }}
-                                title={`Phone ${i}`}
-                            />
-                        </div>
-                    </div>
-                ))}
+        <div className="flex flex-col items-center w-full min-w-0">
+            <div className="flex items-center justify-between w-full px-1 mb-2">
+                <span className="text-gray-200 text-xs uppercase tracking-wider font-bold">
+                    Phone {phoneNum}
+                </span>
+                <span className="text-gray-400 text-[10px] font-mono">
+                    Slot {phoneNum}
+                </span>
             </div>
+
+            <div
+                ref={containerRef}
+                className="w-full relative overflow-hidden"
+                style={{ height: `${phoneHeight}px` }}
+            >
+                <div
+                    className="bg-black rounded-[3rem] p-2 shadow-2xl overflow-hidden border-4 border-gray-700 relative"
+                    style={{
+                        width: '375px',
+                        height: '812px',
+                        transform: `scale(${scale})`,
+                        transformOrigin: 'top left',
+                    }}
+                >
+                    {/* Notch simulation */}
+                    <div className="absolute top-0 inset-x-0 h-6 bg-black rounded-b-xl w-40 mx-auto z-10 pointer-events-none"></div>
+
+                    {/* Exact real phone */}
+                    <iframe
+                        key={`${phoneNum}-${resetKey}`}
+                        src={iframeSrc}
+                        className="w-full h-full rounded-[2.5rem] bg-white"
+                        style={{ border: 'none' }}
+                        title={`Phone ${phoneNum}`}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function TestPhonesPage() {
+    const [code, setCode] = useState<string | null>(null);
+    const [resetKey, setResetKey] = useState<number>(1);
+    const [sessionFase, setSessionFase] = useState<string>('01/01');
+    const [nrTeams, setNrTeams] = useState<number>(4);
+
+    const handleResetAll = async () => {
+        setResetKey((k) => k + 1);
+        try {
+            const sessions = await rankingService.getAllSessions();
+            if (sessions && sessions[0]) {
+                await fetch('/api/session-state', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: sessions[0].id, action: 'reset_joined_players' })
+                });
+            }
+        } catch (err) {
+            console.warn('Failed to reset server joined players', err);
+        }
+    };
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const urlCode = params.get('code');
+            setCode(urlCode);
+
+            rankingService.getAllSessions().then((sessions) => {
+                if (!sessions || !sessions.length) return;
+                let active = sessions[0] as unknown as { id: string; current_fase?: string; nr_teams?: number };
+                if (urlCode) {
+                    const match = sessions.find((s: unknown) => {
+                        const item = s as { id: string };
+                        return item.id === urlCode || item.id.startsWith(urlCode);
+                    });
+                    if (match) active = match as unknown as typeof active;
+                }
+                if (active.current_fase) setSessionFase(active.current_fase);
+                if (active.nr_teams) setNrTeams(active.nr_teams);
+            }).catch((err) => {
+                console.error('Failed to load session:', err);
+            });
+        }
+    }, []);
+
+    return (
+        <div className="min-h-screen bg-gray-950 p-4 sm:p-6 flex flex-col w-full">
+            {/* Version badge moved to the right (left: 100px) so Next.js logo does not cover it */}
+            <div
+                className="fixed z-[9999] text-white/40 text-[11px]"
+                style={{ fontFamily: 'monospace', bottom: '15px', left: '100px' }}
+            >
+                v9.4.13 | 6 phones | fase: {sessionFase} | {nrTeams} teams
+            </div>
+
+            {/* Header */}
+            <header className="flex flex-wrap items-center justify-between w-full mb-4 pb-3 border-b border-gray-800 gap-2">
+                <div className="flex items-center gap-3">
+                    <h1
+                        className="text-white text-2xl font-bold tracking-tight"
+                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                    >
+                        6 Test Phones
+                    </h1>
+                    <span className="text-blue-400 bg-blue-950/80 border border-blue-800 text-xs px-2.5 py-0.5 rounded-full font-mono">
+                        Fase: {sessionFase}
+                    </span>
+                    <span className="text-emerald-400 bg-emerald-950/80 border border-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-mono">
+                        {nrTeams} Teams
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleResetAll}
+                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg border border-indigo-400 transition-colors shadow-sm flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                        title="Reset all 6 phones back to initial '?' team selection"
+                    >
+                        <span>🔄</span> Reset All to &apos;?&apos;
+                    </button>
+                </div>
+            </header>
+
+            {/* 6 Phones Horizontal Row */}
+            <main className="w-full">
+                <div className="grid grid-cols-6 gap-3 lg:gap-4 w-full items-start">
+                    {[1, 2, 3, 4, 5, 6].map((phoneNum) => (
+                        <ScaledPhone
+                            key={phoneNum}
+                            phoneNum={phoneNum}
+                            code={code}
+                            resetKey={resetKey}
+                        />
+                    ))}
+                </div>
+            </main>
         </div>
     );
 }
