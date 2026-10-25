@@ -313,8 +313,7 @@ export default function DisplayPage() {
 
     const resolveMedia = (name: string) => {
       if (!name) return '';
-      if (/^https?:\/\//i.test(name)) return name; // absolute URL
-      return `/pics/${encodeURIComponent(name)}`;
+      return motherfileService.fileUrl(name);
     };
 
     if (!fileName) {

@@ -25,6 +25,18 @@ const nextConfig: NextConfig = {
         source: '/votes',
         destination: '/votes/index.html',
       },
+      {
+        source: '/pics/:name.png',
+        destination: '/pics/:name.webp',
+      },
+      {
+        source: '/pics/:name.jpeg',
+        destination: '/pics/:name.webp',
+      },
+      {
+        source: '/pics/:name.jpg',
+        destination: '/pics/:name.webp',
+      },
     ];
   },
 };

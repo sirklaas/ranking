@@ -5,7 +5,7 @@ import RankingTitleCard, { type RankingTitleCardHandle } from '@/components/titl
 import { TITLE_CARDS } from '@/components/titlecard/titlecards';
 
 const ORIGINALS: Record<string, string> = {
-  flirt: '/pics/pics/RankingFlirt.m4v',
+  flirt: '/pics/RankingFlirt.m4v',
 };
 
 type Mode = 'side' | 'overlay' | 'difference';

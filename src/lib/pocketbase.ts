@@ -67,8 +67,32 @@ export const motherfileService = {
   fileUrl(fileName: string) {
     if (!fileName) return '';
     if (/^https?:\/\//i.test(fileName)) return fileName;
-    // Resolve locally mapped directory (via public/pics)
-    return `/pics/${encodeURIComponent(fileName)}`;
+
+    const clean = fileName.trim();
+    if (clean.startsWith('/')) return clean;
+
+    const webpName = clean.replace(/\.(png|jpe?g)$/i, '.webp');
+    const lower = webpName.toLowerCase();
+
+    const top3Files = ['andes.webp', 'crypto.webp', 'cry.webp', 'geheim.webp', 'kinderen.webp', 'only.webp', 'parenclub.webp', 'schoonzoon.webp', 'verliefd.webp'];
+    const top10Files = ['40dagen.webp', 'echt.webp', 'plaatje.webp', 'pukkel.webp', 'right.webp', 'selfie.webp', 'socials.webp', 'verlies.webp'];
+    const endFiles = ['end.m4v', 'end.webp', 'bedriegelijk.webp', 'beschermend.webp', 'creatief.webp', 'dapper.webp', 'doorzetter.webp', 'sinister.webp', 'vreugdevol.webp', 'wreed.webp'];
+    const trailers = ['trailerzitten.mp4', 'trailertop3.mp4', 'top3.mp4', 'krakendekarakters.mp4', 'top10.mp4', 'guiltypleasure.mp4'];
+
+    if (top3Files.includes(lower)) {
+      return `/pics/Top3/${webpName}`;
+    }
+    if (top10Files.includes(lower)) {
+      return `/pics/Top10/${webpName}`;
+    }
+    if (endFiles.includes(lower)) {
+      return `/pics/End/${clean}`;
+    }
+    if (trailers.includes(clean.toLowerCase())) {
+      return `/trailers/Trailers/${clean}`;
+    }
+
+    return `/pics/${encodeURIComponent(clean)}`;
   }
 };
 
@@ -370,15 +394,15 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '07/14': { heading: 'Gat in mijn hand /n Ik heb een enorm', image: 'RankingGat.m4v' },
   '07/15': { heading: 'Teveel /n Ik drink nooit', image: 'RankingDrink.m4v' },
   '10/01': { heading: '', image: 'TrailerTop3.mp4' },
-  '10/05': { heading: 'Wie wordt er heel snel verliefd', image: 'verliefd.jpeg' },
-  '10/06': { heading: 'Wie is de ideale schoonzoon of zus?', image: 'schoonzoon.png' },
-  '10/07': { heading: 'Vliegtuig neer in de Andes. Wie eet je eerst op?', image: 'andes.jpeg' },
-  '10/08': { heading: 'Wie zou je niet op je kinderen laten passen?', image: 'kinderen.png' },
-  '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: 'crypto.png' },
-  '10/10': { heading: 'Wie komt het vaakst te laat?', image: 'cry.png' },
-  '10/11': { heading: 'Wie maakt als eerste een OnlyFans account?', image: 'only.png' },
-  '10/12': { heading: 'Wie moet je zeker geen geheim vertellen?', image: 'geheim.png' },
-  '10/13': { heading: 'Wie neem je mee naar een parenclub?', image: 'parenclub.png' },
+  '10/05': { heading: 'Wie wordt er heel snel verliefd', image: 'verliefd.webp' },
+  '10/06': { heading: 'Wie is de ideale schoonzoon of zus?', image: 'schoonzoon.webp' },
+  '10/07': { heading: 'Vliegtuig neer in de Andes. Wie eet je eerst op?', image: 'andes.webp' },
+  '10/08': { heading: 'Wie zou je niet op je kinderen laten passen?', image: 'kinderen.webp' },
+  '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: 'crypto.webp' },
+  '10/10': { heading: 'Wie komt het vaakst te laat?', image: 'cry.webp' },
+  '10/11': { heading: 'Wie maakt als eerste een OnlyFans account?', image: 'only.webp' },
+  '10/12': { heading: 'Wie moet je zeker geen geheim vertellen?', image: 'geheim.webp' },
+  '10/13': { heading: 'Wie neem je mee naar een parenclub?', image: 'parenclub.webp' },
   '13/01': { heading: 'Krakende Karakters', image: 'KrakendeKarakters.mp4' },
   '13/02': { heading: '24 Goede Eigenschappen', image: '' },
   '13/03': { heading: '24 Minder Goede Eigenschappen', image: '' },
@@ -386,14 +410,14 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '13/05': { heading: 'Resultaten Minder Goede Eigenschappen', image: '' },
   '17/01': { heading: 'De Top 10', image: 'Top10.mp4' },
   '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
-  '17/05': { heading: 'Wie mag een pukkel op je bil uitknijpen?', image: 'pukkel.png' },
-  '17/06': { heading: 'Wie denkt altijd gelijk te hebben?', image: 'right.png' },
-  '17/07': { heading: 'Wie doet mee aan naakte fotoshoot?', image: 'plaatje.jpeg' },
-  '17/08': { heading: 'Wie is de grootste zuiplap van de familie?', image: '40dagen.png' },
-  '17/09': { heading: 'Wie kan absoluut niet tegen kritiek?', image: 'verlies.png' },
-  '17/10': { heading: 'Wie laat weleens een wind?', image: 'echt.png' },
-  '17/11': { heading: 'Wie maakt de lelijkste Selfies?', image: 'selfie.png' },
-  '17/12': { heading: 'Wie is meest verslaafd aan Social Media?', image: 'socials.png' },
+  '17/05': { heading: 'Wie mag een pukkel op je bil uitknijpen?', image: 'pukkel.webp' },
+  '17/06': { heading: 'Wie denkt altijd gelijk te hebben?', image: 'right.webp' },
+  '17/07': { heading: 'Wie doet mee aan naakte fotoshoot?', image: 'plaatje.webp' },
+  '17/08': { heading: 'Wie is de grootste zuiplap van de familie?', image: '40dagen.webp' },
+  '17/09': { heading: 'Wie kan absoluut niet tegen kritiek?', image: 'verlies.webp' },
+  '17/10': { heading: 'Wie laat weleens een wind?', image: 'echt.webp' },
+  '17/11': { heading: 'Wie maakt de lelijkste Selfies?', image: 'selfie.webp' },
+  '17/12': { heading: 'Wie is meest verslaafd aan Social Media?', image: 'socials.webp' },
   '17/13': { heading: 'Wie heeft de grootste mond?', image: '' },
   '17/14': { heading: 'Wie is de grootste drama queen?', image: '' },
   '20/01': { heading: 'De Finale', image: 'end.m4v' }
