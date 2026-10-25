@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.15";
+const APP_VERSION = "v9.4.16";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -25,13 +25,55 @@ export default function PresenterPage() {
   const [saveBanner, setSaveBanner] = useState<string | null>(null);
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
   const [pbStatus, setPbStatus] = useState<string>('init');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetStatus, setResetStatus] = useState<string | null>(null);
   const localWriteTs = useRef<number>(0); // timestamp of last local module state write
+
+  const handleResetGameData = async () => {
+    if (!selectedSession) return;
+    setIsResetting(true);
+    setResetStatus('Resetting...');
+    try {
+      const res = await fetch('/api/session-state', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedSession.id,
+          action: 'reset_joined_players'
+        }),
+      });
+      if (res.ok) {
+        setSelectedSession((prev) => prev ? {
+          ...prev,
+          joined_players: [],
+          teamleaders: {},
+          top3_state: {},
+          top10_state: {},
+          krakende_state: {}
+        } : null);
+        setResetStatus('✓ Data gereset! (0 spelers / stippen)');
+        setTimeout(() => setResetStatus(null), 3000);
+      } else {
+        setResetStatus('Fout bij reset');
+      }
+    } catch (e) {
+      console.error('Failed to reset game data:', e);
+      setResetStatus('Fout bij reset');
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   // Reliable PB write with logging + retry
   const writeFaseToPB = useCallback(async (sessionId: string, fase: string) => {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        await rankingService.updateSession(sessionId, { current_fase: fase });
+        const updateData: Record<string, unknown> = { current_fase: fase };
+        if (fase === '01/01') {
+          updateData.joined_players = [];
+          updateData.teamleaders = {};
+        }
+        await rankingService.updateSession(sessionId, updateData);
         setPbStatus(`✓ ${fase}`);
         console.log(`[Presenter] PB write OK: ${fase} (attempt ${attempt})`);
         return;
@@ -577,6 +619,22 @@ export default function PresenterPage() {
                 <h1 className="text-3xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
                 <span className="text-xl font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
                 <span className="text-xl font-semibold text-gray-700">{gameTime} [game time]</span>
+                {currentFase === '01/01' && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleResetGameData}
+                      disabled={isResetting}
+                      className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg shadow-md flex items-center gap-2 active:scale-95 transition-all text-base border border-white"
+                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      title="Wist alle aangemelde spelers (blauwe stippen op display) en stemmen"
+                    >
+                      <span>🗑️ Reset Game Data (01/01)</span>
+                    </button>
+                    {resetStatus && (
+                      <span className="text-sm font-bold text-green-600 animate-fade-in">{resetStatus}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setCurrentView('manage')}
@@ -714,7 +772,19 @@ export default function PresenterPage() {
           <div>
             <h2 className="text-2xl font-medium text-gray-900" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>{selectedSession.showname || 'Game Session'} - {selectedSession.city || 'City'}</h2>
           </div>
-          <div className="flex gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleResetGameData}
+              disabled={isResetting}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-bold transition-colors border border-white text-base shadow-sm"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+              title="Wist alle aangemelde spelers (blauwe stippen op display) en stemmen"
+            >
+              {isResetting ? 'Resetting...' : '🗑️ Reset Game Data'}
+            </button>
+            {resetStatus && (
+              <span className="text-sm font-bold text-green-600 animate-fade-in">{resetStatus}</span>
+            )}
             <button
               onClick={handleStartRankingGame}
               className="bg-[#0A1752] text-white px-6 py-3 rounded-lg hover:bg-[#0A1752]/90 transition-colors font-bold text-lg"

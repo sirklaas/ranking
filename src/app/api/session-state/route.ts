@@ -101,17 +101,31 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ success: true, session: current });
     }
 
-    // Specific action: Reset all joined players (e.g. for testing / new run)
+    // Specific action: Reset all joined players and game data (e.g. on 01/01 / new run)
     if (body.action === 'reset_joined_players') {
-      const updated = await pb.collection('ranking').update(id, { joined_players: [] }, { $autoCancel: false });
+      const resetPayload: Record<string, unknown> = {
+        joined_players: [],
+        teamleaders: {},
+        top3_state: {},
+        top10_state: {},
+        krakende_state: {},
+        ...(body.data || {})
+      };
+      const updated = await pb.collection('ranking').update(id, resetPayload, { $autoCancel: false });
       cachedSession = null;
-      console.log('[session-state] Reset joined_players');
+      console.log('[session-state] Reset game data (joined_players, teamleaders, module states)');
       return NextResponse.json({ success: true, session: updated });
     }
 
     const data = body.data as Record<string, unknown>;
     if (!data) {
       return NextResponse.json({ error: 'Missing data' }, { status: 400 });
+    }
+
+    // Automatically reset joined_players when entering 01/01
+    if (data.current_fase === '01/01') {
+      data.joined_players = [];
+      data.teamleaders = {};
     }
 
     console.log('[session-state] PATCH input:', id, JSON.stringify(data));

@@ -1,6 +1,6 @@
 {
   "name": "temp-ranking",
-  "version": "9.4.15",
+  "version": "9.4.16",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

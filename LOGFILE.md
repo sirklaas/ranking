@@ -1,5 +1,14 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.16 (2026-10-25)
+- **Reset Game Data Knop op Presentator Scherm & Display Dots Reset op 01/01:**
+  - **Presentator "Reset Game Data" Knop:**
+    - Op `/presenter` in fase `01/01` (bovenbalk game-interface) én in het Setup scherm (naast *Start Ranking game*) is een rode knop **`[🗑️ Reset Game Data (01/01)]`** toegevoegd.
+    - Met één klik wist deze direct alle aangemelde spelers (`joined_players`), teamleiderstemmen (`teamleaders`) en tussenstatussen (`top3_state`, `top10_state`, `krakende_state`) in PocketBase en de server cache.
+  - **Display Reset op 01/01:**
+    - Zodra de presentator naar fase `01/01` navigeert, of wanneer het grote scherm (`/display`) opent op `01/01`, worden alle achtergebleven blauwe stippen van eerdere test- of speelrondes direct gewist.
+    - Bij faseovergang naar `01/01` reset PocketBase `joined_players: []` automatisch via `PATCH /api/session-state`.
+
 ## Version 9.4.15 (2026-10-25)
 - **Fase 01/01 Teamknoppen & Dynamic Heading Transitions:**
   - **Team Selectie Knoppen i.p.v. Input:** De numerieke invoer en het `?` cirkeltje zijn vervangen door responsieve teamknoppen in show-badge stijl (witte cirkel met dikke zwarte rand en opvallend roze cijfer).

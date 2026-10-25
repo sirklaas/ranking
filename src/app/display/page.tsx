@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = "v9.4.15";
+const APP_VERSION = "v9.4.16";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -100,6 +100,15 @@ export default function DisplayPage() {
         if (res.ok) {
           const json = await res.json();
           if (json?.session) {
+            // If on 01/01 and there are joined players from previous test/show, clear them
+            if (json.session.current_fase === '01/01' && Array.isArray(json.session.joined_players) && json.session.joined_players.length > 0) {
+              fetch('/api/session-state', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: json.session.id, action: 'reset_joined_players' })
+              }).catch(() => {});
+              json.session.joined_players = [];
+            }
             setCurrentSession(json.session);
             const teamAssignments = getTeamAssignments(json.session);
             setPlayersByTeam(teamAssignments);
@@ -260,6 +269,9 @@ export default function DisplayPage() {
           if (fresh.id !== prev.id) {
             console.log(`[Display] Switched to new active game session: ${fresh.id}`);
             return fresh;
+          }
+          if (fresh.current_fase === '01/01' && prev.current_fase !== '01/01') {
+            fresh.joined_players = [];
           }
           if (fresh.current_fase === prev.current_fase && fresh.headings === prev.headings
             && JSON.stringify(fresh.teamleaders) === JSON.stringify((prev as Record<string, unknown>).teamleaders)
