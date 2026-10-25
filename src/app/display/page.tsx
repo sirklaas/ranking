@@ -8,7 +8,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = "v9.4.19";
+const APP_VERSION = "v9.4.20";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -448,18 +448,11 @@ export default function DisplayPage() {
                 // Pause 0.5s before end to freeze on last visible frame (prevent black)
                 if (vid.duration - vid.currentTime < 0.5 && !vid.paused) {
                   vid.pause();
-                  // If this is the ending trailer (20/01), redirect to the standalone ending app
-                  if (currentSession?.current_fase === '20/01') {
-                    window.location.href = 'https://end.pinkmilk.eu/display.html';
-                  }
                 }
               }}
               onEnded={(e) => {
                 e.currentTarget.pause();
                 console.log('[Display] video ended');
-                if (currentSession?.current_fase === '20/01') {
-                  window.location.href = 'https://end.pinkmilk.eu/display.html';
-                }
               }}
             />
           ) : (

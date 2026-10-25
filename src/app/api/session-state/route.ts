@@ -109,6 +109,7 @@ export async function PATCH(req: Request) {
         top3_state: {},
         top10_state: {},
         krakende_state: {},
+        endgame_state: { selectedCard: null, playbackState: 'grid', usedCards: [], teamSelections: {} },
         ...(body.data || {})
       };
       const updated = await pb.collection('ranking').update(id, resetPayload, { $autoCancel: false });
@@ -126,6 +127,7 @@ export async function PATCH(req: Request) {
     if (data.current_fase === '01/01') {
       data.joined_players = [];
       data.teamleaders = {};
+      data.endgame_state = { selectedCard: null, playbackState: 'grid', usedCards: [], teamSelections: {} };
     }
 
     console.log('[session-state] PATCH input:', id, JSON.stringify(data));

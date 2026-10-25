@@ -1,5 +1,20 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.20 (2026-10-25)
+- **Native Endgame Finale Module (`fase 20/01`)**:
+  - Volledig geïntegreerd in Ranking zonder externe redirects naar `end.pinkmilk.eu`.
+  - **Presenter**: Bevat het grid van 8 kaarten (Bedrieglijk, Beschermend, Creatief, Dapper, Doorzetter, Sinister, Vreugdevol, Wreed), interactieve kaartselectie, `→` om video te starten (audio op presenter), `→` om terug te keren naar het grid en kaart als gespeeld te markeren, `Show End Title` knop (`end.m4v` + `Lawineboys.m4a`), en `Reset All`.
+  - **Display**: Synchroon met presenter. Toont grid van 8 kaarten; toont fullscreen first frame bij gepauzeerde kaart; speelt fullscreen video af bij speelstatus; schakelt over naar looping `end.m4v` bij endtitle; meldt aan PocketBase zodra de video klaar is (`playbackState: finished`).
+  - **Telefoon (Spelers)**:
+    - **Teamleider**: Ziet het grid met de 8 kaarten en kiest één kaart voor het team via touch.
+    - **Teamleden**: Zien in eerste instantie een wachtscherm dat de teamleider kiest; zodra de teamleider heeft gekozen zien teamleden **uitsluitend die ene gekozen kaart**.
+    - **Onthulling/Reveal**: Pas **nadat de display-video is afgelopen** toont de telefoon de feestelijke onthulling ("✨ ONTHULD VOOR TEAM X!").
+- **Optie A (TeamX Admin als Master)**:
+  - In TeamX Admin (`teaminput`): extra sectie `[🎮 Ranking Koppeling]` toegevoegd op show-blokken.
+  - Maakt het mogelijk direct een Excel met spelersnamen te uploaden en met één klik de sessie aan te maken/updaten in de `ranking` PocketBase collectie (priority 1).
+  - Koppelt automatisch het geldige TeamX show-ID aan `photocircle` (`media.html?showId=<id>`) zodat de Photo App zonder relatie-fouten foto's en video's uploadt.
+  - TeamX blijft 100% onaangetast en veilig.
+
 ## Version 9.4.19 (2026-10-25)
 - **Zitten en Staan Phone React Hook Fix:**
   - Opgelost: De vroege return voor de trailer op `07/01` stond vóór de `useState`, `useRef` en `useEffect` hooks, wat in Next.js/React leidde tot een *"Rendered fewer hooks than expected"* runtime error. Alle hooks staan nu conform React-standaarden bovenaan.

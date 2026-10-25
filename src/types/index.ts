@@ -20,9 +20,10 @@ export interface RankingSession extends PocketBaseRecord {
   headings: string; // JSON string for fase headings {"01/00": {"heading": "Text", "image": "pic.jpg"}}
   current_fase: string; // Current fase (e.g., "01/00")
   elimination_state?: string; // JSON string of EliminationState
-  krakende_state?: string; // JSON string of KrakendeState
-  top3_state?: string; // JSON string of Top3State
-  top10_state?: string; // JSON string of Top10State
+  krakende_state?: string | Record<string, unknown>; // JSON string of KrakendeState
+  top3_state?: string | Record<string, unknown>; // JSON string of Top3State
+  top10_state?: string | Record<string, unknown>; // JSON string of Top10State
+  endgame_state?: string | Record<string, unknown>; // JSON string of EndgameState
   submissions?: unknown[]; // JSON field
 }
 

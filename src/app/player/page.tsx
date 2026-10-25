@@ -7,7 +7,7 @@ import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 
-const APP_VERSION = 'v9.4.19';
+const APP_VERSION = 'v9.4.20';
 
 function getPlayerStorageKey(baseKey: string): string {
   if (typeof window === 'undefined') return baseKey;
@@ -814,15 +814,29 @@ export default function PlayerPage() {
               )}
               {currentSession?.current_fase === '01/06' ? (
                 <div className="w-full flex flex-col items-center mt-3 pt-3 border-t border-white/20 gap-3">
-                  <a
-                    href={`https://www.pinkmilk.eu/phone/media.html?showId=${currentSession?.id || ''}&playerName=${encodeURIComponent(selectedPlayerName || '')}&team=${teamNumber || '1'}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-3.5 px-4 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
-                    style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                  >
-                    <span>Photo App [ {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'} ]</span>
-                  </a>
+                  {(() => {
+                    let photoShowId = currentSession?.id || '';
+                    if (currentSession?.photocircle) {
+                      if (currentSession.photocircle.includes('showId=')) {
+                        const m = currentSession.photocircle.match(/showId=([a-zA-Z0-9]+)/);
+                        if (m) photoShowId = m[1];
+                      } else if (!currentSession.photocircle.includes('http') && currentSession.photocircle.trim().length > 5) {
+                        photoShowId = currentSession.photocircle.trim();
+                      }
+                    }
+                    const photoAppHref = `https://www.pinkmilk.eu/phone/media.html?showId=${photoShowId}&playerName=${encodeURIComponent(selectedPlayerName || '')}&team=${teamNumber || '1'}`;
+                    return (
+                      <a
+                        href={photoAppHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-3.5 px-4 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
+                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                      >
+                        <span>Photo App [ {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'} ]</span>
+                      </a>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="text-sm opacity-80 mt-3 font-normal border-t border-white/20 pt-2">

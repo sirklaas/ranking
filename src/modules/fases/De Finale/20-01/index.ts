@@ -1,6 +1,6 @@
 import type { FaseModule } from '@/types/fases';
 import { registerFase } from '@/modules/fases';
-import { key, title, group, needs, skipTrailer } from './config';
+import { key, title, group, needs, skipTrailer, stateField } from './config';
 import DisplayView from './DisplayView';
 import PresenterView from './PresenterView';
 import PlayerView from './PlayerView';
@@ -11,6 +11,7 @@ export const faseModule: FaseModule = {
     title,
     needs,
     skipTrailer,
+    stateField,
     DisplayView,
     PresenterView,
     PlayerView,

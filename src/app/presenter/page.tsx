@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.19";
+const APP_VERSION = "v9.4.20";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -28,6 +28,32 @@ export default function PresenterPage() {
   const [isResetting, setIsResetting] = useState(false);
   const [resetStatus, setResetStatus] = useState<string | null>(null);
   const localWriteTs = useRef<number>(0); // timestamp of last local module state write
+
+  // Auto-load latest session when view=game or fase is passed in URL
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const requestedFase = params.get('fase');
+    const autoGame = params.get('view') === 'game' || Boolean(requestedFase);
+
+    if (autoGame && currentView === 'list') {
+      (async () => {
+        try {
+          const res = await fetch('/api/session-state?id=latest');
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.session) {
+              setSelectedSession(data.session);
+              setCurrentFase(requestedFase || data.session.current_fase || '01/01');
+              setCurrentView('game');
+            }
+          }
+        } catch {
+          // ignore
+        }
+      })();
+    }
+  }, [currentView]);
 
   const handleResetGameData = async () => {
     if (!selectedSession) return;
@@ -299,7 +325,7 @@ export default function PresenterPage() {
         }
         const headingsObj = typeof selectedSession.headings === 'string'
           ? JSON.parse(selectedSession.headings || '{}')
-          : { ...(selectedSession.headings || {}) };
+          : { ...((selectedSession.headings as Record<string, unknown>) || {}) };
         headingsObj._lastActivated = Date.now();
         await rankingService.updateSession(selectedSession.id, {
           current_fase: '01/01',
@@ -541,11 +567,6 @@ export default function PresenterPage() {
         setCurrentFase(next);
         if (selectedSession) {
           writeFaseToPB(selectedSession.id, next);
-        }
-        if (next === '20/01') {
-          setTimeout(() => {
-            window.location.href = 'https://www.end.pinkmilk.eu';
-          }, 500);
         }
       } else if (isPrev) {
         const prev = getPrevFaseGlobal(currentFase);
