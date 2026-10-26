@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { FaseCommonProps } from '@/types/fases';
 import { ENDGAME_CARDS, EndgameState, DEFAULT_ENDGAME_STATE } from './endgameData';
 import CodedEndgameReveal from '@/components/endgame/CodedEndgameReveal';
+import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
 const STORAGE_KEY = 'ranking_endgame_state';
 
@@ -29,7 +30,56 @@ const DisplayView: React.FC<FaseCommonProps> = ({
   }, [moduleStateJson]);
 
   const [state, setState] = useState<EndgameState>(parsedState);
-  const endTitleVideoRef = useRef<HTMLVideoElement | null>(null);
+  const endTitleAudioRef = useRef<HTMLAudioElement | null>(null);
+  const trailerVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Play creepy trailer first when entering Finale if no card is selected
+  const [showTrailer, setShowTrailer] = useState<boolean>(() => {
+    return !parsedState.selectedCard && (parsedState.revealedCards || []).length === 0 && parsedState.playbackState === 'grid';
+  });
+
+  // If a card is selected from presenter or sync, dismiss trailer
+  useEffect(() => {
+    if (state.selectedCard || (state.revealedCards || []).length > 0 || state.playbackState !== 'grid') {
+      setShowTrailer(false);
+    }
+  }, [state.selectedCard, state.revealedCards, state.playbackState]);
+
+  // Handle trailer video autoplay and unmuting
+  useEffect(() => {
+    if (!showTrailer) return;
+    const tv = trailerVideoRef.current;
+    if (!tv) return;
+
+    const tryPlay = () => {
+      tv.muted = false;
+      tv.volume = 1;
+      tv.play().catch(() => {
+        tv.muted = true;
+        tv.play().catch(() => {});
+      });
+    };
+
+    tryPlay();
+
+    const unmute = () => {
+      if (trailerVideoRef.current) {
+        trailerVideoRef.current.muted = false;
+        trailerVideoRef.current.volume = 1;
+        if (trailerVideoRef.current.paused) trailerVideoRef.current.play().catch(() => {});
+      }
+    };
+
+    window.addEventListener('ranking-audio-unlocked', unmute);
+    window.addEventListener('click', unmute);
+    window.addEventListener('keydown', unmute);
+
+    return () => {
+      window.removeEventListener('ranking-audio-unlocked', unmute);
+      window.removeEventListener('click', unmute);
+      window.removeEventListener('keydown', unmute);
+    };
+  }, [showTrailer]);
 
   // Sync incoming props
   useEffect(() => {
@@ -76,30 +126,30 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     return ENDGAME_CARDS.find(c => c.id === state.selectedCard) || null;
   }, [state.selectedCard]);
 
-  // Handle end title video & unmute on interaction
+  // Handle end title audio (Wat zullen we drinken) & unmute on interaction
   useEffect(() => {
-    const endVideo = endTitleVideoRef.current;
-    if (!endVideo) return;
+    const endAudio = endTitleAudioRef.current;
+    if (!endAudio) return;
 
     const unmuteAndPlay = () => {
-      endVideo.muted = false;
-      endVideo.volume = 1;
-      if (state.playbackState === 'endtitle' && endVideo.paused) {
-        endVideo.play().catch(() => {});
+      endAudio.muted = false;
+      endAudio.volume = 1;
+      if (state.playbackState === 'endtitle' && endAudio.paused) {
+        endAudio.play().catch(() => {});
       }
     };
 
     if (state.playbackState === 'endtitle') {
-      endVideo.currentTime = 0;
-      endVideo.muted = false;
-      endVideo.volume = 1;
-      endVideo.play().catch(e => {
-        console.log('[Endgame Display] End title video unmuted play error, trying muted:', e);
-        endVideo.muted = true;
-        endVideo.play().catch(() => {});
+      endAudio.currentTime = 0;
+      endAudio.muted = false;
+      endAudio.volume = 1;
+      endAudio.play().catch(e => {
+        console.log('[Endgame Display] End title audio unmuted play error, trying muted:', e);
+        endAudio.muted = true;
+        endAudio.play().catch(() => {});
       });
     } else {
-      endVideo.pause();
+      endAudio.pause();
     }
 
     window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
@@ -260,26 +310,52 @@ const DisplayView: React.FC<FaseCommonProps> = ({
         />
       )}
 
-      {/* End Title Video Container */}
+      {/* Creepy Trailer Video Overlay (First time entering Finale before card selection) */}
+      {showTrailer && (
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+          <video
+            ref={trailerVideoRef}
+            src="/pics/trailercreepy.m4v"
+            className="w-full h-full object-cover"
+            playsInline
+            autoPlay
+            onTimeUpdate={(e) => {
+              const vid = e.currentTarget;
+              if (vid.duration > 0 && vid.duration - vid.currentTime < 0.3) {
+                setShowTrailer(false);
+              }
+            }}
+            onEnded={() => setShowTrailer(false)}
+          />
+          <SpookyTrailerTitle faseKey="20/01" customHeading="DE FINALE" />
+          <button
+            onClick={() => setShowTrailer(false)}
+            className="absolute bottom-6 right-6 z-50 bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white px-5 py-2 rounded-full text-sm font-mono tracking-wider backdrop-blur-sm transition-all"
+          >
+            Overslaan ✕
+          </button>
+        </div>
+      )}
+
+      {/* End Title / End Card with Review QR Code Container */}
       <div
-        className={`fixed inset-0 bg-black z-50 flex items-center justify-center transition-opacity duration-1000 ${
+        className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-1000 ${
           isEndTitle ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
+        style={{
+          background: 'linear-gradient(135deg, #07060a 0%, #150a24 50%, #0d080c 100%)'
+        }}
       >
-        <video
-          ref={endTitleVideoRef}
-          src="/pics/end.m4v"
-          className="w-full h-full object-cover"
-          playsInline
-          autoPlay
+        <audio
+          ref={endTitleAudioRef}
+          src="/endgame/Lawineboys.m4a"
           loop
-          onError={(e) => {
-            const v = e.currentTarget;
-            if (!v.src.includes('/endgame/end.m4v')) {
-              v.src = '/endgame/end.m4v';
-              v.play().catch(() => {});
-            }
-          }}
+          playsInline
+        />
+        <img
+          src="/pics/End/end_card_qr.webp"
+          alt="Einde Ranking - Review QR Code"
+          className="w-full h-full object-contain"
         />
       </div>
     </div>

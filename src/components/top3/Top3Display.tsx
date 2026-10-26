@@ -387,22 +387,23 @@ function NameWall({ allNames = [], votedNames = [] }: { allNames: string[]; vote
   const votedSet = new Set(votedNames);
 
   return (
-    <div className="flex flex-wrap gap-2.5 justify-center px-4 py-2 max-w-5xl mx-auto">
+    <div className="flex flex-wrap gap-2 justify-center px-4 py-2 w-full max-w-[95vw] mx-auto">
       {(allNames || []).map((name, i) => {
         const formattedName = formatName(name);
         const hasVoted = votedSet.has(formattedName) || votedSet.has(name);
         return (
           <div
             key={name}
-            className="px-4 py-2.5 rounded-xl text-lg md:text-xl transition-all duration-700 pointer-events-none shadow-md backdrop-blur-sm"
+            className="px-3.5 py-1.5 rounded-xl text-base md:text-lg transition-all duration-700 pointer-events-none shadow-md backdrop-blur-[2px]"
             style={{
               fontFamily: 'Barlow Semi Condensed, sans-serif',
               fontWeight: 400,
-              backgroundColor: 'rgba(255,255,255,0.18)',
-              color: 'white',
+              backgroundColor: 'rgba(0, 0, 0, 0.35)',
+              color: 'rgba(255, 255, 255, 0.95)',
               opacity: hasVoted ? 0 : 1,
               transform: hasVoted ? 'scale(0)' : 'scale(1)',
-              border: '1.5px solid rgba(255,255,255,0.35)',
+              border: '1px solid rgba(255, 255, 255, 0.22)',
+              textShadow: '0 2px 8px rgba(0, 0, 0, 0.9)',
               animation: hasVoted ? 'none' : `top3NameIn 0.4s ease-out ${i * 35}ms both`,
             }}
           >

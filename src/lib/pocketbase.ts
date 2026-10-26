@@ -126,7 +126,7 @@ export const motherfileService = {
       'verlies': 'speeding-ticket.webp',
       'verlies.webp': 'speeding-ticket.webp',
       'end.m4v': 'trailercreepy.m4v',
-      'end.webp': 'trailercreepy.m4v',
+      'end.webp': 'end_card_qr.webp',
       'bedriegelijk.webp': 'betoverd.jpeg',
       'beschermend.webp': 'elegant.jpeg',
       'creatief.webp': 'gentle.jpeg',

@@ -13,6 +13,7 @@ interface Top10PlayerProps {
     teamNumber: number;
     heading?: string;
     mediaUrl?: string;
+    faseKey?: string;
     allPlayerNames?: string[];
     onVote: (chosenPlayerId: string, chosenPlayerName: string) => void;
 }
@@ -37,6 +38,7 @@ export default function Top10Player({
     teamNumber,
     heading: propHeading,
     mediaUrl,
+    faseKey,
     allPlayerNames,
     onVote,
 }: Top10PlayerProps) {

@@ -125,6 +125,10 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       audioPlayerRef.current.pause();
       audioPlayerRef.current.currentTime = 0;
     }
+    if (endTitleAudioRef.current) {
+      endTitleAudioRef.current.pause();
+      endTitleAudioRef.current.currentTime = 0;
+    }
     const newUsed = state.selectedCard && !state.usedCards.includes(state.selectedCard)
       ? [...state.usedCards, state.selectedCard]
       : state.usedCards;
@@ -235,14 +239,14 @@ const PresenterView: React.FC<FaseCommonProps> = ({
 
         <div className="flex items-center gap-3">
           <button
-            onClick={handleShowEndTitle}
+            onClick={state.playbackState === 'endtitle' ? handleReturnToGrid : handleShowEndTitle}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
               state.playbackState === 'endtitle'
-                ? 'bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-500/40'
+                ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/40'
                 : 'bg-purple-950/60 text-purple-200 border-purple-600/40 hover:bg-purple-800/80 hover:text-white'
             }`}
           >
-            🎬 Show End Title
+            {state.playbackState === 'endtitle' ? '⏹ Terug naar Grid' : '🎬 Show End Card'}
           </button>
 
           <button
@@ -258,6 +262,25 @@ const PresenterView: React.FC<FaseCommonProps> = ({
           </button>
         </div>
       </div>
+
+      {/* End Card Active Banner */}
+      {state.playbackState === 'endtitle' && (
+        <div className="mb-4 p-4 rounded-xl bg-purple-950/80 border border-purple-500/50 flex flex-wrap items-center justify-between gap-3 shadow-xl">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <div className="text-white font-bold text-sm uppercase tracking-wider">End Card Actief op Scherm</div>
+              <div className="text-purple-300 text-xs">Review QR Code wordt getoond met &lsquo;Wat zullen we drinken&rsquo;</div>
+            </div>
+          </div>
+          <button
+            onClick={handleReturnToGrid}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all"
+          >
+            Terug naar Kaarten
+          </button>
+        </div>
+      )}
 
       {/* Control Banner when a card is active */}
       {selectedCardObj && (

@@ -149,7 +149,7 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
 
   return (
     <div
-      className="min-h-screen w-screen flex flex-col justify-between p-8 select-none"
+      className="min-h-screen w-screen flex flex-col justify-between select-none"
       style={{
         background: isPositive
           ? 'linear-gradient(180deg, #f59e0b 0%, #fbbf24 35%, #fde047 100%)'
@@ -157,9 +157,9 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
         fontFamily: '"Barlow Semi Condensed", "DIN Alternate", "Arial Narrow", sans-serif',
       }}
     >
-      {/* Hero Purple Banner with Ranking Logo */}
+      {/* Hero Banner spanning 100% full screen width */}
       <div
-        className="relative w-full h-24 md:h-30 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8 rounded-2xl overflow-hidden shadow-2xl border-2 border-purple-300/40 mb-3 shrink-0"
+        className="relative w-full h-24 md:h-28 bg-cover bg-center bg-no-repeat flex items-center justify-between px-8 border-b-2 border-purple-300/40 mb-3 shrink-0 shadow-2xl"
         style={{ backgroundImage: 'url(/assets/band.webp)' }}
       >
         {/* Logo - Left */}
@@ -181,6 +181,8 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
           </div>
         )}
       </div>
+
+      <div className="flex-1 flex flex-col justify-between px-8 pb-8">
 
       {/* HEADING PLACED DIRECTLY UNDER THE BANNER */}
       <div className="px-4 pb-2">
@@ -251,6 +253,7 @@ export default function KrakendeDisplay({ state, allPlayerNames = [], sessionId 
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

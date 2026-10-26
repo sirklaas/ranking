@@ -55,6 +55,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onM
       teamNumber={playerInfo.teamNumber}
       heading={displayHeading}
       mediaUrl={mediaUrl}
+      faseKey={faseKey}
       allPlayerNames={allPlayerNames}
       onVote={async (chosenPlayerId, chosenPlayerName) => {
         const newState = await top10Logic.submitVote(

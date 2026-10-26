@@ -432,27 +432,50 @@ export default function KrakendePlayer({
         })}
       </div>
 
-      {/* Confirm button — fixed at bottom */}
+      {/* Confirm button / modal — fluidly moves to middle of the screen when selected */}
       {isVoting && !submitted && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#0A1752] via-[#0A1752]/95 to-transparent">
-          <button
-            onClick={handleConfirm}
-            disabled={!selected}
-            className="w-full py-3 rounded-lg text-lg font-semibold transition-all active:scale-95 border-2 border-white shadow-md"
-            style={{
-              backgroundColor: selected ? '#0A1752' : '#333',
-              color: 'white',
-              borderColor: selected ? 'white' : '#555',
-              opacity: selected ? 1 : 0.5,
-              fontFamily: 'Barlow Semi Condensed, sans-serif',
-              fontWeight: 400,
-            }}
+        <>
+          {/* Subtle backdrop when selected so the middle button pops */}
+          <div
+            onClick={() => setSelected(null)}
+            className={`fixed inset-0 bg-black/60 backdrop-blur-[2px] z-40 transition-opacity duration-500 ease-out ${
+              selected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+          />
+
+          <div
+            className={`fixed left-4 right-4 z-50 flex flex-col items-center justify-center transition-all duration-500 ease-out ${
+              selected
+                ? 'top-1/2 -translate-y-1/2 pointer-events-auto scale-100 opacity-100'
+                : 'top-[95%] -translate-y-full pointer-events-none scale-95 opacity-0'
+            }`}
           >
-            {selected
-              ? `Bevestig: ${getTraitLabel(traits.find((t) => t.id === selected)!, 'nl')}`
-              : 'Kies een eigenschap'}
-          </button>
-        </div>
+            <div className="w-full max-w-sm p-6 rounded-3xl bg-gradient-to-b from-[#14236e] to-[#0A1752] border-2 border-white/70 shadow-[0_12px_45px_rgba(0,0,0,0.85)] text-center flex flex-col items-center gap-3">
+              <span className="text-4xl animate-bounce">👉</span>
+              <button
+                onClick={handleConfirm}
+                className="w-full py-4 px-4 rounded-2xl text-xl font-bold transition-all active:scale-95 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white border-2 border-white shadow-[0_0_25px_rgba(249,115,22,0.7)]"
+                style={{
+                  fontFamily: '"Barlow Semi Condensed", sans-serif',
+                }}
+              >
+                <span className="text-sm font-normal text-white/90 block mb-1">Ben je echt:</span>
+                <span className="underline block text-2xl font-black">
+                  {selected ? getTraitLabel(traits.find((t) => t.id === selected)!, 'nl') : ''}
+                </span>
+              </button>
+              <div className="text-white/80 text-xs font-medium">
+                Tik op de oranje knop om te bevestigen
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-white/60 hover:text-white text-xs underline mt-1"
+              >
+                ✕ Kies een andere eigenschap
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
