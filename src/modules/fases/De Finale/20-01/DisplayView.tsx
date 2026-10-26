@@ -167,16 +167,16 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     >
       {/* 8 Cards Grid view */}
       <div
-        className={`w-full h-full p-8 md:p-14 flex flex-col justify-center transition-all duration-700 ${
+        className={`w-full h-full p-4 md:p-8 flex flex-col justify-center transition-all duration-700 ${
           isRevealActive || isEndTitle ? 'opacity-0 scale-90 blur-xl pointer-events-none' : 'opacity-100 scale-100 blur-0'
         }`}
       >
-        <div className="text-center mb-8">
+        <div className="text-center mb-4 md:mb-6">
           <span className="text-orange-500 text-xs font-mono tracking-[0.3em] uppercase block mb-1">
             De Grote Ontknoping · Munten Verdeling
           </span>
           <h2
-            className="text-white text-4xl md:text-6xl font-normal uppercase tracking-wider"
+            className="text-white text-4xl md:text-5xl font-normal uppercase tracking-wider"
             style={{
               fontFamily: '"BrewHouse-Aged", "BrewHouse", sans-serif',
               textShadow: '0 0 20px rgba(255,117,24,0.8)'
@@ -186,7 +186,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
           </h2>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 md:gap-6 max-w-[75vw] mx-auto w-full max-h-[60vh] items-center justify-items-center">
+        <div className="grid grid-cols-4 gap-5 md:gap-7 max-w-[85vw] mx-auto w-full max-h-[72vh] items-center">
           {ENDGAME_CARDS.map(card => {
             const used = state.usedCards.includes(card.id);
             const isSelected = state.selectedCard === card.id;
@@ -194,7 +194,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
             return (
               <div
                 key={card.id}
-                className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-500 aspect-square shadow-2xl flex flex-col w-full max-w-[25vh] max-h-[25vh] ${
+                className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-500 aspect-square shadow-2xl flex flex-col w-full ${
                   used
                     ? 'opacity-25 grayscale border-white/10'
                     : isSelected
