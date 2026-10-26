@@ -418,11 +418,6 @@ export default function CreepyPreviewPage() {
                     <div className="absolute top-3 left-3 bg-black/80 backdrop-blur border border-zinc-800 px-2.5 py-1 rounded-md text-[11px] font-mono font-bold text-orange-400">
                       #{idx + 1}
                     </div>
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/50 to-transparent p-4">
-                      <span className="text-xl font-black text-white block uppercase tracking-wide">
-                        {card.name}
-                      </span>
-                    </div>
                   </div>
 
                   {/* Outcome Description */}

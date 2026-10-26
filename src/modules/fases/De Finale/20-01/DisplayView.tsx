@@ -186,7 +186,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
           </h2>
         </div>
 
-        <div className="grid grid-cols-4 gap-6 md:gap-10 max-w-[94vw] mx-auto w-full max-h-[75vh] items-center">
+        <div className="grid grid-cols-4 gap-4 md:gap-6 max-w-[75vw] mx-auto w-full max-h-[60vh] items-center justify-items-center">
           {ENDGAME_CARDS.map(card => {
             const used = state.usedCards.includes(card.id);
             const isSelected = state.selectedCard === card.id;
@@ -194,11 +194,11 @@ const DisplayView: React.FC<FaseCommonProps> = ({
             return (
               <div
                 key={card.id}
-                className={`relative rounded-3xl overflow-hidden border-2 transition-all duration-500 aspect-square shadow-2xl flex flex-col ${
+                className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-500 aspect-square shadow-2xl flex flex-col w-full max-w-[25vh] max-h-[25vh] ${
                   used
                     ? 'opacity-25 grayscale border-white/10'
                     : isSelected
-                    ? 'border-orange-500 ring-8 ring-orange-500/40 scale-105 shadow-orange-500/50'
+                    ? 'border-orange-500 ring-6 ring-orange-500/40 scale-105 shadow-orange-500/50'
                     : 'border-orange-500/30 hover:border-orange-500 hover:scale-102 shadow-lg shadow-black/80'
                 }`}
                 style={{
@@ -211,14 +211,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
                   alt={card.name}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 text-center">
-                  <span
-                    className="text-white font-bold text-lg uppercase tracking-wide"
-                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}
-                  >
-                    {card.name}
-                  </span>
-                </div>
               </div>
             );
           })}

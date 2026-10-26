@@ -265,6 +265,25 @@ export default function CodedEndgameReveal({
 
     const loop = (now: number) => {
       if (playbackState === 'paused') {
+        const cardEl = cardContainerRef.current;
+        if (cardEl) {
+          cardEl.style.display = 'flex';
+          cardEl.style.transform = 'translate(-50%, -50%) scale(1)';
+          cardEl.style.opacity = '1';
+        }
+        const ticketEl = ticketRef.current;
+        if (ticketEl) {
+          ticketEl.style.opacity = '0';
+          ticketEl.style.transform = 'translate(-50%, -50%) scale(0.2)';
+        }
+        const wipeEl = wipeRectRef.current;
+        if (wipeEl) {
+          wipeEl.setAttribute('width', '0');
+        }
+        const shCanvas = shatterCanvasRef.current;
+        if (shCanvas) {
+          shCanvas.style.display = 'none';
+        }
         animFrameRef.current = requestAnimationFrame(loop);
         return;
       }
@@ -390,17 +409,17 @@ export default function CodedEndgameReveal({
       if (ticketEl) {
         if (t < T_TICKET_START) {
           ticketEl.style.opacity = '0';
-          ticketEl.style.transform = 'translate(-50%, -50%) scale(0.6)';
+          ticketEl.style.transform = 'translate(-50%, -50%) scale(0.2)';
         } else if (t >= T_TICKET_START && t < T_WIPE_START) {
           const ticketProgress = (t - T_TICKET_START) / (T_WIPE_START - T_TICKET_START);
-          const easeOutBack = (x: number) => {
-            const c1 = 1.70158;
-            const c3 = c1 + 1;
-            return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-          };
-          const scaleTicket = 0.6 + 0.4 * easeOutBack(Math.min(1, ticketProgress));
-          ticketEl.style.opacity = String(Math.min(1, ticketProgress * 2.5));
-          ticketEl.style.transform = `translate(-50%, -50%) scale(${scaleTicket})`;
+          const c1 = 1.70158;
+          const c3 = c1 + 1;
+          const p = Math.min(1, ticketProgress);
+          const easeOut = 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+          const scaleTicket = 0.2 + 0.8 * easeOut;
+          const fastFade = Math.min(1.0, ticketProgress * 3);
+          ticketEl.style.opacity = fastFade.toFixed(3);
+          ticketEl.style.transform = `translate(-50%, -50%) scale(${scaleTicket.toFixed(3)})`;
         } else {
           ticketEl.style.opacity = '1';
           ticketEl.style.transform = 'translate(-50%, -50%) scale(1)';
@@ -550,11 +569,17 @@ export default function CodedEndgameReveal({
           style={{ zIndex: 15 }}
         />
 
-        {/* Ticket Reveal Container (Phase 3 & 4 - Under Card, Revealed on Shatter) */}
+        {/* Ticket Reveal Container (Starts with 0% opacity, grows after explosion) */}
         <div
           ref={ticketRef}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ width: '966px', height: '470px', zIndex: 8 }}
+          style={{
+            width: '966px',
+            height: '470px',
+            zIndex: 8,
+            opacity: 0,
+            transform: 'translate(-50%, -50%) scale(0.2)',
+          }}
         >
           {/* Ticket SVG */}
           <div className="absolute inset-0 w-[966px] h-[470px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
