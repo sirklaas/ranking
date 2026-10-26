@@ -460,8 +460,12 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
 /* ──────── main display component ──────── */
 export default function Top10Display({ state, heading, mediaUrl, faseKey, sessionId }: Top10DisplayProps) {
     const phase = state?.currentQuestion?.phase || 'intro';
-    const votedNames = state ? getVoterNames(state) : [];
-    const liveTally = useMemo(() => getLiveTally(state), [state]);
+    const isMatchingFase = !state?.currentFase || !faseKey || state.currentFase === faseKey;
+    const votedNames = state && isMatchingFase ? getVoterNames(state) : [];
+    const liveTally = useMemo(() => {
+        if (!isMatchingFase) return [];
+        return getLiveTally(state);
+    }, [state, isMatchingFase]);
     const [animateCloud, setAnimateCloud] = useState(false);
     const prevPhaseRef = useRef(phase);
     const videoRef = useRef<HTMLVideoElement>(null);

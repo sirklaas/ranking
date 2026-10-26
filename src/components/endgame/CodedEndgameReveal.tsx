@@ -774,16 +774,6 @@ export default function CodedEndgameReveal({
           className="absolute inset-0 pointer-events-none"
           style={{ zIndex: 20 }}
         />
-
-        {/* Close / Return Button */}
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="absolute top-8 right-8 z-40 bg-black/80 hover:bg-orange-600 text-white font-bold text-sm px-5 py-2.5 rounded-full border border-orange-500/50 backdrop-blur shadow-lg transition-all"
-          >
-            ✕ Terug naar Kaarten
-          </button>
-        )}
       </div>
     </div>
   );

@@ -387,23 +387,23 @@ function NameWall({ allNames = [], votedNames = [] }: { allNames: string[]; vote
   const votedSet = new Set(votedNames);
 
   return (
-    <div className="flex flex-wrap gap-4 justify-center p-8">
+    <div className="flex flex-wrap gap-2.5 justify-center px-4 py-2 max-w-5xl mx-auto">
       {(allNames || []).map((name, i) => {
         const formattedName = formatName(name);
         const hasVoted = votedSet.has(formattedName) || votedSet.has(name);
         return (
           <div
             key={name}
-            className="px-6 py-6 rounded-xl text-2xl transition-all duration-700 pointer-events-none"
+            className="px-4 py-2.5 rounded-xl text-lg md:text-xl transition-all duration-700 pointer-events-none shadow-md backdrop-blur-sm"
             style={{
               fontFamily: 'Barlow Semi Condensed, sans-serif',
-              fontWeight: 300,
-              backgroundColor: 'rgba(255,255,255,0.15)',
+              fontWeight: 400,
+              backgroundColor: 'rgba(255,255,255,0.18)',
               color: 'white',
               opacity: hasVoted ? 0 : 1,
               transform: hasVoted ? 'scale(0)' : 'scale(1)',
-              border: '2px solid rgba(255,255,255,0.2)',
-              animation: hasVoted ? 'none' : `top3NameIn 0.4s ease-out ${i * 40}ms both`,
+              border: '1.5px solid rgba(255,255,255,0.35)',
+              animation: hasVoted ? 'none' : `top3NameIn 0.4s ease-out ${i * 35}ms both`,
             }}
           >
             {formatName(name)}
@@ -551,19 +551,21 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
           </div>
         )}
 
-        {/* Main content — starts below allocated heading height */}
-        <div className="flex-1 flex items-start justify-center p-8 pt-[clamp(150px,21vh,190px)]">
-          {phase === 'results' ? (
+        {/* Main content — results are centered, voting name wall sits at the bottom just above status bar */}
+        {phase === 'results' ? (
+          <div className="flex-1 flex items-center justify-center p-8 pt-[clamp(150px,21vh,190px)]">
             <ResultsView results={state.currentQuestion.results || []} animate={animateResults} />
-          ) : (
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col justify-end items-center px-6 pb-2">
             <NameWall allNames={state?.allPlayerNames || []} votedNames={votedNames} />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Status bar */}
-        <div className="text-center pb-8">
+        <div className="text-center pb-6 pt-2">
           {phase === 'voting' && (
-            <div className="text-white text-4xl font-bold tracking-wider" style={{ fontFamily: barlowFont, textShadow: '0 3px 12px rgba(0,0,0,0.7)' }}>
+            <div className="text-white text-3xl md:text-4xl font-bold tracking-wider" style={{ fontFamily: barlowFont, textShadow: '0 3px 12px rgba(0,0,0,0.8)' }}>
               {votedNames.length} / {(state?.allPlayerNames || []).length} HEBBEN GESTEMD
             </div>
           )}

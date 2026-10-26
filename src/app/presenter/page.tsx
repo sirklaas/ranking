@@ -109,6 +109,30 @@ export default function PresenterPage() {
           updateData.joined_players = [];
           updateData.teamleaders = {};
         }
+        if (fase.startsWith('17/')) {
+          const qIdx = parseInt(fase.split('/')[1] || '0', 10);
+          updateData.top10_state = JSON.stringify({
+            currentFase: fase,
+            currentQuestion: {
+              questionIndex: qIdx,
+              phase: 'voting',
+              votes: [],
+              results: []
+            }
+          });
+        }
+        if (fase.startsWith('10/')) {
+          const qIdx = parseInt(fase.split('/')[1] || '0', 10);
+          updateData.top3_state = JSON.stringify({
+            currentFase: fase,
+            currentQuestion: {
+              questionIndex: qIdx,
+              phase: 'voting',
+              votes: [],
+              results: []
+            }
+          });
+        }
         await rankingService.updateSession(sessionId, updateData);
         // Also update via server-side /api/session-state to immediately bust cache for Display
         try {

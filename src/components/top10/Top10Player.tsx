@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Top10State } from '@/modules/top10/types';
 import { hasPlayerVoted } from '@/modules/top10/logic';
 import TrailerTitleCard from '@/components/common/TrailerTitleCard';
+import CreepyRankingLogo from '@/components/common/CreepyRankingLogo';
 
 interface Top10PlayerProps {
     state: Top10State;
@@ -48,17 +49,18 @@ export default function Top10Player({
     const [submitted, setSubmitted] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
 
-    // Reset local submitted state if questionIndex changes (prevents "Je hebt gestemd" lingering on next slide)
+    // Reset local submitted state if questionIndex or faseKey changes (prevents "Je hebt gestemd" lingering on next slide)
     React.useEffect(() => {
         setSubmitted(false);
         setSelected(null);
         setQuery('');
-    }, [state?.currentQuestion?.questionIndex]);
+    }, [state?.currentQuestion?.questionIndex, state?.currentFase, faseKey]);
 
     const isVoting = state?.currentQuestion?.phase === 'voting';
     const isResults = state?.currentQuestion?.phase === 'results';
 
-    const alreadyVoted = hasPlayerVoted(state, playerId || '');
+    const isMatchingFase = !state?.currentFase || !faseKey || state.currentFase === faseKey;
+    const alreadyVoted = isMatchingFase && hasPlayerVoted(state, playerId || '');
 
     const rawPool: string[] = Array.isArray(state?.allPlayerNames) && state.allPlayerNames.length > 0
         ? state.allPlayerNames
@@ -231,7 +233,7 @@ export default function Top10Player({
                     style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
                 >
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-full max-h-28 w-auto object-contain p-2" />
+                        <CreepyRankingLogo size="sm" />
                     </div>
                 </div>
 

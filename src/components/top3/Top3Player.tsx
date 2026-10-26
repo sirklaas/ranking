@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Top3State } from '@/modules/top3/types';
 import { hasPlayerVoted } from '@/modules/top3/logic';
 import TrailerTitleCard from '@/components/common/TrailerTitleCard';
+import CreepyRankingLogo from '@/components/common/CreepyRankingLogo';
 
 interface Top3PlayerProps {
   state: Top3State;
@@ -189,7 +190,7 @@ export default function Top3Player({
           style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
-            <img src="/assets/ranking_logo.webp" alt="Ranking Logo" className="h-full max-h-28 w-auto object-contain p-2" />
+            <CreepyRankingLogo size="sm" />
           </div>
         </div>
 

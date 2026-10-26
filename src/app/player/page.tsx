@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import CreepyRankingLogo from '@/components/common/CreepyRankingLogo';
 import { rankingService, teamService, faseService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
@@ -713,16 +714,9 @@ export default function PlayerPage() {
             minHeight: '20vh' // Ensure proper height
           }}
         >
-          {/* Logo Overlay - Much Bigger */}
+          {/* Creepy Ranking Logo Overlay */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <Image
-              src="/assets/ranking_logo.webp"
-              alt="Ranking Logo"
-              width={256}
-              height={128}
-              className="h-full max-h-32 w-auto object-contain p-2"
-              priority
-            />
+            <CreepyRankingLogo size="lg" />
           </div>
         </div>
 

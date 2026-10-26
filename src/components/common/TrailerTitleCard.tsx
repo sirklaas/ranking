@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+import CreepyRankingLogo from '@/components/common/CreepyRankingLogo';
 
 interface TrailerTitleCardProps {
   title: string;
@@ -55,52 +55,46 @@ export default function TrailerTitleCard({
 
   return (
     <div
-      className="min-h-screen w-full relative overflow-hidden flex flex-col justify-between select-none"
+      className="h-[100dvh] max-h-screen w-full relative overflow-hidden flex flex-col justify-between select-none p-2 sm:p-4"
       style={{
         fontFamily: '"Barlow Semi Condensed", sans-serif',
         background: 'radial-gradient(circle at 50% 40%, #1e2875 0%, #0A1752 50%, #050b29 100%)',
       }}
     >
-      {/* Top Ranking Logo Band */}
+      {/* Top Creepy Ranking Logo Band */}
       <div
-        className="relative bg-cover bg-center bg-no-repeat shrink-0 w-full overflow-hidden shadow-lg border-b border-white/10"
+        className="relative bg-cover bg-center bg-no-repeat shrink-0 w-full overflow-hidden shadow-lg border-b border-orange-500/20 rounded-2xl"
         style={{
           backgroundImage: 'url(/assets/band.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          height: '13vh',
+          height: '10vh',
+          maxHeight: '75px',
         }}
       >
         <div className="absolute inset-0 flex items-center justify-center">
-          <Image
-            src="/assets/ranking_logo.webp"
-            alt="Ranking the Starzzz Logo"
-            width={256}
-            height={128}
-            className="h-full max-h-24 w-auto object-contain p-2"
-            priority
-          />
+          <CreepyRankingLogo size="sm" />
         </div>
       </div>
 
       {/* Ambient background glowing circles */}
-      <div className="absolute w-96 h-96 rounded-full bg-blue-500/20 blur-3xl -top-10 -left-20 pointer-events-none animate-pulse" />
-      <div className="absolute w-96 h-96 rounded-full bg-pink-500/15 blur-3xl -bottom-20 -right-20 pointer-events-none animate-pulse" style={{ animationDelay: '1.5s' }} />
+      <div className="absolute w-72 h-72 rounded-full bg-orange-500/10 blur-3xl -top-10 -left-20 pointer-events-none animate-pulse" />
+      <div className="absolute w-72 h-72 rounded-full bg-purple-500/15 blur-3xl -bottom-20 -right-20 pointer-events-none animate-pulse" style={{ animationDelay: '1.5s' }} />
 
-      {/* Main card content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 text-center">
+      {/* Main card content - lifted higher so nothing is cut off */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-2 text-center my-auto">
         <div
           className="flex flex-col items-center max-w-sm w-full"
           style={{
-            animation: 'trailerPopIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+            animation: 'trailerPopIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}
         >
           {/* Animated Badge Icon */}
-          <div className="relative mb-5">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-[#0A1752] via-[#24358a] to-[#3b82f6] border-2 border-white/40 shadow-2xl flex items-center justify-center relative overflow-hidden">
+          <div className="relative mb-3">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0A1752] via-[#24358a] to-[#3b82f6] border-2 border-white/40 shadow-xl flex items-center justify-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent" />
               <svg
-                className="w-10 h-10 text-yellow-300 drop-shadow-md animate-pulse"
+                className="w-7 h-7 text-yellow-300 drop-shadow-md animate-pulse"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
@@ -108,14 +102,14 @@ export default function TrailerTitleCard({
               </svg>
             </div>
             {/* Subtle pulse ring around badge */}
-            <div className="absolute inset-0 rounded-3xl border-2 border-yellow-400/50 animate-ping pointer-events-none" style={{ animationDuration: '3s' }} />
+            <div className="absolute inset-0 rounded-2xl border-2 border-yellow-400/50 animate-ping pointer-events-none" style={{ animationDuration: '3s' }} />
           </div>
 
           {/* Title */}
           <h1
-            className="text-white uppercase font-black tracking-wider leading-none drop-shadow-2xl mb-4"
+            className="text-white uppercase font-black tracking-wider leading-none drop-shadow-2xl mb-2.5"
             style={{
-              fontSize: 'clamp(2.6rem, 10vw, 4.8rem)',
+              fontSize: 'clamp(2.1rem, 8vw, 3.4rem)',
               textShadow: '0 4px 20px rgba(0,0,0,0.8), 0 0 30px rgba(255,255,255,0.2)',
             }}
           >
@@ -123,42 +117,42 @@ export default function TrailerTitleCard({
           </h1>
 
           {/* Divider pill */}
-          <div className="h-1.5 w-24 rounded-full bg-gradient-to-r from-yellow-400 via-pink-400 to-blue-400 mb-6 shadow-md" />
+          <div className="h-1.5 w-20 rounded-full bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 mb-3 shadow-md" />
 
           {/* Subtitle with pulsing indicator */}
-          <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-ping" />
-            <span className="text-white/90 text-lg font-medium tracking-wide">
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+            <span className="text-white/90 text-base font-medium tracking-wide">
               {subtitle}
             </span>
           </div>
 
           {fase && (
-            <div className="text-white/40 text-xs font-mono mt-4 tracking-widest uppercase">
+            <div className="text-white/40 text-[11px] font-mono mt-2 tracking-widest uppercase">
               Fase {fase}
             </div>
           )}
         </div>
       </div>
 
-      {/* Bottom Photo App section */}
-      <div className="w-full max-w-sm px-4 pb-6 mx-auto flex flex-col items-center text-center z-20 shrink-0">
+      {/* Bottom Photo App section - lifted up so it always stays visible above fold */}
+      <div className="w-full max-w-sm px-2 pb-2 mx-auto flex flex-col items-center text-center z-20 shrink-0">
         <a
           href={photoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full py-3.5 px-6 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
+          className="w-full py-2.5 px-5 rounded-full bg-gradient-to-r from-[#0A1752] to-[#1e2875] text-white font-bold border-2 border-white/80 shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-lg"
           style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}
         >
           <span>Photo App {teamNum ? `[ Team ${teamNum} ]` : ''}</span>
-          <svg className="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
         </a>
-        <div className="mt-3 text-white/95 text-base font-bold leading-snug drop-shadow" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
+        <div className="mt-2 text-white/95 text-sm sm:text-base font-bold leading-tight drop-shadow" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
           Vergeet niet om filmpjes en foto&apos;s te delen.
         </div>
-        <div className="text-yellow-300 text-sm font-bold drop-shadow tracking-wide mt-0.5" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
+        <div className="text-yellow-300 text-xs sm:text-sm font-bold drop-shadow tracking-wide mt-0.5" style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}>
           [ vooral van de quizmaster want die tellen dubbel ]
         </div>
       </div>

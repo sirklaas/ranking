@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import type { FaseCommonProps } from '@/types/fases';
 import TrailerTitleCard from '@/components/common/TrailerTitleCard';
+import CreepyRankingLogo from '@/components/common/CreepyRankingLogo';
 
 // Exact video durations on Display (in ms) so phone does not reveal stelling until video completes
 const ZITTEN_DURATIONS: Record<string, number> = {
@@ -36,10 +37,32 @@ const ZITTEN_STELLINGEN: Record<string, string> = {
   '07/15': 'Teveel /n Ik drink nooit',
 };
 
-const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
+const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo, heading }) => {
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [isReady, setIsReady] = useState(false);
   const prevFaseRef = useRef(faseKey);
+
+  const handleVote = async (selected: 'red' | 'blue') => {
+    setChoice(selected);
+    if (!sessionId || !faseKey) return;
+    try {
+      const pid = playerInfo?.playerId || (typeof window !== 'undefined' ? localStorage.getItem('rankingPlayerData_slot1') || 'anon' : 'anon');
+      await fetch('/api/zitten-vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          fase: faseKey,
+          playerId: playerInfo?.playerId || pid,
+          playerName: playerInfo?.playerName || 'Speler',
+          teamNumber: playerInfo?.teamNumber || 0,
+          choice: selected,
+        }),
+      });
+    } catch (e) {
+      console.warn('[Zitten PlayerView] Vote failed:', e);
+    }
+  };
 
   // Determine two-line stelling text
   const rawText = (faseKey && ZITTEN_STELLINGEN[faseKey]) || heading || 'Zitten en Staan';
@@ -134,14 +157,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
         }}
       >
         <div className="absolute inset-0 flex items-center justify-center">
-          <Image
-            src="/assets/ranking_logo.webp"
-            alt="Ranking Logo"
-            width={256}
-            height={128}
-            className="h-full max-h-28 w-auto object-contain p-2"
-            priority
-          />
+          <CreepyRankingLogo size="sm" />
         </div>
       </div>
 
@@ -171,7 +187,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
           >
             <div className="flex-1 flex flex-col items-center gap-3">
               <button
-                onClick={() => setChoice('red')}
+                onClick={() => handleVote('red')}
                 className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
                 style={{
                   background: 'linear-gradient(145deg, #e53e3e, #c53030)',
@@ -192,7 +208,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, heading }) => {
 
             <div className="flex-1 flex flex-col items-center gap-3">
               <button
-                onClick={() => setChoice('blue')}
+                onClick={() => handleVote('blue')}
                 className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
                 style={{
                   background: 'linear-gradient(145deg, #3182ce, #2b6cb0)',

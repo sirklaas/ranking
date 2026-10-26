@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { FaseCommonProps } from '@/types/fases';
 import { ENDGAME_CARDS, EndgameState, DEFAULT_ENDGAME_STATE, EndgameCard } from './endgameData';
+import CreepyRankingLogo from '@/components/common/CreepyRankingLogo';
 
 const PlayerView: React.FC<FaseCommonProps> = ({
   sessionId,
@@ -153,11 +154,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({
         />
         <div className="absolute inset-0 bg-black/20" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <img
-            src="/assets/ranking_logo.webp"
-            alt="Ranking"
-            className="h-[60%] w-auto object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
-          />
+          <CreepyRankingLogo size="sm" />
         </div>
       </div>
 
