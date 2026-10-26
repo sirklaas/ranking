@@ -88,6 +88,14 @@ export default function TestPhonesPage() {
     const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
     const handleResetAll = async () => {
+        for (let i = 1; i <= 6; i++) {
+            try {
+                localStorage.removeItem(`rankingPlayerData_slot${i}`);
+                localStorage.removeItem(`rankingTeam_slot${i}`);
+                localStorage.removeItem(`voted_top3_slot${i}`);
+                localStorage.removeItem(`voted_top10_slot${i}`);
+            } catch {}
+        }
         setResetKey((k) => k + 1);
         try {
             const sid = activeSessionId || code || 'latest';
@@ -99,6 +107,43 @@ export default function TestPhonesPage() {
         } catch (err) {
             console.warn('Failed to reset server joined players', err);
         }
+    };
+
+    const handleAutoJoinAll = async () => {
+        const testPlayers = [
+            { team: 1, name: '001 Angela' },
+            { team: 2, name: '002 Anita' },
+            { team: 3, name: '003 Anouk' },
+            { team: 4, name: '004 Chantal' },
+            { team: 1, name: '001 Astrid' },
+            { team: 2, name: '002 Beau' },
+        ];
+        const sid = activeSessionId || code || 'latest';
+
+        for (let i = 0; i < testPlayers.length; i++) {
+            const p = testPlayers[i];
+            const slot = i + 1;
+            const data = { teamNumber: p.team, playerName: p.name };
+            try {
+                localStorage.setItem(`rankingPlayerData_slot${slot}`, JSON.stringify(data));
+                localStorage.setItem(`rankingTeam_slot${slot}`, p.team.toString());
+            } catch {}
+
+            try {
+                await fetch('/api/session-state', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: sid,
+                        action: 'join_player',
+                        playerName: p.name
+                    })
+                });
+            } catch (err) {
+                console.warn('Auto-join player error:', err);
+            }
+        }
+        setResetKey((k) => k + 1);
     };
 
     useEffect(() => {
@@ -190,6 +235,13 @@ export default function TestPhonesPage() {
                     >
                         🎬 Trailers & Traits
                     </a>
+                    <button
+                        onClick={handleAutoJoinAll}
+                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-lg border border-emerald-400 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.5)] flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                        title="Meld direct 6 testspelers aan over alle 4 teams"
+                    >
+                        <span>⚡</span> Auto-Join 6 Spelers
+                    </button>
                     <button
                         onClick={handleResetAll}
                         className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-extrabold rounded-lg border border-orange-400 transition-colors shadow-[0_0_15px_#ea580c] flex items-center gap-1.5 active:scale-95 cursor-pointer"

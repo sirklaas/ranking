@@ -741,12 +741,32 @@ export default function PresenterPage() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => setCurrentView('manage')}
-                className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
-              >
-                ← Back to Setup
-              </button>
+              <div className="flex items-center gap-3">
+                <a
+                  href="/test-phones"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2.5 rounded-lg font-bold shadow-md flex items-center gap-2 text-sm transition-all hover:scale-105 active:scale-95"
+                  title="Open 6 test telefoons matrix in nieuw tabblad"
+                >
+                  📱 6 Test Phones
+                </a>
+                <a
+                  href="/display"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg font-bold shadow-md flex items-center gap-2 text-sm transition-all hover:scale-105 active:scale-95"
+                  title="Open Display scherm in nieuw tabblad"
+                >
+                  🖥️ Display
+                </a>
+                <button
+                  onClick={() => setCurrentView('manage')}
+                  className="bg-gray-600 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-sm"
+                >
+                  ← Setup
+                </button>
+              </div>
             </div>
           </div>
 
