@@ -167,16 +167,17 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     >
       {/* 8 Cards Grid view */}
       <div
-        className={`w-full h-full p-4 md:p-8 flex flex-col justify-center transition-all duration-700 ${
+        className={`w-full h-full pt-6 md:pt-10 pb-8 px-6 md:px-12 flex flex-col justify-start items-center transition-all duration-700 ${
           isRevealActive || isEndTitle ? 'opacity-0 scale-90 blur-xl pointer-events-none' : 'opacity-100 scale-100 blur-0'
         }`}
       >
+        {/* Heading moved higher */}
         <div className="text-center mb-4 md:mb-6">
-          <span className="text-orange-500 text-xs font-mono tracking-[0.3em] uppercase block mb-1">
+          <span className="text-orange-500 text-xs font-mono tracking-[0.3em] uppercase block mb-0.5">
             De Grote Ontknoping · Munten Verdeling
           </span>
           <h2
-            className="text-white text-4xl md:text-5xl font-normal uppercase tracking-wider"
+            className="text-white text-3xl md:text-5xl font-normal uppercase tracking-wider"
             style={{
               fontFamily: '"BrewHouse-Aged", "BrewHouse", sans-serif',
               textShadow: '0 0 20px rgba(255,117,24,0.8)'
@@ -186,7 +187,15 @@ const DisplayView: React.FC<FaseCommonProps> = ({
           </h2>
         </div>
 
-        <div className="grid grid-cols-4 gap-5 md:gap-7 max-w-[85vw] mx-auto w-full max-h-[72vh] items-center">
+        {/* 8 Cards Grid - Identical row and column spacing */}
+        <div
+          className="grid grid-cols-4 max-w-[85vw] mx-auto w-full"
+          style={{
+            gap: '28px',
+            rowGap: '28px',
+            columnGap: '28px',
+          }}
+        >
           {ENDGAME_CARDS.map(card => {
             const used = state.usedCards.includes(card.id);
             const isSelected = state.selectedCard === card.id;

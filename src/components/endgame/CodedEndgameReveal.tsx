@@ -268,11 +268,15 @@ export default function CodedEndgameReveal({
         const cardEl = cardContainerRef.current;
         if (cardEl) {
           cardEl.style.display = 'flex';
+          cardEl.style.left = '50%';
+          cardEl.style.top = '50%';
           cardEl.style.transform = 'translate(-50%, -50%) scale(1)';
           cardEl.style.opacity = '1';
         }
         const ticketEl = ticketRef.current;
         if (ticketEl) {
+          ticketEl.style.left = '50%';
+          ticketEl.style.top = '50%';
           ticketEl.style.opacity = '0';
           ticketEl.style.transform = 'translate(-50%, -50%) scale(0.2)';
         }
@@ -344,6 +348,8 @@ export default function CodedEndgameReveal({
       if (t < T_SHATTER_START) {
         if (cardEl) {
           cardEl.style.display = 'flex';
+          cardEl.style.left = '50%';
+          cardEl.style.top = '50%';
           const breathe = 1.0 + 0.02 * Math.sin(t * 1.5);
           cardEl.style.transform = `translate(-50%, -50%) scale(${breathe})`;
           cardEl.style.opacity = '1';
@@ -401,12 +407,14 @@ export default function CodedEndgameReveal({
         if (shCanvas) shCanvas.style.display = 'none';
       }
 
-      // 4. Ticket Reveal & Star Spin
+      // 4. Ticket Reveal & Star Spin (Centered Horizontally & Vertically)
       const ticketEl = ticketRef.current;
       const starEl = starGroupRef.current;
       const wipeEl = wipeRectRef.current;
 
       if (ticketEl) {
+        ticketEl.style.left = '50%';
+        ticketEl.style.top = '50%';
         if (t < T_TICKET_START) {
           ticketEl.style.opacity = '0';
           ticketEl.style.transform = 'translate(-50%, -50%) scale(0.2)';
@@ -539,11 +547,22 @@ export default function CodedEndgameReveal({
           style={{ zIndex: 2 }}
         />
 
-        {/* Center Card Container (Phase 1 - On Top of Ticket) */}
+        {/* Center Card Container (Phase 1 - Centered Horizontally & Vertically) */}
         <div
           ref={cardContainerRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"
-          style={{ width: '600px', height: '600px', zIndex: 10 }}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '600px',
+            height: '600px',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
         >
           <img
             src={card.image}
@@ -565,20 +584,30 @@ export default function CodedEndgameReveal({
           ref={shatterCanvasRef}
           width={1920}
           height={1080}
-          className="absolute inset-0 pointer-events-none"
-          style={{ zIndex: 15 }}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: '1920px',
+            height: '1080px',
+            zIndex: 15,
+            pointerEvents: 'none',
+          }}
         />
 
-        {/* Ticket Reveal Container (Starts with 0% opacity, grows after explosion) */}
+        {/* Ticket Reveal Container (Starts with 0% opacity, grows after explosion - Centered Horizontally & Vertically) */}
         <div
           ref={ticketRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
           style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%) scale(0.2)',
             width: '966px',
             height: '470px',
             zIndex: 8,
             opacity: 0,
-            transform: 'translate(-50%, -50%) scale(0.2)',
+            pointerEvents: 'none',
           }}
         >
           {/* Ticket SVG */}
