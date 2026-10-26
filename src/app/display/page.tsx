@@ -400,10 +400,10 @@ export default function DisplayPage() {
 
     // Render module if it has a DisplayView AND either:
     // - no stateField required, OR state exists, OR this is NOT the trailer slot (*/01)
-    // On question slides (e.g. 10/05), render the module even without state — DisplayView handles the fallback
-    const isTrailerSlot = currentSession.current_fase.endsWith('/01');
+    // - for 20/01 (De Finale), it is the main endgame module itself (not a trailer), so always render
+    const isTrailerSlot = currentSession.current_fase.endsWith('/01') && currentSession.current_fase !== '20/01';
     const stateReady = !mod?.stateField || !!moduleStates[mod.stateField];
-    if (mod?.DisplayView && (stateReady || !isTrailerSlot)) {
+    if (mod?.DisplayView && (stateReady || !isTrailerSlot || currentSession.current_fase === '20/01')) {
       const headingsJson = currentSession.headings || '{}';
       const heading = faseService.getCurrentHeading(headingsJson, currentSession.current_fase) || '';
       const imageName = faseService.getCurrentImage(headingsJson, currentSession.current_fase) || '';

@@ -110,6 +110,16 @@ export default function PresenterPage() {
           updateData.teamleaders = {};
         }
         await rankingService.updateSession(sessionId, updateData);
+        // Also update via server-side /api/session-state to immediately bust cache for Display
+        try {
+          await fetch('/api/session-state', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: sessionId, data: updateData })
+          });
+        } catch {
+          // ignore API error
+        }
         setPbStatus(`✓ ${fase}`);
         console.log(`[Presenter] PB write OK: ${fase} (attempt ${attempt})`);
         return;
@@ -121,6 +131,21 @@ export default function PresenterPage() {
     }
     setPbStatus(`FAIL ${fase}`);
   }, []);
+
+  // Ensure active session claims priority=1 so Display polls and connects to this session
+  useEffect(() => {
+    if (selectedSession && currentView === 'game') {
+      const sess = selectedSession as unknown as Record<string, unknown>;
+      if (sess.priority !== 1) {
+        rankingService.updateSession(selectedSession.id, { priority: 1 }).catch(() => {});
+        fetch('/api/session-state', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: selectedSession.id, data: { priority: 1 } })
+        }).catch(() => {});
+      }
+    }
+  }, [currentView, selectedSession?.id]);
 
 
   // Subscribe to PB real-time updates for the active session (to show live votes arriving)
@@ -725,8 +750,8 @@ export default function PresenterPage() {
             </div>
           </div>
 
-          {/* Module-specific controls (resolved from fase registry) */}
-          {(() => {
+          {/* Module-specific controls (resolved from fase registry) - except 20/01 which renders in full grid below */}
+          {currentFase !== '20/01' && (() => {
             const mod = findFaseModule(currentFase);
             if (!mod || !selectedSession) return null;
             const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
@@ -741,8 +766,43 @@ export default function PresenterPage() {
               />
             );
           })()}
-          {/* Main content grid: 48% | 44% | 8% (no outer spacers) */}
-          {currentFase.startsWith('13/') ? (
+          {/* Main content grid */}
+          {currentFase === '20/01' ? (
+            <div className="mt-4 flex gap-4 pr-6" style={{ height: 'calc(100vh - 160px)' }}>
+              <div className="flex-1 h-full rounded-2xl overflow-hidden shadow-2xl">
+                {(() => {
+                  const mod = findFaseModule(currentFase);
+                  if (!mod || !selectedSession) return null;
+                  const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
+                  return (
+                    <mod.PresenterView
+                      key={mod.stateField || currentFase}
+                      faseKey={currentFase}
+                      sessionId={selectedSession.id}
+                      moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+                      onModuleStateJson={(json) => { if (mod.stateField) { localWriteTs.current = Date.now(); setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); } }}
+                      allPlayerNames={allPlayerNames}
+                    />
+                  );
+                })()}
+              </div>
+              <div className="space-y-3 flex flex-col w-[8%] min-w-[120px]">
+                {phaseButtons.map((phase) => (
+                  <button
+                    key={phase.label}
+                    onClick={() => handlePhaseNavigation(phase.fases[0])}
+                    className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
+                      ? 'bg-orange-600 shadow-lg'
+                      : 'bg-orange-400 hover:bg-orange-500'
+                      }`}
+                  >
+                    <div>{phase.label}</div>
+                    <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : currentFase.startsWith('13/') ? (
             <div className="mt-4 flex justify-end pr-6">
               <div className="space-y-3 flex flex-col w-[8%] min-w-[120px]">
                 {phaseButtons.map((phase) => (

@@ -54,19 +54,18 @@ const PresenterView: React.FC<FaseCommonProps> = ({
     }
 
     // Persist to PocketBase
-    if (sessionId) {
-      try {
-        await fetch('/api/session-state', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: sessionId,
-            data: { endgame_state: stateWithTs }
-          })
-        });
-      } catch (err) {
-        console.error('[Endgame Presenter] Error saving state:', err);
-      }
+    const targetId = sessionId || 'latest';
+    try {
+      await fetch('/api/session-state', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetId,
+          data: { endgame_state: stateWithTs }
+        })
+      });
+    } catch (err) {
+      console.error('[Endgame Presenter] Error saving state:', err);
     }
   }, [sessionId, onModuleStateJson]);
 

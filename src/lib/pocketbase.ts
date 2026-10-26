@@ -92,6 +92,49 @@ export const motherfileService = {
       'billen': 'RankingBillen.m4v',
       'gat': 'RankingGat.m4v',
       'teveel': 'RankingDrink.m4v',
+      // Legacy to Halloween mappings:
+      'verliefd': 'dracula.webp',
+      'verliefd.webp': 'dracula.webp',
+      'schoonzoon': 'frankenstein.webp',
+      'schoonzoon.webp': 'frankenstein.webp',
+      'andes': 'zombie.webp',
+      'andes.webp': 'zombie.webp',
+      'kinderen': 'witch.webp',
+      'kinderen.webp': 'witch.webp',
+      'crypto': 'mummy.webp',
+      'crypto.webp': 'mummy.webp',
+      'cry': 'skeleton.webp',
+      'cry.webp': 'skeleton.webp',
+      'only': 'werewolf.webp',
+      'only.webp': 'werewolf.webp',
+      'geheim': 'ghost.webp',
+      'geheim.webp': 'ghost.webp',
+      'parenclub': 'sinister-man.webp',
+      'parenclub.webp': 'sinister-man.webp',
+      'pukkel': 'hannibal.webp',
+      'pukkel.webp': 'hannibal.webp',
+      'right': 'always-right.webp',
+      'right.webp': 'always-right.webp',
+      'plaatje': 'photoshoot.webp',
+      'plaatje.webp': 'photoshoot.webp',
+      '40dagen': '40-days.webp',
+      '40dagen.webp': '40-days.webp',
+      'echt': 'trump-pumpkin.webp',
+      'echt.webp': 'trump-pumpkin.webp',
+      'selfie.webp': 'selfie-monster.webp',
+      'socials.webp': 'socials-zombie.webp',
+      'verlies': 'speeding-ticket.webp',
+      'verlies.webp': 'speeding-ticket.webp',
+      'end.m4v': 'trailercreepy.m4v',
+      'end.webp': 'trailercreepy.m4v',
+      'bedriegelijk.webp': 'betoverd.jpeg',
+      'beschermend.webp': 'elegant.jpeg',
+      'creatief.webp': 'gentle.jpeg',
+      'dapper.webp': 'muzikaal.jpeg',
+      'doorzetter.webp': 'mystiek.jpeg',
+      'sinister.webp': 'ondeugend.jpeg',
+      'vreugdevol.webp': 'vrolijk.jpeg',
+      'wreed.webp': 'wijs.jpeg',
     };
 
     if (aliasMap[clean.toLowerCase()]) {
@@ -101,28 +144,33 @@ export const motherfileService = {
     const webpName = clean.replace(/\.(png|jpe?g)$/i, '.webp');
     const lower = webpName.toLowerCase();
 
-    const top3Files = ['andes.webp', 'crypto.webp', 'cry.webp', 'geheim.webp', 'kinderen.webp', 'only.webp', 'parenclub.webp', 'schoonzoon.webp', 'verliefd.webp'];
     const top3HalloweenFiles = ['dracula.webp', 'einstein.webp', 'frankenstein.webp', 'ghost.webp', 'mummy.webp', 'sinister-man.webp', 'skeleton.webp', 'werewolf.webp', 'witch.webp', 'zombie.webp'];
-    const top10Files = ['40dagen.webp', 'echt.webp', 'plaatje.webp', 'pukkel.webp', 'right.webp', 'selfie.webp', 'socials.webp', 'verlies.webp'];
     const top10HalloweenFiles = ['40-days.webp', 'always-right.webp', 'hannibal.webp', 'inlaw.webp', 'photoshoot.webp', 'selfie-monster.webp', 'socials-zombie.webp', 'speeding-ticket.webp', 'temptation.webp', 'trump-pumpkin.webp'];
-    const endFiles = ['end.m4v', 'end.webp', 'bedriegelijk.webp', 'beschermend.webp', 'creatief.webp', 'dapper.webp', 'doorzetter.webp', 'sinister.webp', 'vreugdevol.webp', 'wreed.webp'];
-    const endHalloweenFiles = ['betoverd.jpeg', 'elegant.jpeg', 'gentle.jpeg', 'muzikaal.jpeg', 'mystiek.jpeg', 'ondeugend.jpeg', 'vrolijk.jpeg', 'wijs.jpeg'];
+    const endHalloweenFiles = ['betoverd.jpeg', 'betoverd.webp', 'elegant.jpeg', 'elegant.webp', 'gentle.jpeg', 'gentle.webp', 'muzikaal.jpeg', 'muzikaal.webp', 'mystiek.jpeg', 'mystiek.webp', 'ondeugend.jpeg', 'ondeugend.webp', 'vrolijk.jpeg', 'vrolijk.webp', 'wijs.jpeg', 'wijs.webp'];
     const trailers = ['trailerzitten.mp4', 'trailertop3.mp4', 'top3.mp4', 'krakendekarakters.mp4', 'top10.mp4', 'guiltypleasure.mp4', 'trailercreepy.m4v'];
 
     if (top3HalloweenFiles.includes(lower)) {
       return `/pics/Top3 Haloween/${webpName}`;
     }
-    if (top3Files.includes(lower)) {
-      return `/pics/Top3/${webpName}`;
-    }
     if (top10HalloweenFiles.includes(lower)) {
       return `/pics/Top10Haloween/${webpName}`;
     }
-    if (top10Files.includes(lower)) {
-      return `/pics/Top10/${webpName}`;
-    }
     if (endHalloweenFiles.includes(clean.toLowerCase())) {
       return `/pics/End Haloween/${clean}`;
+    }
+    if (trailers.includes(clean.toLowerCase())) {
+      return `/pics/HaloweenTrailer/trailercreepy.m4v`;
+    }
+
+    const top3Files = ['andes.webp', 'crypto.webp', 'cry.webp', 'geheim.webp', 'kinderen.webp', 'only.webp', 'parenclub.webp', 'schoonzoon.webp', 'verliefd.webp'];
+    const top10Files = ['40dagen.webp', 'echt.webp', 'plaatje.webp', 'pukkel.webp', 'right.webp', 'selfie.webp', 'socials.webp', 'verlies.webp'];
+    const endFiles = ['end.m4v', 'end.webp', 'bedriegelijk.webp', 'beschermend.webp', 'creatief.webp', 'dapper.webp', 'doorzetter.webp', 'sinister.webp', 'vreugdevol.webp', 'wreed.webp'];
+
+    if (top3Files.includes(lower)) {
+      return `/pics/Top3/${webpName}`;
+    }
+    if (top10Files.includes(lower)) {
+      return `/pics/Top10/${webpName}`;
     }
     if (endFiles.includes(lower)) {
       return `/pics/End/${clean}`;
@@ -420,7 +468,7 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '01/06': { heading: 'Maak een selfie Video en zet die in de Photo App', image: 'RankingSelfie.mp4' },
   '01/07': { heading: 'Wie is jullie Teamleider?', image: '' },
   '02/00': { heading: 'Tijd voor\nronde 2!', image: null },
-  '07/01': { heading: 'Blijf staan als je het eens /n bent met de volgende stelling:', image: 'TrailerZitten.mp4' },
+  '07/01': { heading: 'Blijf staan als je het eens /n bent met de volgende stelling:', image: 'trailercreepy.m4v' },
   '07/05': { heading: 'Superfoods /n Ik zweer erbij', image: 'RankingSuperfoods.m4v' },
   '07/06': { heading: 'Ik flirt soms /n om iets te krijgen', image: 'RankingFlirt.m4v' },
   '07/07': { heading: 'Houseparty /n Niks leukers dan', image: 'RankingHouseparty.m4v' },
@@ -432,34 +480,34 @@ export const DEFAULT_HEADINGS: Record<string, { heading: string; image?: string 
   '07/13': { heading: 'Billen /n Ik val echt op', image: 'RankingBillen.m4v' },
   '07/14': { heading: 'Gat in mijn hand /n Ik heb een enorm', image: 'RankingGat.m4v' },
   '07/15': { heading: 'Teveel /n Ik drink nooit', image: 'RankingDrink.m4v' },
-  '10/01': { heading: '', image: 'TrailerTop3.mp4' },
-  '10/05': { heading: 'Wie wordt er heel snel verliefd', image: 'verliefd.webp' },
-  '10/06': { heading: 'Wie is de ideale schoonzoon of zus?', image: 'schoonzoon.webp' },
-  '10/07': { heading: 'Vliegtuig neer in de Andes. Wie eet je eerst op?', image: 'andes.webp' },
-  '10/08': { heading: 'Wie zou je niet op je kinderen laten passen?', image: 'kinderen.webp' },
-  '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: 'crypto.webp' },
-  '10/10': { heading: 'Wie komt het vaakst te laat?', image: 'cry.webp' },
-  '10/11': { heading: 'Wie maakt als eerste een OnlyFans account?', image: 'only.webp' },
-  '10/12': { heading: 'Wie moet je zeker geen geheim vertellen?', image: 'geheim.webp' },
-  '10/13': { heading: 'Wie neem je mee naar een parenclub?', image: 'parenclub.webp' },
-  '13/01': { heading: 'Krakende Karakters', image: 'KrakendeKarakters.mp4' },
-  '13/02': { heading: '24 Goede Eigenschappen', image: '' },
-  '13/03': { heading: '24 Minder Goede Eigenschappen', image: '' },
+  '10/01': { heading: 'De Top 3', image: 'trailercreepy.m4v' },
+  '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: 'dracula.webp' },
+  '10/06': { heading: 'Wie is de ideale schoon- zoon of zus?', image: 'frankenstein.webp' },
+  '10/07': { heading: 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?', image: 'zombie.webp' },
+  '10/08': { heading: 'Wie zou je absoluut niet op je kinderen laten passen?', image: 'witch.webp' },
+  '10/09': { heading: "Wie heeft de meeste crypto's", image: 'mummy.webp' },
+  '10/10': { heading: 'Wie komt het vaakst te laat?', image: 'skeleton.webp' },
+  '10/11': { heading: 'Wie zou er als eerste een account aanmaken /n op OnlyFans?', image: 'werewolf.webp' },
+  '10/12': { heading: 'Wie moet je zeker geen geheim vertellen?', image: 'ghost.webp' },
+  '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: 'sinister-man.webp' },
+  '13/01': { heading: 'Krakende Karakters', image: 'trailercreepy.m4v' },
+  '13/02': { heading: 'Hoe kom je hier doorheen?', image: '' },
+  '13/03': { heading: 'Goede Geinige Eigenschappen', image: '' },
   '13/04': { heading: 'Resultaten Goede Eigenschappen', image: '' },
-  '13/05': { heading: 'Resultaten Minder Goede Eigenschappen', image: '' },
-  '17/01': { heading: 'De Top 10', image: 'Top10.mp4' },
+  '13/05': { heading: 'Geinige grappenmaker...', image: '' },
+  '17/01': { heading: 'De Top 10', image: 'trailercreepy.m4v' },
   '17/02': { heading: 'Kies iemand uit een ander team!', image: '' },
-  '17/05': { heading: 'Wie mag een pukkel op je bil uitknijpen?', image: 'pukkel.webp' },
-  '17/06': { heading: 'Wie denkt altijd gelijk te hebben?', image: 'right.webp' },
-  '17/07': { heading: 'Wie doet mee aan naakte fotoshoot?', image: 'plaatje.webp' },
-  '17/08': { heading: 'Wie is de grootste zuiplap van de familie?', image: '40dagen.webp' },
-  '17/09': { heading: 'Wie kan absoluut niet tegen kritiek?', image: 'verlies.webp' },
-  '17/10': { heading: 'Wie laat weleens een wind?', image: 'echt.webp' },
-  '17/11': { heading: 'Wie maakt de lelijkste Selfies?', image: 'selfie.webp' },
-  '17/12': { heading: 'Wie is meest verslaafd aan Social Media?', image: 'socials.webp' },
-  '17/13': { heading: 'Wie heeft de grootste mond?', image: '' },
-  '17/14': { heading: 'Wie is de grootste drama queen?', image: '' },
-  '20/01': { heading: 'De Finale', image: 'end.m4v' }
+  '17/05': { heading: 'Een pijnlijke pukkel op je bil waar je niet bij kan. /n Wie mag hem voor je uitknijpen?', image: 'hannibal.webp' },
+  '17/06': { heading: 'Wie denkt dat ie altijd gelijk heeft?', image: 'always-right.webp' },
+  '17/07': { heading: 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?', image: 'photoshoot.webp' },
+  '17/08': { heading: 'Wie kan 40 dagen zonder sex?', image: '40-days.webp' },
+  '17/09': { heading: 'Wie kan absoluut niet tegen kritiek?', image: 'trump-pumpkin.webp' },
+  '17/10': { heading: 'Wie is het monsterlijke schoon-kind?', image: 'inlaw.webp' },
+  '17/11': { heading: 'Wie maakt de allerlelijkste Selfies ?', image: 'selfie-monster.webp' },
+  '17/12': { heading: 'Wie is het meest verslaafd aan Social Media?', image: 'socials-zombie.webp' },
+  '17/13': { heading: 'Wie krijgt de meeste bekeuringen?', image: 'speeding-ticket.webp' },
+  '17/14': { heading: 'Jullie doen mee met Temptation Island. /n Wie heeft als eerste iemand tusen de lakens?', image: 'temptation.webp' },
+  '20/01': { heading: 'De Finale', image: 'trailercreepy.m4v' }
 };
 
 // Fases Management Helper Functions

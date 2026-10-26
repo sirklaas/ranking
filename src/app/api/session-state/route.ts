@@ -74,13 +74,29 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const id = body.id;
+    let id = body.id;
 
     if (!id) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
 
     const pb = await getServerPocketBase();
+
+    if (id === 'latest') {
+      let records;
+      try {
+        records = await pb.collection('ranking').getList(1, 1, { filter: 'priority = 1', sort: '-updated', $autoCancel: false });
+      } catch {
+        records = { items: [] };
+      }
+      if (!records.items.length) {
+        records = await pb.collection('ranking').getList(1, 1, { sort: '-updated', $autoCancel: false });
+      }
+      if (!records.items[0]) {
+        return NextResponse.json({ error: 'No active session' }, { status: 404 });
+      }
+      id = records.items[0].id;
+    }
 
     // Specific action: A player claims/joins on their phone
     if (body.action === 'join_player' && body.playerName) {
