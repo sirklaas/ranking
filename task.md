@@ -35,6 +35,9 @@
 - [x] 5.2 Add Creepy Ranking Show logo badge with BrewHouse-Aged font and 🎃 icons
 - [x] 5.3 Re-skin Display Intro team circles and player badges in pumpkin orange and dark slate
 - [x] 5.4 Test sound effects & endcard audio (`public/endgame/endcard_audio.mp3`)
+- [x] 5.5 Integrate Coded Endgame Engine with pure Voronoi glass shatter, SVG ticket reveal, star particles, and 8 Munten outcomes
+- [x] 5.6 Map all 8 Halloween cards (Betoverd, Vrolijk, Ondeugend, Mystiek, Gentle, Elegant, Wijs, Muzikaal) into Finale DisplayView and PresenterView
+- [x] 5.7 Add live interactive testing suite for trailers, 48 traits, and 8 coded cards at `/creepy-preview`
 
 ---
 
