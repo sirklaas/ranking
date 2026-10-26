@@ -339,8 +339,9 @@ export default function DisplayPage() {
 
   // Removed mute state syncing; videos play with sound by default
 
-  // Generate QR code URL for joining (bigger)
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`https://ranking.pinkmilk.eu/player?code=${gameCode}`)}`;
+  // Generate QR code URL for joining (uses current origin dynamically)
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_DOMAIN ? `https://${process.env.NEXT_PUBLIC_DOMAIN}` : 'https://ranking.pinkmilk.eu');
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`${currentOrigin}/player?code=${gameCode}`)}`;
 
   // Only show media overlay if there's a file
   const allowMediaOverlay = true;
