@@ -78,6 +78,10 @@ export default function DisplayPage() {
       try {
         const v = videoRef.current;
         if (v && v.src) {
+          // If video was already playing or paused near end, rewind to 0 so sound starts from beginning
+          if (v.currentTime > 1) {
+            v.currentTime = 0;
+          }
           v.muted = false;
           v.volume = 1;
           const p = v.play();
@@ -252,13 +256,14 @@ export default function DisplayPage() {
     };
   }, [forceUnlockAudio]);
 
-  // Play video when the media URL changes
+  // Play video only when user has unlocked sound AND the media URL actually changes (matches original)
   useEffect(() => {
     if (!currentMedia) {
       lastPlayedUrl.current = '';
       return;
     }
     const v = videoRef.current;
+    if (!userEnabledSound) return; // Don't play until sound is enabled (matches original)
     if (currentMedia.type !== 'video' || !v) return;
     if (currentMedia.url === lastPlayedUrl.current) return;
     lastPlayedUrl.current = currentMedia.url;
@@ -266,7 +271,7 @@ export default function DisplayPage() {
     console.log(`[Display ${APP_VERSION}] Playing new video: ${currentMedia.name}`);
     try {
       v.currentTime = 0;
-      v.muted = !userEnabledSound;
+      v.muted = false;
       v.volume = 1;
       const p = v.play();
       if (p && typeof p.then === 'function') {
@@ -503,19 +508,17 @@ export default function DisplayPage() {
               className="w-full h-full object-contain"
               playsInline
               autoPlay
-              muted={!userEnabledSound}
               onCanPlay={(e) => {
-                const vid = e.currentTarget;
                 if (userEnabledSound) {
-                  vid.muted = false;
-                  vid.volume = 1;
-                  vid.play().catch(() => {
-                    vid.muted = true;
-                    vid.play().catch(() => {});
-                  });
-                } else {
-                  vid.muted = true;
-                  vid.play().catch(() => {});
+                  const vid = e.currentTarget;
+                  if (vid.paused) {
+                    vid.muted = false;
+                    vid.volume = 1;
+                    vid.play().catch(() => {
+                      vid.muted = true;
+                      vid.play().catch(() => {});
+                    });
+                  }
                 }
               }}
               onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
@@ -527,7 +530,7 @@ export default function DisplayPage() {
               onTimeUpdate={(e) => {
                 const vid = e.currentTarget;
                 // Pause 0.5s before end to freeze on last visible frame (prevent black)
-                if (vid.duration - vid.currentTime < 0.5 && !vid.paused) {
+                if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
                   vid.pause();
                 }
               }}

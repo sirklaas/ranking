@@ -63,15 +63,15 @@ export default function TrailerTitleCard({
     >
       {/* Top Creepy Ranking Logo Band */}
       <div
-        className="relative bg-cover bg-center bg-no-repeat shrink-0 w-full overflow-hidden shadow-lg border-b border-orange-500/20 rounded-2xl py-2 flex items-center justify-center"
+        className="relative bg-cover bg-center bg-no-repeat shrink-0 w-full overflow-hidden shadow-lg border-b border-orange-500/20 rounded-2xl py-3 flex items-center justify-center"
         style={{
           backgroundImage: 'url(/assets/band.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          minHeight: '85px',
+          minHeight: '105px',
         }}
       >
-        <CreepyRankingLogo size="md" />
+        <CreepyRankingLogo />
       </div>
 
       {/* Ambient background glowing circles */}

@@ -148,15 +148,15 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo,
     >
       {/* Logo band */}
       <div
-        className="relative bg-cover bg-center bg-no-repeat shrink-0 py-2.5 flex items-center justify-center"
+        className="relative bg-cover bg-center bg-no-repeat shrink-0 py-3 flex items-center justify-center"
         style={{
           backgroundImage: 'url(/assets/band.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          minHeight: '85px',
+          minHeight: '105px',
         }}
       >
-        <CreepyRankingLogo size="md" />
+        <CreepyRankingLogo />
       </div>
 
       {/* Heading - strictly two lines, revealed only after display video is finished */}
