@@ -1,0 +1,61 @@
+{
+  "defaultCard": "betoverd",
+  "cards": {
+    "betoverd": {
+      "name": "Betoverd",
+      "image": "/pics/End Haloween/betoverd.jpeg",
+      "line1": "Jammer",
+      "line2": "jullie halveren",
+      "color": "#ff7518"
+    },
+    "vrolijk": {
+      "name": "Vrolijk",
+      "image": "/pics/End Haloween/vrolijk.jpeg",
+      "line1": "Lekker",
+      "line2": "5 munten extra",
+      "color": "#ff7518"
+    },
+    "ondeugend": {
+      "name": "Ondeugend",
+      "image": "/pics/End Haloween/ondeugend.jpeg",
+      "line1": "Geef 1 munt",
+      "line2": "aan elk team",
+      "color": "#ff7518"
+    },
+    "mystiek": {
+      "name": "Mystiek",
+      "image": "/pics/End Haloween/mystiek.jpeg",
+      "line1": "Krijg 1 munt",
+      "line2": "van elk team",
+      "color": "#ff7518"
+    },
+    "gentle": {
+      "name": "Gentle",
+      "image": "/pics/End Haloween/gentle.jpeg",
+      "line1": "Lever",
+      "line2": "3 munten in",
+      "color": "#ff7518"
+    },
+    "elegant": {
+      "name": "Elegant",
+      "image": "/pics/End Haloween/elegant.jpeg",
+      "line1": "Lekker",
+      "line2": "jullie verdubbelen",
+      "color": "#ff7518"
+    },
+    "wijs": {
+      "name": "Wijs",
+      "image": "/pics/End Haloween/wijs.jpeg",
+      "line1": "Lever",
+      "line2": "7 munten in",
+      "color": "#ff7518"
+    },
+    "muzikaal": {
+      "name": "Muzikaal",
+      "image": "/pics/End Haloween/muzikaal.jpeg",
+      "line1": "Jullie",
+      "line2": "ver<span class=\"large-num\">3</span>voudigen",
+      "color": "#ff7518"
+    }
+  }
+}

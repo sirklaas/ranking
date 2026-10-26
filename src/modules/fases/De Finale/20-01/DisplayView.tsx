@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { FaseCommonProps } from '@/types/fases';
 import { ENDGAME_CARDS, EndgameState, DEFAULT_ENDGAME_STATE } from './endgameData';
+import CodedEndgameReveal from '@/components/endgame/CodedEndgameReveal';
 
 const STORAGE_KEY = 'ranking_endgame_state';
 
@@ -28,7 +29,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
   }, [moduleStateJson]);
 
   const [state, setState] = useState<EndgameState>(parsedState);
-  const videoPlayerRef = useRef<HTMLVideoElement | null>(null);
   const endTitleVideoRef = useRef<HTMLVideoElement | null>(null);
 
   // Sync incoming props
@@ -76,36 +76,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     return ENDGAME_CARDS.find(c => c.id === state.selectedCard) || null;
   }, [state.selectedCard]);
 
-  // Handle video element operations when state changes
-  useEffect(() => {
-    const video = videoPlayerRef.current;
-    if (!video) return;
-
-    if (state.playbackState === 'grid') {
-      video.pause();
-      video.currentTime = 0;
-    } else if (state.playbackState === 'paused' && activeCard) {
-      if (!video.src.includes(activeCard.id)) {
-        video.src = activeCard.video;
-        video.load();
-        video.currentTime = 0;
-      }
-      video.pause();
-    } else if (state.playbackState === 'playing' && activeCard) {
-      if (!video.src.includes(activeCard.id)) {
-        video.src = activeCard.video;
-        video.load();
-      }
-      video.muted = false;
-      video.volume = 1;
-      video.play().catch(e => {
-        console.warn('[Endgame Display] Video unmuted autoplay failed, trying muted:', e);
-        video.muted = true;
-        video.play().catch(err => console.error('[Endgame Display] Video playback failed:', err));
-      });
-    }
-  }, [state.playbackState, activeCard]);
-
   // Handle end title video
   useEffect(() => {
     const endVideo = endTitleVideoRef.current;
@@ -119,15 +89,15 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     }
   }, [state.playbackState]);
 
-  // Notify backend when video has ended
-  const handleVideoEnded = useCallback(async () => {
-    if (state.playbackState === 'playing' && state.selectedCard) {
-      console.log('[Endgame Display] Video finished for card:', state.selectedCard);
+  // Notify backend when reveal animation has finished
+  const handleRevealEnded = useCallback(async () => {
+    if (state.selectedCard) {
+      console.log('[Endgame Display] Coded reveal finished for card:', state.selectedCard);
       const cardId = state.selectedCard;
 
-      const newRevealed = !state.revealedCards.includes(cardId)
-        ? [...state.revealedCards, cardId]
-        : state.revealedCards;
+      const newRevealed = !state.revealedCards?.includes(cardId)
+        ? [...(state.revealedCards || []), cardId]
+        : (state.revealedCards || []);
 
       const newUsed = !state.usedCards.includes(cardId)
         ? [...state.usedCards, cardId]
@@ -164,30 +134,59 @@ const DisplayView: React.FC<FaseCommonProps> = ({
             })
           });
         } catch (err) {
-          console.error('[Endgame Display] Error notifying video end:', err);
+          console.error('[Endgame Display] Error notifying end:', err);
         }
       }
     }
   }, [state, sessionId, onModuleStateJson]);
 
-  const isVideoActive = state.playbackState === 'paused' || state.playbackState === 'playing' || state.playbackState === 'finished';
+  const handleCloseReveal = useCallback(() => {
+    const nextState: EndgameState = {
+      ...state,
+      selectedCard: null,
+      playbackState: 'grid',
+      timestamp: Date.now()
+    };
+    setState(nextState);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    } catch {}
+    if (onModuleStateJson) onModuleStateJson(JSON.stringify(nextState));
+  }, [state, onModuleStateJson]);
+
+  const isRevealActive = (state.playbackState === 'paused' || state.playbackState === 'playing' || state.playbackState === 'finished') && activeCard !== null;
   const isEndTitle = state.playbackState === 'endtitle';
 
   return (
     <div
       className="fixed inset-0 w-full h-full overflow-hidden select-none"
       style={{
-        background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)',
+        background: 'linear-gradient(135deg, #07060a 0%, #150a24 50%, #0d080c 100%)',
         fontFamily: 'Barlow Semi Condensed, sans-serif'
       }}
     >
       {/* 8 Cards Grid view */}
       <div
         className={`w-full h-full p-8 md:p-14 flex flex-col justify-center transition-all duration-700 ${
-          isVideoActive || isEndTitle ? 'opacity-0 scale-90 blur-xl pointer-events-none' : 'opacity-100 scale-100 blur-0'
+          isRevealActive || isEndTitle ? 'opacity-0 scale-90 blur-xl pointer-events-none' : 'opacity-100 scale-100 blur-0'
         }`}
       >
-        <div className="grid grid-cols-4 gap-6 md:gap-10 max-w-[94vw] mx-auto w-full max-h-[82vh] items-center">
+        <div className="text-center mb-8">
+          <span className="text-orange-500 text-xs font-mono tracking-[0.3em] uppercase block mb-1">
+            De Grote Ontknoping · Munten Verdeling
+          </span>
+          <h2
+            className="text-white text-4xl md:text-6xl font-normal uppercase tracking-wider"
+            style={{
+              fontFamily: '"BrewHouse-Aged", "BrewHouse", sans-serif',
+              textShadow: '0 0 20px rgba(255,117,24,0.8)'
+            }}
+          >
+            Kies een Kaart
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-4 gap-6 md:gap-10 max-w-[94vw] mx-auto w-full max-h-[75vh] items-center">
           {ENDGAME_CARDS.map(card => {
             const used = state.usedCards.includes(card.id);
             const isSelected = state.selectedCard === card.id;
@@ -197,13 +196,13 @@ const DisplayView: React.FC<FaseCommonProps> = ({
                 key={card.id}
                 className={`relative rounded-3xl overflow-hidden border-2 transition-all duration-500 aspect-square shadow-2xl flex flex-col ${
                   used
-                    ? 'opacity-30 grayscale border-white/10'
+                    ? 'opacity-25 grayscale border-white/10'
                     : isSelected
-                    ? 'border-indigo-400 ring-8 ring-indigo-500/40 scale-105 shadow-indigo-500/50'
-                    : 'border-white/20 hover:border-indigo-400/50'
+                    ? 'border-orange-500 ring-8 ring-orange-500/40 scale-105 shadow-orange-500/50'
+                    : 'border-orange-500/30 hover:border-orange-500 hover:scale-102 shadow-lg shadow-black/80'
                 }`}
                 style={{
-                  background: 'rgba(25, 25, 40, 0.85)',
+                  background: 'rgba(20, 15, 30, 0.9)',
                   backdropFilter: 'blur(10px)'
                 }}
               >
@@ -212,38 +211,29 @@ const DisplayView: React.FC<FaseCommonProps> = ({
                   alt={card.name}
                   className="w-full h-full object-cover"
                 />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 text-center">
+                  <span
+                    className="text-white font-bold text-lg uppercase tracking-wide"
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}
+                  >
+                    {card.name}
+                  </span>
+                </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Fullscreen Video Player Container */}
-      <div
-        className={`fixed inset-0 bg-black z-40 flex items-center justify-center transition-opacity duration-700 ${
-          isVideoActive ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        {activeCard && (
-          <div className="relative w-full h-full flex items-center justify-center">
-            <video
-              ref={videoPlayerRef}
-              className="w-full h-full object-contain"
-              playsInline
-              onEnded={handleVideoEnded}
-              onError={() => {
-                const v = videoPlayerRef.current;
-                if (v && activeCard.fallbackVideoUrl && !v.src.includes('www.end.pinkmilk.eu')) {
-                  console.log('[Endgame Display] Falling back to remote video url:', activeCard.fallbackVideoUrl);
-                  v.src = activeCard.fallbackVideoUrl;
-                  v.load();
-                  if (state.playbackState === 'playing') v.play().catch(() => {});
-                }
-              }}
-            />
-          </div>
-        )}
-      </div>
+      {/* Coded Pure Animation Endgame Reveal */}
+      {isRevealActive && activeCard && (
+        <CodedEndgameReveal
+          card={activeCard}
+          playbackState={state.playbackState === 'playing' ? 'playing' : 'paused'}
+          onFinished={handleRevealEnded}
+          onClose={handleCloseReveal}
+        />
+      )}
 
       {/* End Title Video Container */}
       <div

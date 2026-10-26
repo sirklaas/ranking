@@ -1,0 +1,61 @@
+{
+  "defaultCard": "bedrieglijk",
+  "cards": {
+    "creatief": {
+      "name": "Creatief",
+      "image": "/endgame/creatief.webp",
+      "line1": "Jammer",
+      "line2": "jullie halveren",
+      "color": "#5b215c"
+    },
+    "doorzetter": {
+      "name": "Doorzetter",
+      "image": "/endgame/doorzetter.webp",
+      "line1": "Lekker",
+      "line2": "5 munten extra",
+      "color": "#5b215c"
+    },
+    "wreed": {
+      "name": "Wreed",
+      "image": "/endgame/wreed.webp",
+      "line1": "Geef 1 munt",
+      "line2": "aan elk team",
+      "color": "#5b215c"
+    },
+    "beschermend": {
+      "name": "Beschermend",
+      "image": "/endgame/beschermend.webp",
+      "line1": "Krijg 1 munt",
+      "line2": "van elk team",
+      "color": "#5b215c"
+    },
+    "dapper": {
+      "name": "Dapper",
+      "image": "/endgame/dapper.webp",
+      "line1": "Lever",
+      "line2": "3 munten in",
+      "color": "#5b215c"
+    },
+    "bedrieglijk": {
+      "name": "Bedrieglijk",
+      "image": "/endgame/bedriegelijk.webp",
+      "line1": "Lekker",
+      "line2": "jullie verdubbelen",
+      "color": "#5b215c"
+    },
+    "sinister": {
+      "name": "Sinister",
+      "image": "/endgame/sinister.webp",
+      "line1": "Lever",
+      "line2": "7 munten in",
+      "color": "#5b215c"
+    },
+    "vreugdevol": {
+      "name": "Vreugdevol",
+      "image": "/endgame/vreugdevol.webp",
+      "line1": "Jullie",
+      "line2": "ver<span class=\"large-num\">3</span>voudigen",
+      "color": "#5b215c"
+    }
+  }
+}

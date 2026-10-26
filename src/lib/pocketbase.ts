@@ -75,12 +75,12 @@ export const motherfileService = {
       'teamnaam': 'RankingNaam.mp4',
       'teamyell': 'RankingKreet.mp4',
       'selfie': 'RankingSelfie.mp4',
-      'trailerzit': 'TrailerZitten.mp4',
-      'trailerzitten': 'TrailerZitten.mp4',
-      'trailertop3': 'TrailerTop3.mp4',
-      'trailerkrakende': 'KrakendeKarakters.mp4',
-      'trailertop10': 'Top10.mp4',
-      'trailerfinale': 'end.m4v',
+      'trailerzit': 'trailercreepy.m4v',
+      'trailerzitten': 'trailercreepy.m4v',
+      'trailertop3': 'trailercreepy.m4v',
+      'trailerkrakende': 'trailercreepy.m4v',
+      'trailertop10': 'trailercreepy.m4v',
+      'trailerfinale': 'trailercreepy.m4v',
       'super': 'RankingSuperfoods.m4v',
       'flirt': 'RankingFlirt.m4v',
       'houseparty': 'RankingHouseparty.m4v',
@@ -102,21 +102,33 @@ export const motherfileService = {
     const lower = webpName.toLowerCase();
 
     const top3Files = ['andes.webp', 'crypto.webp', 'cry.webp', 'geheim.webp', 'kinderen.webp', 'only.webp', 'parenclub.webp', 'schoonzoon.webp', 'verliefd.webp'];
+    const top3HalloweenFiles = ['dracula.webp', 'einstein.webp', 'frankenstein.webp', 'ghost.webp', 'mummy.webp', 'sinister-man.webp', 'skeleton.webp', 'werewolf.webp', 'witch.webp', 'zombie.webp'];
     const top10Files = ['40dagen.webp', 'echt.webp', 'plaatje.webp', 'pukkel.webp', 'right.webp', 'selfie.webp', 'socials.webp', 'verlies.webp'];
+    const top10HalloweenFiles = ['40-days.webp', 'always-right.webp', 'hannibal.webp', 'inlaw.webp', 'photoshoot.webp', 'selfie-monster.webp', 'socials-zombie.webp', 'speeding-ticket.webp', 'temptation.webp', 'trump-pumpkin.webp'];
     const endFiles = ['end.m4v', 'end.webp', 'bedriegelijk.webp', 'beschermend.webp', 'creatief.webp', 'dapper.webp', 'doorzetter.webp', 'sinister.webp', 'vreugdevol.webp', 'wreed.webp'];
-    const trailers = ['trailerzitten.mp4', 'trailertop3.mp4', 'top3.mp4', 'krakendekarakters.mp4', 'top10.mp4', 'guiltypleasure.mp4'];
+    const endHalloweenFiles = ['betoverd.jpeg', 'elegant.jpeg', 'gentle.jpeg', 'muzikaal.jpeg', 'mystiek.jpeg', 'ondeugend.jpeg', 'vrolijk.jpeg', 'wijs.jpeg'];
+    const trailers = ['trailerzitten.mp4', 'trailertop3.mp4', 'top3.mp4', 'krakendekarakters.mp4', 'top10.mp4', 'guiltypleasure.mp4', 'trailercreepy.m4v'];
 
+    if (top3HalloweenFiles.includes(lower)) {
+      return `/pics/Top3 Haloween/${webpName}`;
+    }
     if (top3Files.includes(lower)) {
       return `/pics/Top3/${webpName}`;
     }
+    if (top10HalloweenFiles.includes(lower)) {
+      return `/pics/Top10Haloween/${webpName}`;
+    }
     if (top10Files.includes(lower)) {
       return `/pics/Top10/${webpName}`;
+    }
+    if (endHalloweenFiles.includes(clean.toLowerCase())) {
+      return `/pics/End Haloween/${clean}`;
     }
     if (endFiles.includes(lower)) {
       return `/pics/End/${clean}`;
     }
     if (trailers.includes(clean.toLowerCase())) {
-      return `/trailers/Trailers/${clean}`;
+      return `/pics/HaloweenTrailer/trailercreepy.m4v`;
     }
 
     return `/pics/${encodeURIComponent(clean)}`;

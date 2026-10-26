@@ -7,6 +7,7 @@ import { RankingSession } from '@/types';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
+import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
 const APP_VERSION = "v9.4.20";
 
@@ -428,7 +429,7 @@ export default function DisplayPage() {
 
   console.log(`[Display ${APP_VERSION}] Falling through to media overlay for fase`, currentSession?.current_fase);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 relative overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+    <div className="min-h-screen bg-[#07060a] bg-gradient-to-br from-[#0c0817] via-[#140822] to-[#1a0802] relative overflow-hidden text-white" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
       {versionBadge}
 
       {/* Media overlay: plays current fase video/image when available */}
@@ -476,27 +477,27 @@ export default function DisplayPage() {
           ) : (
             <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />
           )}
-          {/* Heading overlay: top center 100px for normal fases, bottom for trailers (xx/01) */}
-          {(() => {
+          {/* Heading overlay: animated spooky overlay for trailers (xx/01), top center for normal fases */}
+          {currentSession?.current_fase?.endsWith('/01') ? (
+            <SpookyTrailerTitle
+              faseKey={currentSession.current_fase}
+              customHeading={faseService.parseHeadings(currentSession?.headings || '{}')[currentSession.current_fase]?.heading}
+            />
+          ) : (() => {
             // "Zitten en staan" = groep 07, Krakende = groep 13 no headings here per request.
             // 01/04-01/06: heading only on phones, not on display.
-            // Top 3 trailer (10/01) and Top 10 trailer (17/01): no heading on display per request
-            // End game (20/01): no headings on display per request
-            if (['10/01', '17/01', '20/01'].includes(currentSession?.current_fase || '') || currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/') || currentSession?.current_fase?.startsWith('20/')) return null;
+            if (currentSession?.current_fase?.startsWith('07/') || currentSession?.current_fase?.startsWith('13/') || currentSession?.current_fase?.startsWith('20/')) return null;
             if (['01/04', '01/05', '01/06'].includes(currentSession?.current_fase || '')) return null;
 
             const headings = faseService.parseHeadings(currentSession?.headings || '{}');
             const headingText = headings[currentSession?.current_fase || '']?.heading || '';
-            const isTrailer = currentSession?.current_fase?.endsWith('/01');
             return headingText ? (
               <div
-                className={`absolute left-0 right-0 flex items-center justify-center px-8 text-center ${isTrailer ? 'bottom-[75px]' : 'top-[100px]'}`}
+                className="absolute left-0 right-0 flex items-center justify-center px-8 text-center top-[100px]"
                 style={{
-                  background: isTrailer
-                    ? 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)'
-                    : 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)',
-                  paddingTop: isTrailer ? '40px' : '20px',
-                  paddingBottom: isTrailer ? '20px' : '40px',
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)',
+                  paddingTop: '20px',
+                  paddingBottom: '40px',
                 }}
               >
                 <h1
@@ -513,38 +514,45 @@ export default function DisplayPage() {
 
       {currentSession?.current_fase?.startsWith('01/') && (
         <>
-          {/* Animated background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-600 opacity-70 animate-pulse"></div>
+          {/* Animated Halloween background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-950 via-zinc-950 to-orange-950 opacity-80 animate-pulse"></div>
 
-          {/* Horizontal Band with Background + Overlaid Text and Logo */}
+          {/* Horizontal Band with Background + Overlaid Text and Spooky Logo */}
           <div
-            className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6"
+            className="relative z-10 w-full h-32 bg-cover bg-center bg-no-repeat flex items-center justify-between px-6 border-b border-orange-500/30"
             style={{
               backgroundImage: 'url(/assets/band.webp)',
               marginTop: '10px'
             }}
           >
-            {/* Logo - Left side of band */}
-            <div className="flex items-center">
-              <Image
-                src="/assets/ranking_logo.webp"
-                alt="Ranking Logo"
-                width={256}
-                height={128}
-                className="h-28 w-auto object-contain"
-                priority
-              />
+            {/* Spooky Logo - Left side of band */}
+            <div className="flex items-center space-x-3">
+              <span className="text-4xl animate-bounce">🎃</span>
+              <div className="flex flex-col">
+                <span
+                  className="text-orange-500 text-3xl font-normal uppercase tracking-wider leading-none"
+                  style={{
+                    fontFamily: '"BrewHouse-Aged", "BrewHouse", sans-serif',
+                    textShadow: '0 0 20px rgba(255, 117, 24, 0.9), 0 0 35px rgba(255, 69, 0, 0.8)'
+                  }}
+                >
+                  Creepy Ranking
+                </span>
+                <span className="text-[11px] font-mono tracking-[0.3em] text-orange-300 uppercase">
+                  Halloween Edition
+                </span>
+              </div>
             </div>
 
             {/* Centered Text Overlay */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <p className="text-xl md:text-2xl text-white/90 mb-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+              <p className="text-xl md:text-2xl text-orange-300/90 mb-0 font-medium" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                 Quizmaster Klaas presenteert
               </p>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-0" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-0 uppercase tracking-wide" style={{ fontFamily: '"BrewHouse-Aged", "BrewHouse", sans-serif', textShadow: '0 0 15px rgba(255,117,24,0.6)' }}>
                 {currentSession.showname} - {currentSession.city}
               </h1>
-              <p className="text-xl md:text-2xl text-white/90" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
+              <p className="text-xl md:text-2xl text-orange-200/90 font-medium" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
                 De teams van vandaag zijn:
               </p>
             </div>
@@ -608,17 +616,17 @@ export default function DisplayPage() {
                   >
                     {/* Team Circle with outline */}
                     <div
-                      className="bg-white rounded-full flex items-center justify-center mb-2 shadow-lg"
+                      className="bg-zinc-950 rounded-full flex items-center justify-center mb-2 shadow-[0_0_20px_rgba(255,117,24,0.35)]"
                       style={{
                         width: `min(100px, calc((100vw - 6rem) / ${currentSession.nr_teams}))`,
                         height: `min(100px, calc((100vw - 6rem) / ${currentSession.nr_teams}))`,
-                        border: '8px solid black',
+                        border: '6px solid #f97316',
                         minWidth: '60px',
                         minHeight: '60px'
                       }}
                     >
                       <span
-                        className="font-bold text-black"
+                        className="font-bold text-orange-400"
                         style={{
                           fontSize: `min(2.5rem, calc((100vw - 12rem) / ${currentSession.nr_teams} * 0.35))`
                         }}
@@ -676,9 +684,9 @@ export default function DisplayPage() {
                             return (
                               <div
                                 key={player}
-                                className={`absolute left-1 right-1 rounded-lg text-center border-2 border-white shadow-md overflow-hidden flex items-center justify-center ${isLeader
-                                  ? 'bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 text-black z-10'
-                                  : 'bg-gradient-to-r from-pink-200 to-purple-300 text-gray-800'
+                                className={`absolute left-1 right-1 rounded-lg text-center border shadow-md overflow-hidden flex items-center justify-center ${isLeader
+                                  ? 'bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 text-black border-amber-200 z-10 shadow-[0_0_20px_rgba(255,117,24,0.7)]'
+                                  : 'bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-orange-200 border-orange-500/30'
                                 }`}
                                 style={{
                                   fontFamily: 'Barlow Semi Condensed, sans-serif',
@@ -690,7 +698,7 @@ export default function DisplayPage() {
                                   top: `${originalSlot * slotHeight}px`,
                                   transform: `translateY(${slotDiff * slotHeight}px)`,
                                   transition: 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1), background 1s ease, box-shadow 1s ease',
-                                  boxShadow: isLeader ? '0 0 20px rgba(234, 179, 8, 0.5)' : undefined,
+                                  boxShadow: isLeader ? '0 0 25px rgba(249, 115, 22, 0.6)' : undefined,
                                 }}
                               >
                                 <span className="block truncate w-full px-2" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 400 }}>
@@ -701,10 +709,10 @@ export default function DisplayPage() {
                                   {player}
                                 </span>
 
-                                {/* Subtle, simple dark blue dot in lower right corner when player has joined (60% size, dark blue #0A1752) */}
+                                {/* Glowing orange dot in lower right corner when player has joined via phone */}
                                 {isJoined && (
                                   <span
-                                    className="absolute bottom-2 right-2 w-[7px] h-[7px] rounded-full bg-[#0A1752]"
+                                    className="absolute bottom-2 right-2 w-[8px] h-[8px] rounded-full bg-orange-400 shadow-[0_0_8px_#f97316]"
                                     title={`${player} is ingelogd`}
                                   />
                                 )}

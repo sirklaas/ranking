@@ -668,20 +668,20 @@ export default function PlayerPage() {
         className="min-h-screen relative overflow-hidden flex items-center justify-center text-white text-xl"
         style={{
           fontFamily: 'Barlow Semi Condensed, sans-serif',
-          background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
+          background: 'linear-gradient(135deg, #0d0814 0%, #1a0a26 30%, #260c18 60%, #170709 85%, #08060a 100%)'
         }}
       >
-        <div className="animate-pulse">Even geduld...</div>
+        <div className="animate-pulse text-orange-400 font-bold">Even geduld...</div>
       </div>
     );
   }
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen relative overflow-hidden text-white"
       style={{
         fontFamily: '"Barlow Semi Condensed", "Barlow", sans-serif',
-        background: 'linear-gradient(135deg, #e66f55 0%, #e4a86f 25%, #6d8fd0 50%, #6f6fbe 75%, #7fd2cc 100%)'
+        background: 'linear-gradient(135deg, #0d0814 0%, #1a0a26 30%, #260c18 60%, #170709 85%, #08060a 100%)'
       }}
     >
       <link

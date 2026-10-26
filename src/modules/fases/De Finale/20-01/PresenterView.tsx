@@ -114,7 +114,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
 
       // Play audio on presenter screen
       if (card && audioPlayerRef.current) {
-        audioPlayerRef.current.src = card.video;
+        audioPlayerRef.current.src = '/endgame/endcard_audio.mp3';
         audioPlayerRef.current.currentTime = 0;
         audioPlayerRef.current.play().catch(e => console.log('Audio autoplay prevented on presenter:', e));
       }
@@ -262,12 +262,17 @@ const PresenterView: React.FC<FaseCommonProps> = ({
 
       {/* Control Banner when a card is active */}
       {selectedCardObj && (
-        <div className="mb-4 p-3.5 rounded-xl bg-indigo-950/60 border border-indigo-500/40 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+        <div className="mb-4 p-3.5 rounded-xl bg-orange-950/60 border border-orange-500/50 flex flex-wrap items-center justify-between gap-3 shadow-lg">
           <div className="flex items-center gap-3">
-            <img src={selectedCardObj.image} alt={selectedCardObj.name} className="w-12 h-12 rounded-lg object-cover border border-indigo-400/50" />
+            <img src={selectedCardObj.image} alt={selectedCardObj.name} className="w-14 h-14 rounded-lg object-cover border border-orange-400" />
             <div>
-              <div className="text-xs text-indigo-300 font-semibold uppercase">Actieve Kaart</div>
-              <div className="text-xl font-bold text-white">{selectedCardObj.name}</div>
+              <div className="text-xs text-orange-400 font-semibold uppercase tracking-wider">Actieve Kaart · Uitkomst</div>
+              <div className="text-xl font-bold text-white flex items-center gap-2">
+                <span>{selectedCardObj.name}</span>
+                <span className="text-orange-300 font-normal text-base bg-orange-950/80 px-2.5 py-0.5 rounded border border-orange-600/40">
+                  {selectedCardObj.line1} {selectedCardObj.line2.replace(/<[^>]+>/g, '')}
+                </span>
+              </div>
             </div>
             {getTeamsForCard(selectedCardObj.id).length > 0 && (
               <span className="px-2.5 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-400/40 text-xs font-bold">
@@ -280,16 +285,16 @@ const PresenterView: React.FC<FaseCommonProps> = ({
             {state.playbackState === 'paused' && (
               <button
                 onClick={handlePlayVideo}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold text-base shadow-lg shadow-green-900/50 flex items-center gap-2 transition-all hover:scale-105"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-base shadow-lg shadow-orange-900/50 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <span>▶</span> Speel Video (Display)
+                <span>✨</span> Start Coded Reveal (Display)
               </button>
             )}
 
             {(state.playbackState === 'playing' || state.playbackState === 'finished') && (
               <button
                 onClick={handleReturnToGrid}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-base shadow-lg shadow-indigo-900/50 flex items-center gap-2 transition-all hover:scale-105"
+                className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-base border border-zinc-600 shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>⏹</span> Terug naar Grid
               </button>
@@ -311,10 +316,10 @@ const PresenterView: React.FC<FaseCommonProps> = ({
               onClick={() => handleCardClick(card)}
               className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-300 flex flex-col aspect-square group ${
                 used
-                  ? 'opacity-35 grayscale cursor-not-allowed border-gray-700 bg-black/40'
+                  ? 'opacity-35 grayscale cursor-not-allowed border-zinc-800 bg-black/40'
                   : isSelected
-                  ? 'border-indigo-400 ring-4 ring-indigo-500/40 scale-[1.02] shadow-2xl shadow-indigo-500/30 cursor-pointer bg-indigo-950/40'
-                  : 'border-white/15 hover:border-indigo-400/70 hover:scale-[1.02] cursor-pointer bg-slate-900/60 shadow-lg'
+                  ? 'border-orange-500 ring-4 ring-orange-500/50 scale-[1.02] shadow-2xl shadow-orange-500/40 cursor-pointer bg-orange-950/40'
+                  : 'border-orange-500/30 hover:border-orange-500 hover:scale-[1.02] cursor-pointer bg-zinc-900/70 shadow-lg'
               }`}
             >
               <img
@@ -330,12 +335,15 @@ const PresenterView: React.FC<FaseCommonProps> = ({
                 </div>
               )}
 
-              {/* Bottom Label */}
-              <div className="absolute inset-x-0 bottom-0 pt-6 pb-2 px-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex flex-col items-center justify-end">
-                <span className="text-white text-base md:text-lg font-normal tracking-wide text-center drop-shadow-md">
+              {/* Bottom Label with Munten Outcome */}
+              <div className="absolute inset-x-0 bottom-0 pt-6 pb-2.5 px-2 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex flex-col items-center justify-end text-center">
+                <span className="text-white text-base md:text-lg font-bold tracking-wide drop-shadow-md">
                   {card.name}
                 </span>
-                {used && <span className="text-[10px] text-gray-400 uppercase font-semibold">Gespeeld</span>}
+                <span className="text-xs text-orange-300 font-medium line-clamp-1">
+                  {card.line1} {card.line2.replace(/<[^>]+>/g, '')}
+                </span>
+                {used && <span className="text-[10px] text-zinc-400 uppercase font-semibold mt-0.5">Gespeeld</span>}
               </div>
             </div>
           );

@@ -41,10 +41,10 @@ function ScaledPhone({
     return (
         <div className="flex flex-col items-center w-full min-w-0">
             <div className="flex items-center justify-between w-full px-1 mb-2">
-                <span className="text-gray-200 text-xs uppercase tracking-wider font-bold">
-                    Phone {phoneNum}
+                <span className="text-orange-400 text-xs uppercase tracking-wider font-bold">
+                    📱 Phone {phoneNum}
                 </span>
-                <span className="text-gray-400 text-[10px] font-mono">
+                <span className="text-zinc-500 text-[10px] font-mono">
                     Slot {phoneNum}
                 </span>
             </div>
@@ -55,7 +55,7 @@ function ScaledPhone({
                 style={{ height: `${phoneHeight}px` }}
             >
                 <div
-                    className="bg-black rounded-[3rem] p-2 shadow-2xl overflow-hidden border-4 border-gray-700 relative"
+                    className="bg-black rounded-[3rem] p-2 shadow-[0_0_25px_rgba(255,117,24,0.18)] overflow-hidden border-4 border-orange-500/40 hover:border-orange-500/80 transition-all relative"
                     style={{
                         width: '375px',
                         height: '812px',
@@ -70,7 +70,7 @@ function ScaledPhone({
                     <iframe
                         key={`${phoneNum}-${resetKey}`}
                         src={iframeSrc}
-                        className="w-full h-full rounded-[2.5rem] bg-white"
+                        className="w-full h-full rounded-[2.5rem] bg-[#0c0914]"
                         style={{ border: 'none' }}
                         title={`Phone ${phoneNum}`}
                     />
@@ -130,36 +130,69 @@ export default function TestPhonesPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gray-950 p-4 sm:p-6 flex flex-col w-full">
-            {/* Version badge moved to the right (left: 100px) so Next.js logo does not cover it */}
+        <div className="min-h-screen bg-[#08070b] p-4 sm:p-6 flex flex-col w-full text-white">
+            {/* Version badge */}
             <div
-                className="fixed z-[9999] text-white/40 text-[11px]"
+                className="fixed z-[9999] text-orange-400/40 text-[11px]"
                 style={{ fontFamily: 'monospace', bottom: '15px', left: '100px' }}
             >
-                v9.4.20 | 6 phones | fase: {sessionFase} | {nrTeams} teams
+                v9.4.20 · Halloween Edition · 6 phones · fase: {sessionFase} · {nrTeams} teams
             </div>
 
-            {/* Header */}
-            <header className="flex flex-wrap items-center justify-between w-full mb-4 pb-3 border-b border-gray-800 gap-2">
-                <div className="flex items-center gap-3">
-                    <h1
-                        className="text-white text-2xl font-bold tracking-tight"
-                        style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                    >
-                        6 Test Phones
-                    </h1>
-                    <span className="text-blue-400 bg-blue-950/80 border border-blue-800 text-xs px-2.5 py-0.5 rounded-full font-mono">
+            {/* Creepy Header */}
+            <header className="flex flex-wrap items-center justify-between w-full mb-6 pb-4 border-b border-orange-500/30 gap-3">
+                <div className="flex items-center gap-4">
+                    <span className="text-3xl animate-bounce">🎃</span>
+                    <div>
+                        <h1
+                            className="text-orange-500 text-2xl md:text-3xl font-normal tracking-wide uppercase leading-none"
+                            style={{
+                                fontFamily: '"BrewHouse-Aged", "BrewHouse", sans-serif',
+                                textShadow: '0 0 16px rgba(255,117,24,0.8), 0 0 30px rgba(255,69,0,0.6)'
+                            }}
+                        >
+                            Creepy Ranking — 6 Test Phones
+                        </h1>
+                        <p className="text-[11px] text-zinc-400 font-mono tracking-wider uppercase mt-1">
+                            Simulated Mobile Player Environment · Real-time Synced
+                        </p>
+                    </div>
+                    <span className="text-orange-400 bg-orange-950/80 border border-orange-700/80 text-xs px-3 py-1 rounded-full font-mono font-bold shadow-[0_0_10px_rgba(255,117,24,0.3)]">
                         Fase: {sessionFase}
                     </span>
-                    <span className="text-emerald-400 bg-emerald-950/80 border border-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-mono">
+                    <span className="text-purple-400 bg-purple-950/80 border border-purple-700/80 text-xs px-3 py-1 rounded-full font-mono font-bold">
                         {nrTeams} Teams
                     </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
+                    <a
+                        href="/display"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-orange-300 text-xs font-bold rounded-lg border border-orange-500/40 transition-colors shadow-sm flex items-center gap-1.5"
+                    >
+                        🖥️ Display
+                    </a>
+                    <a
+                        href="/presenter"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-orange-300 text-xs font-bold rounded-lg border border-orange-500/40 transition-colors shadow-sm flex items-center gap-1.5"
+                    >
+                        🎛️ Presenter
+                    </a>
+                    <a
+                        href="/creepy-preview"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-purple-300 text-xs font-bold rounded-lg border border-purple-500/40 transition-colors shadow-sm flex items-center gap-1.5"
+                    >
+                        🎬 Trailers & Traits
+                    </a>
                     <button
                         onClick={handleResetAll}
-                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg border border-indigo-400 transition-colors shadow-sm flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                        className="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-extrabold rounded-lg border border-orange-400 transition-colors shadow-[0_0_15px_#ea580c] flex items-center gap-1.5 active:scale-95 cursor-pointer"
                         title="Reset all 6 phones back to initial '?' team selection"
                     >
                         <span>🔄</span> Reset All to &apos;?&apos;
