@@ -493,9 +493,9 @@ export default function CodedEndgameReveal({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 bg-[#08070b] overflow-hidden flex items-center justify-center select-none"
+      className="fixed inset-0 z-50 bg-[#ffffff] overflow-hidden flex items-center justify-center select-none"
     >
-      {/* 1920x1080 Virtual Canvas Scaled to Fit */}
+      {/* 1920x1080 Virtual Canvas Scaled to Fit - Seamless White Backdrop */}
       <div
         style={{
           width: '1920px',
@@ -503,6 +503,7 @@ export default function CodedEndgameReveal({
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
           position: 'relative',
+          backgroundColor: '#ffffff',
           backgroundImage: 'url(/endgame/endgame_bg.webp)',
           backgroundSize: '1920px 1080px',
           backgroundPosition: 'center',
@@ -515,14 +516,15 @@ export default function CodedEndgameReveal({
           ref={spaceCanvasRef}
           width={1920}
           height={1080}
-          className="absolute inset-0 z-10 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: 2 }}
         />
 
-        {/* Center Card Container */}
+        {/* Center Card Container (Phase 1 - On Top of Ticket) */}
         <div
           ref={cardContainerRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center pointer-events-none"
-          style={{ width: '600px', height: '600px' }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"
+          style={{ width: '600px', height: '600px', zIndex: 10 }}
         >
           <img
             src={card.image}
@@ -539,19 +541,20 @@ export default function CodedEndgameReveal({
           />
         </div>
 
-        {/* 3D Voronoi Shatter Canvas */}
+        {/* 3D Voronoi Shatter Canvas (Phase 2 - On Top of Card & Ticket) */}
         <canvas
           ref={shatterCanvasRef}
           width={1920}
           height={1080}
-          className="absolute inset-0 z-25 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: 15 }}
         />
 
-        {/* Ticket Reveal Container */}
+        {/* Ticket Reveal Container (Phase 3 & 4 - Under Card, Revealed on Shatter) */}
         <div
           ref={ticketRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none"
-          style={{ width: '966px', height: '470px' }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          style={{ width: '966px', height: '470px', zIndex: 8 }}
         >
           {/* Ticket SVG */}
           <div className="absolute inset-0 w-[966px] h-[470px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
@@ -662,7 +665,8 @@ export default function CodedEndgameReveal({
           ref={particleCanvasRef}
           width={1920}
           height={1080}
-          className="absolute inset-0 z-35 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: 20 }}
         />
 
         {/* Close / Return Button */}
