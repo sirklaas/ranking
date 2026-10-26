@@ -186,12 +186,10 @@ export default function Top3Player({
 
         {/* Logo band - bring forward */}
         <div
-          className="relative z-20 shrink-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
+          className="relative z-20 shrink-0 bg-cover bg-center bg-no-repeat py-2.5 flex items-center justify-center"
+          style={{ backgroundImage: 'url(/assets/band.webp)', minHeight: '85px' }}
         >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <CreepyRankingLogo size="sm" />
-          </div>
+          <CreepyRankingLogo size="md" />
         </div>
 
         {/* Heading - bring forward */}

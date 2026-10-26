@@ -146,15 +146,15 @@ const PlayerView: React.FC<FaseCommonProps> = ({
       }}
     >
       {/* Official Ranking Top Band */}
-      <div className="relative w-full h-[12vh] min-h-[70px] max-h-[100px] flex-shrink-0 overflow-hidden shadow-lg">
+      <div className="relative w-full min-h-[85px] py-2.5 flex-shrink-0 overflow-hidden shadow-lg flex items-center justify-center">
         <img
           src="/assets/band.webp"
           alt="Ranking Header"
-          className="w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <CreepyRankingLogo size="sm" />
+        <div className="relative z-10 w-full">
+          <CreepyRankingLogo size="md" />
         </div>
       </div>
 

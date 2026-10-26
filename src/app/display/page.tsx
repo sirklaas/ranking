@@ -38,10 +38,9 @@ export default function DisplayPage() {
   const [pollDebug, setPollDebug] = useState({ count: 0, lastPbFase: '?', error: '' });
 
   const forceUnlockAudio = useCallback(() => {
-    if (soundUnlockedRef.current) return;
     soundUnlockedRef.current = true;
-    console.log('[Display] Sound unlocked via user gesture');
     setUserEnabledSound(true);
+    console.log('[Display] Sound unlocked via user gesture');
     try { sessionStorage.setItem('soundUnlocked', 'true'); } catch {}
 
     try {
@@ -62,6 +61,17 @@ export default function DisplayPage() {
 
     try {
       window.dispatchEvent(new CustomEvent('ranking-audio-unlocked'));
+    } catch {}
+
+    // Unmute ALL video and audio elements on the entire document
+    try {
+      document.querySelectorAll<HTMLVideoElement | HTMLAudioElement>('video, audio').forEach((media) => {
+        media.muted = false;
+        media.volume = 1;
+        if (media.paused) {
+          media.play().catch(() => {});
+        }
+      });
     } catch {}
 
     setTimeout(() => {
@@ -200,13 +210,6 @@ export default function DisplayPage() {
 
     loadSessionData();
 
-    // Auto-unlock if user enabled sound earlier in this session
-    try {
-      if (typeof window !== 'undefined' && sessionStorage.getItem('soundUnlocked') === 'true') {
-        forceUnlockAudio();
-      }
-    } catch {}
-
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' || e.key === 'F') {
@@ -215,7 +218,7 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
-      if (!userEnabledSound && (e.key === ' ' || e.key === 'Enter')) {
+      if (e.key === ' ' || e.key === 'Enter') {
         forceUnlockAudio();
       }
     };
@@ -226,24 +229,24 @@ export default function DisplayPage() {
       document.removeEventListener('keydown', handleKeyDown);
       document.head.removeChild(link);
     };
-  }, [loadSessionData, forceUnlockAudio, userEnabledSound]);
+  }, [loadSessionData, forceUnlockAudio]);
 
-  // Global user gesture listener to unlock audio on first click/touch/keypress
+  // Global user gesture listener to unlock/unmute audio on ANY click/touch/keypress
   useEffect(() => {
     const handleGlobalGesture = (e: Event) => {
       const target = e.target as HTMLElement | null;
       if (target?.closest?.('[data-no-global-unlock]')) return;
-      if (!soundUnlockedRef.current) {
-        forceUnlockAudio();
-      }
+      forceUnlockAudio();
     };
 
     window.addEventListener('click', handleGlobalGesture, { capture: true });
+    window.addEventListener('pointerdown', handleGlobalGesture, { capture: true });
     window.addEventListener('touchstart', handleGlobalGesture, { capture: true, passive: true });
     window.addEventListener('keydown', handleGlobalGesture, { capture: true });
 
     return () => {
       window.removeEventListener('click', handleGlobalGesture, { capture: true });
+      window.removeEventListener('pointerdown', handleGlobalGesture, { capture: true });
       window.removeEventListener('touchstart', handleGlobalGesture);
       window.removeEventListener('keydown', handleGlobalGesture);
     };

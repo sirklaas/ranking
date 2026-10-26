@@ -76,10 +76,18 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     return ENDGAME_CARDS.find(c => c.id === state.selectedCard) || null;
   }, [state.selectedCard]);
 
-  // Handle end title video
+  // Handle end title video & unmute on interaction
   useEffect(() => {
     const endVideo = endTitleVideoRef.current;
     if (!endVideo) return;
+
+    const unmuteAndPlay = () => {
+      endVideo.muted = false;
+      endVideo.volume = 1;
+      if (state.playbackState === 'endtitle' && endVideo.paused) {
+        endVideo.play().catch(() => {});
+      }
+    };
 
     if (state.playbackState === 'endtitle') {
       endVideo.currentTime = 0;
@@ -93,6 +101,16 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     } else {
       endVideo.pause();
     }
+
+    window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
+    window.addEventListener('click', unmuteAndPlay);
+    window.addEventListener('keydown', unmuteAndPlay);
+
+    return () => {
+      window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
+      window.removeEventListener('click', unmuteAndPlay);
+      window.removeEventListener('keydown', unmuteAndPlay);
+    };
   }, [state.playbackState]);
 
   // Notify backend when reveal animation has finished

@@ -229,12 +229,10 @@ export default function Top10Player({
 
                 {/* Logo band */}
                 <div
-                    className="relative z-20 w-full bg-cover bg-center bg-no-repeat shrink-0 top-0 left-0"
-                    style={{ backgroundImage: 'url(/assets/band.webp)', height: '14vh' }}
+                    className="relative z-20 w-full bg-cover bg-center bg-no-repeat shrink-0 top-0 left-0 py-2.5 flex items-center justify-center"
+                    style={{ backgroundImage: 'url(/assets/band.webp)', minHeight: '85px' }}
                 >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <CreepyRankingLogo size="sm" />
-                    </div>
+                    <CreepyRankingLogo size="md" />
                 </div>
 
                 {/* Heading */}

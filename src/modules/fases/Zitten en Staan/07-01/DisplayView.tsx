@@ -33,10 +33,16 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
     };
   }, [sessionId, faseKey]);
 
-  // Play video with sound once loaded
+  // Play video with sound once loaded & unmute on user interaction
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
+
+    const unmuteAndPlay = () => {
+      v.muted = false;
+      v.volume = 1;
+      if (v.paused) v.play().catch(() => {});
+    };
 
     const tryPlay = () => {
       v.muted = false;
@@ -53,7 +59,16 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
       v.addEventListener('canplay', tryPlay, { once: true });
     }
 
-    return () => v.removeEventListener('canplay', tryPlay);
+    window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
+    window.addEventListener('click', unmuteAndPlay);
+    window.addEventListener('keydown', unmuteAndPlay);
+
+    return () => {
+      v.removeEventListener('canplay', tryPlay);
+      window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
+      window.removeEventListener('click', unmuteAndPlay);
+      window.removeEventListener('keydown', unmuteAndPlay);
+    };
   }, [mediaUrl, faseKey]);
 
   return (

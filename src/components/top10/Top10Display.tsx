@@ -478,23 +478,39 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
         prevPhaseRef.current = phase;
     }, [phase]);
 
-    // Play video only once and with sound
+    // Play video with sound and unmute on interaction
     useEffect(() => {
-        if (videoRef.current) {
-            const v = videoRef.current;
+        const v = videoRef.current;
+        if (!v) return;
+
+        const unmuteAndPlay = () => {
             v.muted = false;
             v.volume = 1;
-            v.loop = false;
+            if (v.paused) v.play().catch(() => {});
+        };
 
-            const playPromise = v.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("[Top10Display] Autoplay prevented, waiting for interaction", error);
-                    v.muted = true; // Fallback to muted if blocked
-                    v.play();
-                });
-            }
+        v.muted = false;
+        v.volume = 1;
+        v.loop = false;
+
+        const playPromise = v.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("[Top10Display] Autoplay prevented, waiting for interaction", error);
+                v.muted = true; // Fallback to muted if blocked
+                v.play().catch(() => {});
+            });
         }
+
+        window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
+        window.addEventListener('click', unmuteAndPlay);
+        window.addEventListener('keydown', unmuteAndPlay);
+
+        return () => {
+            window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
+            window.removeEventListener('click', unmuteAndPlay);
+            window.removeEventListener('keydown', unmuteAndPlay);
+        };
     }, [mediaUrl]);
 
 

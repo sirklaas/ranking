@@ -472,12 +472,46 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
 
   // Trigger animation when results phase starts
   const prevPhaseRef = useRef(phase);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
   useEffect(() => {
     if (phase === 'results' && prevPhaseRef.current !== 'results') {
       setAnimateResults(true);
     }
     prevPhaseRef.current = phase;
   }, [phase]);
+
+  // Handle video audio playback & unmute on interaction
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    const unmuteAndPlay = () => {
+      v.muted = false;
+      v.volume = 1;
+      if (v.paused) v.play().catch(() => {});
+    };
+
+    v.muted = false;
+    v.volume = 1;
+    const p = v.play();
+    if (p !== undefined) {
+      p.catch(() => {
+        v.muted = true;
+        v.play().catch(() => {});
+      });
+    }
+
+    window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
+    window.addEventListener('click', unmuteAndPlay);
+    window.addEventListener('keydown', unmuteAndPlay);
+
+    return () => {
+      window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
+      window.removeEventListener('click', unmuteAndPlay);
+      window.removeEventListener('keydown', unmuteAndPlay);
+    };
+  }, [mediaUrl]);
 
   return (
     <div
@@ -492,11 +526,15 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
             <video
+              ref={videoRef}
               src={mediaUrl}
               className="w-[100vw] h-[100vh] object-cover"
               autoPlay
-              muted
               playsInline
+              onPlay={(e) => {
+                e.currentTarget.muted = false;
+                e.currentTarget.volume = 1;
+              }}
               onTimeUpdate={(e) => {
                 const vid = e.currentTarget;
                 if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
