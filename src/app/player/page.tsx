@@ -706,18 +706,15 @@ export default function PlayerPage() {
 
         {/* Sections 1-3: Logo Background + Logo Overlay - Sticky Header */}
         <div
-          className="row-span-3 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50 sticky-header"
+          className="row-span-3 relative bg-cover bg-center bg-no-repeat sticky top-0 z-50 sticky-header flex items-center justify-center py-2"
           style={{
             backgroundImage: 'url(/assets/band.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            minHeight: '20vh' // Ensure proper height
+            minHeight: '120px'
           }}
         >
-          {/* Creepy Ranking Logo Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <CreepyRankingLogo size="lg" />
-          </div>
+          <CreepyRankingLogo />
         </div>
 
         {/* Sections 4-5: Dynamic Heading with Typewriter Animation */}

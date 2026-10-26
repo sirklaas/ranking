@@ -3,8 +3,8 @@ import { registerFase } from '@/modules/fases';
 import { key, title, group, needs, skipTrailer } from './config';
 import PresenterView from './PresenterView';
 import PlayerView from './PlayerView';
+import DisplayView from './DisplayView';
 
-// No custom DisplayView — normal media overlay handles video playback on display
 export const faseModule: FaseModule = {
   key,
   group,
@@ -13,6 +13,7 @@ export const faseModule: FaseModule = {
   skipTrailer,
   PresenterView,
   PlayerView,
+  DisplayView,
 };
 
 registerFase(faseModule);

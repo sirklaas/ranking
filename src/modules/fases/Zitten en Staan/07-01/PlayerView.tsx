@@ -40,7 +40,34 @@ const ZITTEN_STELLINGEN: Record<string, string> = {
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo, heading }) => {
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [tallies, setTallies] = useState({ red: 0, blue: 0 });
   const prevFaseRef = useRef(faseKey);
+
+  // Poll live vote tallies
+  useEffect(() => {
+    let active = true;
+    const fetchTallies = async () => {
+      try {
+        const p = new URLSearchParams();
+        if (sessionId) p.set('session_id', sessionId);
+        if (faseKey) p.set('fase', faseKey);
+        const res = await fetch(`/api/zitten-vote?${p.toString()}`);
+        if (active && res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setTallies({ red: data.red || 0, blue: data.blue || 0 });
+          }
+        }
+      } catch {}
+    };
+
+    fetchTallies();
+    const timer = setInterval(fetchTallies, 1000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [sessionId, faseKey]);
 
   const handleVote = async (selected: 'red' | 'blue') => {
     setChoice(selected);
@@ -124,14 +151,29 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo,
 
     return (
       <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center"
+        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-6"
         style={{ background: bg, fontFamily: 'Barlow Semi Condensed, sans-serif' }}
       >
-        <div className="text-center" style={{ animation: 'zsPopIn 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
+        <div className="text-center flex flex-col items-center" style={{ animation: 'zsPopIn 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
           <div className="text-white text-6xl font-bold mb-2" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
             {choice === 'red' ? '🔴' : '🔵'}
           </div>
-          <div className="text-white/60 text-lg mt-4">Wacht op de volgende vraag…</div>
+          <div className="text-white text-2xl font-bold uppercase tracking-wider mb-1">
+            {choice === 'red' ? 'Je bent Oneens' : 'Je bent Eens'}
+          </div>
+          <div className="text-white/80 text-sm mb-6">Stem geregistreerd!</div>
+
+          {/* Counter Rectangles on Phone */}
+          <div className="flex gap-4">
+            <div className="px-6 py-3 rounded-2xl bg-black/30 border-2 border-white/40 text-center shadow-lg min-w-[100px]">
+              <div className="text-3xl font-black font-mono leading-none text-white">{tallies.red}</div>
+              <div className="text-xs uppercase font-bold text-red-200 mt-1">Rood / Oneens</div>
+            </div>
+            <div className="px-6 py-3 rounded-2xl bg-black/30 border-2 border-white/40 text-center shadow-lg min-w-[100px]">
+              <div className="text-3xl font-black font-mono leading-none text-white">{tallies.blue}</div>
+              <div className="text-xs uppercase font-bold text-blue-200 mt-1">Blauw / Eens</div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -179,49 +221,60 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo,
       {/* Red / Blue buttons - revealed only after display video is finished */}
       <div className="flex-1 flex items-center justify-center px-6">
         {isReady ? (
-          <div
-            className="flex gap-6 w-full max-w-md"
-            style={{ animation: 'zsFadeUp 0.5s ease-out both' }}
-          >
-            <div className="flex-1 flex flex-col items-center gap-3">
-              <button
-                onClick={() => handleVote('red')}
-                className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-                style={{
-                  background: 'linear-gradient(145deg, #e53e3e, #c53030)',
-                  border: '4px solid rgba(255,255,255,0.3)',
-                }}
-              >
-                <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
-                  🔴
-                </span>
-              </button>
-              <div
-                className="text-white font-bold text-2xl tracking-wide "
-                style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              >
-                Oneens
+          <div className="flex flex-col items-center gap-4 w-full max-w-md" style={{ animation: 'zsFadeUp 0.5s ease-out both' }}>
+            <div className="flex gap-6 w-full">
+              <div className="flex-1 flex flex-col items-center gap-3">
+                <button
+                  onClick={() => handleVote('red')}
+                  className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                  style={{
+                    background: 'linear-gradient(145deg, #e53e3e, #c53030)',
+                    border: '4px solid rgba(255,255,255,0.3)',
+                  }}
+                >
+                  <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
+                    🔴
+                  </span>
+                </button>
+                <div
+                  className="text-white font-bold text-2xl tracking-wide "
+                  style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                >
+                  Oneens
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col items-center gap-3">
+                <button
+                  onClick={() => handleVote('blue')}
+                  className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                  style={{
+                    background: 'linear-gradient(145deg, #3182ce, #2b6cb0)',
+                    border: '4px solid rgba(255,255,255,0.3)',
+                  }}
+                >
+                  <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
+                    🔵
+                  </span>
+                </button>
+                <div
+                  className="text-white font-bold text-2xl tracking-wide "
+                  style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                >
+                  Eens
+                </div>
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center gap-3">
-              <button
-                onClick={() => handleVote('blue')}
-                className="w-full aspect-square rounded-3xl flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-                style={{
-                  background: 'linear-gradient(145deg, #3182ce, #2b6cb0)',
-                  border: '4px solid rgba(255,255,255,0.3)',
-                }}
-              >
-                <span className="text-white text-5xl font-extrabold" style={{ textShadow: '0 3px 12px rgba(0,0,0,0.4)' }}>
-                  🔵
-                </span>
-              </button>
-              <div
-                className="text-white font-bold text-2xl tracking-wide "
-                style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-              >
-                Eens
+            {/* Live Counter Rectangles on Phone */}
+            <div className="flex items-center justify-center gap-4 w-full max-w-xs mt-2">
+              <div className="flex-1 py-2 px-3 rounded-2xl bg-red-600/80 border-2 border-red-300 text-center shadow-lg">
+                <div className="text-2xl font-black font-mono leading-none text-white">{tallies.red}</div>
+                <div className="text-[11px] uppercase font-bold text-red-200 mt-1">Oneens</div>
+              </div>
+              <div className="flex-1 py-2 px-3 rounded-2xl bg-blue-600/80 border-2 border-blue-300 text-center shadow-lg">
+                <div className="text-2xl font-black font-mono leading-none text-white">{tallies.blue}</div>
+                <div className="text-[11px] uppercase font-bold text-blue-200 mt-1">Eens</div>
               </div>
             </div>
           </div>
