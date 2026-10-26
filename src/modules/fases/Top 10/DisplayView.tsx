@@ -38,14 +38,17 @@ const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, sess
   // Use hardcoded image with theme resolver, or fall back to passed media
   const hardcodedMediaUrl = slide.image ? motherfileService.fileUrl(slide.image) : (passedMediaUrl || '');
   const parsed = safeJsonParse<Top10State>(moduleStateJson);
+  const qIdx = parseInt(faseKey.split('/')[1] || '0', 10);
+  const isCurrentFase = !!parsed && parsed.currentFase === faseKey && (parsed.currentQuestion?.questionIndex === qIdx || !parsed.currentQuestion?.questionIndex);
+
   // If state belongs to a different slide/faseKey, reset votes for this fresh slide
-  const state: Top10State = (parsed && parsed.currentFase === faseKey)
+  const state: Top10State = isCurrentFase
     ? parsed
     : {
         ...EMPTY_TOP10_STATE,
         currentFase: faseKey,
         currentQuestion: {
-          questionIndex: parseInt(faseKey.split('/')[1] || '0', 10),
+          questionIndex: qIdx,
           phase: 'voting',
           votes: [],
           results: [],
@@ -58,6 +61,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({ moduleStateJson, faseKey, sess
   }
 
   return <Top10Display
+    key={faseKey}
     state={state}
     heading={slide.heading}
     mediaUrl={hardcodedMediaUrl}

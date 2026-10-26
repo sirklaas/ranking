@@ -176,7 +176,28 @@ function WordCloud({ results, animate }: { results: Top10Result[]; animate: bool
 
     // Simulation & Rendering Logic
     useEffect(() => {
-        if (!d3Loaded || !animate || !results.length || !containerRef.current || !canvasRef.current) return;
+        // If results are empty (new slide or no votes), clear canvas and stop simulation immediately
+        if (!results || results.length === 0) {
+            if (frameRef.current) {
+                cancelAnimationFrame(frameRef.current);
+                frameRef.current = 0;
+            }
+            if (simulationRef.current) {
+                simulationRef.current.stop();
+                simulationRef.current = null;
+            }
+            nodesRef.current = [];
+            if (canvasRef.current) {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            return;
+        }
+
+        if (!d3Loaded || !animate || !containerRef.current || !canvasRef.current) return;
 
         const d3 = (window as any).d3;
         const container = containerRef.current;
@@ -460,7 +481,7 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
 /* ──────── main display component ──────── */
 export default function Top10Display({ state, heading, mediaUrl, faseKey, sessionId }: Top10DisplayProps) {
     const phase = state?.currentQuestion?.phase || 'intro';
-    const isMatchingFase = !state?.currentFase || !faseKey || state.currentFase === faseKey;
+    const isMatchingFase = !!faseKey && state?.currentFase === faseKey;
     const votedNames = state && isMatchingFase ? getVoterNames(state) : [];
     const liveTally = useMemo(() => {
         if (!isMatchingFase) return [];
@@ -608,19 +629,19 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                 >
                     {phase === 'intro' ? (
                         <div className="flex-1 flex flex-wrap gap-4 items-start justify-center p-8">
-                            <NameWall allNames={state.allPlayerNames} votedNames={votedNames} />
+                            <NameWall key={faseKey} allNames={state.allPlayerNames} votedNames={votedNames} />
                         </div>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center relative">
                             {/* Left: SequentialResults if results phase */}
                             {phase === 'results' && (
                                 <div className="w-[30%] h-full shrink-0 pr-6">
-                                    <SequentialResults results={state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
+                                    <SequentialResults key={faseKey} results={state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
                                 </div>
                             )}
                             {/* WordCloud: takes full width during voting (100% centered!), or 70% during results */}
                             <div className={`${phase === 'results' ? 'w-[70%]' : 'w-full'} h-full flex items-center justify-center relative transition-all duration-700`}>
-                                <WordCloud results={liveTally} animate={animateCloud} />
+                                <WordCloud key={faseKey} results={liveTally} animate={animateCloud} />
                             </div>
                         </div>
                     )}

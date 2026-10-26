@@ -25,24 +25,19 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     if (!faseKey || !sessionId) return;
     if (state.currentFase === faseKey) return; // already in sync
 
-    if (state?.currentQuestion?.votes?.length > 0 || state?.currentQuestion?.phase === 'results') {
-      const nextState: Top10State = {
-        ...state,
-        currentFase: faseKey,
-        currentQuestion: {
-          questionIndex: (state?.currentQuestion?.questionIndex || 0) + 1,
-          phase: 'intro',
-          votes: [],
-          results: [],
-        },
-      };
-      onModuleStateJson?.(JSON.stringify(nextState));
-      top10Logic.persistState(sessionId, nextState).catch(() => { });
-    } else {
-      const syncState: Top10State = { ...state, currentFase: faseKey };
-      onModuleStateJson?.(JSON.stringify(syncState));
-      top10Logic.persistState(sessionId, syncState).catch(() => { });
-    }
+    const qIdx = parseInt(faseKey.split('/')[1] || '0', 10);
+    const nextState: Top10State = {
+      ...state,
+      currentFase: faseKey,
+      currentQuestion: {
+        questionIndex: qIdx,
+        phase: 'voting',
+        votes: [],
+        results: [],
+      },
+    };
+    onModuleStateJson?.(JSON.stringify(nextState));
+    top10Logic.persistState(sessionId, nextState).catch(() => { });
   }, [faseKey, sessionId, state.currentFase]);
 
   if (!sessionId) return null;

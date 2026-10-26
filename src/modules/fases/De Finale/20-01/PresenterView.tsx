@@ -196,11 +196,18 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         handleReset();
+      } else if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        if (state.playbackState === 'endtitle') {
+          handleReturnToGrid();
+        } else {
+          handleShowEndTitle();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.playbackState, handlePlayVideo, handleReturnToGrid, handleReset]);
+  }, [state.playbackState, handlePlayVideo, handleReturnToGrid, handleReset, handleShowEndTitle]);
 
   // Which teams picked which card?
   const getTeamsForCard = (cardId: string): string[] => {
@@ -246,7 +253,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
                 : 'bg-purple-950/60 text-purple-200 border-purple-600/40 hover:bg-purple-800/80 hover:text-white'
             }`}
           >
-            {state.playbackState === 'endtitle' ? '⏹ Terug naar Grid' : '🎬 Show End Card'}
+            {state.playbackState === 'endtitle' ? '⏹ Terug naar Grid (e)' : '🎬 Show End Card (e)'}
           </button>
 
           <button
@@ -386,6 +393,10 @@ const PresenterView: React.FC<FaseCommonProps> = ({
           <span className="flex items-center gap-1.5">
             <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/20 font-mono text-indigo-300">R</kbd>
             <span>Reset</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/20 font-mono text-indigo-300">E</kbd>
+            <span>Show End Card (QR)</span>
           </span>
         </div>
 

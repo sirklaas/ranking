@@ -163,6 +163,40 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     };
   }, [state.playbackState]);
 
+  // Keyboard shortcut 'e' or 'E' on display to toggle End Card with QR code & Lawineboys
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+      if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        const nextPlayback = state.playbackState === 'endtitle' ? 'grid' : 'endtitle';
+        const nextState: EndgameState = {
+          ...state,
+          selectedCard: null,
+          playbackState: nextPlayback,
+          timestamp: Date.now()
+        };
+        setState(nextState);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+        } catch {}
+        if (onModuleStateJson) onModuleStateJson(JSON.stringify(nextState));
+        if (sessionId) {
+          fetch('/api/session-state', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: sessionId,
+              data: { endgame_state: nextState }
+            })
+          }).catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [state, sessionId, onModuleStateJson]);
+
   // Notify backend when reveal animation has finished
   const handleRevealEnded = useCallback(async () => {
     if (state.selectedCard) {
@@ -327,7 +361,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
             }}
             onEnded={() => setShowTrailer(false)}
           />
-          <SpookyTrailerTitle faseKey="20/01" customHeading="DE FINALE" />
+          <SpookyTrailerTitle faseKey="20/01" customHeading="FNUIKENDE FINALE" />
           <button
             onClick={() => setShowTrailer(false)}
             className="absolute bottom-6 right-6 z-50 bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white px-5 py-2 rounded-full text-sm font-mono tracking-wider backdrop-blur-sm transition-all"

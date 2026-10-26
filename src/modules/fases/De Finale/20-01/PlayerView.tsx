@@ -205,7 +205,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({
 
   // During initial trailer before choice
   if (!chosenCard && !state.selectedCard && (state.revealedCards || []).length === 0 && !isLeader && state.playbackState === 'grid') {
-    return <TrailerTitleCard title="De Finale" subtitle="Kijk naar het grote scherm" fase="20/01" />;
+    return <TrailerTitleCard title="Fnuikende Finale" subtitle="Kijk naar het grote scherm" fase="20/01" />;
   }
 
   return (

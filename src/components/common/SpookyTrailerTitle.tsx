@@ -14,7 +14,7 @@ const TRAILER_TITLES: Record<string, string> = {
   '10/01': 'DE TOP 3',
   '13/01': 'KRAKENDE KARAKTERS',
   '17/01': 'DE TOP 10',
-  '20/01': 'DE FINALE',
+  '20/01': 'FNUIKENDE FINALE',
 };
 
 export default function SpookyTrailerTitle({
@@ -33,8 +33,8 @@ export default function SpookyTrailerTitle({
     return () => clearTimeout(timer);
   }, [faseKey, delayMs]);
 
-  // Use defined trailer title first, or customHeading if provided
-  const title = TRAILER_TITLES[faseKey] || customHeading || '';
+  // Use customHeading first if provided, or defined trailer title
+  const title = customHeading || TRAILER_TITLES[faseKey] || '';
   if (!title) return null;
 
   const fontFamilies: Record<string, string> = {
