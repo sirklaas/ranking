@@ -82,3 +82,10 @@ body {
     opacity: 1;
   }
 }
+
+.large-num {
+  font-size: 110px;
+  vertical-align: -2px;
+  display: inline-block;
+  margin: 0 1px;
+}

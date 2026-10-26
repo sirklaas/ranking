@@ -26,11 +26,21 @@ export default function CodedEndgameReveal({
   const starGroupRef = useRef<SVGGElement>(null);
   const wipeRectRef = useRef<SVGRectElement>(null);
   const cardContainerRef = useRef<HTMLDivElement>(null);
+  const cardImgRef = useRef<HTMLImageElement | null>(null);
 
   const [scale, setScale] = useState(1);
   const animFrameRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
   const elapsedRef = useRef<number>(0);
+
+  // Preload card image for Voronoi shard texturing
+  useEffect(() => {
+    if (typeof window !== 'undefined' && card.image) {
+      const img = new Image();
+      img.src = card.image;
+      cardImgRef.current = img;
+    }
+  }, [card.image]);
 
   // Audio references
   const bgAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -342,16 +352,25 @@ export default function CodedEndgameReveal({
               shCtx.translate(x, y);
               shCtx.scale(scaleSh, scaleSh);
               shCtx.rotate(shard.rotZ * shatterT);
-              shCtx.fillStyle = `rgba(255, 117, 24, ${alpha * 0.85})`;
-              shCtx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
-              shCtx.lineWidth = 1.5;
 
               shCtx.beginPath();
               shCtx.moveTo(shard.pts[0].x, shard.pts[0].y);
               shCtx.lineTo(shard.pts[1].x, shard.pts[1].y);
               shCtx.lineTo(shard.pts[2].x, shard.pts[2].y);
               shCtx.closePath();
-              shCtx.fill();
+
+              if (cardImgRef.current && cardImgRef.current.complete) {
+                shCtx.save();
+                shCtx.clip();
+                shCtx.drawImage(cardImgRef.current, -shard.origCX, -shard.origCY, 600, 600);
+                shCtx.restore();
+              } else {
+                shCtx.fillStyle = `rgba(255, 117, 24, ${alpha * 0.85})`;
+                shCtx.fill();
+              }
+
+              shCtx.strokeStyle = `rgba(255, 230, 160, ${alpha * 0.8})`;
+              shCtx.lineWidth = 1.5;
               shCtx.stroke();
               shCtx.restore();
             }
@@ -508,7 +527,15 @@ export default function CodedEndgameReveal({
           <img
             src={card.image}
             alt={card.name}
-            className="w-[600px] h-[600px] object-cover rounded-2xl border-4 border-orange-500 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(255,117,24,0.4)]"
+            style={{
+              width: '600px',
+              height: '600px',
+              objectFit: 'cover',
+              borderRadius: '12px',
+              border: '4px solid #8B0000',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(245, 158, 11, 0.35)',
+              willChange: 'transform, opacity',
+            }}
           />
         </div>
 
@@ -590,34 +617,39 @@ export default function CodedEndgameReveal({
               >
                 <polygon
                   points="0,-55 14,-15 55,-14 22,10 35,50 0,25 -35,50 -22,10 -55,-14 -14,-15"
-                  fill="#ff7518"
-                  stroke="#5b215c"
-                  strokeWidth="3"
+                  fill={card.color || '#5B215C'}
+                  stroke="#dfa86a"
+                  strokeWidth="2.5"
                 />
               </g>
             </svg>
           </div>
 
-          {/* Dynamic Outcome Text (Munten Format) */}
+          {/* Dynamic Outcome Text (Barlow Semi Condensed 400 & 700) */}
           <div
             className="absolute left-[145px] top-[50px] w-[676px] h-[330px] flex flex-col items-center justify-center pointer-events-none"
             style={{ clipPath: 'url(#codedTextWipeClip)' }}
           >
             <div
-              className="text-[#5B215C] font-normal uppercase text-center leading-tight tracking-wider"
+              className="text-[#5B215C] font-normal uppercase text-center tracking-wider max-w-[660px] whitespace-nowrap"
               style={{
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 fontSize: '68px',
+                lineHeight: 1.05,
+                letterSpacing: '0.01em',
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
               }}
             >
               {card.line1}
             </div>
             <div
-              className="text-[#5B215C] font-bold uppercase text-center leading-none tracking-wide mt-2 max-w-[650px]"
+              className="text-[#5B215C] font-bold uppercase text-center tracking-wide max-w-[660px]"
               style={{
                 fontFamily: 'Barlow Semi Condensed, sans-serif',
                 fontSize: '92px',
+                lineHeight: 0.92,
+                letterSpacing: '0.01em',
+                marginTop: '4px',
                 filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.2))',
               }}
               dangerouslySetInnerHTML={{ __html: card.line2 }}

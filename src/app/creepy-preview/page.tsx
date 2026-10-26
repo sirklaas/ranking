@@ -456,72 +456,86 @@ export default function CreepyPreviewPage() {
         )}
       </main>
 
-      {/* Fullscreen Overlay for Coded Endgame Reveal */}
+      {/* Seamless Fullscreen Coded Endgame Reveal (Layout as in Example File) */}
       {selectedEndgameCard && (
-        <div className="fixed inset-0 z-50 bg-black flex flex-col">
-          {/* Top Control Bar */}
-          <div className="relative z-50 bg-black/90 backdrop-blur border-b border-orange-500/30 px-6 py-3 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">🃏</span>
-              <div>
-                <span className="text-xs text-orange-400 font-mono font-bold uppercase tracking-wider block">
-                  Coded Finale Reveal Simulation
-                </span>
-                <span className="text-base font-black text-white uppercase">
-                  {selectedEndgameCard.name} ·{' '}
-                  <span className="text-zinc-300 font-normal">
-                    {selectedEndgameCard.line1} {selectedEndgameCard.line2.replace(/<[^>]*>/g, '')}
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            {/* Controls */}
+        <div className="fixed inset-0 z-50 overflow-hidden select-none">
+          {/* Top Floating Pill Header (as in example file) */}
+          <header className="fixed top-3.5 left-1/2 -translate-x-1/2 z-[60] bg-[#12121a]/90 backdrop-blur-md border border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.4)] rounded-full px-4 py-1.5 flex items-center justify-between gap-3 max-w-[96vw]">
             <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setEndgamePlaybackState('playing')}
-                className={`px-4 py-2 rounded-lg font-bold text-xs uppercase transition-all flex items-center space-x-1.5 ${
-                  endgamePlaybackState === 'playing'
-                    ? 'bg-orange-600 text-white shadow-[0_0_15px_#ea580c]'
-                    : 'bg-zinc-800 text-zinc-200 hover:bg-orange-600 hover:text-white'
-                }`}
-              >
-                <span>▶️</span>
-                <span>Play Reveal</span>
-              </button>
-              <button
-                onClick={() => setEndgamePlaybackState('paused')}
-                className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all flex items-center space-x-1"
-              >
-                <span>⏸️</span>
-                <span>Reset Card</span>
-              </button>
-              <button
-                onClick={() => setIsMuted((m) => !m)}
-                className="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold transition-all flex items-center space-x-1"
-              >
-                <span>{isMuted ? '🔇' : '🔊'}</span>
-                <span>{isMuted ? 'Unmute' : 'Mute'}</span>
-              </button>
-              <button
-                onClick={() => setSelectedEndgameCard(null)}
-                className="px-4 py-2 rounded-lg bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs uppercase transition-all ml-2"
-              >
-                ✕ Sluiten
-              </button>
+              <span className="bg-gradient-to-br from-purple-700 to-purple-500 text-white text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded shadow-[0_0_10px_rgba(147,51,234,0.4)]">
+                {cardSet === 'halloween' ? '🎃 Halloween' : '🔮 Standard'}
+              </span>
+              <span className="text-white text-xs font-bold uppercase hidden sm:inline">
+                {selectedEndgameCard.name}
+              </span>
             </div>
+
+            {/* Quick 8-Card Switcher Pills */}
+            <div className="flex items-center space-x-1 bg-black/40 p-1 rounded-lg border border-white/10 overflow-x-auto max-w-[55vw]">
+              {(cardSet === 'halloween' ? ENDGAME_HALLOWEEN_CARDS : ENDGAME_STANDARD_CARDS).map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    setSelectedEndgameCard(c);
+                    setEndgamePlaybackState('playing');
+                  }}
+                  className={`px-2.5 py-1 rounded text-[11px] font-bold whitespace-nowrap transition-all ${
+                    selectedEndgameCard.id === c.id
+                      ? 'bg-purple-600 text-white shadow-[0_0_8px_#9333ea]'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedEndgameCard(null)}
+              className="bg-white/10 hover:bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20 transition-all"
+            >
+              ✕ Sluiten
+            </button>
+          </header>
+
+          {/* Bottom Floating Pill Controls Bar (as in example file) */}
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] bg-[#12121a]/90 backdrop-blur-md border border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.4)] rounded-full px-5 py-2 flex items-center space-x-3">
+            <button
+              onClick={() => setEndgamePlaybackState('playing')}
+              className={`px-4 py-1.5 rounded-full font-bold text-xs uppercase transition-all flex items-center space-x-1.5 ${
+                endgamePlaybackState === 'playing'
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-black shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              <span>▶</span>
+              <span>Play</span>
+            </button>
+            <button
+              onClick={() => setEndgamePlaybackState('paused')}
+              className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center space-x-1 border border-white/10"
+            >
+              <span>↺</span>
+              <span>Replay</span>
+            </button>
+            <button
+              onClick={() => setIsMuted((m) => !m)}
+              className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center space-x-1 border border-white/10"
+            >
+              <span>{isMuted ? '🔇' : '🔊'}</span>
+              <span>{isMuted ? 'Audio Off' : 'Audio On'}</span>
+            </button>
           </div>
 
-          {/* Reveal Component */}
-          <div className="relative flex-1 w-full h-full">
-            <CodedEndgameReveal
-              card={selectedEndgameCard}
-              playbackState={endgamePlaybackState}
-              onFinished={() => setEndgamePlaybackState('finished')}
-              onClose={() => setSelectedEndgameCard(null)}
-              isMuted={isMuted}
-            />
-          </div>
+          {/* Pure Canvas Reveal Engine */}
+          <CodedEndgameReveal
+            card={selectedEndgameCard}
+            playbackState={endgamePlaybackState}
+            onFinished={() => setEndgamePlaybackState('finished')}
+            onClose={() => setSelectedEndgameCard(null)}
+            isMuted={isMuted}
+          />
         </div>
       )}
     </div>
