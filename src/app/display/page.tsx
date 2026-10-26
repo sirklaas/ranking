@@ -37,6 +37,46 @@ export default function DisplayPage() {
   const [moduleStates, setModuleStates] = useState<Record<string, string>>({});
   const [pollDebug, setPollDebug] = useState({ count: 0, lastPbFase: '?', error: '' });
 
+  const forceUnlockAudio = useCallback(() => {
+    if (soundUnlockedRef.current) return;
+    soundUnlockedRef.current = true;
+    console.log('[Display] Sound unlocked via user gesture');
+    setUserEnabledSound(true);
+    try { sessionStorage.setItem('soundUnlocked', 'true'); } catch {}
+
+    try {
+      const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+      const AC = window.AudioContext || anyWin?.webkitAudioContext;
+      if (AC) {
+        const ctx = new AC();
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const s = ctx.createBufferSource();
+        s.buffer = buf;
+        s.connect(ctx.destination);
+        s.start(0);
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      }
+    } catch (err) {
+      console.warn('[Display] AudioContext unlock error:', err);
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('ranking-audio-unlocked'));
+    } catch {}
+
+    setTimeout(() => {
+      try {
+        const v = videoRef.current;
+        if (v && v.src) {
+          v.muted = false;
+          v.volume = 1;
+          const p = v.play();
+          if (p) p.catch(() => { v.muted = true; v.play().catch(() => {}); });
+        }
+      } catch (err) {}
+    }, 50);
+  }, []);
+
   useEffect(() => {
     currentSessionRef.current = currentSession;
   }, [currentSession]);
@@ -160,41 +200,12 @@ export default function DisplayPage() {
 
     loadSessionData();
 
-    // Event listener for audio context unlock
-    const forceUnlockAudio = () => {
-      if (soundUnlockedRef.current) return;
-      soundUnlockedRef.current = true;
-      console.log('[Display] Global unlock triggered via event');
-      setUserEnabledSound(true);
-      lastPlayedUrl.current = '';
-
-      try {
-        const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-        const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
-        if (AC) {
-          const ctx = new AC();
-          const buf = ctx.createBuffer(1, 1, 22050);
-          const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
-          if (ctx.state === 'suspended') ctx.resume().catch(() => { });
-        }
-      } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
-
-      setTimeout(() => {
-        try {
-          const v = videoRef.current;
-          if (v && v.src) {
-            v.muted = false;
-            v.volume = 1;
-            const p = v.play();
-            if (p) p.catch(() => { v.muted = true; v.play().catch(() => { }); });
-          }
-        } catch (err) { }
-      }, 100);
-    };
-
-    // Removed global mousedown/touchstart listeners.
-    // The explicit Start buttons on the overlay now handle audio unlocking,
-    // preventing the overlay from unmounting before the click event finishes.
+    // Auto-unlock if user enabled sound earlier in this session
+    try {
+      if (typeof window !== 'undefined' && sessionStorage.getItem('soundUnlocked') === 'true') {
+        forceUnlockAudio();
+      }
+    } catch {}
 
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -204,7 +215,6 @@ export default function DisplayPage() {
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
       }
-      // Spacebar or Enter to unlock audio if overlay is present
       if (!userEnabledSound && (e.key === ' ' || e.key === 'Enter')) {
         forceUnlockAudio();
       }
@@ -216,24 +226,44 @@ export default function DisplayPage() {
       document.removeEventListener('keydown', handleKeyDown);
       document.head.removeChild(link);
     };
-  }, [loadSessionData]);
+  }, [loadSessionData, forceUnlockAudio, userEnabledSound]);
 
-  // Play video only when the media URL actually changes AND user has clicked start
+  // Global user gesture listener to unlock audio on first click/touch/keypress
+  useEffect(() => {
+    const handleGlobalGesture = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.('[data-no-global-unlock]')) return;
+      if (!soundUnlockedRef.current) {
+        forceUnlockAudio();
+      }
+    };
+
+    window.addEventListener('click', handleGlobalGesture, { capture: true });
+    window.addEventListener('touchstart', handleGlobalGesture, { capture: true, passive: true });
+    window.addEventListener('keydown', handleGlobalGesture, { capture: true });
+
+    return () => {
+      window.removeEventListener('click', handleGlobalGesture, { capture: true });
+      window.removeEventListener('touchstart', handleGlobalGesture);
+      window.removeEventListener('keydown', handleGlobalGesture);
+    };
+  }, [forceUnlockAudio]);
+
+  // Play video when the media URL changes
   useEffect(() => {
     if (!currentMedia) {
       lastPlayedUrl.current = '';
       return;
     }
     const v = videoRef.current;
-    if (!userEnabledSound) return; // Don't play until user clicks start button
     if (currentMedia.type !== 'video' || !v) return;
-    if (currentMedia.url === lastPlayedUrl.current) return; // already playing this URL
+    if (currentMedia.url === lastPlayedUrl.current) return;
     lastPlayedUrl.current = currentMedia.url;
 
     console.log(`[Display ${APP_VERSION}] Playing new video: ${currentMedia.name}`);
     try {
       v.currentTime = 0;
-      v.muted = false;
+      v.muted = !userEnabledSound;
       v.volume = 1;
       const p = v.play();
       if (p && typeof p.then === 'function') {
@@ -247,6 +277,18 @@ export default function DisplayPage() {
       console.error('[Display] Video play error:', e);
     }
   }, [currentMedia, userEnabledSound]);
+
+  // When userEnabledSound flips to true, immediately unmute current playing video
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (userEnabledSound && v.muted) {
+      console.log('[Display] Unmuting active video');
+      v.muted = false;
+      v.volume = 1;
+      v.play().catch(() => {});
+    }
+  }, [userEnabledSound]);
 
   // Poll session state via cached server proxy (never hits PB directly from browser)
   useEffect(() => {
@@ -423,6 +465,20 @@ export default function DisplayPage() {
             allPlayerNames={allPlayerNames}
           />
           {versionBadge}
+          {/* Audio unlock prompt if sound is not enabled yet */}
+          {isMounted && !userEnabledSound && (
+            <div
+              onClick={() => forceUnlockAudio()}
+              className="fixed bottom-6 right-6 z-[99999] bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold px-8 py-4 rounded-2xl shadow-[0_0_35px_rgba(249,115,22,0.8)] cursor-pointer flex items-center gap-4 animate-pulse border-2 border-orange-300 text-xl tracking-wide select-none transition-transform hover:scale-105"
+              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+            >
+              <span className="text-3xl">🔊</span>
+              <div>
+                <div className="uppercase">Klik voor Geluid</div>
+                <div className="text-xs font-normal text-orange-200">Klik ergens op het scherm of druk op een toets</div>
+              </div>
+            </div>
+          )}
         </>
       );
     }
@@ -444,17 +500,19 @@ export default function DisplayPage() {
               className="w-full h-full object-contain"
               playsInline
               autoPlay
+              muted={!userEnabledSound}
               onCanPlay={(e) => {
+                const vid = e.currentTarget;
                 if (userEnabledSound) {
-                  const vid = e.currentTarget;
-                  if (vid.paused) {
-                    vid.muted = false;
-                    vid.volume = 1;
-                    vid.play().catch(() => {
-                      vid.muted = true;
-                      vid.play().catch(() => {});
-                    });
-                  }
+                  vid.muted = false;
+                  vid.volume = 1;
+                  vid.play().catch(() => {
+                    vid.muted = true;
+                    vid.play().catch(() => {});
+                  });
+                } else {
+                  vid.muted = true;
+                  vid.play().catch(() => {});
                 }
               }}
               onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
@@ -764,52 +822,24 @@ export default function DisplayPage() {
         <div className="flex gap-6">
           {/* Safe Start Button */}
           <button
-            onMouseDown={(e) => e.stopPropagation()} // Prevent global unlock from swallowing click
-            onClick={async () => {
-              soundUnlockedRef.current = true;
-              setUserEnabledSound(true);
-              console.log('[Display] Resume clicked — enabling audio only');
-
-              try {
-                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
-                if (AC) {
-                  const ctx = new AC();
-                  const buf = ctx.createBuffer(1, 1, 22050);
-                  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
-                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
-                }
-              } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
-            }}
-            className="px-10 py-6 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-2xl text-2xl transition-all shadow-lg flex flex-col items-center gap-2 cursor-pointer"
+            onClick={() => forceUnlockAudio()}
+            className="px-10 py-6 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold rounded-2xl text-2xl transition-all shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 cursor-pointer border-2 border-orange-400"
             style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
           >
             <span>▶ START / RESUME</span>
-            <span className="text-sm font-normal opacity-80">(Alleen geluid activeren)</span>
+            <span className="text-sm font-normal text-orange-100">(Klik om alle geluiden te activeren)</span>
           </button>
 
           {/* Hard Reset Button */}
           <button
-            onMouseDown={(e) => e.stopPropagation()} // Prevent global unlock from swallowing click
-            onClick={async () => {
+            data-no-global-unlock="true"
+            onClick={async (e) => {
+              e.stopPropagation();
               // Confirm dialog to prevent accidental wipes
               if (!window.confirm("WEET JE ZEKER DAT JE ALLES WILT WISSEN?\n\nDit wist alle scores, teamleaders, top 3, top 10 en krakende karakters.")) return;
 
-              soundUnlockedRef.current = true;
-              setUserEnabledSound(true);
+              forceUnlockAudio();
               console.log('[Display] Reset clicked — running hard reset');
-
-              // Audio unlock
-              try {
-                const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-                const AC = window.AudioContext || (anyWin && anyWin.webkitAudioContext);
-                if (AC) {
-                  const ctx = new AC();
-                  const buf = ctx.createBuffer(1, 1, 22050);
-                  const s = ctx.createBufferSource(); s.buffer = buf; s.connect(ctx.destination); s.start(0);
-                  if (ctx.state === 'suspended') ctx.resume().catch(() => { });
-                }
-              } catch (err) { console.warn('[Display] AudioContext unlock error:', err); }
 
               // HARD RESET AND LOCK
               const sess = currentSessionRef.current;

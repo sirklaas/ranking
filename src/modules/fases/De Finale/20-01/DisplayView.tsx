@@ -83,7 +83,13 @@ const DisplayView: React.FC<FaseCommonProps> = ({
 
     if (state.playbackState === 'endtitle') {
       endVideo.currentTime = 0;
-      endVideo.play().catch(e => console.log('[Endgame Display] End title video play error:', e));
+      endVideo.muted = false;
+      endVideo.volume = 1;
+      endVideo.play().catch(e => {
+        console.log('[Endgame Display] End title video unmuted play error, trying muted:', e);
+        endVideo.muted = true;
+        endVideo.play().catch(() => {});
+      });
     } else {
       endVideo.pause();
     }
@@ -247,7 +253,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
           src="/pics/end.m4v"
           className="w-full h-full object-cover"
           playsInline
-          muted
           autoPlay
           loop
           onError={(e) => {

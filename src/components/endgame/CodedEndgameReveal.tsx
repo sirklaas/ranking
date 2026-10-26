@@ -50,6 +50,36 @@ export default function CodedEndgameReveal({
     star: false,
     chime: false,
   });
+  const [audioBlocked, setAudioBlocked] = useState(false);
+
+  const unlockAndPlayAudio = useCallback(() => {
+    try {
+      const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
+      const AC = window.AudioContext || anyWin?.webkitAudioContext;
+      if (AC) {
+        const ctx = new AC();
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      }
+      if (bgAudioRef.current && playbackState === 'playing') {
+        bgAudioRef.current.play().then(() => {
+          setAudioBlocked(false);
+        }).catch(() => {});
+      }
+      Object.values(sfxRefs.current).forEach((audio) => {
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }).catch(() => {});
+      });
+      setAudioBlocked(false);
+    } catch {}
+  }, [playbackState]);
+
+  useEffect(() => {
+    const handleUnlock = () => unlockAndPlayAudio();
+    window.addEventListener('ranking-audio-unlocked', handleUnlock);
+    return () => window.removeEventListener('ranking-audio-unlocked', handleUnlock);
+  }, [unlockAndPlayAudio]);
 
   // Responsive scaling
   useEffect(() => {
@@ -260,7 +290,12 @@ export default function CodedEndgameReveal({
     if (playbackState === 'playing' && bgAudioRef.current && !isMuted) {
       bgAudioRef.current.currentTime = 0;
       bgAudioRef.current.volume = 1;
-      bgAudioRef.current.play().catch(() => {});
+      bgAudioRef.current.play().then(() => {
+        setAudioBlocked(false);
+      }).catch((err) => {
+        console.warn('[Endgame Reveal] Audio autoplay blocked:', err);
+        setAudioBlocked(true);
+      });
     }
 
     const loop = (now: number) => {
@@ -520,8 +555,25 @@ export default function CodedEndgameReveal({
   return (
     <div
       ref={containerRef}
+      onClick={() => {
+        if (audioBlocked) unlockAndPlayAudio();
+      }}
       className="fixed inset-0 z-50 bg-[#ffffff] overflow-hidden flex items-center justify-center select-none"
     >
+      {/* Autoplay blocked recovery prompt */}
+      {audioBlocked && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            unlockAndPlayAudio();
+          }}
+          className="fixed top-6 right-6 z-[99999] bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold px-6 py-3 rounded-2xl shadow-[0_0_25px_rgba(249,115,22,0.8)] cursor-pointer flex items-center gap-3 animate-pulse border-2 border-orange-300 text-lg select-none"
+          style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+        >
+          <span className="text-2xl">🔊</span>
+          <span>KLIK VOOR GELUID</span>
+        </button>
+      )}
       {/* 1920x1080 Virtual Canvas Scaled to Fit - Seamless White Backdrop */}
       <div
         style={{
