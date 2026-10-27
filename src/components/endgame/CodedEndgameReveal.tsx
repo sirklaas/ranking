@@ -592,12 +592,12 @@ export default function CodedEndgameReveal({
     <div
       ref={containerRef}
       onClick={() => {
-        if (audioBlocked) unlockAndPlayAudio();
+        if (!isMuted && audioBlocked) unlockAndPlayAudio();
       }}
       className="fixed inset-0 z-50 bg-[#ffffff] overflow-hidden flex items-center justify-center select-none"
     >
-      {/* Autoplay blocked recovery prompt */}
-      {audioBlocked && (
+      {/* Autoplay blocked recovery prompt - Never show on muted displays */}
+      {!isMuted && audioBlocked && (
         <button
           onClick={(e) => {
             e.stopPropagation();

@@ -1,5 +1,11 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.31 (2026-10-27)
+- **Display 100% Stil & Geen Audio-Knoppen:**
+  - `isMuted={true}` expliciet doorgegeven aan `CodedEndgameReveal` in `DisplayView.tsx`.
+  - Display probeert geen audio meer af te spelen via de beamer, waardoor Safari geen autoplay blokkeert.
+  - De oranje knop *"🔊 KLIK VOOR GELUID"* verschijnt nu nooit meer op het display. Alle audio speelt exclusief via Presenter op de MacBook.
+
 ## Version 9.4.30 (2026-10-27)
 - **De Finale — Reveal Blijft Onbeperkt Staan Tot Pijltje Rechts:**
   - Klikken op een kaart start direct de coded reveal met audio (`playbackState: 'playing'`).

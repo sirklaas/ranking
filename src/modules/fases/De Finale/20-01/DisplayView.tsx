@@ -321,6 +321,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
         <CodedEndgameReveal
           card={activeCard}
           playbackState={state.playbackState}
+          isMuted={true}
           onFinished={handleRevealEnded}
           onClose={handleCloseReveal}
         />
