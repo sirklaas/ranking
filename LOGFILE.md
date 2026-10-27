@@ -1,5 +1,12 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.30 (2026-10-27)
+- **De Finale — Reveal Blijft Onbeperkt Staan Tot Pijltje Rechts:**
+  - Klikken op een kaart start direct de coded reveal met audio (`playbackState: 'playing'`).
+  - Oorzaak opgelost waarbij het scherm na 14s terugviel naar de kaartafbeelding: de animatie houdt de onthulde uitkomst (het gouden ticket met uitkomsttekst) nu permanent vast.
+  - Bij het drukken op de rechter pijltoets (`→` / ArrowRight) keert het scherm direct terug naar het 8-kaarten grid, waarbij de gespeelde kaart netjes grijs/inactief (`greyed out`) is.
+  - Sneltoets conflict in `presenter/page.tsx` verholpen: ArrowRight op fase 20/01 stuurt geen slide wissel meer, maar bedient exclusief de finale-kaartstappen.
+
 ## Version 9.4.29 (2026-10-27)
 - **De Finale — 8 Kaarten Eerste Weergave op Display:**
   - Display toont bij binnenkomst in De Finale (20/01) direct het 8-kaarten grid als eerste weergave (geen storende video-overlay en geen achtergebleven "Betoverd" reveal).

@@ -180,10 +180,46 @@ const DisplayView: React.FC<FaseCommonProps> = ({
   }, [state, sessionId, onModuleStateJson]);
 
   const handleCloseReveal = useCallback(() => {
+    const cardId = state.selectedCard;
+    const newUsed = cardId && !state.usedCards.includes(cardId)
+      ? [...state.usedCards, cardId]
+      : state.usedCards;
+    const newRevealed = cardId && !state.revealedCards?.includes(cardId)
+      ? [...(state.revealedCards || []), cardId]
+      : (state.revealedCards || []);
+
     const nextState: EndgameState = {
       ...state,
       selectedCard: null,
       playbackState: 'grid',
+      usedCards: newUsed,
+      revealedCards: newRevealed,
+      timestamp: Date.now()
+    };
+    setState(nextState);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    } catch {}
+    if (onModuleStateJson) onModuleStateJson(JSON.stringify(nextState));
+    if (sessionId) {
+      fetch('/api/session-state', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: sessionId,
+          data: { endgame_state: nextState }
+        })
+      }).catch(() => {});
+    }
+  }, [state, sessionId, onModuleStateJson]);
+
+  const handleCardClick = useCallback((card: { id: string }) => {
+    if (state.playbackState !== 'grid' && state.selectedCard) return;
+    if (state.usedCards.includes(card.id)) return;
+    const nextState: EndgameState = {
+      ...state,
+      selectedCard: card.id,
+      playbackState: 'playing',
       timestamp: Date.now()
     };
     setState(nextState);
@@ -252,12 +288,17 @@ const DisplayView: React.FC<FaseCommonProps> = ({
             return (
               <div
                 key={card.id}
+                onClick={() => {
+                  if (!used && state.playbackState === 'grid') {
+                    handleCardClick(card);
+                  }
+                }}
                 className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-500 aspect-square shadow-2xl flex flex-col w-full ${
                   used
                     ? 'opacity-25 grayscale border-white/10'
                     : isSelected
-                    ? 'border-orange-500 ring-6 ring-orange-500/40 scale-105 shadow-orange-500/50'
-                    : 'border-orange-500/30 hover:border-orange-500 hover:scale-102 shadow-lg shadow-black/80'
+                    ? 'border-orange-500 ring-6 ring-orange-500/40 scale-105 shadow-orange-500/50 cursor-pointer'
+                    : 'border-orange-500/30 hover:border-orange-500 hover:scale-102 shadow-lg shadow-black/80 cursor-pointer'
                 }`}
                 style={{
                   background: 'rgba(20, 15, 30, 0.9)',
@@ -279,7 +320,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
       {isRevealActive && activeCard && (
         <CodedEndgameReveal
           card={activeCard}
-          playbackState={state.playbackState === 'playing' ? 'playing' : 'paused'}
+          playbackState={state.playbackState}
           onFinished={handleRevealEnded}
           onClose={handleCloseReveal}
         />

@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.29";
+const APP_VERSION = "v9.4.30";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -753,6 +753,9 @@ export default function PresenterPage() {
       const isNext = e.key === 'ArrowRight' || e.key === ']' || e.key === 'PageDown';
       const isPrev = e.key === 'ArrowLeft' || e.key === '[' || e.key === 'PageUp';
       if (!isNext && !isPrev) return;
+
+      // In finale (20/01), ArrowRight is used inside PresenterView to return from card reveal to grid
+      if (currentFase === '20/01') return;
 
       e.preventDefault();
       if (isNext) {

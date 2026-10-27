@@ -327,6 +327,48 @@ export default function CodedEndgameReveal({
         return;
       }
 
+      if (playbackState === 'finished') {
+        const cardEl = cardContainerRef.current;
+        if (cardEl) cardEl.style.display = 'none';
+        const shCanvas = shatterCanvasRef.current;
+        if (shCanvas) shCanvas.style.display = 'none';
+        const ticketEl = ticketRef.current;
+        if (ticketEl) {
+          ticketEl.style.left = '50%';
+          ticketEl.style.top = '50%';
+          ticketEl.style.opacity = '1';
+          ticketEl.style.transform = 'translate(-50%, -50%) scale(1)';
+        }
+        const starEl = starGroupRef.current;
+        if (starEl) {
+          starEl.setAttribute('transform', 'translate(483, 410) rotate(1080)');
+        }
+        const wipeEl = wipeRectRef.current;
+        if (wipeEl) {
+          wipeEl.setAttribute('width', '676');
+        }
+
+        const sCanvas = spaceCanvasRef.current;
+        if (sCanvas) {
+          const sCtx = sCanvas.getContext('2d');
+          if (sCtx) {
+            sCtx.clearRect(0, 0, 1920, 1080);
+            const t = (now - startTimeRef.current) / 1000;
+            for (const s of starsRef.current) {
+              const a = s.alpha * (0.6 + 0.4 * Math.sin(t * s.speed));
+              const px = (s.x + s.dx * t) % 1920;
+              const py = (s.y + s.dy * t) % 1080;
+              sCtx.fillStyle = `rgba(255, 255, 255, ${a})`;
+              sCtx.beginPath();
+              sCtx.arc(px < 0 ? px + 1920 : px, py < 0 ? py + 1080 : py, s.r, 0, Math.PI * 2);
+              sCtx.fill();
+            }
+          }
+        }
+        animFrameRef.current = requestAnimationFrame(loop);
+        return;
+      }
+
       const t = (now - startTimeRef.current) / 1000;
       elapsedRef.current = t;
 
@@ -350,12 +392,6 @@ export default function CodedEndgameReveal({
       if (t >= 7.0 && !sfxTriggeredRef.current.chime) {
         sfxTriggeredRef.current.chime = true;
         playSFX('chime', 0.85);
-      }
-
-      // Notify completion
-      if (t >= 14.0 && !isFinishedNotified) {
-        isFinishedNotified = true;
-        if (onFinished) onFinished();
       }
 
       // 2. Render Space Drift

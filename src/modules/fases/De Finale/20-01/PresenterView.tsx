@@ -101,13 +101,19 @@ const PresenterView: React.FC<FaseCommonProps> = ({
     if (state.playbackState !== 'grid') return;
     if (isCardUsed(card.id)) return;
 
-    // Select card and pause at first frame
+    // Immediately start reveal animation on display and play audio on presenter
     const next: EndgameState = {
       ...state,
       selectedCard: card.id,
-      playbackState: 'paused'
+      playbackState: 'playing'
     };
     syncState(next);
+
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.src = '/endgame/endcard_audio.mp3';
+      audioPlayerRef.current.currentTime = 0;
+      audioPlayerRef.current.play().catch(e => console.log('Audio autoplay prevented on presenter:', e));
+    }
   };
 
   const handlePlayVideo = useCallback(() => {
@@ -198,7 +204,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
         e.preventDefault();
         if (state.playbackState === 'paused') {
           handlePlayVideo();
-        } else if (state.playbackState === 'playing' || state.playbackState === 'finished') {
+        } else if (state.playbackState === 'playing' || state.playbackState === 'finished' || state.selectedCard) {
           handleReturnToGrid();
         }
       } else if (e.key === 'r' || e.key === 'R') {
@@ -215,7 +221,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [state.playbackState, handlePlayVideo, handleReturnToGrid, handleReset, handleShowEndTitle]);
+  }, [state.playbackState, state.selectedCard, handlePlayVideo, handleReturnToGrid, handleReset, handleShowEndTitle]);
 
   // Which teams picked which card?
   const getTeamsForCard = (cardId: string): string[] => {
@@ -328,12 +334,12 @@ const PresenterView: React.FC<FaseCommonProps> = ({
               </button>
             )}
 
-            {(state.playbackState === 'playing' || state.playbackState === 'finished') && (
+            {(state.playbackState === 'playing' || state.playbackState === 'finished' || state.selectedCard) && (
               <button
                 onClick={handleReturnToGrid}
                 className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-base border border-zinc-600 shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <span>⏹</span> Terug naar Grid
+                <span>⏹</span> Terug naar Grid (→)
               </button>
             )}
           </div>
