@@ -1,5 +1,13 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.33 (2026-10-27)
+- **De Finale — Trailer bij Binnenkomst, Daarna Grid View:**
+  - Bij het openen van De Finale (20/01) start direct de creepy finale trailer (`trailercreepy.m4v`) met titelkaart *"FNUIKENDE FINALE"*.
+  - Audio speelt vanaf de MacBook via de Presenter naar de zaalspeakers; beamer blijft stil.
+  - Zodra de trailer afloopt of wordt overgeslagen (`→` / Overslaan), verschijnt direct het **8-kaarten grid view**.
+  - Presenter heeft een `[🎬 Trailer]` knop om de trailer op elk moment opnieuw te starten.
+  - Kaart kiezen -> dichte kaart groot in beeld -> `→` onthult met audio -> `→` keert terug naar grid met greyed-out kaart.
+
 ## Version 9.4.32 (2026-10-27)
 - **De Finale — Kaart Selecteren Onthult NIET Automatisch:**
   - Klikken op een kaart in het grid selecteert de kaart en toont deze groot en intact in het midden van het scherm (`playbackState: 'paused'`), ZONDER te onthullen.

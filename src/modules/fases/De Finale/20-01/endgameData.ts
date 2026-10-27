@@ -148,7 +148,7 @@ export const ENDGAME_CARDS: EndgameCard[] = ENDGAME_HALLOWEEN_CARDS;
 
 export interface EndgameState {
   selectedCard: string | null;
-  playbackState: 'grid' | 'paused' | 'playing' | 'finished' | 'endtitle';
+  playbackState: 'trailer' | 'grid' | 'paused' | 'playing' | 'finished' | 'endtitle';
   usedCards: string[];
   teamSelections?: Record<number, string>;
   revealedCards?: string[];
@@ -157,7 +157,7 @@ export interface EndgameState {
 
 export const DEFAULT_ENDGAME_STATE: EndgameState = {
   selectedCard: null,
-  playbackState: 'grid',
+  playbackState: 'trailer',
   usedCards: [],
   teamSelections: {},
   revealedCards: [],

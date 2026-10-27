@@ -125,7 +125,7 @@ export async function PATCH(req: Request) {
         top3_state: {},
         top10_state: {},
         krakende_state: {},
-        endgame_state: { selectedCard: null, playbackState: 'grid', usedCards: [], teamSelections: {} },
+        endgame_state: { selectedCard: null, playbackState: 'trailer', usedCards: [], teamSelections: {} },
         ...(body.data || {})
       };
       const updated = await pb.collection('ranking').update(id, resetPayload, { $autoCancel: false });

@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.32";
+const APP_VERSION = "v9.4.33";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -96,7 +96,7 @@ export default function PresenterPage() {
           top3_state: {},
           top10_state: {},
           krakende_state: {},
-          endgame_state: { selectedCard: null, playbackState: 'grid', usedCards: [], teamSelections: {} }
+          endgame_state: { selectedCard: null, playbackState: 'trailer', usedCards: [], teamSelections: {} }
         } : null);
         setResetStatus('✓ Data gereset! (0 spelers / stippen / stemmen)');
         setTimeout(() => setResetStatus(null), 3000);
@@ -143,6 +143,12 @@ export default function PresenterPage() {
               results: []
             }
           });
+        }
+        if (fase === '20/01') {
+          const cur = (selectedSession as Record<string, unknown> | null)?.endgame_state as { usedCards?: string[] } | undefined;
+          if (!cur?.usedCards?.length) {
+            updateData.endgame_state = { selectedCard: null, playbackState: 'trailer', usedCards: [], teamSelections: {} };
+          }
         }
         if (fase.startsWith('07/')) {
           // Immediately wipe any old counter data for this slide so new slide -> counters to zero

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { FaseCommonProps } from '@/types/fases';
 import { ENDGAME_CARDS, EndgameState, DEFAULT_ENDGAME_STATE } from './endgameData';
 import CodedEndgameReveal from '@/components/endgame/CodedEndgameReveal';
+import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
 const STORAGE_KEY = 'ranking_endgame_state';
 
@@ -18,7 +19,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
       const parsed = typeof moduleStateJson === 'string' ? JSON.parse(moduleStateJson) : moduleStateJson;
       return {
         selectedCard: parsed?.selectedCard || null,
-        playbackState: parsed?.playbackState || 'grid',
+        playbackState: parsed?.playbackState || (parsed?.usedCards?.length > 0 ? 'grid' : 'trailer'),
         usedCards: Array.isArray(parsed?.usedCards) ? parsed.usedCards : [],
         teamSelections: parsed?.teamSelections || {},
         revealedCards: Array.isArray(parsed?.revealedCards) ? parsed.revealedCards : [],
@@ -31,16 +32,17 @@ const DisplayView: React.FC<FaseCommonProps> = ({
 
   const [state, setState] = useState<EndgameState>(parsedState);
   const mountTimeRef = useRef<number>(Date.now());
+  const trailerVideoRef = useRef<HTMLVideoElement | null>(null);
 
   // Sync incoming props from PocketBase / parent
   useEffect(() => {
     setState((prev) => {
-      // If props say no card selected, ensure we are on grid view
+      // If props say no card selected, preserve trailer/endtitle/grid
       if (!parsedState.selectedCard) {
         return {
           ...parsedState,
           selectedCard: null,
-          playbackState: parsedState.playbackState === 'endtitle' ? 'endtitle' : 'grid'
+          playbackState: parsedState.playbackState || (parsedState.usedCards?.length > 0 ? 'grid' : 'trailer')
         };
       }
       return parsedState;
@@ -90,10 +92,51 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     return ENDGAME_CARDS.find(c => c.id === state.selectedCard) || null;
   }, [state.selectedCard]);
 
+  const handleEndTrailer = useCallback(() => {
+    const nextState: EndgameState = {
+      ...state,
+      playbackState: 'grid',
+      timestamp: Date.now()
+    };
+    setState(nextState);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    } catch {}
+    if (onModuleStateJson) onModuleStateJson(JSON.stringify(nextState));
+    if (sessionId) {
+      fetch('/api/session-state', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: sessionId,
+          data: { endgame_state: nextState }
+        })
+      }).catch(() => {});
+    }
+  }, [state, sessionId, onModuleStateJson]);
+
+  // Trailer video autoplay on Display
+  useEffect(() => {
+    if (state.playbackState !== 'trailer') return;
+    const tv = trailerVideoRef.current;
+    if (!tv) return;
+    tv.currentTime = 0;
+    tv.muted = true;
+    tv.volume = 0;
+    tv.play().catch(() => {});
+  }, [state.playbackState]);
+
   // Keyboard shortcut 'e' or 'E' on display to toggle End Card with QR code & Lawineboys
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+      if (state.playbackState === 'trailer') {
+        if (e.key === 'ArrowRight' || e.key === ']' || e.key === 'Escape') {
+          e.preventDefault();
+          handleEndTrailer();
+          return;
+        }
+      }
       if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         const nextPlayback = state.playbackState === 'endtitle' ? 'grid' : 'endtitle';
@@ -270,6 +313,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
 
   const isRevealActive = (state.playbackState === 'paused' || state.playbackState === 'playing' || state.playbackState === 'finished') && activeCard !== null;
   const isEndTitle = state.playbackState === 'endtitle';
+  const isTrailer = state.playbackState === 'trailer';
 
   return (
     <div
@@ -282,7 +326,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
       {/* 8 Cards Grid view */}
       <div
         className={`w-full h-full pt-6 md:pt-10 pb-8 px-6 md:px-12 flex flex-col justify-start items-center transition-all duration-700 ${
-          isRevealActive || isEndTitle ? 'opacity-0 scale-90 blur-xl pointer-events-none' : 'opacity-100 scale-100 blur-0'
+          isRevealActive || isEndTitle || isTrailer ? 'opacity-0 scale-90 blur-xl pointer-events-none' : 'opacity-100 scale-100 blur-0'
         }`}
       >
         {/* Heading moved higher */}
@@ -354,6 +398,41 @@ const DisplayView: React.FC<FaseCommonProps> = ({
           onFinished={handleRevealEnded}
           onClose={handleCloseReveal}
         />
+      )}
+
+      {/* Creepy Trailer Video Overlay (Plays first when entering Finale before grid view) */}
+      {isTrailer && (
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+          <video
+            ref={trailerVideoRef}
+            src="/pics/HaloweenTrailer/trailercreepy.m4v"
+            className="w-full h-full object-cover"
+            playsInline
+            autoPlay
+            muted
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (!target.src.endsWith('/pics/trailercreepy.m4v')) {
+                target.src = '/pics/trailercreepy.m4v';
+                target.play().catch(() => {});
+              }
+            }}
+            onTimeUpdate={(e) => {
+              const vid = e.currentTarget;
+              if (vid.duration > 0 && vid.duration - vid.currentTime < 0.3) {
+                handleEndTrailer();
+              }
+            }}
+            onEnded={() => handleEndTrailer()}
+          />
+          <SpookyTrailerTitle faseKey="20/01" customHeading="FNUIKENDE FINALE" />
+          <button
+            onClick={handleEndTrailer}
+            className="absolute bottom-6 right-6 z-50 bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white px-5 py-2 rounded-full text-sm font-mono tracking-wider backdrop-blur-sm transition-all cursor-pointer"
+          >
+            Overslaan ✕ (→)
+          </button>
+        </div>
       )}
 
       {/* End Title / End Card with Review QR Code Container */}

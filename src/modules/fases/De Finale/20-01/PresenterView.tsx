@@ -17,7 +17,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       const parsed = typeof moduleStateJson === 'string' ? JSON.parse(moduleStateJson) : moduleStateJson;
       return {
         selectedCard: parsed?.selectedCard || null,
-        playbackState: parsed?.playbackState || 'grid',
+        playbackState: parsed?.playbackState || (parsed?.usedCards?.length > 0 ? 'grid' : 'trailer'),
         usedCards: Array.isArray(parsed?.usedCards) ? parsed.usedCards : [],
         teamSelections: parsed?.teamSelections || {},
         revealedCards: Array.isArray(parsed?.revealedCards) ? parsed.revealedCards : []
@@ -30,11 +30,26 @@ const PresenterView: React.FC<FaseCommonProps> = ({
   const [state, setState] = useState<EndgameState>(parsedState);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const endTitleAudioRef = useRef<HTMLAudioElement | null>(null);
+  const trailerAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Sync incoming props to local state
   useEffect(() => {
     setState(parsedState);
   }, [parsedState]);
+
+  // Ensure trailer audio plays on MacBook when in trailer state
+  useEffect(() => {
+    const ta = trailerAudioRef.current;
+    if (!ta) return;
+    if (state.playbackState === 'trailer') {
+      ta.currentTime = 0;
+      ta.volume = 1;
+      ta.muted = false;
+      ta.play().catch(e => console.log('Trailer audio autoplay blocked on presenter:', e));
+    } else {
+      ta.pause();
+    }
+  }, [state.playbackState]);
 
   // Ensure Lawineboys audio only plays when in endtitle state
   useEffect(() => {
@@ -137,6 +152,10 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       endTitleAudioRef.current.pause();
       endTitleAudioRef.current.currentTime = 0;
     }
+    if (trailerAudioRef.current) {
+      trailerAudioRef.current.pause();
+      trailerAudioRef.current.currentTime = 0;
+    }
     const newUsed = state.selectedCard && !state.usedCards.includes(state.selectedCard)
       ? [...state.usedCards, state.selectedCard]
       : state.usedCards;
@@ -155,9 +174,29 @@ const PresenterView: React.FC<FaseCommonProps> = ({
     syncState(next);
   }, [state, syncState]);
 
+  const handleReplayTrailer = () => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+    }
+    if (endTitleAudioRef.current) {
+      endTitleAudioRef.current.pause();
+      endTitleAudioRef.current.currentTime = 0;
+    }
+    const next: EndgameState = {
+      ...state,
+      selectedCard: null,
+      playbackState: 'trailer'
+    };
+    syncState(next);
+  };
+
   const handleShowEndTitle = () => {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
+    }
+    if (trailerAudioRef.current) {
+      trailerAudioRef.current.pause();
     }
     if (endTitleAudioRef.current) {
       endTitleAudioRef.current.currentTime = 0;
@@ -181,6 +220,10 @@ const PresenterView: React.FC<FaseCommonProps> = ({
         endTitleAudioRef.current.pause();
         endTitleAudioRef.current.currentTime = 0;
       }
+      if (trailerAudioRef.current) {
+        trailerAudioRef.current.pause();
+        trailerAudioRef.current.currentTime = 0;
+      }
       syncState({
         selectedCard: null,
         playbackState: 'grid',
@@ -196,7 +239,9 @@ const PresenterView: React.FC<FaseCommonProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        if (state.playbackState === 'paused') {
+        if (state.playbackState === 'trailer') {
+          handleReturnToGrid();
+        } else if (state.playbackState === 'paused') {
           handlePlayVideo();
         } else if (state.playbackState === 'playing' || state.playbackState === 'finished' || state.selectedCard) {
           handleReturnToGrid();
@@ -242,6 +287,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       {/* Hidden audio players */}
       <audio ref={audioPlayerRef} />
       <audio ref={endTitleAudioRef} src="/endgame/Lawineboys.m4a" />
+      <audio ref={trailerAudioRef} src="/pics/HaloweenTrailer/trailercreepy.m4v" />
 
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-3 border-b border-white/10">
@@ -254,8 +300,20 @@ const PresenterView: React.FC<FaseCommonProps> = ({
 
         <div className="flex items-center gap-3">
           <button
+            onClick={handleReplayTrailer}
+            className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all border cursor-pointer ${
+              state.playbackState === 'trailer'
+                ? 'bg-orange-600 text-white border-orange-400 shadow-lg shadow-orange-500/40'
+                : 'bg-orange-950/60 text-orange-200 border-orange-600/40 hover:bg-orange-800/80 hover:text-white'
+            }`}
+            title="Herstart de finale trailer"
+          >
+            🎬 Trailer
+          </button>
+
+          <button
             onClick={state.playbackState === 'endtitle' ? handleReturnToGrid : handleShowEndTitle}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border cursor-pointer ${
               state.playbackState === 'endtitle'
                 ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/40'
                 : 'bg-purple-950/60 text-purple-200 border-purple-600/40 hover:bg-purple-800/80 hover:text-white'
@@ -277,6 +335,25 @@ const PresenterView: React.FC<FaseCommonProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Trailer Active Banner */}
+      {state.playbackState === 'trailer' && (
+        <div className="mb-4 p-4 rounded-xl bg-orange-950/80 border border-orange-500/50 flex flex-wrap items-center justify-between gap-3 shadow-xl">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl animate-pulse">🎬</span>
+            <div>
+              <div className="text-white font-bold text-sm uppercase tracking-wider">Trailer Actief op Scherm</div>
+              <div className="text-orange-300 text-xs">Fnuikende Finale trailer speelt af op beamer en speakers</div>
+            </div>
+          </div>
+          <button
+            onClick={handleReturnToGrid}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm uppercase tracking-wider shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <span>⏭</span> Naar Kaarten Grid (→)
+          </button>
+        </div>
+      )}
 
       {/* End Card Active Banner */}
       {state.playbackState === 'endtitle' && (
