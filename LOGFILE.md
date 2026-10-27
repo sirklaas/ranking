@@ -1,5 +1,17 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.36 (2026-10-27)
+- **Display Centering Fix (Geen Kaart Meer in de Rechterbenedenhoek):**
+  - Oorzaak van de scheve kaart opgelost: een CSS `@keyframes` regel overschreef de inline `transform: translate(-50%, -50%)`, waardoor de gekozen kaart linkboven op 50%/50% werd verankerd en in de hoek rechtsonder belandde.
+  - `@keyframes cardFadeIn` aangepast zodat deze puur de opacity animeert en element-translaties met rust laat.
+  - Kaartcontainer in `CodedEndgameReveal.tsx` gecentreerd gehouden met `translate(-50%, -50%)`.
+  - Witte balken rondom reveal geëlimineerd: achtergrond gewijzigd naar Halloween donker `#07060a`.
+- **Presenter Scherm — Strict No-Scroll Regel:**
+  - Presenter kan tijdens de live show nooit scrollen; het hele dashboard moet 100% 'fit to screen' zijn op het MacBook scherm.
+  - `overflow-hidden` afgedwongen op het hoofdraster en finale presentatievenster.
+  - Top header compact gemaakt (`py-2 px-6`), banners slank gemaakt en het 8-kaarten grid geplaatst in een flexibele 2-rijen layout (`grid-cols-4 grid-rows-2 flex-1 min-h-0`). Alle 8 kaarten én actieknoppen passen nu zonder enige scrollbar op het scherm.
+  - Regel tevens vastgelegd in Obsidian (`/Users/mac/Vault/03 Projects/RankingNW.md`).
+
 ## Version 9.4.35 (2026-10-27)
 - **De Finale — Alleen Kaart op Telefoon (Geen Tekst/Koppen) & Vloeiende Fade-In:**
   - Op de telefoon wordt bij een gekozen kaart alléén nog de kaartafbeelding zelf getoond (geen badges, geen losse koppen, geen uitkomstteksten — de naam staat al in de afbeelding).

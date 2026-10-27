@@ -277,7 +277,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
 
   return (
     <div
-      className="w-full h-full flex flex-col select-none overflow-y-auto p-4 md:p-6"
+      className="w-full h-full flex flex-col select-none overflow-hidden p-2.5 md:p-3"
       style={{
         fontFamily: 'Barlow Semi Condensed, sans-serif',
         background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)',
@@ -289,21 +289,21 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       <audio ref={endTitleAudioRef} src="/endgame/Lawineboys.m4a" />
       <audio ref={trailerAudioRef} src="/pics/HaloweenTrailer/trailercreepy.m4v" />
 
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-3 border-b border-white/10">
-        <div>
-          <div className="text-xs uppercase tracking-widest text-indigo-400 font-semibold">Presenter · Finale</div>
-          <h1 className="text-2xl md:text-3xl font-light text-white tracking-wide">
-            Endgame Presenter
+      {/* Header - Slim single line to preserve vertical space */}
+      <div className="flex items-center justify-between gap-3 mb-2 pb-1.5 border-b border-white/10 flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <span className="text-[10px] uppercase tracking-widest text-orange-400 font-bold bg-orange-950/60 px-2 py-0.5 rounded border border-orange-500/30">Finale 20/01</span>
+          <h1 className="text-base md:text-lg font-normal text-white tracking-wide">
+            De Finale · Kaartenkeuze
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleReplayTrailer}
-            className={`px-3.5 py-2 rounded-lg text-sm font-semibold transition-all border cursor-pointer ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
               state.playbackState === 'trailer'
-                ? 'bg-orange-600 text-white border-orange-400 shadow-lg shadow-orange-500/40'
+                ? 'bg-orange-600 text-white border-orange-400 shadow-md shadow-orange-500/40'
                 : 'bg-orange-950/60 text-orange-200 border-orange-600/40 hover:bg-orange-800/80 hover:text-white'
             }`}
             title="Herstart de finale trailer"
@@ -313,9 +313,9 @@ const PresenterView: React.FC<FaseCommonProps> = ({
 
           <button
             onClick={state.playbackState === 'endtitle' ? handleReturnToGrid : handleShowEndTitle}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border cursor-pointer ${
+            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
               state.playbackState === 'endtitle'
-                ? 'bg-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/40'
+                ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-500/40'
                 : 'bg-purple-950/60 text-purple-200 border-purple-600/40 hover:bg-purple-800/80 hover:text-white'
             }`}
           >
@@ -324,10 +324,10 @@ const PresenterView: React.FC<FaseCommonProps> = ({
 
           <button
             onClick={handleReset}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-red-950/50 hover:bg-red-800 text-red-200 border border-red-700/40 transition-all flex items-center gap-1.5"
+            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-950/50 hover:bg-red-800 text-red-200 border border-red-700/40 transition-all flex items-center gap-1 cursor-pointer"
             title="Reset alle kaarten"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
               <path d="M3 3v5h5" />
             </svg>
@@ -336,70 +336,70 @@ const PresenterView: React.FC<FaseCommonProps> = ({
         </div>
       </div>
 
-      {/* Trailer Active Banner */}
+      {/* Trailer Active Banner - Slim */}
       {state.playbackState === 'trailer' && (
-        <div className="mb-4 p-4 rounded-xl bg-orange-950/80 border border-orange-500/50 flex flex-wrap items-center justify-between gap-3 shadow-xl">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl animate-pulse">🎬</span>
+        <div className="mb-2 py-1.5 px-3 rounded-lg bg-orange-950/80 border border-orange-500/50 flex items-center justify-between gap-2 shadow-md flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-base animate-pulse">🎬</span>
             <div>
-              <div className="text-white font-bold text-sm uppercase tracking-wider">Trailer Actief op Scherm</div>
-              <div className="text-orange-300 text-xs">Fnuikende Finale trailer speelt af op beamer en speakers</div>
+              <div className="text-white font-bold text-xs uppercase tracking-wider">Trailer Actief op Scherm</div>
+              <div className="text-orange-300 text-[11px]">Trailer speelt af op beamer en speakers</div>
             </div>
           </div>
           <button
             onClick={handleReturnToGrid}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm uppercase tracking-wider shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            className="px-3.5 py-1 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs uppercase tracking-wider shadow flex items-center gap-1.5 cursor-pointer"
           >
             <span>⏭</span> Naar Kaarten Grid (→)
           </button>
         </div>
       )}
 
-      {/* End Card Active Banner */}
+      {/* End Card Active Banner - Slim */}
       {state.playbackState === 'endtitle' && (
-        <div className="mb-4 p-4 rounded-xl bg-purple-950/80 border border-purple-500/50 flex flex-wrap items-center justify-between gap-3 shadow-xl">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎉</span>
+        <div className="mb-2 py-1.5 px-3 rounded-lg bg-purple-950/80 border border-purple-500/50 flex items-center justify-between gap-2 shadow-md flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🎉</span>
             <div>
-              <div className="text-white font-bold text-sm uppercase tracking-wider">End Card Actief op Scherm</div>
-              <div className="text-purple-300 text-xs">Review QR Code wordt getoond met &lsquo;Wat zullen we drinken&rsquo;</div>
+              <div className="text-white font-bold text-xs uppercase tracking-wider">End Card Actief op Scherm</div>
+              <div className="text-purple-300 text-[11px]">Review QR Code &amp; Lawineboys actief</div>
             </div>
           </div>
           <button
             onClick={handleReturnToGrid}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all"
+            className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all cursor-pointer"
           >
             Terug naar Kaarten
           </button>
         </div>
       )}
 
-      {/* Control Banner when a card is active */}
+      {/* Control Banner when a card is active - Slim */}
       {selectedCardObj && (
-        <div className="mb-4 p-3.5 rounded-xl bg-orange-950/60 border border-orange-500/50 flex flex-wrap items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-3">
-            <img src={selectedCardObj.image} alt={selectedCardObj.name} className="w-14 h-14 rounded-lg object-cover border border-orange-400" />
-            <div>
-              <div className="text-xs text-orange-400 font-semibold uppercase tracking-wider">Actieve Kaart · Uitkomst</div>
-              <div className="text-xl font-bold text-white flex items-center gap-2">
+        <div className="mb-2 py-1.5 px-3 rounded-lg bg-orange-950/70 border border-orange-500/50 flex items-center justify-between gap-2 shadow-md flex-shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <img src={selectedCardObj.image} alt={selectedCardObj.name} className="w-9 h-9 rounded object-cover border border-orange-400 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider">Actieve Kaart</div>
+              <div className="text-sm font-bold text-white flex items-center gap-2 truncate">
                 <span>{selectedCardObj.name}</span>
-                <span className="text-orange-300 font-normal text-base bg-orange-950/80 px-2.5 py-0.5 rounded border border-orange-600/40">
+                <span className="text-orange-300 font-normal text-xs bg-orange-950/80 px-2 py-0.5 rounded border border-orange-600/40 truncate">
                   {selectedCardObj.line1} {selectedCardObj.line2.replace(/<[^>]+>/g, '')}
                 </span>
               </div>
             </div>
             {getTeamsForCard(selectedCardObj.id).length > 0 && (
-              <span className="px-2.5 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-400/40 text-xs font-bold">
-                👑 Gekozen door: {getTeamsForCard(selectedCardObj.id).join(', ')}
+              <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-400/40 text-[10px] font-bold flex-shrink-0">
+                👑 Team: {getTeamsForCard(selectedCardObj.id).join(', ')}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {state.playbackState === 'paused' && (
               <button
                 onClick={handlePlayVideo}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-base shadow-lg shadow-orange-900/50 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs shadow-md shadow-orange-900/50 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>✨</span> Start Reveal (→)
               </button>
@@ -408,7 +408,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
             {(state.playbackState === 'playing' || state.playbackState === 'finished') && (
               <button
                 onClick={handleReturnToGrid}
-                className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-base border border-zinc-600 shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="px-4 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs border border-zinc-600 shadow flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>⏹</span> Terug naar Grid (→)
               </button>
@@ -417,8 +417,8 @@ const PresenterView: React.FC<FaseCommonProps> = ({
         </div>
       )}
 
-      {/* 8 Cards Grid */}
-      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-h-[72vh] items-stretch">
+      {/* 8 Cards Grid - Fits 100% on MacBook Screen Without Scrolling */}
+      <div className="flex-1 min-h-0 grid grid-cols-4 grid-rows-2 gap-2 overflow-hidden">
         {ENDGAME_CARDS.map(card => {
           const used = isCardUsed(card.id);
           const isSelected = state.selectedCard === card.id;
@@ -428,65 +428,65 @@ const PresenterView: React.FC<FaseCommonProps> = ({
             <div
               key={card.id}
               onClick={() => handleCardClick(card)}
-              className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-300 flex flex-col aspect-square group ${
+              className={`relative rounded-xl overflow-hidden border-2 transition-all duration-200 flex flex-col h-full w-full group ${
                 used
-                  ? 'opacity-35 grayscale cursor-not-allowed border-zinc-800 bg-black/40'
+                  ? 'opacity-30 grayscale cursor-not-allowed border-zinc-800 bg-black/40'
                   : isSelected
-                  ? 'border-orange-500 ring-4 ring-orange-500/50 scale-[1.02] shadow-2xl shadow-orange-500/40 cursor-pointer bg-orange-950/40'
-                  : 'border-orange-500/30 hover:border-orange-500 hover:scale-[1.02] cursor-pointer bg-zinc-900/70 shadow-lg'
+                  ? 'border-orange-500 ring-2 ring-orange-500/50 scale-[1.01] shadow-lg shadow-orange-500/40 cursor-pointer bg-orange-950/40'
+                  : 'border-orange-500/30 hover:border-orange-500 hover:scale-[1.01] cursor-pointer bg-zinc-900/70 shadow'
               }`}
             >
               <img
                 src={card.image}
                 alt={card.name}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-102"
               />
 
               {/* Team Pick Badge */}
               {teams.length > 0 && (
-                <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-yellow-400 text-black text-[11px] font-bold shadow-md flex items-center gap-1">
+                <div className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-full bg-yellow-400 text-black text-[10px] font-bold shadow flex items-center gap-1">
                   👑 {teams.join(', ')}
                 </div>
               )}
 
               {/* Bottom Label with Munten Outcome */}
-              <div className="absolute inset-x-0 bottom-0 pt-6 pb-2.5 px-2 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex flex-col items-center justify-end text-center">
-                <span className="text-white text-base md:text-lg font-bold tracking-wide drop-shadow-md">
+              <div className="absolute inset-x-0 bottom-0 pt-4 pb-1 px-1 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex flex-col items-center justify-end text-center">
+                <span className="text-white text-xs md:text-sm font-bold tracking-wide drop-shadow-md">
                   {card.name}
                 </span>
-                <span className="text-xs text-orange-300 font-medium line-clamp-1">
+                <span className="text-[11px] text-orange-300 font-medium line-clamp-1">
                   {card.line1} {card.line2.replace(/<[^>]+>/g, '')}
                 </span>
-                {used && <span className="text-[10px] text-zinc-400 uppercase font-semibold mt-0.5">Gespeeld</span>}
+                {used && <span className="text-[9px] text-zinc-400 uppercase font-semibold">Gespeeld</span>}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Bottom Instructions bar */}
-      <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-gray-400 gap-2">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5">
-            <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/20 font-mono text-indigo-300">Klik Kaart</kbd>
-            <span>Selecteer</span>
+      {/* Bottom Instructions bar - Ultra compact single line */}
+      <div className="mt-1.5 pt-1.5 border-t border-white/10 flex items-center justify-between text-[11px] text-gray-400 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.2 rounded bg-white/10 border border-white/20 font-mono text-orange-300">Klik</kbd>
+            <span>Kies</span>
           </span>
-          <span className="flex items-center gap-1.5">
-            <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/20 font-mono text-indigo-300">→</kbd>
-            <span>Speel Video / Terug</span>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.2 rounded bg-white/10 border border-white/20 font-mono text-orange-300">→</kbd>
+            <span>Reveal / Terug</span>
           </span>
-          <span className="flex items-center gap-1.5">
-            <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/20 font-mono text-indigo-300">R</kbd>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.2 rounded bg-white/10 border border-white/20 font-mono text-orange-300">R</kbd>
             <span>Reset</span>
           </span>
-          <span className="flex items-center gap-1.5">
-            <kbd className="px-2 py-0.5 rounded bg-white/10 border border-white/20 font-mono text-indigo-300">E</kbd>
-            <span>Show End Card (QR)</span>
+          <span className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.2 rounded bg-white/10 border border-white/20 font-mono text-orange-300">E</kbd>
+            <span>End Card (QR)</span>
           </span>
         </div>
 
-        <div className="text-right text-gray-500 text-[11px]">
-          Fase: 20/01 · Dual-Screen Sync Actief
+        <div className="text-right text-gray-500 text-[10px]">
+          Fase: 20/01 · Geen Scrollen Nodig
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.35";
+const APP_VERSION = "v9.4.36";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -805,16 +805,16 @@ export default function PresenterPage() {
     const nextMedia = getNextMedia();
 
     return (
-      <div className="h-screen bg-gray-100" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-        <div style={{ margin: '0 2%' }}>
-          {/* Header with game info - with 2% side margins */}
-          <div className="bg-white shadow-md p-6">
+      <div className="h-screen bg-gray-100 overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        <div style={{ margin: '0 1.5%' }}>
+          {/* Header with game info - Slim padding to fit on MacBook screens without scroll */}
+          <div className="bg-white shadow-md py-2 px-4 md:px-6">
             <div className="flex justify-between items-center">
               {/* Left side - Game info in one line */}
-              <div className="flex items-center gap-8">
-                <h1 className="text-3xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
-                <span className="text-xl font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
-                <span className="text-xl font-semibold text-gray-700">{gameTime} [game time]</span>
+              <div className="flex items-center gap-6">
+                <h1 className="text-2xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
+                <span className="text-lg font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
+                <span className="text-lg font-semibold text-gray-700">{gameTime} [game time]</span>
                 {currentFase === '01/01' && (
                   <div className="flex items-center gap-3">
                     <button
@@ -879,7 +879,7 @@ export default function PresenterPage() {
           })()}
           {/* Main content grid */}
           {currentFase === '20/01' ? (
-            <div className="mt-4 flex gap-4 pr-6" style={{ height: 'calc(100vh - 160px)' }}>
+            <div className="mt-2 flex gap-3 pr-4" style={{ height: 'calc(100vh - 84px)' }}>
               <div className="flex-1 h-full rounded-2xl overflow-hidden shadow-2xl">
                 {(() => {
                   const mod = findFaseModule(currentFase);

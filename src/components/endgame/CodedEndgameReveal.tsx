@@ -621,7 +621,7 @@ export default function CodedEndgameReveal({
       onClick={() => {
         if (!isMuted && audioBlocked) unlockAndPlayAudio();
       }}
-      className="fixed inset-0 z-50 bg-[#ffffff] overflow-hidden flex items-center justify-center select-none"
+      className="fixed inset-0 z-50 bg-[#07060a] overflow-hidden flex items-center justify-center select-none"
     >
       {/* Autoplay blocked recovery prompt - Never show on muted displays */}
       {!isMuted && audioBlocked && (
@@ -637,7 +637,7 @@ export default function CodedEndgameReveal({
           <span>KLIK VOOR GELUID</span>
         </button>
       )}
-      {/* 1920x1080 Virtual Canvas Scaled to Fit - Seamless White Backdrop */}
+      {/* 1920x1080 Virtual Canvas Scaled to Fit - Seamless Dark Backdrop */}
       <div
         style={{
           width: '1920px',
@@ -645,7 +645,7 @@ export default function CodedEndgameReveal({
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
           position: 'relative',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#07060a',
           backgroundImage: 'url(/endgame/endgame_bg.webp)',
           backgroundSize: '1920px 1080px',
           backgroundPosition: 'center',
@@ -665,7 +665,6 @@ export default function CodedEndgameReveal({
         {/* Center Card Container (Phase 1 - Centered Horizontally & Vertically) */}
         <div
           ref={cardContainerRef}
-          className="animate-card-fade-in"
           style={{
             position: 'absolute',
             left: '50%',

@@ -90,15 +90,13 @@ body {
   margin: 0 1px;
 }
 
-/* Smooth Card Fade In */
+/* Smooth Card Fade In - Opacity only to avoid overriding element transforms */
 @keyframes cardFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.92);
   }
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
