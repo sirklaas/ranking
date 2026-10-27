@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.24";
+const APP_VERSION = "v9.4.25";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -70,6 +70,7 @@ export default function PresenterPage() {
     setIsResetting(true);
     setResetStatus('Resetting...');
     try {
+      // 1. Reset main session data
       const res = await fetch('/api/session-state', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -78,6 +79,10 @@ export default function PresenterPage() {
           action: 'reset_joined_players'
         }),
       });
+
+      // 2. Clear zitten_votes specifically
+      fetch(`/api/zitten-vote?sessionId=${selectedSession.id}`, { method: 'DELETE' }).catch(() => {});
+
       if (res.ok) {
         setSelectedSession((prev) => prev ? {
           ...prev,
@@ -87,7 +92,7 @@ export default function PresenterPage() {
           top10_state: {},
           krakende_state: {}
         } : null);
-        setResetStatus('✓ Data gereset! (0 spelers / stippen)');
+        setResetStatus('✓ Data gereset! (0 spelers / stippen / stemmen)');
         setTimeout(() => setResetStatus(null), 3000);
       } else {
         setResetStatus('Fout bij reset');

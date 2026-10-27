@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.24";
+const APP_VERSION = "v9.4.25";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -23,7 +23,10 @@ function ZittenDisplayCounters({ sessionId, faseKey }: { sessionId?: string; fas
     const fetchTallies = async () => {
       try {
         const p = new URLSearchParams();
-        if (sessionId) p.set('session_id', sessionId);
+        if (sessionId) {
+          p.set('sessionId', sessionId);
+          p.set('session_id', sessionId);
+        }
         if (faseKey) p.set('fase', faseKey);
         const res = await fetch(`/api/zitten-vote?${p.toString()}`);
         if (active && res.ok) {
@@ -45,36 +48,34 @@ function ZittenDisplayCounters({ sessionId, faseKey }: { sessionId?: string; fas
 
   return (
     <>
-      {/* Bottom Left: Red Rounded Square */}
+      {/* Bottom Left: Red Rounded Square - 1/3 compact size */}
       <div
-        className="fixed bottom-8 left-8 z-[60] flex flex-col items-center justify-center w-36 h-36 md:w-44 md:h-44 rounded-3xl text-white select-none shadow-[0_0_40px_rgba(220,38,38,0.8)] border-4 border-red-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-6 left-6 z-[60] flex flex-col items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl text-white select-none shadow-[0_0_20px_rgba(220,38,38,0.8)] border-2 border-red-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 50%, #742a2a 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-5xl md:text-7xl font-black font-mono leading-none tracking-tight drop-shadow-md">
+        <span className="text-2xl md:text-3xl font-black font-mono leading-none tracking-tight drop-shadow-md">
           {tallies.red}
         </span>
-        <span className="text-xs md:text-sm font-bold tracking-widest uppercase text-red-200 mt-2 font-mono flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+        <span className="text-[9px] md:text-[10px] font-bold tracking-wider uppercase text-red-200 mt-0.5 font-mono">
           Rood
         </span>
       </div>
 
-      {/* Bottom Right: Blue Rounded Square */}
+      {/* Bottom Right: Blue Rounded Square - 1/3 compact size */}
       <div
-        className="fixed bottom-8 right-8 z-[60] flex flex-col items-center justify-center w-36 h-36 md:w-44 md:h-44 rounded-3xl text-white select-none shadow-[0_0_40px_rgba(37,99,235,0.8)] border-4 border-blue-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-6 right-6 z-[60] flex flex-col items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl text-white select-none shadow-[0_0_20px_rgba(37,99,235,0.8)] border-2 border-blue-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #3182ce 0%, #2b6cb0 50%, #1a365d 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-5xl md:text-7xl font-black font-mono leading-none tracking-tight drop-shadow-md">
+        <span className="text-2xl md:text-3xl font-black font-mono leading-none tracking-tight drop-shadow-md">
           {tallies.blue}
         </span>
-        <span className="text-xs md:text-sm font-bold tracking-widest uppercase text-blue-200 mt-2 font-mono flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+        <span className="text-[9px] md:text-[10px] font-bold tracking-wider uppercase text-blue-200 mt-0.5 font-mono">
           Blauw
         </span>
       </div>
@@ -667,8 +668,8 @@ export default function DisplayPage() {
         </div>
       )}
 
-      {/* Zitten en Staan Counter Rectangles on Display */}
-      {currentSession?.current_fase?.startsWith('07/') && (
+      {/* Zitten en Staan Counter Rectangles on Display - NOT on trailer (07/01) */}
+      {currentSession?.current_fase?.startsWith('07/') && currentSession.current_fase !== '07/01' && (
         <ZittenDisplayCounters sessionId={currentSession.id} faseKey={currentSession.current_fase} />
       )}
 

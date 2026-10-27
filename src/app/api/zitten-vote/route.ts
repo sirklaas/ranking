@@ -14,7 +14,7 @@ const CACHE_TTL = 1000;
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const sessionId = url.searchParams.get('sessionId');
+    const sessionId = url.searchParams.get('sessionId') || url.searchParams.get('session_id');
     const fase = url.searchParams.get('fase');
 
     if (!sessionId || !fase) {
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const sessionId = url.searchParams.get('sessionId');
+    const sessionId = url.searchParams.get('sessionId') || url.searchParams.get('session_id');
 
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });

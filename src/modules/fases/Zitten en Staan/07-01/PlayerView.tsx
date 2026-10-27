@@ -23,7 +23,7 @@ const ZITTEN_DURATIONS: Record<string, number> = {
 
 // All stellingen strictly split into two lines using /n
 const ZITTEN_STELLINGEN: Record<string, string> = {
-  '07/01': 'Blijf staan als je het eens /n bent met de volgende stelling:',
+  '07/01': 'Zitten & Staan',
   '07/05': 'Superfoods /n Ik zweer erbij',
   '07/06': 'Ik flirt soms /n om iets te krijgen',
   '07/07': 'Houseparty /n Niks leukers dan',
@@ -40,34 +40,7 @@ const ZITTEN_STELLINGEN: Record<string, string> = {
 const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo, heading }) => {
   const [choice, setChoice] = useState<'red' | 'blue' | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const [tallies, setTallies] = useState({ red: 0, blue: 0 });
   const prevFaseRef = useRef(faseKey);
-
-  // Poll live vote tallies
-  useEffect(() => {
-    let active = true;
-    const fetchTallies = async () => {
-      try {
-        const p = new URLSearchParams();
-        if (sessionId) p.set('session_id', sessionId);
-        if (faseKey) p.set('fase', faseKey);
-        const res = await fetch(`/api/zitten-vote?${p.toString()}`);
-        if (active && res.ok) {
-          const data = await res.json();
-          if (data.success) {
-            setTallies({ red: data.red || 0, blue: data.blue || 0 });
-          }
-        }
-      } catch {}
-    };
-
-    fetchTallies();
-    const timer = setInterval(fetchTallies, 1000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [sessionId, faseKey]);
 
   const handleVote = async (selected: 'red' | 'blue') => {
     setChoice(selected);
@@ -161,19 +134,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo,
           <div className="text-white text-2xl font-bold uppercase tracking-wider mb-1">
             {choice === 'red' ? 'Je bent Oneens' : 'Je bent Eens'}
           </div>
-          <div className="text-white/80 text-sm mb-6">Stem geregistreerd!</div>
-
-          {/* Counter Rectangles on Phone */}
-          <div className="flex gap-4">
-            <div className="px-6 py-3 rounded-2xl bg-black/30 border-2 border-white/40 text-center shadow-lg min-w-[100px]">
-              <div className="text-3xl font-black font-mono leading-none text-white">{tallies.red}</div>
-              <div className="text-xs uppercase font-bold text-red-200 mt-1">Rood / Oneens</div>
-            </div>
-            <div className="px-6 py-3 rounded-2xl bg-black/30 border-2 border-white/40 text-center shadow-lg min-w-[100px]">
-              <div className="text-3xl font-black font-mono leading-none text-white">{tallies.blue}</div>
-              <div className="text-xs uppercase font-bold text-blue-200 mt-1">Blauw / Eens</div>
-            </div>
-          </div>
+          <div className="text-white/80 text-sm">Stem geregistreerd!</div>
         </div>
       </div>
     );
@@ -263,18 +224,6 @@ const PlayerView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, playerInfo,
                 >
                   Eens
                 </div>
-              </div>
-            </div>
-
-            {/* Live Counter Rectangles on Phone */}
-            <div className="flex items-center justify-center gap-4 w-full max-w-xs mt-2">
-              <div className="flex-1 py-2 px-3 rounded-2xl bg-red-600/80 border-2 border-red-300 text-center shadow-lg">
-                <div className="text-2xl font-black font-mono leading-none text-white">{tallies.red}</div>
-                <div className="text-[11px] uppercase font-bold text-red-200 mt-1">Oneens</div>
-              </div>
-              <div className="flex-1 py-2 px-3 rounded-2xl bg-blue-600/80 border-2 border-blue-300 text-center shadow-lg">
-                <div className="text-2xl font-black font-mono leading-none text-white">{tallies.blue}</div>
-                <div className="text-[11px] uppercase font-bold text-blue-200 mt-1">Eens</div>
               </div>
             </div>
           </div>

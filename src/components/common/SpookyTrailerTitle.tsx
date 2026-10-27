@@ -10,7 +10,7 @@ interface SpookyTrailerTitleProps {
 }
 
 const TRAILER_TITLES: Record<string, string> = {
-  '07/01': 'ZITTEN EN STAAN',
+  '07/01': 'ZITTEN & STAAN',
   '10/01': 'DE TOP 3',
   '13/01': 'KRAKENDE KARAKTERS',
   '17/01': 'DE TOP 10',

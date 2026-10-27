@@ -129,8 +129,22 @@ export async function PATCH(req: Request) {
         ...(body.data || {})
       };
       const updated = await pb.collection('ranking').update(id, resetPayload, { $autoCancel: false });
+
+      // Also wipe zitten_votes collection records for this session
+      try {
+        const zittenVotes = await pb.collection('zitten_votes').getFullList({
+          filter: `session_id="${id}"`,
+          $autoCancel: false,
+        });
+        for (const zv of zittenVotes) {
+          await pb.collection('zitten_votes').delete(zv.id, { $autoCancel: false }).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[session-state] Error clearing zitten_votes:', err);
+      }
+
       cachedSession = null;
-      console.log('[session-state] Reset game data (joined_players, teamleaders, module states)');
+      console.log('[session-state] Reset game data (joined_players, teamleaders, module states, zitten_votes)');
       return NextResponse.json({ success: true, session: updated });
     }
 
