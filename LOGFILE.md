@@ -1,5 +1,13 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.34 (2026-10-27)
+- **De Finale — Gekozen Kaart Zichtbaar op Telefoons:**
+  - Zodra een kaart wordt gekozen (`paused`, `playing`, `finished`), verschijnt deze kaart nu ook direct op het telefoonscherm van alle spelers.
+  - In de gesloten toestand (`paused`) ziet de speler de gekozen kaartafbeelding, de kaartnaam in BrewHouse-stijl, en de tekst *"Kijk naar het grote scherm voor de ontknoping..."*.
+  - Zodra de presentator op `→` drukt om te onthullen (`playing` / `finished`), verschijnt op de telefoon ook de badge met de uitkomst (bijv. *"Jammer · jullie halveren"* of *"Lekker · 5 munten extra"*).
+  - Zodra de presentator terugkeert naar het grid (`playbackState === 'grid'`), verdwijnt de kaart direct van de telefoons en keren ze terug naar de standaardtitelkaart *"Kijk naar het grote scherm"*.
+  - Sneltoets `'e'` toont zoals voorheen de feestelijke bedankscherm met Photo App link.
+
 ## Version 9.4.33 (2026-10-27)
 - **De Finale — Trailer bij Binnenkomst, Daarna Grid View:**
   - Bij het openen van De Finale (20/01) start direct de creepy finale trailer (`trailercreepy.m4v`) met titelkaart *"FNUIKENDE FINALE"*.
