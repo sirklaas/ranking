@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.22";
+const APP_VERSION = "v9.4.23";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -676,6 +676,7 @@ export default function PresenterPage() {
   }, [getOrderedFasesGlobal]);
 
   const currentVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [presenterAudio, setPresenterAudio] = useState(false);
 
   const formatHeading = (text?: string) => {
     if (!text) return '';
@@ -881,18 +882,47 @@ export default function PresenterPage() {
                         <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#1a1a2e' }}>
                           {/* Media: video or image */}
                           {media?.type === 'video' && media.path ? (
-                            <video
-                              ref={currentVideoRef}
-                              src={media.path}
-                              className="absolute inset-0 w-full h-full object-contain"
-                              preload="auto"
-                              autoPlay
-                              muted
-                              playsInline
-                              onLoadedMetadata={(e) => {
-                                e.currentTarget.play().catch(() => {});
-                              }}
-                            />
+                            <>
+                              <video
+                                ref={currentVideoRef}
+                                src={media.path}
+                                className="absolute inset-0 w-full h-full object-contain"
+                                preload="auto"
+                                autoPlay
+                                muted={!presenterAudio}
+                                playsInline
+                                onLoadedMetadata={(e) => {
+                                  const vid = e.currentTarget;
+                                  vid.muted = !presenterAudio;
+                                  vid.play().catch(() => {});
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPresenterAudio((prev) => {
+                                    const next = !prev;
+                                    if (currentVideoRef.current) {
+                                      currentVideoRef.current.muted = !next;
+                                      currentVideoRef.current.volume = 1;
+                                      if (next && currentVideoRef.current.paused) {
+                                        currentVideoRef.current.play().catch(() => {});
+                                      }
+                                    }
+                                    return next;
+                                  });
+                                }}
+                                className={`absolute top-2 right-2 z-20 px-2 py-1 rounded text-xs font-bold transition-all shadow-md ${
+                                  presenterAudio
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse'
+                                    : 'bg-black/80 hover:bg-black text-gray-300 border border-white/20'
+                                }`}
+                                title={presenterAudio ? 'Geluid staat aan op presenter preview' : 'Klik om video geluid te horen op presenter laptop'}
+                              >
+                                {presenterAudio ? '🔊 Geluid Aan' : '🔇 Geluid Uit (Preview)'}
+                              </button>
+                            </>
                           ) : media?.type === 'image' && media.path ? (
                             <img src={media.path} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
                           ) : null}

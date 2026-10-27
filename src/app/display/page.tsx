@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.22";
+const APP_VERSION = "v9.4.23";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -97,6 +97,7 @@ export default function DisplayPage() {
   const lastPlayedUrl = useRef<string>('');
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
   const soundUnlockedRef = useRef(false); // Ref to avoid stale closure in event listeners
   const lockedSessionId = useRef<string | null>(null);
   const currentSessionRef = useRef<RankingSession | null>(null);
@@ -107,8 +108,12 @@ export default function DisplayPage() {
   const forceUnlockAudio = useCallback(() => {
     soundUnlockedRef.current = true;
     setUserEnabledSound(true);
+    setAudioBlocked(false);
     console.log('[Display] Sound unlocked via user gesture');
-    try { sessionStorage.setItem('soundUnlocked', 'true'); } catch {}
+    try {
+      localStorage.setItem('ranking_sound_unlocked', 'true');
+      sessionStorage.setItem('soundUnlocked', 'true');
+    } catch {}
 
     try {
       const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
@@ -152,7 +157,14 @@ export default function DisplayPage() {
           v.muted = false;
           v.volume = 1;
           const p = v.play();
-          if (p) p.catch(() => { v.muted = true; v.play().catch(() => {}); });
+          if (p) {
+            p.then(() => setAudioBlocked(false))
+             .catch(() => {
+               v.muted = true;
+               v.play().catch(() => {});
+               setAudioBlocked(true);
+             });
+          }
         }
       } catch (err) {}
     }, 50);
@@ -281,6 +293,16 @@ export default function DisplayPage() {
 
     loadSessionData();
 
+    // Auto-unlock if user enabled sound earlier in this session or device
+    try {
+      if (
+        typeof window !== 'undefined' &&
+        (localStorage.getItem('ranking_sound_unlocked') === 'true' || sessionStorage.getItem('soundUnlocked') === 'true')
+      ) {
+        forceUnlockAudio();
+      }
+    } catch {}
+
     // Keyboard controls
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'f' || e.key === 'F') {
@@ -323,33 +345,52 @@ export default function DisplayPage() {
     };
   }, [forceUnlockAudio]);
 
-  // Play video only when user has unlocked sound AND the media URL actually changes (matches original)
+  // Play video with sound
   useEffect(() => {
     if (!currentMedia) {
       lastPlayedUrl.current = '';
+      setAudioBlocked(false);
       return;
     }
     const v = videoRef.current;
-    if (!userEnabledSound) return; // Don't play until sound is enabled (matches original)
     if (currentMedia.type !== 'video' || !v) return;
     if (currentMedia.url === lastPlayedUrl.current) return;
     lastPlayedUrl.current = currentMedia.url;
 
     console.log(`[Display ${APP_VERSION}] Playing new video: ${currentMedia.name}`);
-    try {
+
+    const startPlayback = () => {
+      const isUnlocked = userEnabledSound || soundUnlockedRef.current;
       v.currentTime = 0;
-      v.muted = false;
+      v.muted = !isUnlocked;
       v.volume = 1;
+
       const p = v.play();
       if (p && typeof p.then === 'function') {
-        p.catch((e) => {
-          console.warn('[Display] Autoplay blocked, falling back to muted.', e);
+        p.then(() => {
+          if (isUnlocked) {
+            setAudioBlocked(false);
+            console.log(`[Display ${APP_VERSION}] Video playing UNMUTED with sound.`);
+          }
+        }).catch((e) => {
+          console.warn('[Display] Unmuted autoplay blocked by browser policy, fallback to muted:', e);
           v.muted = true;
-          v.play().catch(() => { });
+          setAudioBlocked(true);
+          v.play().catch(() => {});
         });
       }
-    } catch (e) {
-      console.error('[Display] Video play error:', e);
+    };
+
+    if (v.readyState >= 1) {
+      startPlayback();
+    } else {
+      const onLoaded = () => {
+        v.removeEventListener('loadedmetadata', onLoaded);
+        v.removeEventListener('canplay', onLoaded);
+        startPlayback();
+      };
+      v.addEventListener('loadedmetadata', onLoaded);
+      v.addEventListener('canplay', onLoaded);
     }
   }, [currentMedia, userEnabledSound]);
 
@@ -566,46 +607,76 @@ export default function DisplayPage() {
 
       {/* Media overlay: plays current fase video/image when available */}
       {currentMedia && currentMedia.url && allowMediaOverlay && (
-        <div className={`fixed inset-0 z-50 bg-black ${!userEnabledSound ? 'pointer-events-none' : ''}`}>
+        <div className="fixed inset-0 z-50 bg-black cursor-pointer">
           {currentMedia.type === 'video' ? (
-            <video
-              key={currentMedia.url}
-              ref={videoRef}
-              src={currentMedia.url}
-              className="w-full h-full object-contain"
-              playsInline
-              autoPlay
-              onCanPlay={(e) => {
-                if (userEnabledSound) {
+            <>
+              <video
+                key={currentMedia.url}
+                ref={videoRef}
+                src={currentMedia.url}
+                className="w-full h-full object-contain"
+                playsInline
+                autoPlay
+                onCanPlay={(e) => {
                   const vid = e.currentTarget;
-                  if (vid.paused) {
-                    vid.muted = false;
-                    vid.volume = 1;
-                    vid.play().catch(() => {
-                      vid.muted = true;
-                      vid.play().catch(() => {});
-                    });
+                  if (userEnabledSound || soundUnlockedRef.current) {
+                    if (vid.muted) {
+                      vid.muted = false;
+                      vid.volume = 1;
+                    }
+                    if (vid.paused) {
+                      vid.play().then(() => setAudioBlocked(false)).catch(() => {
+                        vid.muted = true;
+                        setAudioBlocked(true);
+                        vid.play().catch(() => {});
+                      });
+                    }
                   }
-                }
-              }}
-              onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
-              onPlay={() => console.log('[Display] video play', currentMedia)}
-              onError={(e) => {
-                console.log('[Display] video error encountered, falling back');
-                setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
-              }}
-              onTimeUpdate={(e) => {
-                const vid = e.currentTarget;
-                // Pause 0.5s before end to freeze on last visible frame (prevent black)
-                if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
-                  vid.pause();
-                }
-              }}
-              onEnded={(e) => {
-                e.currentTarget.pause();
-                console.log('[Display] video ended');
-              }}
-            />
+                }}
+                onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
+                onPlay={() => {
+                  console.log('[Display] video play', currentMedia);
+                  const v = videoRef.current;
+                  if (v && (userEnabledSound || soundUnlockedRef.current) && v.muted) {
+                    v.muted = false;
+                    v.volume = 1;
+                  }
+                }}
+                onError={(e) => {
+                  console.log('[Display] video error encountered, falling back');
+                  setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
+                }}
+                onTimeUpdate={(e) => {
+                  const vid = e.currentTarget;
+                  // Pause 0.5s before end to freeze on last visible frame (prevent black)
+                  if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
+                    vid.pause();
+                  }
+                }}
+                onEnded={(e) => {
+                  e.currentTarget.pause();
+                  console.log('[Display] video ended');
+                }}
+              />
+
+              {/* Autoplay blocked recovery prompt - unmissable if browser ever mutes video */}
+              {audioBlocked && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    forceUnlockAudio();
+                  }}
+                  className="fixed top-6 right-6 z-[99999] bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold px-8 py-4 rounded-2xl shadow-[0_0_35px_rgba(249,115,22,0.9)] cursor-pointer flex items-center gap-4 animate-bounce border-2 border-orange-300 text-xl tracking-wide select-none"
+                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
+                >
+                  <span className="text-3xl">🔊</span>
+                  <div>
+                    <div className="uppercase">Klik hier voor Geluid</div>
+                    <div className="text-xs font-normal text-orange-200">Of druk op spatiebalk / klik op het scherm</div>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />
           )}
