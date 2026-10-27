@@ -389,16 +389,22 @@ const DisplayView: React.FC<FaseCommonProps> = ({
         </div>
       </div>
 
-      {/* Coded Pure Animation Endgame Reveal */}
-      {isRevealActive && activeCard && (
-        <CodedEndgameReveal
-          card={activeCard}
-          playbackState={state.playbackState}
-          isMuted={true}
-          onFinished={handleRevealEnded}
-          onClose={handleCloseReveal}
-        />
-      )}
+      {/* Coded Pure Animation Endgame Reveal with smooth fade-in */}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-700 ease-out ${
+          isRevealActive && activeCard ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {activeCard && (
+          <CodedEndgameReveal
+            card={activeCard}
+            playbackState={state.playbackState}
+            isMuted={true}
+            onFinished={handleRevealEnded}
+            onClose={handleCloseReveal}
+          />
+        )}
+      </div>
 
       {/* Creepy Trailer Video Overlay (Plays first when entering Finale before grid view) */}
       {isTrailer && (

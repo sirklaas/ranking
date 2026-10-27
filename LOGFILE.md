@@ -1,5 +1,11 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.35 (2026-10-27)
+- **De Finale — Alleen Kaart op Telefoon (Geen Tekst/Koppen) & Vloeiende Fade-In:**
+  - Op de telefoon wordt bij een gekozen kaart alléén nog de kaartafbeelding zelf getoond (geen badges, geen losse koppen, geen uitkomstteksten — de naam staat al in de afbeelding).
+  - Zowel op de telefoon als op het grote scherm (Display) fade de kaart nu boterzacht in via `animate-card-fade-in` (0.8s cubic-bezier).
+  - Zodra de presentator terugkeert naar het grid, verdwijnt de kaart direct van de telefoons en keren ze terug naar *"Kijk naar het grote scherm"*.
+
 ## Version 9.4.34 (2026-10-27)
 - **De Finale — Gekozen Kaart Zichtbaar op Telefoons:**
   - Zodra een kaart wordt gekozen (`paused`, `playing`, `finished`), verschijnt deze kaart nu ook direct op het telefoonscherm van alle spelers.

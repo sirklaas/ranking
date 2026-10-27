@@ -32,6 +32,7 @@ export default function CodedEndgameReveal({
   const animFrameRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
   const elapsedRef = useRef<number>(0);
+  const pausedStartTimeRef = useRef<number | null>(null);
 
   // Preload card image for Voronoi shard texturing
   useEffect(() => {
@@ -300,14 +301,19 @@ export default function CodedEndgameReveal({
 
     const loop = (now: number) => {
       if (playbackState === 'paused') {
+        if (!pausedStartTimeRef.current) {
+          pausedStartTimeRef.current = now;
+        }
         const cardEl = cardContainerRef.current;
         if (cardEl) {
           cardEl.style.display = 'flex';
           cardEl.style.left = '50%';
           cardEl.style.top = '50%';
-          const breathe = 1.0 + 0.015 * Math.sin((now / 1000) * 1.5);
+          const elapsed = (now - pausedStartTimeRef.current) / 1000;
+          const fadeProgress = Math.min(1, Math.max(0, elapsed / 0.8));
+          const breathe = (0.94 + 0.06 * fadeProgress) * (1.0 + 0.015 * Math.sin((now / 1000) * 1.5));
           cardEl.style.transform = `translate(-50%, -50%) scale(${breathe})`;
-          cardEl.style.opacity = '1';
+          cardEl.style.opacity = String(fadeProgress);
         }
         const ticketEl = ticketRef.current;
         if (ticketEl) {
@@ -659,6 +665,7 @@ export default function CodedEndgameReveal({
         {/* Center Card Container (Phase 1 - Centered Horizontally & Vertically) */}
         <div
           ref={cardContainerRef}
+          className="animate-card-fade-in"
           style={{
             position: 'absolute',
             left: '50%',

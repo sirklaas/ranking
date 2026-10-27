@@ -149,13 +149,11 @@ const PlayerView: React.FC<FaseCommonProps> = ({
     );
   }
 
-  // 2. When a card is chosen: show the card on the phone!
+  // 2. When a card is chosen: show ONLY the card on the phone! (No heading, no info, smooth fade-in)
   // Active during 'paused' (chosen, unrevealed), 'playing' (revealing), 'finished' (revealed)
   const isCardActive = !!activeCard && (state.playbackState === 'paused' || state.playbackState === 'playing' || state.playbackState === 'finished');
 
   if (isCardActive && activeCard) {
-    const isRevealed = state.playbackState === 'playing' || state.playbackState === 'finished';
-
     return (
       <div
         className="min-h-screen w-full flex flex-col justify-between text-white select-none overflow-x-hidden"
@@ -166,7 +164,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({
         }}
       >
         {/* Header Band */}
-        <div className="relative w-full min-h-[90px] py-2.5 flex-shrink-0 overflow-hidden shadow-lg flex items-center justify-center">
+        <div className="relative w-full min-h-[85px] py-2 flex-shrink-0 overflow-hidden shadow-lg flex items-center justify-center">
           <img
             src="/assets/band.webp"
             alt="Ranking Header"
@@ -178,27 +176,10 @@ const PlayerView: React.FC<FaseCommonProps> = ({
           </div>
         </div>
 
-        {/* Card Content Container */}
-        <div className="flex-1 w-full max-w-sm mx-auto px-5 py-4 flex flex-col items-center justify-center text-center z-10 animate-fadeIn">
-          {/* Status Badge */}
-          {isRevealed ? (
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-xs font-mono uppercase tracking-widest mb-3 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
-              <span className="text-sm">✨</span> Onthuld!
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-mono uppercase tracking-widest mb-3">
-              <span className="w-2 h-2 rounded-full bg-orange-400 animate-ping" />
-              Gekozen Kaart
-            </div>
-          )}
-
-          {/* Card Image */}
+        {/* Card Content Container - ONLY THE CARD IMAGE, NO HEADING, NO INFO, SMOOTH FADE IN */}
+        <div className="flex-1 w-full max-w-sm mx-auto px-6 py-6 flex items-center justify-center text-center z-10">
           <div
-            className={`relative rounded-2xl overflow-hidden border-2 transition-all duration-700 w-full max-w-[240px] aspect-square shadow-2xl ${
-              isRevealed
-                ? 'border-amber-400 shadow-[0_0_35px_rgba(251,191,36,0.5)] scale-102'
-                : 'border-orange-500/80 shadow-[0_0_25px_rgba(255,117,24,0.4)]'
-            }`}
+            className="relative rounded-2xl overflow-hidden border-2 border-orange-500/80 shadow-[0_0_40px_rgba(255,117,24,0.45)] w-full max-w-[290px] aspect-square animate-card-fade-in"
             style={{
               background: 'rgba(20, 15, 30, 0.95)',
               backdropFilter: 'blur(10px)'
@@ -207,37 +188,9 @@ const PlayerView: React.FC<FaseCommonProps> = ({
             <img
               src={activeCard.image}
               alt={activeCard.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover select-none"
             />
           </div>
-
-          {/* Card Name */}
-          <h2
-            className="text-white text-3xl font-normal uppercase tracking-wider mt-3.5 mb-1"
-            style={{
-              fontFamily: '"BrewHouse-Aged", "BrewHouse", sans-serif',
-              textShadow: '0 0 20px rgba(255,117,24,0.8)'
-            }}
-          >
-            {activeCard.name}
-          </h2>
-
-          {/* Suspense text or Revealed Outcome */}
-          {isRevealed ? (
-            <div className="mt-2 w-full max-w-[260px] px-4 py-3 rounded-xl border border-amber-400/60 bg-gradient-to-r from-amber-950/90 via-orange-950/90 to-amber-950/90 shadow-[0_0_25px_rgba(251,191,36,0.3)] animate-fadeIn">
-              <div className="text-amber-300 text-xs font-mono uppercase tracking-widest font-bold">
-                {activeCard.line1}
-              </div>
-              <div
-                className="text-white text-xl font-black uppercase tracking-wide mt-1"
-                dangerouslySetInnerHTML={{ __html: activeCard.line2 }}
-              />
-            </div>
-          ) : (
-            <p className="text-orange-200/80 text-sm font-medium animate-pulse mt-1">
-              Kijk naar het grote scherm voor de ontknoping...
-            </p>
-          )}
         </div>
 
         {/* Footer */}
