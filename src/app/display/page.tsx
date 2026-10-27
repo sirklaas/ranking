@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.26";
+const APP_VERSION = "v9.4.27";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -19,6 +19,8 @@ function ZittenDisplayCounters({ sessionId, faseKey }: { sessionId?: string; fas
   const [tallies, setTallies] = useState({ red: 0, blue: 0 });
 
   useEffect(() => {
+    // Instantly reset tallies to zero on each new slide
+    setTallies({ red: 0, blue: 0 });
     let active = true;
     const fetchTallies = async () => {
       try {
@@ -48,28 +50,28 @@ function ZittenDisplayCounters({ sessionId, faseKey }: { sessionId?: string; fas
 
   return (
     <>
-      {/* Bottom Left: Red Rounded Square - mini size, no text */}
+      {/* Bottom Left: Red Rounded Square - doubled size, no text */}
       <div
-        className="fixed bottom-4 left-4 z-[60] flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(220,38,38,0.8)] border border-red-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-6 left-6 z-[60] flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl text-white select-none shadow-[0_0_25px_rgba(220,38,38,0.8)] border-2 border-red-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 50%, #742a2a 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
+        <span className="text-2xl md:text-3xl font-black font-mono leading-none drop-shadow-md">
           {tallies.red}
         </span>
       </div>
 
-      {/* Bottom Right: Blue Rounded Square - mini size, no text */}
+      {/* Bottom Right: Blue Rounded Square - doubled size, no text */}
       <div
-        className="fixed bottom-4 right-4 z-[60] flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(37,99,235,0.8)] border border-blue-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-6 right-6 z-[60] flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl text-white select-none shadow-[0_0_25px_rgba(37,99,235,0.8)] border-2 border-blue-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #3182ce 0%, #2b6cb0 50%, #1a365d 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
+        <span className="text-2xl md:text-3xl font-black font-mono leading-none drop-shadow-md">
           {tallies.blue}
         </span>
       </div>
@@ -101,68 +103,11 @@ export default function DisplayPage() {
   const [pollDebug, setPollDebug] = useState({ count: 0, lastPbFase: '?', error: '' });
 
   const forceUnlockAudio = useCallback(() => {
-    soundUnlockedRef.current = true;
-    setUserEnabledSound(true);
-    setAudioBlocked(false);
-    console.log('[Display] Sound unlocked via user gesture');
+    // Display is permanently muted per architecture (audio plays via Presenter MacBook to speakers)
     try {
-      localStorage.setItem('ranking_sound_unlocked', 'true');
-      sessionStorage.setItem('soundUnlocked', 'true');
+      localStorage.removeItem('ranking_sound_unlocked');
+      sessionStorage.removeItem('soundUnlocked');
     } catch {}
-
-    try {
-      const anyWin = window as unknown as { webkitAudioContext?: typeof AudioContext };
-      const AC = window.AudioContext || anyWin?.webkitAudioContext;
-      if (AC) {
-        const ctx = new AC();
-        const buf = ctx.createBuffer(1, 1, 22050);
-        const s = ctx.createBufferSource();
-        s.buffer = buf;
-        s.connect(ctx.destination);
-        s.start(0);
-        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-      }
-    } catch (err) {
-      console.warn('[Display] AudioContext unlock error:', err);
-    }
-
-    try {
-      window.dispatchEvent(new CustomEvent('ranking-audio-unlocked'));
-    } catch {}
-
-    // Unmute ALL video and audio elements on the entire document
-    try {
-      document.querySelectorAll<HTMLVideoElement | HTMLAudioElement>('video, audio').forEach((media) => {
-        media.muted = false;
-        media.volume = 1;
-        if (media.paused) {
-          media.play().catch(() => {});
-        }
-      });
-    } catch {}
-
-    setTimeout(() => {
-      try {
-        const v = videoRef.current;
-        if (v && v.src) {
-          // If video was already playing or paused near end, rewind to 0 so sound starts from beginning
-          if (v.currentTime > 1) {
-            v.currentTime = 0;
-          }
-          v.muted = false;
-          v.volume = 1;
-          const p = v.play();
-          if (p) {
-            p.then(() => setAudioBlocked(false))
-             .catch(() => {
-               v.muted = true;
-               v.play().catch(() => {});
-               setAudioBlocked(true);
-             });
-          }
-        }
-      } catch (err) {}
-    }, 50);
   }, []);
 
   useEffect(() => {
@@ -288,14 +233,10 @@ export default function DisplayPage() {
 
     loadSessionData();
 
-    // Auto-unlock if user enabled sound earlier in this session or device
+    // Display is permanently muted per architecture (audio exclusively via Presenter MacBook)
     try {
-      if (
-        typeof window !== 'undefined' &&
-        (localStorage.getItem('ranking_sound_unlocked') === 'true' || sessionStorage.getItem('soundUnlocked') === 'true')
-      ) {
-        forceUnlockAudio();
-      }
+      localStorage.removeItem('ranking_sound_unlocked');
+      sessionStorage.removeItem('soundUnlocked');
     } catch {}
 
     // Keyboard controls
@@ -305,9 +246,6 @@ export default function DisplayPage() {
       }
       if (e.key === 'r' || e.key === 'R') {
         loadSessionData();
-      }
-      if (e.key === ' ' || e.key === 'Enter') {
-        forceUnlockAudio();
       }
     };
 
@@ -319,32 +257,10 @@ export default function DisplayPage() {
     };
   }, [loadSessionData, forceUnlockAudio]);
 
-  // Global user gesture listener to unlock/unmute audio on ANY click/touch/keypress
-  useEffect(() => {
-    const handleGlobalGesture = (e: Event) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest?.('[data-no-global-unlock]')) return;
-      forceUnlockAudio();
-    };
-
-    window.addEventListener('click', handleGlobalGesture, { capture: true });
-    window.addEventListener('pointerdown', handleGlobalGesture, { capture: true });
-    window.addEventListener('touchstart', handleGlobalGesture, { capture: true, passive: true });
-    window.addEventListener('keydown', handleGlobalGesture, { capture: true });
-
-    return () => {
-      window.removeEventListener('click', handleGlobalGesture, { capture: true });
-      window.removeEventListener('pointerdown', handleGlobalGesture, { capture: true });
-      window.removeEventListener('touchstart', handleGlobalGesture);
-      window.removeEventListener('keydown', handleGlobalGesture);
-    };
-  }, [forceUnlockAudio]);
-
-  // Play video with sound
+  // Play video permanently muted (sound is played exclusively by Presenter on MacBook)
   useEffect(() => {
     if (!currentMedia) {
       lastPlayedUrl.current = '';
-      setAudioBlocked(false);
       return;
     }
     const v = videoRef.current;
@@ -352,28 +268,13 @@ export default function DisplayPage() {
     if (currentMedia.url === lastPlayedUrl.current) return;
     lastPlayedUrl.current = currentMedia.url;
 
-    console.log(`[Display ${APP_VERSION}] Playing new video: ${currentMedia.name}`);
+    console.log(`[Display ${APP_VERSION}] Playing video (muted): ${currentMedia.name}`);
 
     const startPlayback = () => {
-      const isUnlocked = userEnabledSound || soundUnlockedRef.current;
       v.currentTime = 0;
-      v.muted = !isUnlocked;
-      v.volume = 1;
-
-      const p = v.play();
-      if (p && typeof p.then === 'function') {
-        p.then(() => {
-          if (isUnlocked) {
-            setAudioBlocked(false);
-            console.log(`[Display ${APP_VERSION}] Video playing UNMUTED with sound.`);
-          }
-        }).catch((e) => {
-          console.warn('[Display] Unmuted autoplay blocked by browser policy, fallback to muted:', e);
-          v.muted = true;
-          setAudioBlocked(true);
-          v.play().catch(() => {});
-        });
-      }
+      v.muted = true;
+      v.volume = 0;
+      v.play().catch(() => {});
     };
 
     if (v.readyState >= 1) {
@@ -387,19 +288,7 @@ export default function DisplayPage() {
       v.addEventListener('loadedmetadata', onLoaded);
       v.addEventListener('canplay', onLoaded);
     }
-  }, [currentMedia, userEnabledSound]);
-
-  // When userEnabledSound flips to true, immediately unmute current playing video
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (userEnabledSound && v.muted) {
-      console.log('[Display] Unmuting active video');
-      v.muted = false;
-      v.volume = 1;
-      v.play().catch(() => {});
-    }
-  }, [userEnabledSound]);
+  }, [currentMedia]);
 
   // Poll session state via cached server proxy (never hits PB directly from browser)
   useEffect(() => {

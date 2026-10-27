@@ -30,19 +30,6 @@ const PresenterView: React.FC<FaseCommonProps> = ({
   const [state, setState] = useState<EndgameState>(parsedState);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const endTitleAudioRef = useRef<HTMLAudioElement | null>(null);
-  const trailerAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Auto-play trailer audio on presenter (MacBook speakers) during initial trailer
-  useEffect(() => {
-    const isTrailer = !state.selectedCard && (state.revealedCards || []).length === 0 && state.playbackState === 'grid';
-    if (isTrailer && trailerAudioRef.current) {
-      trailerAudioRef.current.currentTime = 0;
-      trailerAudioRef.current.volume = 1;
-      trailerAudioRef.current.play().catch(() => {});
-    } else if (trailerAudioRef.current) {
-      trailerAudioRef.current.pause();
-    }
-  }, [state.selectedCard, state.revealedCards, state.playbackState]);
 
   // Sync incoming props to local state
   useEffect(() => {
@@ -245,7 +232,6 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       }}
     >
       {/* Hidden audio players */}
-      <audio ref={trailerAudioRef} src="/pics/HaloweenTrailer/trailercreepy.m4v" />
       <audio ref={audioPlayerRef} />
       <audio ref={endTitleAudioRef} src="/endgame/Lawineboys.m4a" />
 

@@ -499,39 +499,14 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
         prevPhaseRef.current = phase;
     }, [phase]);
 
-    // Play video with sound and unmute on interaction
+    // Video is permanently muted on display (Presenter plays the audio)
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
-
-        const unmuteAndPlay = () => {
-            v.muted = false;
-            v.volume = 1;
-            if (v.paused) v.play().catch(() => {});
-        };
-
-        v.muted = false;
-        v.volume = 1;
+        v.muted = true;
+        v.volume = 0;
         v.loop = false;
-
-        const playPromise = v.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("[Top10Display] Autoplay prevented, waiting for interaction", error);
-                v.muted = true; // Fallback to muted if blocked
-                v.play().catch(() => {});
-            });
-        }
-
-        window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
-        window.addEventListener('click', unmuteAndPlay);
-        window.addEventListener('keydown', unmuteAndPlay);
-
-        return () => {
-            window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
-            window.removeEventListener('click', unmuteAndPlay);
-            window.removeEventListener('keydown', unmuteAndPlay);
-        };
+        v.play().catch(() => {});
     }, [mediaUrl]);
 
 
@@ -557,9 +532,10 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                             ref={videoRef}
                             src={mediaUrl}
                             autoPlay
+                            muted
                             playsInline
                             className="w-full h-full object-cover"
-                            onPlay={(e) => { e.currentTarget.muted = false; e.currentTarget.volume = 1; e.currentTarget.loop = false; }}
+                            onPlay={(e) => { e.currentTarget.muted = true; e.currentTarget.volume = 0; e.currentTarget.loop = false; }}
                             onTimeUpdate={(e) => {
                                 const vid = e.currentTarget;
                                 if (vid.duration - vid.currentTime < 0.5 && !vid.paused) {

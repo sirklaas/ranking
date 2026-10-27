@@ -8,8 +8,11 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [tallies, setTallies] = useState<{ red: number; blue: number }>({ red: 0, blue: 0 });
 
-  // Fetch real-time vote tallies for this question
+  // Fetch real-time vote tallies for this question - resets to zero immediately on new slide
   useEffect(() => {
+    // Instantly reset tallies to zero on each new slide
+    setTallies({ red: 0, blue: 0 });
+
     if (!sessionId || !faseKey) return;
     let active = true;
 
@@ -33,47 +36,19 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
     };
   }, [sessionId, faseKey]);
 
-  // Play video with sound once loaded & unmute on user interaction
+  // Ensure video on Display is 100% permanently MUTED (Presenter MacBook plays audio to speakers)
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
 
-    const unmuteAndPlay = () => {
-      v.muted = false;
-      v.volume = 1;
-      if (v.paused) v.play().catch(() => {});
-    };
-
-    const tryPlay = () => {
-      v.muted = false;
-      v.volume = 1;
-      v.play().catch(() => {
-        v.muted = true;
-        v.play().catch(() => console.log('[DisplayView] autoplay blocked'));
-      });
-    };
-
-    if (v.readyState >= 3) {
-      tryPlay();
-    } else {
-      v.addEventListener('canplay', tryPlay, { once: true });
-    }
-
-    window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
-    window.addEventListener('click', unmuteAndPlay);
-    window.addEventListener('keydown', unmuteAndPlay);
-
-    return () => {
-      v.removeEventListener('canplay', tryPlay);
-      window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
-      window.removeEventListener('click', unmuteAndPlay);
-      window.removeEventListener('keydown', unmuteAndPlay);
-    };
+    v.muted = true;
+    v.volume = 0;
+    v.play().catch(() => {});
   }, [mediaUrl, faseKey]);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black select-none" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-      {/* Full-screen media */}
+      {/* Full-screen media - strictly muted on display */}
       {mediaUrl && isVideo ? (
         <video
           key={`${faseKey}-${mediaUrl}`}
@@ -81,6 +56,8 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
           src={mediaUrl}
           className="absolute inset-0 w-full h-full object-contain"
           playsInline
+          autoPlay
+          muted
           preload="auto"
           onTimeUpdate={(e) => {
             const vid = e.currentTarget;
@@ -96,29 +73,29 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
         <img src={mediaUrl} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
       ) : null}
 
-      {/* Two mini rounded squares on the display: Red bottom-left, Blue bottom-right */}
+      {/* Two rounded squares on the display: Red bottom-left, Blue bottom-right (doubled size, no text) */}
       {/* Bottom Left: Red Rounded Square */}
       <div
-        className="fixed bottom-4 left-4 z-40 flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(220,38,38,0.7)] border border-red-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-6 left-6 z-40 flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl text-white select-none shadow-[0_0_25px_rgba(220,38,38,0.8)] border-2 border-red-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 50%, #742a2a 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
+        <span className="text-2xl md:text-3xl font-black font-mono leading-none drop-shadow-md">
           {tallies.red}
         </span>
       </div>
 
       {/* Bottom Right: Blue Rounded Square */}
       <div
-        className="fixed bottom-4 right-4 z-40 flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(37,99,235,0.7)] border border-blue-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-6 right-6 z-40 flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-2xl text-white select-none shadow-[0_0_25px_rgba(37,99,235,0.8)] border-2 border-blue-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #3182ce 0%, #2b6cb0 50%, #1a365d 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
+        <span className="text-2xl md:text-3xl font-black font-mono leading-none drop-shadow-md">
           {tallies.blue}
         </span>
       </div>

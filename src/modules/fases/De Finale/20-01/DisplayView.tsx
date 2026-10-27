@@ -45,40 +45,15 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     }
   }, [state.selectedCard, state.revealedCards, state.playbackState]);
 
-  // Handle trailer video autoplay and unmuting
+  // Handle trailer video - strictly muted on display (Presenter plays the audio)
   useEffect(() => {
     if (!showTrailer) return;
     const tv = trailerVideoRef.current;
     if (!tv) return;
 
-    const tryPlay = () => {
-      tv.muted = false;
-      tv.volume = 1;
-      tv.play().catch(() => {
-        tv.muted = true;
-        tv.play().catch(() => {});
-      });
-    };
-
-    tryPlay();
-
-    const unmute = () => {
-      if (trailerVideoRef.current) {
-        trailerVideoRef.current.muted = false;
-        trailerVideoRef.current.volume = 1;
-        if (trailerVideoRef.current.paused) trailerVideoRef.current.play().catch(() => {});
-      }
-    };
-
-    window.addEventListener('ranking-audio-unlocked', unmute);
-    window.addEventListener('click', unmute);
-    window.addEventListener('keydown', unmute);
-
-    return () => {
-      window.removeEventListener('ranking-audio-unlocked', unmute);
-      window.removeEventListener('click', unmute);
-      window.removeEventListener('keydown', unmute);
-    };
+    tv.muted = true;
+    tv.volume = 0;
+    tv.play().catch(() => {});
   }, [showTrailer]);
 
   // Sync incoming props
@@ -126,41 +101,13 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     return ENDGAME_CARDS.find(c => c.id === state.selectedCard) || null;
   }, [state.selectedCard]);
 
-  // Handle end title audio (Wat zullen we drinken) & unmute on interaction
+  // End title audio is handled exclusively by PresenterView on the MacBook
   useEffect(() => {
     const endAudio = endTitleAudioRef.current;
     if (!endAudio) return;
-
-    const unmuteAndPlay = () => {
-      endAudio.muted = false;
-      endAudio.volume = 1;
-      if (state.playbackState === 'endtitle' && endAudio.paused) {
-        endAudio.play().catch(() => {});
-      }
-    };
-
-    if (state.playbackState === 'endtitle') {
-      endAudio.currentTime = 0;
-      endAudio.muted = false;
-      endAudio.volume = 1;
-      endAudio.play().catch(e => {
-        console.log('[Endgame Display] End title audio unmuted play error, trying muted:', e);
-        endAudio.muted = true;
-        endAudio.play().catch(() => {});
-      });
-    } else {
-      endAudio.pause();
-    }
-
-    window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
-    window.addEventListener('click', unmuteAndPlay);
-    window.addEventListener('keydown', unmuteAndPlay);
-
-    return () => {
-      window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
-      window.removeEventListener('click', unmuteAndPlay);
-      window.removeEventListener('keydown', unmuteAndPlay);
-    };
+    endAudio.muted = true;
+    endAudio.volume = 0;
+    endAudio.pause();
   }, [state.playbackState]);
 
   // Keyboard shortcut 'e' or 'E' on display to toggle End Card with QR code & Lawineboys

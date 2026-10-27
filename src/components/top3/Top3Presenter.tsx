@@ -80,7 +80,7 @@ export default function Top3Presenter({ sessionId, state, heading, mediaUrl, onS
         {mediaUrl && (
           <div className="bg-[#0e1629] border border-gray-800 rounded-lg p-4 flex justify-center items-center shadow-lg">
             {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
-              <video src={mediaUrl} className="max-w-full max-h-[300px] rounded-lg" autoPlay muted loop playsInline />
+              <video src={mediaUrl} className="max-w-full max-h-[300px] rounded-lg" muted playsInline />
             ) : (
               <img src={mediaUrl} alt="Top 3 Media" className="max-w-full max-h-[300px] rounded-lg object-contain" />
             )}

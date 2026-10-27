@@ -482,36 +482,14 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
     prevPhaseRef.current = phase;
   }, [phase]);
 
-  // Handle video audio playback & unmute on interaction
+  // Handle video audio playback - strictly muted on display
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
 
-    const unmuteAndPlay = () => {
-      v.muted = false;
-      v.volume = 1;
-      if (v.paused) v.play().catch(() => {});
-    };
-
-    v.muted = false;
-    v.volume = 1;
-    const p = v.play();
-    if (p !== undefined) {
-      p.catch(() => {
-        v.muted = true;
-        v.play().catch(() => {});
-      });
-    }
-
-    window.addEventListener('ranking-audio-unlocked', unmuteAndPlay);
-    window.addEventListener('click', unmuteAndPlay);
-    window.addEventListener('keydown', unmuteAndPlay);
-
-    return () => {
-      window.removeEventListener('ranking-audio-unlocked', unmuteAndPlay);
-      window.removeEventListener('click', unmuteAndPlay);
-      window.removeEventListener('keydown', unmuteAndPlay);
-    };
+    v.muted = true;
+    v.volume = 0;
+    v.play().catch(() => {});
   }, [mediaUrl]);
 
   return (
@@ -531,10 +509,11 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
               src={mediaUrl}
               className="w-[100vw] h-[100vh] object-cover"
               autoPlay
+              muted
               playsInline
               onPlay={(e) => {
-                e.currentTarget.muted = false;
-                e.currentTarget.volume = 1;
+                e.currentTarget.muted = true;
+                e.currentTarget.volume = 0;
               }}
               onTimeUpdate={(e) => {
                 const vid = e.currentTarget;

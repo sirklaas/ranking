@@ -1,5 +1,18 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.27 (2026-10-27)
+- **100% Permanente Display Muting (Geen Dubbel Geluid / Geen Echo):**
+  - Display beamer scherm (`/display`, `Top10Display`, `Top3Display`, `Zitten en Staan DisplayView`, `De Finale DisplayView`) is nu 100% permanent gedempt (`muted={true}`, `volume = 0`).
+  - Alle automatische en interactieve unmuting logic verwijderd op het display.
+  - Alleen het Presenter dashboard op de MacBook speelt de show audio af rechtstreeks naar de versterker/speakers. Geen overlap of faseverschuiving meer mogelijk.
+- **Zitten en Staan — Automatische Nulstand op Nieuwe Slide:**
+  - Zodra de presentator naar een nieuwe slide/stelling gaat, wordt alle data voor die slide direct gewist in PocketBase (`DELETE /api/zitten-vote?fase=...`).
+  - Zowel in `DisplayView.tsx` als `display/page.tsx` springt de teller op het scherm direct naar 0 bij elke slide wissel.
+- **Zitten en Staan — Tellers Dubbel Zo Groot:**
+  - Formaat van de rode en blauwe afgeronde rechthoeken verdubbeld naar `w-16 h-16 md:w-20 md:h-20` (64px / 80px) met `text-2xl md:text-3xl` bold cijfers.
+  - Blijft zonder woorden ("Rood" en "Blauw" weggelaten).
+
+
 ## Version 9.4.26 (2026-10-27)
 - **Audio Routing & Stabiliteit:**
   - MacBook audio-uitgang (3.5mm jack / audio interface) naar de zaalspeakers/versterker is de exclusieve audiobron.

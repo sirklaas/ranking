@@ -97,14 +97,20 @@ export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
     const sessionId = url.searchParams.get('sessionId') || url.searchParams.get('session_id');
+    const fase = url.searchParams.get('fase');
 
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
     }
 
     const pb = await getServerPocketBase();
+    let filter = `session_id="${sessionId}"`;
+    if (fase) {
+      filter += ` && fase="${fase}"`;
+    }
+
     const records = await pb.collection(COLLECTION).getFullList({
-      filter: `session_id="${sessionId}"`,
+      filter,
       $autoCancel: false,
     });
 
@@ -112,11 +118,15 @@ export async function DELETE(req: Request) {
       await pb.collection(COLLECTION).delete(r.id, { $autoCancel: false }).catch(() => {});
     }
 
-    for (const k of cache.keys()) {
-      if (k.startsWith(sessionId)) cache.delete(k);
+    if (fase) {
+      cache.delete(`${sessionId}:${fase}`);
+    } else {
+      for (const k of cache.keys()) {
+        if (k.startsWith(sessionId)) cache.delete(k);
+      }
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deleted: records.length });
   } catch (error) {
     console.error('[zitten-vote] DELETE error:', error);
     return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });

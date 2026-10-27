@@ -160,6 +160,22 @@ export async function PATCH(req: Request) {
       data.endgame_state = { selectedCard: null, playbackState: 'grid', usedCards: [], teamSelections: {} };
     }
 
+    // Automatically delete counter data on each new slide in Zitten & Staan (07/*)
+    if (typeof data.current_fase === 'string' && data.current_fase.startsWith('07/')) {
+      try {
+        const slideFase = data.current_fase;
+        const oldVotes = await pb.collection('zitten_votes').getFullList({
+          filter: `session_id="${id}" && fase="${slideFase}"`,
+          $autoCancel: false,
+        });
+        for (const v of oldVotes) {
+          await pb.collection('zitten_votes').delete(v.id, { $autoCancel: false }).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[session-state] Error clearing slide zitten votes:', err);
+      }
+    }
+
     console.log('[session-state] PATCH input:', id, JSON.stringify(data));
 
     const updated = await pb.collection('ranking').update(id, data, { $autoCancel: false });

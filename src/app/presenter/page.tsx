@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.26";
+const APP_VERSION = "v9.4.27";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -137,6 +137,12 @@ export default function PresenterPage() {
               results: []
             }
           });
+        }
+        if (fase.startsWith('07/')) {
+          // Immediately wipe any old counter data for this slide so new slide -> counters to zero
+          fetch(`/api/zitten-vote?sessionId=${encodeURIComponent(sessionId)}&fase=${encodeURIComponent(fase)}`, {
+            method: 'DELETE',
+          }).catch(() => {});
         }
         await rankingService.updateSession(sessionId, updateData);
         // Also update via server-side /api/session-state to immediately bust cache for Display
@@ -689,14 +695,13 @@ export default function PresenterPage() {
     return true; // Default ON: MacBook is connected to amplifier/speakers!
   });
 
-  // Global gesture unlock on presenter to ensure audio permission is always active
+  // Global gesture unlock on presenter to ensure audio permission is active without restarting paused video
   useEffect(() => {
     const handleGesture = () => {
       const v = currentVideoRef.current;
       if (v && presenterAudio) {
         v.muted = false;
         v.volume = 1;
-        if (v.paused) v.play().catch(() => {});
       }
     };
     window.addEventListener('click', handleGesture, { capture: true });
@@ -952,6 +957,9 @@ export default function PresenterPage() {
                                   if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
                                     vid.pause();
                                   }
+                                }}
+                                onEnded={(e) => {
+                                  e.currentTarget.pause();
                                 }}
                               />
                               <button
