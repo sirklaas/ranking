@@ -55,6 +55,8 @@ export async function POST(req: Request) {
                     timestamp: Date.now(),
                 };
 
+                const expectedVotesCount = existingVotes.length + 1;
+
                 const newState: Top10State = {
                     ...top10State,
                     currentQuestion: {
@@ -67,12 +69,26 @@ export async function POST(req: Request) {
                     top10_state: JSON.stringify(newState),
                 }, { $autoCancel: false });
 
-                finalState = newState;
+                // Post-write verification: ensure our vote was NOT overwritten by a concurrent write!
+                const verifySession = await pb.collection('ranking').getOne(sessionId, { $autoCancel: false });
+                const verifyState: Top10State = typeof verifySession.top10_state === 'string'
+                    ? JSON.parse(verifySession.top10_state)
+                    : verifySession.top10_state;
+
+                const verifiedVotes = verifyState?.currentQuestion?.votes || [];
+                const containsOurVote = verifiedVotes.some((v) => v.voterId === voterId);
+
+                if (!containsOurVote || verifiedVotes.length < expectedVotesCount) {
+                    console.warn(`[top10-vote] Concurrent overwrite detected for voter ${voterId}. Retrying attempt ${i + 1}/${maxRetries}...`);
+                    throw new Error('Concurrent vote write collision detected');
+                }
+
+                finalState = verifyState;
                 break; // Exit retry loop on success
             } catch (err: any) {
                 lastError = err;
                 // Jittered backoff safely bypassing rate limits
-                await new Promise(r => setTimeout(r, 100 + Math.random() * 200));
+                await new Promise(r => setTimeout(r, 60 + Math.random() * 120));
             }
         }
 

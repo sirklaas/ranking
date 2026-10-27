@@ -1,5 +1,12 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.37 (2026-10-27)
+- **Top 3 & Top 10 — Voting Concurrency Safety (Oplossing A):**
+  - Post-write read verification toegevoegd aan `src/app/api/top10-vote/route.ts` en `src/app/api/top3-vote/route.ts`.
+  - Na het opslaan van een stem controleert de server direct of de stem daadwerkelijk in de database staat en niet per ongeluk is overschreven door een gelijktijdige write van een andere telefoon.
+  - Bij een gedetecteerde collision triggert de retry-lus automatisch met jittered backoff (60-180ms), haalt de nieuwste stand op en slaat de stem alsnog gegarandeerd op.
+  - 100% veilig en transparant: geen databasewijzigingen, geen frontend wijzigingen.
+
 ## Version 9.4.36 (2026-10-27)
 - **Display Centering Fix (Geen Kaart Meer in de Rechterbenedenhoek):**
   - Oorzaak van de scheve kaart opgelost: een CSS `@keyframes` regel overschreef de inline `transform: translate(-50%, -50%)`, waardoor de gekozen kaart linkboven op 50%/50% werd verankerd en in de hoek rechtsonder belandde.

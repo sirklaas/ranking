@@ -181,7 +181,7 @@ export default function TestPhonesPage() {
                 className="fixed z-[9999] text-orange-400/40 text-[11px]"
                 style={{ fontFamily: 'monospace', bottom: '15px', left: '100px' }}
             >
-                v9.4.36 · Halloween Edition · 6 phones · fase: {sessionFase} · {nrTeams} teams
+                v9.4.37 · Halloween Edition · 6 phones · fase: {sessionFase} · {nrTeams} teams
             </div>
 
             {/* Creepy Header */}
