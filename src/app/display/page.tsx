@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.23";
+const APP_VERSION = "v9.4.24";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -581,20 +581,6 @@ export default function DisplayPage() {
             allPlayerNames={allPlayerNames}
           />
           {versionBadge}
-          {/* Audio unlock prompt if sound is not enabled yet */}
-          {isMounted && !userEnabledSound && (
-            <div
-              onClick={() => forceUnlockAudio()}
-              className="fixed bottom-6 right-6 z-[99999] bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold px-8 py-4 rounded-2xl shadow-[0_0_35px_rgba(249,115,22,0.8)] cursor-pointer flex items-center gap-4 animate-pulse border-2 border-orange-300 text-xl tracking-wide select-none transition-transform hover:scale-105"
-              style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-            >
-              <span className="text-3xl">🔊</span>
-              <div>
-                <div className="uppercase">Klik voor Geluid</div>
-                <div className="text-xs font-normal text-orange-200">Klik ergens op het scherm of druk op een toets</div>
-              </div>
-            </div>
-          )}
         </>
       );
     }
@@ -617,31 +603,15 @@ export default function DisplayPage() {
                 className="w-full h-full object-contain"
                 playsInline
                 autoPlay
+                muted
                 onCanPlay={(e) => {
                   const vid = e.currentTarget;
-                  if (userEnabledSound || soundUnlockedRef.current) {
-                    if (vid.muted) {
-                      vid.muted = false;
-                      vid.volume = 1;
-                    }
-                    if (vid.paused) {
-                      vid.play().then(() => setAudioBlocked(false)).catch(() => {
-                        vid.muted = true;
-                        setAudioBlocked(true);
-                        vid.play().catch(() => {});
-                      });
-                    }
+                  if (vid.paused) {
+                    vid.play().catch(() => {});
                   }
                 }}
                 onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
-                onPlay={() => {
-                  console.log('[Display] video play', currentMedia);
-                  const v = videoRef.current;
-                  if (v && (userEnabledSound || soundUnlockedRef.current) && v.muted) {
-                    v.muted = false;
-                    v.volume = 1;
-                  }
-                }}
+                onPlay={() => console.log('[Display] video play', currentMedia)}
                 onError={(e) => {
                   console.log('[Display] video error encountered, falling back');
                   setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
@@ -658,24 +628,6 @@ export default function DisplayPage() {
                   console.log('[Display] video ended');
                 }}
               />
-
-              {/* Autoplay blocked recovery prompt - unmissable if browser ever mutes video */}
-              {audioBlocked && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    forceUnlockAudio();
-                  }}
-                  className="fixed top-6 right-6 z-[99999] bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold px-8 py-4 rounded-2xl shadow-[0_0_35px_rgba(249,115,22,0.9)] cursor-pointer flex items-center gap-4 animate-bounce border-2 border-orange-300 text-xl tracking-wide select-none"
-                  style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                >
-                  <span className="text-3xl">🔊</span>
-                  <div>
-                    <div className="uppercase">Klik hier voor Geluid</div>
-                    <div className="text-xs font-normal text-orange-200">Of druk op spatiebalk / klik op het scherm</div>
-                  </div>
-                </div>
-              )}
             </>
           ) : (
             <img src={currentMedia.url} alt={currentMedia.name} className="w-full h-full object-contain" />
@@ -961,84 +913,6 @@ export default function DisplayPage() {
         <p>Press &apos;R&apos; to refresh</p>
         <p>Press &apos;→&apos; / &apos;←&apos; to navigate fases</p>
       </div>
-
-      {/* Forced Interaction Overlay to Unlock Sound */}
-      {isMounted && !userEnabledSound && <div
-        className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center"
-      >
-        <h2 className="text-white text-3xl font-light mb-12 tracking-widest pointer-events-none">Display Systeem</h2>
-
-        <div className="flex gap-6">
-          {/* Safe Start Button */}
-          <button
-            onClick={() => forceUnlockAudio()}
-            className="px-10 py-6 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold rounded-2xl text-2xl transition-all shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 cursor-pointer border-2 border-orange-400"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-          >
-            <span>▶ START / RESUME</span>
-            <span className="text-sm font-normal text-orange-100">(Klik om alle geluiden te activeren)</span>
-          </button>
-
-          {/* Hard Reset Button */}
-          <button
-            data-no-global-unlock="true"
-            onClick={async (e) => {
-              e.stopPropagation();
-              // Confirm dialog to prevent accidental wipes
-              if (!window.confirm("WEET JE ZEKER DAT JE ALLES WILT WISSEN?\n\nDit wist alle scores, teamleaders, top 3, top 10 en krakende karakters.")) return;
-
-              forceUnlockAudio();
-              console.log('[Display] Reset clicked — running hard reset');
-
-              // HARD RESET AND LOCK
-              const sess = currentSessionRef.current;
-              if (sess) {
-                lockedSessionId.current = sess.id;
-
-                // Step 1: Instant React clear
-                setCurrentSession(prev => prev ? {
-                  ...prev,
-                  teamleaders: {},
-                  current_fase: '01/01',
-                  top3_state: '{}',
-                  top10_state: '{}',
-                  krakende_state: '{}'
-                } as unknown as RankingSession : prev);
-
-                // Step 2: PB Persist
-                try {
-                  await fetch(`/api/krakende-vote?sessionId=${sess.id}`, { method: 'DELETE' });
-                  const patchRes = await fetch('/api/session-state', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      id: sess.id,
-                      data: {
-                        teamleaders: {},
-                        current_fase: '01/01',
-                        top3_state: '{}',
-                        top10_state: '{}',
-                        krakende_state: '{}'
-                      }
-                    })
-                  });
-                  const patchJson = await patchRes.json();
-                  if (patchJson?.session) {
-                    setCurrentSession(patchJson.session as unknown as RankingSession);
-                  }
-                } catch (e) {
-                  console.error('[Display] Hard reset failed:', e);
-                }
-              }
-            }}
-            className="px-10 py-6 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-bold rounded-2xl text-2xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.5)] flex flex-col items-center gap-2 cursor-pointer"
-            style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-          >
-            <span>♻️ NIEUWE SHOW</span>
-            <span className="text-sm font-normal opacity-80">(Wist ALLE score data)</span>
-          </button>
-        </div>
-      </div>}
     </div>
   );
 }

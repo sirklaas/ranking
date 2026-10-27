@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.23";
+const APP_VERSION = "v9.4.24";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -676,7 +676,42 @@ export default function PresenterPage() {
   }, [getOrderedFasesGlobal]);
 
   const currentVideoRef = useRef<HTMLVideoElement | null>(null);
-  const [presenterAudio, setPresenterAudio] = useState(false);
+  const [presenterAudio, setPresenterAudio] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('presenter_audio_enabled');
+      if (saved !== null) return saved === 'true';
+    }
+    return true; // Default ON: MacBook is connected to amplifier/speakers!
+  });
+
+  // Global gesture unlock on presenter to ensure audio permission is always active
+  useEffect(() => {
+    const handleGesture = () => {
+      const v = currentVideoRef.current;
+      if (v && presenterAudio) {
+        v.muted = false;
+        v.volume = 1;
+        if (v.paused) v.play().catch(() => {});
+      }
+    };
+    window.addEventListener('click', handleGesture, { capture: true });
+    window.addEventListener('keydown', handleGesture, { capture: true });
+    return () => {
+      window.removeEventListener('click', handleGesture, { capture: true });
+      window.removeEventListener('keydown', handleGesture, { capture: true });
+    };
+  }, [presenterAudio]);
+
+  // Restart and play video with sound whenever currentFase or media changes
+  useEffect(() => {
+    const v = currentVideoRef.current;
+    if (v) {
+      v.currentTime = 0;
+      v.muted = !presenterAudio;
+      v.volume = 1;
+      v.play().catch(() => {});
+    }
+  }, [currentFase, presenterAudio]);
 
   const formatHeading = (text?: string) => {
     if (!text) return '';
@@ -884,6 +919,7 @@ export default function PresenterPage() {
                           {media?.type === 'video' && media.path ? (
                             <>
                               <video
+                                key={media.path}
                                 ref={currentVideoRef}
                                 src={media.path}
                                 className="absolute inset-0 w-full h-full object-contain"
@@ -891,10 +927,26 @@ export default function PresenterPage() {
                                 autoPlay
                                 muted={!presenterAudio}
                                 playsInline
-                                onLoadedMetadata={(e) => {
+                                onCanPlay={(e) => {
                                   const vid = e.currentTarget;
                                   vid.muted = !presenterAudio;
+                                  vid.volume = 1;
+                                  if (vid.paused) {
+                                    vid.play().catch(() => {});
+                                  }
+                                }}
+                                onLoadedMetadata={(e) => {
+                                  const vid = e.currentTarget;
+                                  vid.currentTime = 0;
+                                  vid.muted = !presenterAudio;
+                                  vid.volume = 1;
                                   vid.play().catch(() => {});
+                                }}
+                                onTimeUpdate={(e) => {
+                                  const vid = e.currentTarget;
+                                  if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
+                                    vid.pause();
+                                  }
                                 }}
                               />
                               <button
@@ -903,6 +955,7 @@ export default function PresenterPage() {
                                   e.stopPropagation();
                                   setPresenterAudio((prev) => {
                                     const next = !prev;
+                                    localStorage.setItem('presenter_audio_enabled', String(next));
                                     if (currentVideoRef.current) {
                                       currentVideoRef.current.muted = !next;
                                       currentVideoRef.current.volume = 1;
@@ -913,14 +966,15 @@ export default function PresenterPage() {
                                     return next;
                                   });
                                 }}
-                                className={`absolute top-2 right-2 z-20 px-2 py-1 rounded text-xs font-bold transition-all shadow-md ${
+                                className={`absolute top-2 right-2 z-20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg flex items-center gap-1.5 ${
                                   presenterAudio
-                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse'
-                                    : 'bg-black/80 hover:bg-black text-gray-300 border border-white/20'
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white ring-2 ring-emerald-300'
+                                    : 'bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-500/50'
                                 }`}
-                                title={presenterAudio ? 'Geluid staat aan op presenter preview' : 'Klik om video geluid te horen op presenter laptop'}
+                                title={presenterAudio ? 'Geluid speelt af via MacBook audio-uitgang naar versterker' : 'Geluid is gedempt'}
                               >
-                                {presenterAudio ? '🔊 Geluid Aan' : '🔇 Geluid Uit (Preview)'}
+                                <span>{presenterAudio ? '🔊' : '🔇'}</span>
+                                <span>{presenterAudio ? 'MacBook Audio: AAN' : 'MacBook Audio: UIT'}</span>
                               </button>
                             </>
                           ) : media?.type === 'image' && media.path ? (
