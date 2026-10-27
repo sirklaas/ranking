@@ -30,7 +30,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
   }, [moduleStateJson]);
 
   const [state, setState] = useState<EndgameState>(parsedState);
-  const endTitleAudioRef = useRef<HTMLAudioElement | null>(null);
   const trailerVideoRef = useRef<HTMLVideoElement | null>(null);
 
   // Play creepy trailer first when entering Finale if no card is selected
@@ -100,15 +99,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
   const activeCard = useMemo(() => {
     return ENDGAME_CARDS.find(c => c.id === state.selectedCard) || null;
   }, [state.selectedCard]);
-
-  // End title audio is handled exclusively by PresenterView on the MacBook
-  useEffect(() => {
-    const endAudio = endTitleAudioRef.current;
-    if (!endAudio) return;
-    endAudio.muted = true;
-    endAudio.volume = 0;
-    endAudio.pause();
-  }, [state.playbackState]);
 
   // Keyboard shortcut 'e' or 'E' on display to toggle End Card with QR code & Lawineboys
   useEffect(() => {
@@ -296,10 +286,19 @@ const DisplayView: React.FC<FaseCommonProps> = ({
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
           <video
             ref={trailerVideoRef}
-            src="/pics/trailercreepy.m4v"
+            src="/pics/HaloweenTrailer/trailercreepy.m4v"
             className="w-full h-full object-cover"
             playsInline
             autoPlay
+            muted
+            onError={(e) => {
+              // Fallback to /pics/trailercreepy.m4v if subfolder path fails
+              const target = e.currentTarget;
+              if (!target.src.endsWith('/pics/trailercreepy.m4v')) {
+                target.src = '/pics/trailercreepy.m4v';
+                target.play().catch(() => {});
+              }
+            }}
             onTimeUpdate={(e) => {
               const vid = e.currentTarget;
               if (vid.duration > 0 && vid.duration - vid.currentTime < 0.3) {
@@ -327,12 +326,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
           background: 'linear-gradient(135deg, #07060a 0%, #150a24 50%, #0d080c 100%)'
         }}
       >
-        <audio
-          ref={endTitleAudioRef}
-          src="/endgame/Lawineboys.m4a"
-          loop
-          playsInline
-        />
         <img
           src="/pics/End/end_card_qr.webp"
           alt="Einde Ranking - Review QR Code"

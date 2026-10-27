@@ -1,5 +1,17 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.28 (2026-10-27)
+- **De Finale — Eenvoudige Werkende Telefoonversie Hersteld:**
+  - Teamleider stemmen op de telefoon volledig verwijderd conform wens van Klaas.
+  - Spelersschermen tonen tijdens De Finale betrouwbaar de titelkaart met *"Kijk naar het grote scherm"*.
+  - Pas wanneer de presentator op `'e'` of de End Card knop drukt, verschijnt op de telefoons het feestelijke scherm ("Bedankt voor het spelen!", sterren geven, en Photo App koppeling).
+- **De Finale — Trailer Asset Path Fix:**
+  - `trailercreepy.m4v` gekopieerd naar zowel `/pics/HaloweenTrailer/trailercreepy.m4v` als `/pics/trailercreepy.m4v` met automatische fallback onError.
+- **De Finale — End Card & Lawineboys Uitsluitend op 'e' / Knop:**
+  - QR Code en feestnummer *"Wat zullen we drinken"* (Lawineboys) activeren uitsluitend via de knop `[🎬 Show End Card (e)]` of sneltoets `'e'` / `'E'`.
+  - Geluid speelt exclusief af via de Presenter op de MacBook naar de versterker, Display blijft stil.
+
+
 ## Version 9.4.27 (2026-10-27)
 - **100% Permanente Display Muting (Geen Dubbel Geluid / Geen Echo):**
   - Display beamer scherm (`/display`, `Top10Display`, `Top3Display`, `Zitten en Staan DisplayView`, `De Finale DisplayView`) is nu 100% permanent gedempt (`muted={true}`, `volume = 0`).

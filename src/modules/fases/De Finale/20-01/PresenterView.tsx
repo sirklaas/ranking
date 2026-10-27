@@ -36,6 +36,14 @@ const PresenterView: React.FC<FaseCommonProps> = ({
     setState(parsedState);
   }, [parsedState]);
 
+  // Ensure Lawineboys audio only plays when in endtitle state
+  useEffect(() => {
+    if (state.playbackState !== 'endtitle' && endTitleAudioRef.current && !endTitleAudioRef.current.paused) {
+      endTitleAudioRef.current.pause();
+      endTitleAudioRef.current.currentTime = 0;
+    }
+  }, [state.playbackState]);
+
   // Sync to backend and local storage
   const syncState = useCallback(async (newState: EndgameState) => {
     const stateWithTs = { ...newState, timestamp: Date.now() };
