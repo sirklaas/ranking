@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.25";
+const APP_VERSION = "v9.4.26";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -48,35 +48,29 @@ function ZittenDisplayCounters({ sessionId, faseKey }: { sessionId?: string; fas
 
   return (
     <>
-      {/* Bottom Left: Red Rounded Square - 1/3 compact size */}
+      {/* Bottom Left: Red Rounded Square - mini size, no text */}
       <div
-        className="fixed bottom-6 left-6 z-[60] flex flex-col items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl text-white select-none shadow-[0_0_20px_rgba(220,38,38,0.8)] border-2 border-red-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-4 left-4 z-[60] flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(220,38,38,0.8)] border border-red-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 50%, #742a2a 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-2xl md:text-3xl font-black font-mono leading-none tracking-tight drop-shadow-md">
+        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
           {tallies.red}
-        </span>
-        <span className="text-[9px] md:text-[10px] font-bold tracking-wider uppercase text-red-200 mt-0.5 font-mono">
-          Rood
         </span>
       </div>
 
-      {/* Bottom Right: Blue Rounded Square - 1/3 compact size */}
+      {/* Bottom Right: Blue Rounded Square - mini size, no text */}
       <div
-        className="fixed bottom-6 right-6 z-[60] flex flex-col items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl text-white select-none shadow-[0_0_20px_rgba(37,99,235,0.8)] border-2 border-blue-400/80 transition-all duration-300 pointer-events-none"
+        className="fixed bottom-4 right-4 z-[60] flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(37,99,235,0.8)] border border-blue-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #3182ce 0%, #2b6cb0 50%, #1a365d 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-2xl md:text-3xl font-black font-mono leading-none tracking-tight drop-shadow-md">
+        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
           {tallies.blue}
-        </span>
-        <span className="text-[9px] md:text-[10px] font-bold tracking-wider uppercase text-blue-200 mt-0.5 font-mono">
-          Blauw
         </span>
       </div>
     </>

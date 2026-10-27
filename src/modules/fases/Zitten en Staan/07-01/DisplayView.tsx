@@ -96,38 +96,30 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
         <img src={mediaUrl} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
       ) : null}
 
-      {/* Two rounded squares on the display: Red bottom-left, Blue bottom-right */}
+      {/* Two mini rounded squares on the display: Red bottom-left, Blue bottom-right */}
       {/* Bottom Left: Red Rounded Square */}
       <div
-        className="fixed bottom-8 left-8 z-40 flex flex-col items-center justify-center w-36 h-36 md:w-44 md:h-44 rounded-3xl text-white select-none shadow-[0_0_40px_rgba(220,38,38,0.7)] border-4 border-red-400/80 transition-all duration-300"
+        className="fixed bottom-4 left-4 z-40 flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(220,38,38,0.7)] border border-red-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #e53e3e 0%, #c53030 50%, #742a2a 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-5xl md:text-7xl font-black font-mono leading-none tracking-tight drop-shadow-md">
+        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
           {tallies.red}
-        </span>
-        <span className="text-xs md:text-sm font-bold tracking-widest uppercase text-red-200 mt-2 font-mono flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
-          Rood
         </span>
       </div>
 
       {/* Bottom Right: Blue Rounded Square */}
       <div
-        className="fixed bottom-8 right-8 z-40 flex flex-col items-center justify-center w-36 h-36 md:w-44 md:h-44 rounded-3xl text-white select-none shadow-[0_0_40px_rgba(37,99,235,0.7)] border-4 border-blue-400/80 transition-all duration-300"
+        className="fixed bottom-4 right-4 z-40 flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-xl text-white select-none shadow-[0_0_15px_rgba(37,99,235,0.7)] border border-blue-400/80 transition-all duration-300 pointer-events-none"
         style={{
           background: 'linear-gradient(135deg, #3182ce 0%, #2b6cb0 50%, #1a365d 100%)',
           backdropFilter: 'blur(10px)',
         }}
       >
-        <span className="text-5xl md:text-7xl font-black font-mono leading-none tracking-tight drop-shadow-md">
+        <span className="text-sm md:text-base font-black font-mono leading-none drop-shadow-md">
           {tallies.blue}
-        </span>
-        <span className="text-xs md:text-sm font-bold tracking-widest uppercase text-blue-200 mt-2 font-mono flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
-          Blauw
         </span>
       </div>
     </div>

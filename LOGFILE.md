@@ -1,5 +1,18 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.26 (2026-10-27)
+- **Audio Routing & Stabiliteit:**
+  - MacBook audio-uitgang (3.5mm jack / audio interface) naar de zaalspeakers/versterker is de exclusieve audiobron.
+  - Presenter speelt altijd alle fase-audio, media-audio en trailers direct af.
+  - Display beamer scherm is 100% stil (`muted`) en start direct schoon zonder storende START-overlays.
+  - MP4 video's geoptimaliseerd met `moov` faststart atom aan het begin voor directe start zonder bufferen.
+- **Zitten & Staan (Fase 07/*):**
+  - **Trailer 07/01**: Titel aangepast naar exact `"Zitten & Staan"`. Tellers worden expliciet NIET getoond op de trailer.
+  - **Display tellers**: Halve formaat mini tellers (`w-8 h-8 md:w-9 md:h-9`), woorden `"Rood"` en `"Blauw"` verwijderd (alleen getallen in subtiele pill).
+  - **Telefoons**: Alle counter rectangles (stemscherm en bevestigingsscherm) en polling verwijderd. Telefoon toont uitsluitend de Oneens / Eens knoppen.
+  - **Data reset**: PocketBase `zitten_votes` collectie opgeschoond en gekoppeld aan de "Reset Game Data" knop zodat spookstemmen verdwijnen.
+
+
 ## Version 9.4.20 (2026-10-25)
 - **Native Endgame Finale Module (`fase 20/01`)**:
   - Volledig geïntegreerd in Ranking zonder externe redirects naar `end.pinkmilk.eu`.
