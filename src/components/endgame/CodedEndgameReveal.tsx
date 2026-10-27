@@ -305,7 +305,8 @@ export default function CodedEndgameReveal({
           cardEl.style.display = 'flex';
           cardEl.style.left = '50%';
           cardEl.style.top = '50%';
-          cardEl.style.transform = 'translate(-50%, -50%) scale(1)';
+          const breathe = 1.0 + 0.015 * Math.sin((now / 1000) * 1.5);
+          cardEl.style.transform = `translate(-50%, -50%) scale(${breathe})`;
           cardEl.style.opacity = '1';
         }
         const ticketEl = ticketRef.current;
@@ -323,6 +324,26 @@ export default function CodedEndgameReveal({
         if (shCanvas) {
           shCanvas.style.display = 'none';
         }
+
+        // Render ambient space drift while awaiting ->
+        const sCanvas = spaceCanvasRef.current;
+        if (sCanvas) {
+          const sCtx = sCanvas.getContext('2d');
+          if (sCtx) {
+            sCtx.clearRect(0, 0, 1920, 1080);
+            const t = now / 1000;
+            for (const s of starsRef.current) {
+              const a = s.alpha * (0.6 + 0.4 * Math.sin(t * s.speed));
+              const px = (s.x + s.dx * t) % 1920;
+              const py = (s.y + s.dy * t) % 1080;
+              sCtx.fillStyle = `rgba(255, 255, 255, ${a})`;
+              sCtx.beginPath();
+              sCtx.arc(px < 0 ? px + 1920 : px, py < 0 ? py + 1080 : py, s.r, 0, Math.PI * 2);
+              sCtx.fill();
+            }
+          }
+        }
+
         animFrameRef.current = requestAnimationFrame(loop);
         return;
       }

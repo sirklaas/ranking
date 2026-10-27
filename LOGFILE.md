@@ -1,5 +1,12 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.32 (2026-10-27)
+- **De Finale — Kaart Selecteren Onthult NIET Automatisch:**
+  - Klikken op een kaart in het grid selecteert de kaart en toont deze groot en intact in het midden van het scherm (`playbackState: 'paused'`), ZONDER te onthullen.
+  - Pas wanneer de presentator op de rechter pijltoets (`→` / ArrowRight) drukt of op `[✨ Start Reveal (→)]` klikt, start de reveal animatie met geluid.
+  - Na de reveal blijft het gouden ticket met de uitkomsttekst permanent op het scherm staan.
+  - Een tweede druk op de rechter pijltoets (`→`) keert terug naar het 8-kaarten grid, waarbij de gespeelde kaart grijs (`greyed out`) is.
+
 ## Version 9.4.31 (2026-10-27)
 - **Display 100% Stil & Geen Audio-Knoppen:**
   - `isMuted={true}` expliciet doorgegeven aan `CodedEndgameReveal` in `DisplayView.tsx`.

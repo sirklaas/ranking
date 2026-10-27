@@ -101,19 +101,13 @@ const PresenterView: React.FC<FaseCommonProps> = ({
     if (state.playbackState !== 'grid') return;
     if (isCardUsed(card.id)) return;
 
-    // Immediately start reveal animation on display and play audio on presenter
+    // Select card and pause - displays the unrevealed card large on screen; reveals ONLY on ->
     const next: EndgameState = {
       ...state,
       selectedCard: card.id,
-      playbackState: 'playing'
+      playbackState: 'paused'
     };
     syncState(next);
-
-    if (audioPlayerRef.current) {
-      audioPlayerRef.current.src = '/endgame/endcard_audio.mp3';
-      audioPlayerRef.current.currentTime = 0;
-      audioPlayerRef.current.play().catch(e => console.log('Audio autoplay prevented on presenter:', e));
-    }
   };
 
   const handlePlayVideo = useCallback(() => {
@@ -330,11 +324,11 @@ const PresenterView: React.FC<FaseCommonProps> = ({
                 onClick={handlePlayVideo}
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-base shadow-lg shadow-orange-900/50 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <span>✨</span> Start Coded Reveal (Display)
+                <span>✨</span> Start Reveal (→)
               </button>
             )}
 
-            {(state.playbackState === 'playing' || state.playbackState === 'finished' || state.selectedCard) && (
+            {(state.playbackState === 'playing' || state.playbackState === 'finished') && (
               <button
                 onClick={handleReturnToGrid}
                 className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-base border border-zinc-600 shadow-lg flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer"

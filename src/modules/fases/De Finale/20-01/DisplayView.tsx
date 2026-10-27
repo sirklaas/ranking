@@ -118,7 +118,36 @@ const DisplayView: React.FC<FaseCommonProps> = ({
             })
           }).catch(() => {});
         }
-      } else if (e.key === 'Escape' || e.key === 'ArrowRight' || e.key === 'Backspace') {
+      } else if (e.key === 'ArrowRight' || e.key === ']') {
+        if (state.selectedCard) {
+          if (state.playbackState === 'paused') {
+            // Trigger reveal on first ->
+            const nextState: EndgameState = {
+              ...state,
+              playbackState: 'playing',
+              timestamp: Date.now()
+            };
+            setState(nextState);
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+            } catch {}
+            if (onModuleStateJson) onModuleStateJson(JSON.stringify(nextState));
+            if (sessionId) {
+              fetch('/api/session-state', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  id: sessionId,
+                  data: { endgame_state: nextState }
+                })
+              }).catch(() => {});
+            }
+          } else {
+            // Return to grid on second ->
+            handleCloseReveal();
+          }
+        }
+      } else if (e.key === 'Escape' || e.key === 'Backspace') {
         if (state.selectedCard) {
           handleCloseReveal();
         }
@@ -219,7 +248,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
     const nextState: EndgameState = {
       ...state,
       selectedCard: card.id,
-      playbackState: 'playing',
+      playbackState: 'paused',
       timestamp: Date.now()
     };
     setState(nextState);

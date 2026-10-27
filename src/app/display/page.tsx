@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.31";
+const APP_VERSION = "v9.4.32";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
