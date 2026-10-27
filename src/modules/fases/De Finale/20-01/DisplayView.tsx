@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { FaseCommonProps } from '@/types/fases';
 import { ENDGAME_CARDS, EndgameState, DEFAULT_ENDGAME_STATE } from './endgameData';
 import CodedEndgameReveal from '@/components/endgame/CodedEndgameReveal';
-import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
 const STORAGE_KEY = 'ranking_endgame_state';
 
@@ -22,7 +21,8 @@ const DisplayView: React.FC<FaseCommonProps> = ({
         playbackState: parsed?.playbackState || 'grid',
         usedCards: Array.isArray(parsed?.usedCards) ? parsed.usedCards : [],
         teamSelections: parsed?.teamSelections || {},
-        revealedCards: Array.isArray(parsed?.revealedCards) ? parsed.revealedCards : []
+        revealedCards: Array.isArray(parsed?.revealedCards) ? parsed.revealedCards : [],
+        timestamp: parsed?.timestamp || 0
       };
     } catch {
       return DEFAULT_ENDGAME_STATE;
@@ -30,45 +30,32 @@ const DisplayView: React.FC<FaseCommonProps> = ({
   }, [moduleStateJson]);
 
   const [state, setState] = useState<EndgameState>(parsedState);
-  const trailerVideoRef = useRef<HTMLVideoElement | null>(null);
+  const mountTimeRef = useRef<number>(Date.now());
 
-  // Play creepy trailer first when entering Finale if no card is selected
-  const [showTrailer, setShowTrailer] = useState<boolean>(() => {
-    return !parsedState.selectedCard && (parsedState.revealedCards || []).length === 0 && parsedState.playbackState === 'grid';
-  });
-
-  // If a card is selected from presenter or sync, dismiss trailer
+  // Sync incoming props from PocketBase / parent
   useEffect(() => {
-    if (state.selectedCard || (state.revealedCards || []).length > 0 || state.playbackState !== 'grid') {
-      setShowTrailer(false);
-    }
-  }, [state.selectedCard, state.revealedCards, state.playbackState]);
-
-  // Handle trailer video - strictly muted on display (Presenter plays the audio)
-  useEffect(() => {
-    if (!showTrailer) return;
-    const tv = trailerVideoRef.current;
-    if (!tv) return;
-
-    tv.muted = true;
-    tv.volume = 0;
-    tv.play().catch(() => {});
-  }, [showTrailer]);
-
-  // Sync incoming props
-  useEffect(() => {
-    setState(parsedState);
+    setState((prev) => {
+      // If props say no card selected, ensure we are on grid view
+      if (!parsedState.selectedCard) {
+        return {
+          ...parsedState,
+          selectedCard: null,
+          playbackState: parsedState.playbackState === 'endtitle' ? 'endtitle' : 'grid'
+        };
+      }
+      return parsedState;
+    });
   }, [parsedState]);
 
   // Fast localStorage sync for same-machine dual display
   useEffect(() => {
-    let lastTs = 0;
+    let lastTs = Math.max(parsedState.timestamp || 0, mountTimeRef.current);
     const interval = setInterval(() => {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const fresh = JSON.parse(saved);
-          if (fresh.timestamp && fresh.timestamp !== lastTs) {
+          if (fresh.timestamp && fresh.timestamp > lastTs) {
             lastTs = fresh.timestamp;
             setState(fresh);
           }
@@ -82,7 +69,10 @@ const DisplayView: React.FC<FaseCommonProps> = ({
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
           const fresh = JSON.parse(e.newValue);
-          setState(fresh);
+          if (fresh.timestamp && fresh.timestamp >= lastTs) {
+            lastTs = fresh.timestamp;
+            setState(fresh);
+          }
         } catch {
           // ignore
         }
@@ -94,7 +84,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
       clearInterval(interval);
       window.removeEventListener('storage', handleStorage);
     };
-  }, []);
+  }, [parsedState.timestamp]);
 
   const activeCard = useMemo(() => {
     return ENDGAME_CARDS.find(c => c.id === state.selectedCard) || null;
@@ -127,6 +117,10 @@ const DisplayView: React.FC<FaseCommonProps> = ({
               data: { endgame_state: nextState }
             })
           }).catch(() => {});
+        }
+      } else if (e.key === 'Escape' || e.key === 'ArrowRight' || e.key === 'Backspace') {
+        if (state.selectedCard) {
+          handleCloseReveal();
         }
       }
     };
@@ -197,7 +191,17 @@ const DisplayView: React.FC<FaseCommonProps> = ({
       localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
     } catch {}
     if (onModuleStateJson) onModuleStateJson(JSON.stringify(nextState));
-  }, [state, onModuleStateJson]);
+    if (sessionId) {
+      fetch('/api/session-state', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: sessionId,
+          data: { endgame_state: nextState }
+        })
+      }).catch(() => {});
+    }
+  }, [state, sessionId, onModuleStateJson]);
 
   const isRevealActive = (state.playbackState === 'paused' || state.playbackState === 'playing' || state.playbackState === 'finished') && activeCard !== null;
   const isEndTitle = state.playbackState === 'endtitle';
@@ -279,42 +283,6 @@ const DisplayView: React.FC<FaseCommonProps> = ({
           onFinished={handleRevealEnded}
           onClose={handleCloseReveal}
         />
-      )}
-
-      {/* Creepy Trailer Video Overlay (First time entering Finale before card selection) */}
-      {showTrailer && (
-        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-          <video
-            ref={trailerVideoRef}
-            src="/pics/HaloweenTrailer/trailercreepy.m4v"
-            className="w-full h-full object-cover"
-            playsInline
-            autoPlay
-            muted
-            onError={(e) => {
-              // Fallback to /pics/trailercreepy.m4v if subfolder path fails
-              const target = e.currentTarget;
-              if (!target.src.endsWith('/pics/trailercreepy.m4v')) {
-                target.src = '/pics/trailercreepy.m4v';
-                target.play().catch(() => {});
-              }
-            }}
-            onTimeUpdate={(e) => {
-              const vid = e.currentTarget;
-              if (vid.duration > 0 && vid.duration - vid.currentTime < 0.3) {
-                setShowTrailer(false);
-              }
-            }}
-            onEnded={() => setShowTrailer(false)}
-          />
-          <SpookyTrailerTitle faseKey="20/01" customHeading="FNUIKENDE FINALE" />
-          <button
-            onClick={() => setShowTrailer(false)}
-            className="absolute bottom-6 right-6 z-50 bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white px-5 py-2 rounded-full text-sm font-mono tracking-wider backdrop-blur-sm transition-all"
-          >
-            Overslaan ✕
-          </button>
-        </div>
       )}
 
       {/* End Title / End Card with Review QR Code Container */}

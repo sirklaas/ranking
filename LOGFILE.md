@@ -1,5 +1,14 @@
 # Ranking Project Changelog & Log
 
+## Version 9.4.29 (2026-10-27)
+- **De Finale — 8 Kaarten Eerste Weergave op Display:**
+  - Display toont bij binnenkomst in De Finale (20/01) direct het 8-kaarten grid als eerste weergave (geen storende video-overlay en geen achtergebleven "Betoverd" reveal).
+  - Sync verbeterd: Display laadt geen verouderde `selectedCard` uit localStorage meer op mount, maar start op het schone kaartenoverzicht conform de sessiestatus.
+  - Reset Game Data wist nu ook `ranking_endgame_state` in localStorage en zet de sessie terug op de schone 8-kaarten grid.
+- **Presenter Video Stabiliteit (Geen herstart na 10s):**
+  - Oorzaak opgelost waarbij de trailer in Presenter na ~10s spontaan herstartte: `playedFaseRef` controleert of de fase daadwerkelijk is gewisseld voordat `currentTime = 0` wordt aangeroepen.
+  - `currentTime = 0` verwijderd uit `onLoadedMetadata` zodat her-renders van het video-element tijdens het afspelen de positie niet meer resetten.
+
 ## Version 9.4.28 (2026-10-27)
 - **De Finale — Eenvoudige Werkende Telefoonversie Hersteld:**
   - Teamleider stemmen op de telefoon volledig verwijderd conform wens van Klaas.

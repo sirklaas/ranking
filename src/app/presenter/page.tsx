@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.28";
+const APP_VERSION = "v9.4.29";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -83,6 +83,11 @@ export default function PresenterPage() {
       // 2. Clear zitten_votes specifically
       fetch(`/api/zitten-vote?sessionId=${selectedSession.id}`, { method: 'DELETE' }).catch(() => {});
 
+      // 3. Clear endgame local storage
+      try {
+        localStorage.removeItem('ranking_endgame_state');
+      } catch {}
+
       if (res.ok) {
         setSelectedSession((prev) => prev ? {
           ...prev,
@@ -90,7 +95,8 @@ export default function PresenterPage() {
           teamleaders: {},
           top3_state: {},
           top10_state: {},
-          krakende_state: {}
+          krakende_state: {},
+          endgame_state: { selectedCard: null, playbackState: 'grid', usedCards: [], teamSelections: {} }
         } : null);
         setResetStatus('✓ Data gereset! (0 spelers / stippen / stemmen)');
         setTimeout(() => setResetStatus(null), 3000);
@@ -712,14 +718,20 @@ export default function PresenterPage() {
     };
   }, [presenterAudio]);
 
-  // Restart and play video with sound whenever currentFase or media changes
+  // Play video with sound whenever currentFase changes; do NOT reset currentTime if currentFase did not change!
+  const playedFaseRef = useRef<string>('');
   useEffect(() => {
     const v = currentVideoRef.current;
-    if (v) {
+    if (!v) return;
+    if (currentFase !== playedFaseRef.current) {
+      playedFaseRef.current = currentFase;
       v.currentTime = 0;
       v.muted = !presenterAudio;
       v.volume = 1;
       v.play().catch(() => {});
+    } else {
+      v.muted = !presenterAudio;
+      v.volume = 1;
     }
   }, [currentFase, presenterAudio]);
 
@@ -947,10 +959,11 @@ export default function PresenterPage() {
                                 }}
                                 onLoadedMetadata={(e) => {
                                   const vid = e.currentTarget;
-                                  vid.currentTime = 0;
                                   vid.muted = !presenterAudio;
                                   vid.volume = 1;
-                                  vid.play().catch(() => {});
+                                  if (vid.paused) {
+                                    vid.play().catch(() => {});
+                                  }
                                 }}
                                 onTimeUpdate={(e) => {
                                   const vid = e.currentTarget;

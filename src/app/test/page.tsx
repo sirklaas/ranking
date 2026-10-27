@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { rankingService, teamService } from '@/lib/pocketbase';
 
-const APP_VERSION = "v9.4.28";
+const APP_VERSION = "v9.4.29";
 
 // ---------------------------------------------------------------------------
 // Types
