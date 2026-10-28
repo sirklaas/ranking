@@ -914,19 +914,21 @@ export default function PresenterPage() {
                         el.setAttribute('playsinline', '');
                         el.setAttribute('webkit-playsinline', '');
                         el.setAttribute('autoplay', '');
-                        if (!presenterAudio) {
-                          el.defaultMuted = true;
-                          el.muted = true;
-                          el.setAttribute('muted', '');
+                        el.setAttribute('muted', '');
+                        el.defaultMuted = true;
+                        el.muted = !presenterAudio;
+                        if (presenterAudio) {
+                          el.volume = 1;
                         }
                       }
                     }}
                     src={media.path}
                     className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                    style={{ pointerEvents: 'none' }}
                     preload="auto"
                     autoPlay
                     muted={!presenterAudio}
-                    defaultMuted={!presenterAudio}
+                    defaultMuted
                     playsInline
                     onCanPlay={(e) => {
                       const vid = e.currentTarget;
