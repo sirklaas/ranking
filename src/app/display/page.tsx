@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.46";
+const APP_VERSION = "v9.4.47";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -523,7 +523,14 @@ export default function DisplayPage() {
             <>
               <video
                 key={currentMedia.url}
-                ref={videoRef}
+                ref={(el) => {
+                  videoRef.current = el;
+                  if (el) {
+                    el.defaultMuted = true;
+                    el.muted = true;
+                    el.volume = 0;
+                  }
+                }}
                 src={currentMedia.url}
                 className="w-full h-full object-contain cursor-default"
                 playsInline
@@ -537,6 +544,24 @@ export default function DisplayPage() {
                   v.muted = true;
                   v.volume = 0;
                   if (v.paused) v.play().catch(() => {});
+                }}
+                onLoadedMetadata={(e) => {
+                  const vid = e.currentTarget;
+                  vid.defaultMuted = true;
+                  vid.muted = true;
+                  vid.volume = 0;
+                  if (vid.paused) {
+                    vid.play().catch((err) => console.warn('[Display] onLoadedMetadata play:', err));
+                  }
+                }}
+                onCanPlay={(e) => {
+                  const vid = e.currentTarget;
+                  vid.defaultMuted = true;
+                  vid.muted = true;
+                  vid.volume = 0;
+                  if (vid.paused) {
+                    vid.play().catch((err) => console.warn('[Display] onCanPlay play:', err));
+                  }
                 }}
                 onPlay={() => console.log('[Display] video play', currentMedia)}
                 onError={(e) => {
