@@ -13,7 +13,7 @@ import { Top3State } from '@/modules/top3/types';
 import * as top10Logic from '@/modules/top10/logic';
 import { Top10State } from '@/modules/top10/types';
 
-const APP_VERSION = "v9.4.41";
+const APP_VERSION = "v9.4.42";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -911,6 +911,8 @@ export default function PresenterPage() {
                     ref={(el) => {
                       currentVideoRef.current = el;
                       if (el) {
+                        el.controls = false;
+                        el.removeAttribute('controls');
                         el.setAttribute('playsinline', '');
                         el.setAttribute('webkit-playsinline', '');
                         el.setAttribute('autoplay', '');
@@ -923,9 +925,11 @@ export default function PresenterPage() {
                       }
                     }}
                     src={media.path}
-                    className="absolute inset-0 w-full h-full object-contain"
+                    className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                    style={{ pointerEvents: 'none' }}
                     preload="auto"
                     autoPlay
+                    controls={false}
                     muted={!presenterAudio}
                     defaultMuted
                     playsInline

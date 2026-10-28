@@ -48,11 +48,18 @@ body {
   font-family: 'Barlow Semi Condensed', var(--font-barlow), sans-serif;
 }
 
-/* Hide WebKit / Safari start playback button overlay on videos */
-video::-webkit-media-controls-start-playback-button {
+/* Hide all WebKit / Safari media controls and play/pause overlay buttons on videos */
+video::-webkit-media-controls,
+video::-webkit-media-controls-start-playback-button,
+video::-webkit-media-controls-overlay-play-button,
+video::-webkit-media-controls-play-button,
+video::-webkit-media-controls-enclosure,
+video::-webkit-media-controls-panel,
+video::-webkit-media-controls-overlay-enclosure {
   display: none !important;
-  -webkit-appearance: none;
+  -webkit-appearance: none !important;
   opacity: 0 !important;
+  visibility: hidden !important;
   pointer-events: none !important;
 }
 

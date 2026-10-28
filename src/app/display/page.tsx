@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.41";
+const APP_VERSION = "v9.4.42";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -499,7 +499,7 @@ export default function DisplayPage() {
       {/* Media overlay: plays current fase video/image when available */}
       {currentMedia && currentMedia.url && allowMediaOverlay && (
         <div
-          className="fixed inset-0 z-50 bg-black cursor-pointer"
+          className="fixed inset-0 z-50 bg-black cursor-none"
           onClick={() => {
             const v = videoRef.current;
             if (v) {
@@ -520,6 +520,8 @@ export default function DisplayPage() {
                     el.defaultMuted = true;
                     el.muted = true;
                     el.volume = 0;
+                    el.controls = false;
+                    el.removeAttribute('controls');
                     el.setAttribute('muted', '');
                     el.setAttribute('playsinline', '');
                     el.setAttribute('webkit-playsinline', '');
@@ -528,11 +530,13 @@ export default function DisplayPage() {
                   }
                 }}
                 src={currentMedia.url}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain pointer-events-none"
+                style={{ pointerEvents: 'none' }}
                 playsInline
                 autoPlay
                 muted
                 defaultMuted
+                controls={false}
                 preload="auto"
                 onCanPlay={(e) => {
                   const vid = e.currentTarget;
