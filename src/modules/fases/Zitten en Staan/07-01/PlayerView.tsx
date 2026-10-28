@@ -8,7 +8,7 @@ import CreepyRankingLogo from '@/components/common/CreepyRankingLogo';
 // Exact video durations on Display (in ms) so phone does not reveal stelling until video completes
 const ZITTEN_DURATIONS: Record<string, number> = {
   '07/01': 22000, // TrailerZitten.mp4 (21.6s)
-  '07/05': 16000, // RankingSuperfoods.m4v (15.8s)
+  '07/05': 14200, // RankingSuperfoods.m4v (14.2s)
   '07/06': 14500, // RankingFlirt.m4v (14.3s)
   '07/07': 14500, // RankingHouseparty.m4v (14.3s)
   '07/08': 15500, // RankingSocials.m4v (15.3s)
