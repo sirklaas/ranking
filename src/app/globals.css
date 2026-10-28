@@ -69,6 +69,12 @@ video::-webkit-media-controls-play-button {
   opacity: 0 !important;
 }
 
+video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+  opacity: 0 !important;
+}
+
 /* PhotoCircle popup: grows from tiny + fades in over 3 seconds */
 @keyframes popupGrow {
   from {

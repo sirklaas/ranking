@@ -13,7 +13,7 @@ import { Top3State } from '@/modules/top3/types';
 import * as top10Logic from '@/modules/top10/logic';
 import { Top10State } from '@/modules/top10/types';
 
-const APP_VERSION = "v9.4.44";
+const APP_VERSION = "v9.4.45";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -1042,6 +1042,13 @@ export default function PresenterPage() {
 
     return (
       <div className="h-screen w-screen bg-gray-100 flex flex-col overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        <style dangerouslySetInnerHTML={{ __html: `
+          video::-webkit-media-controls { display: none !important; }
+          video::-webkit-media-controls-panel { display: none !important; }
+          video::-webkit-media-controls-start-playback-button { display: none !important; -webkit-appearance: none !important; opacity: 0 !important; }
+          video::-webkit-media-controls-play-button { display: none !important; -webkit-appearance: none !important; opacity: 0 !important; }
+          video::-webkit-media-controls-overlay-play-button { display: none !important; -webkit-appearance: none !important; opacity: 0 !important; }
+        ` }} />
         {/* Header - Compact single bar */}
         <header className="shrink-0 bg-white shadow-sm py-2 px-4 md:px-6 border-b border-gray-200">
           <div className="flex justify-between items-center">

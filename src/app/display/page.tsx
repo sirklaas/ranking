@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.44";
+const APP_VERSION = "v9.4.45";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -494,6 +494,13 @@ export default function DisplayPage() {
   console.log(`[Display ${APP_VERSION}] Falling through to media overlay for fase`, currentSession?.current_fase);
   return (
     <div className="min-h-screen bg-[#07060a] bg-gradient-to-br from-[#0c0817] via-[#140822] to-[#1a0802] relative overflow-hidden text-white" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        video::-webkit-media-controls { display: none !important; }
+        video::-webkit-media-controls-panel { display: none !important; }
+        video::-webkit-media-controls-start-playback-button { display: none !important; -webkit-appearance: none !important; opacity: 0 !important; }
+        video::-webkit-media-controls-play-button { display: none !important; -webkit-appearance: none !important; opacity: 0 !important; }
+        video::-webkit-media-controls-overlay-play-button { display: none !important; -webkit-appearance: none !important; opacity: 0 !important; }
+      ` }} />
       {versionBadge}
 
       {/* Media overlay: plays current fase video/image when available */}
