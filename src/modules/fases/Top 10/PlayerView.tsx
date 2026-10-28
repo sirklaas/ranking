@@ -13,7 +13,7 @@ const TOP10_HEADINGS: Record<string, string> = {
   '17/07': 'Wie zou meedoen [tegen betaling uiteraard] /n aan de naakte fotoshoot van het Perfecte Plaatje?',
   '17/08': 'Wie is de grootste zuiplap van de familie?',
   '17/09': 'Wie kan absoluut niet tegen kritiek?',
-  '17/10': 'Wie laat weleens een wind?',
+  '17/10': 'Wie is de ideale schoonzoon of -dochter?',
   '17/11': 'Wie maakt de allerlelijkste Selfies ?',
   '17/12': 'Wie is het meest verslaafd aan Social Media?',
   '17/13': 'Wie krijgt de meeste bekeuringen?',

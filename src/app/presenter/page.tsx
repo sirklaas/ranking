@@ -13,7 +13,7 @@ import { Top3State } from '@/modules/top3/types';
 import * as top10Logic from '@/modules/top10/logic';
 import { Top10State } from '@/modules/top10/types';
 
-const APP_VERSION = "v9.4.50";
+const APP_VERSION = "v9.4.51";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');

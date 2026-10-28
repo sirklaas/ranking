@@ -14,7 +14,7 @@ const TOP10_SLIDES: Record<string, { heading: string; image: string }> = {
   '17/07': { heading: 'Wie doet tegen betaling de naakte fotoshoot /n van het Perfecte Plaatje?', image: 'photoshoot.webp' },
   '17/08': { heading: 'Wie kan 40 dagen zonder sex?', image: '40-days.webp' },
   '17/09': { heading: 'Wie kan absoluut niet tegen kritiek?', image: 'trump-pumpkin.webp' },
-  '17/10': { heading: 'Wie is het monsterlijke schoon-kind?', image: 'inlaw.webp' },
+  '17/10': { heading: 'Wie is de ideale schoonzoon of -dochter?', image: 'inlaw.webp' },
   '17/11': { heading: 'Wie maakt de allerlelijkste Selfies ?', image: 'selfie-monster.webp' },
   '17/12': { heading: 'Wie is het meest verslaafd aan Social Media?', image: 'socials-zombie.webp' },
   '17/13': { heading: 'Wie krijgt de meeste bekeuringen?', image: 'speeding-ticket.webp' },
