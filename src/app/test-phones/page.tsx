@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { rankingService } from '@/lib/pocketbase';
 
+const APP_VERSION = "v9.4.40";
+
 function ScaledPhone({
     phoneNum,
     code,
@@ -181,7 +183,7 @@ export default function TestPhonesPage() {
                 className="fixed z-[9999] text-orange-400/40 text-[11px]"
                 style={{ fontFamily: 'monospace', bottom: '15px', left: '100px' }}
             >
-                v9.4.37 · Halloween Edition · 6 phones · fase: {sessionFase} · {nrTeams} teams
+                {APP_VERSION} · Halloween Edition · 6 phones · fase: {sessionFase} · {nrTeams} teams
             </div>
 
             {/* Creepy Header */}
