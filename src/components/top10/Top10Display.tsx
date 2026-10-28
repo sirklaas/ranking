@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import DisplayVideo from '@/components/common/DisplayVideo';
+import { playRiserSound } from '@/lib/soundUtils';
 import { Top10State, Top10Result } from '@/modules/top10/types';
 import { getVoterNames, getLiveTally } from '@/modules/top10/logic';
 import * as top10Logic from '@/modules/top10/logic';
@@ -450,6 +451,7 @@ function SequentialResults({ results }: { results: Top10Result[] }) {
     const [revealCount, setRevealCount] = useState(0);
 
     useEffect(() => {
+        playRiserSound();
         const timer = setInterval(() => {
             setRevealCount(prev => (prev < results.length ? prev + 1 : prev));
         }, 1200); // Reveal every 1.2s for drama
@@ -596,7 +598,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
                             {/* Left: SequentialResults if results phase */}
                             {phase === 'results' && (
                                 <div className="w-[30%] h-full shrink-0 pr-6">
-                                    <SequentialResults key={faseKey} results={state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
+                                    <SequentialResults key={`${faseKey}-${phase}`} results={state.currentQuestion.results?.length > 0 ? state.currentQuestion.results : liveTally} />
                                 </div>
                             )}
                             {/* WordCloud: takes full width during voting (100% centered!), or 70% during results */}
