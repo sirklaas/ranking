@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.38";
+const APP_VERSION = "v9.4.40";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -259,36 +259,57 @@ export default function DisplayPage() {
 
   // Play video permanently muted (sound is played exclusively by Presenter on MacBook)
   useEffect(() => {
-    if (!currentMedia) {
+    if (!currentMedia || currentMedia.type !== 'video') {
       lastPlayedUrl.current = '';
       return;
     }
-    const v = videoRef.current;
-    if (currentMedia.type !== 'video' || !v) return;
-    if (currentMedia.url === lastPlayedUrl.current) return;
-    lastPlayedUrl.current = currentMedia.url;
 
-    console.log(`[Display ${APP_VERSION}] Playing video (muted): ${currentMedia.name}`);
-
-    const startPlayback = () => {
-      v.currentTime = 0;
+    const tryPlay = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      v.defaultMuted = true;
       v.muted = true;
       v.volume = 0;
-      v.play().catch(() => {});
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      v.setAttribute('webkit-playsinline', '');
+      v.setAttribute('autoplay', '');
+      if (currentMedia.url !== lastPlayedUrl.current) {
+        lastPlayedUrl.current = currentMedia.url;
+        v.currentTime = 0;
+      }
+      if (v.paused) {
+        v.play().catch(() => {});
+      }
     };
 
-    if (v.readyState >= 1) {
-      startPlayback();
-    } else {
-      const onLoaded = () => {
-        v.removeEventListener('loadedmetadata', onLoaded);
-        v.removeEventListener('canplay', onLoaded);
-        startPlayback();
-      };
-      v.addEventListener('loadedmetadata', onLoaded);
-      v.addEventListener('canplay', onLoaded);
-    }
+    tryPlay();
+    const t1 = setTimeout(tryPlay, 100);
+    const t2 = setTimeout(tryPlay, 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [currentMedia]);
+
+  // Global click / key interaction unlock for Display
+  useEffect(() => {
+    const handleGesture = () => {
+      const v = videoRef.current;
+      if (v && v.paused) {
+        v.defaultMuted = true;
+        v.muted = true;
+        v.volume = 0;
+        v.play().catch(() => {});
+      }
+    };
+    window.addEventListener('click', handleGesture, { capture: true });
+    window.addEventListener('keydown', handleGesture, { capture: true });
+    return () => {
+      window.removeEventListener('click', handleGesture, { capture: true });
+      window.removeEventListener('keydown', handleGesture, { capture: true });
+    };
+  }, []);
 
   // Poll session state via cached server proxy (never hits PB directly from browser)
   useEffect(() => {
@@ -477,24 +498,60 @@ export default function DisplayPage() {
 
       {/* Media overlay: plays current fase video/image when available */}
       {currentMedia && currentMedia.url && allowMediaOverlay && (
-        <div className="fixed inset-0 z-50 bg-black cursor-pointer">
+        <div
+          className="fixed inset-0 z-50 bg-black cursor-pointer"
+          onClick={() => {
+            const v = videoRef.current;
+            if (v) {
+              v.defaultMuted = true;
+              v.muted = true;
+              v.volume = 0;
+              v.play().catch(() => {});
+            }
+          }}
+        >
           {currentMedia.type === 'video' ? (
             <>
               <video
                 key={currentMedia.url}
-                ref={videoRef}
+                ref={(el) => {
+                  videoRef.current = el;
+                  if (el) {
+                    el.defaultMuted = true;
+                    el.muted = true;
+                    el.volume = 0;
+                    el.setAttribute('muted', '');
+                    el.setAttribute('playsinline', '');
+                    el.setAttribute('webkit-playsinline', '');
+                    el.setAttribute('autoplay', '');
+                    if (el.paused) el.play().catch(() => {});
+                  }
+                }}
                 src={currentMedia.url}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain pointer-events-none"
                 playsInline
                 autoPlay
                 muted
+                defaultMuted
+                preload="auto"
                 onCanPlay={(e) => {
                   const vid = e.currentTarget;
+                  vid.defaultMuted = true;
+                  vid.muted = true;
+                  vid.volume = 0;
                   if (vid.paused) {
                     vid.play().catch(() => {});
                   }
                 }}
-                onLoadedMetadata={() => console.log('[Display] video loadedmetadata', currentMedia)}
+                onLoadedMetadata={(e) => {
+                  const vid = e.currentTarget;
+                  vid.defaultMuted = true;
+                  vid.muted = true;
+                  vid.volume = 0;
+                  if (vid.paused) {
+                    vid.play().catch(() => {});
+                  }
+                }}
                 onPlay={() => console.log('[Display] video play', currentMedia)}
                 onError={(e) => {
                   console.log('[Display] video error encountered, falling back');

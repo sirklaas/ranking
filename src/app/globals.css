@@ -48,6 +48,14 @@ body {
   font-family: 'Barlow Semi Condensed', var(--font-barlow), sans-serif;
 }
 
+/* Hide WebKit / Safari start playback button overlay on videos */
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* PhotoCircle popup: grows from tiny + fades in over 3 seconds */
 @keyframes popupGrow {
   from {

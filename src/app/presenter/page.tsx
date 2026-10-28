@@ -13,7 +13,7 @@ import { Top3State } from '@/modules/top3/types';
 import * as top10Logic from '@/modules/top10/logic';
 import { Top10State } from '@/modules/top10/types';
 
-const APP_VERSION = "v9.4.39";
+const APP_VERSION = "v9.4.40";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -718,6 +718,7 @@ export default function PresenterPage() {
       if (v && presenterAudio) {
         v.muted = false;
         v.volume = 1;
+        if (v.paused) v.play().catch(() => {});
       }
     };
     window.addEventListener('click', handleGesture, { capture: true });
@@ -728,7 +729,7 @@ export default function PresenterPage() {
     };
   }, [presenterAudio]);
 
-  // Play video with sound whenever currentFase changes; do NOT reset currentTime if currentFase did not change!
+  // Play video with sound whenever currentFase changes; fallback to muted if browser blocks unmuted autoplay
   const playedFaseRef = useRef<string>('');
   useEffect(() => {
     const v = currentVideoRef.current;
@@ -736,9 +737,26 @@ export default function PresenterPage() {
     if (currentFase !== playedFaseRef.current) {
       playedFaseRef.current = currentFase;
       v.currentTime = 0;
-      v.muted = !presenterAudio;
-      v.volume = 1;
-      v.play().catch(() => {});
+      if (presenterAudio) {
+        v.muted = false;
+        v.volume = 1;
+        const p = v.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch((err) => {
+            console.warn('[Presenter] Unmuted autoplay blocked by browser policy, falling back to muted:', err);
+            v.defaultMuted = true;
+            v.muted = true;
+            v.setAttribute('muted', '');
+            v.play().catch(() => {});
+          });
+        }
+      } else {
+        v.defaultMuted = true;
+        v.muted = true;
+        v.setAttribute('muted', '');
+        v.volume = 1;
+        v.play().catch(() => {});
+      }
     } else {
       v.muted = !presenterAudio;
       v.volume = 1;
@@ -890,24 +908,67 @@ export default function PresenterPage() {
                 <>
                   <video
                     key={media.path}
-                    ref={currentVideoRef}
+                    ref={(el) => {
+                      currentVideoRef.current = el;
+                      if (el) {
+                        el.setAttribute('playsinline', '');
+                        el.setAttribute('webkit-playsinline', '');
+                        el.setAttribute('autoplay', '');
+                        if (!presenterAudio) {
+                          el.defaultMuted = true;
+                          el.muted = true;
+                          el.setAttribute('muted', '');
+                        }
+                      }
+                    }}
                     src={media.path}
-                    className="absolute inset-0 w-full h-full object-contain"
+                    className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                     preload="auto"
                     autoPlay
                     muted={!presenterAudio}
+                    defaultMuted={!presenterAudio}
                     playsInline
                     onCanPlay={(e) => {
                       const vid = e.currentTarget;
-                      vid.muted = !presenterAudio;
-                      vid.volume = 1;
-                      if (vid.paused) vid.play().catch(() => {});
+                      if (presenterAudio) {
+                        vid.muted = false;
+                        vid.volume = 1;
+                        const p = vid.play();
+                        if (p && typeof p.catch === 'function') {
+                          p.catch(() => {
+                            vid.defaultMuted = true;
+                            vid.muted = true;
+                            vid.setAttribute('muted', '');
+                            vid.play().catch(() => {});
+                          });
+                        }
+                      } else {
+                        vid.defaultMuted = true;
+                        vid.muted = true;
+                        vid.volume = 1;
+                        if (vid.paused) vid.play().catch(() => {});
+                      }
                     }}
                     onLoadedMetadata={(e) => {
                       const vid = e.currentTarget;
-                      vid.muted = !presenterAudio;
-                      vid.volume = 1;
-                      if (vid.paused) vid.play().catch(() => {});
+                      if (presenterAudio) {
+                        vid.muted = false;
+                        vid.volume = 1;
+                        const p = vid.play();
+                        if (p && typeof p.catch === 'function') {
+                          p.catch(() => {
+                            vid.defaultMuted = true;
+                            vid.muted = true;
+                            vid.setAttribute('muted', '');
+                            vid.play().catch(() => {});
+                          });
+                        }
+                      } else {
+                        vid.defaultMuted = true;
+                        vid.muted = true;
+                        vid.volume = 1;
+                        if (vid.paused) vid.play().catch(() => {});
+                      }
                     }}
                     onTimeUpdate={(e) => {
                       const vid = e.currentTarget;
