@@ -5,6 +5,19 @@ import { Top3State } from '@/modules/top3/types';
 import * as top3Logic from '@/modules/top3/logic';
 import Top3Presenter from '@/components/top3/Top3Presenter';
 import { safeJsonParse } from '@/lib/jsonUtils';
+import { motherfileService } from '@/lib/pocketbase';
+
+const TOP3_SLIDES: Record<string, { heading: string; image: string }> = {
+  '10/05': { heading: 'Wie wordt er echt heel erg snel verliefd', image: 'dracula.webp' },
+  '10/06': { heading: 'Wie is de ideale schoonzoon of -zus?', image: 'frankenstein.webp' },
+  '10/07': { heading: 'Je vliegtuig stort neer in de Andes. /n Wie eet je als eerste op ?', image: 'zombie.webp' },
+  '10/08': { heading: 'Wie zou je absoluut niet /n op je kinderen laten passen?', image: 'witch.webp' },
+  '10/09': { heading: 'Wie heeft de meeste crypto\'s', image: 'mummy.webp' },
+  '10/10': { heading: 'Wie is de grootste aansteller?', image: 'skeleton.webp' },
+  '10/11': { heading: 'Wie maakt als eerste een /n OnlyFans account?', image: 'werewolf.webp' },
+  '10/12': { heading: 'Wie moet je zeker geen geheim vertellen?', image: 'ghost.webp' },
+  '10/13': { heading: 'Wie zou je meenemen naar een parenclub?', image: 'sinister-man.webp' },
+};
 
 const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, onModuleStateJson, allPlayerNames, heading, mediaUrl, faseKey }) => {
   const parsed = safeJsonParse<Top3State>(moduleStateJson);
@@ -16,7 +29,6 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     state.allPlayerNames = allPlayerNames || [];
   }
 
-  const prevFaseRef = useRef(faseKey);
   const didInit = useRef(false);
 
   // Auto-persist initial state to PB so display + phone can pick it up immediately
@@ -34,7 +46,6 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
     if (state.currentFase === faseKey) return; // already in sync — do nothing
 
     // Only wipe votes/results when moving to a genuinely different question.
-    // If current slot had real voting activity, clear it for the next round.
     const defaultPhase = faseKey === '10/01' ? 'intro' : 'voting';
     if (state?.currentQuestion?.votes?.length > 0 || state?.currentQuestion?.phase === 'results') {
       const nextState: Top3State = {
@@ -66,12 +77,16 @@ const PresenterView: React.FC<FaseCommonProps> = ({ sessionId, moduleStateJson, 
 
   if (!sessionId) return null;
 
+  const slide = faseKey ? TOP3_SLIDES[faseKey] : undefined;
+  const resolvedHeading = heading || slide?.heading;
+  const resolvedMediaUrl = mediaUrl || (slide?.image ? motherfileService.fileUrl(slide.image) : undefined);
+
   return (
     <Top3Presenter
       sessionId={sessionId}
       state={state}
-      heading={heading}
-      mediaUrl={mediaUrl}
+      heading={resolvedHeading}
+      mediaUrl={resolvedMediaUrl}
       onStateChange={(newState) => onModuleStateJson?.(JSON.stringify(newState))}
     />
   );

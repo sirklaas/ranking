@@ -14,6 +14,78 @@ const ORDERED_FASES = [
   '20/01'
 ];
 
+interface VoteLike {
+  chosenPlayerName: string;
+}
+
+function computeTop3Results(votes: VoteLike[]) {
+  const tally: Record<string, number> = {};
+  votes.forEach((v) => {
+    if (!v.chosenPlayerName) return;
+    tally[v.chosenPlayerName] = (tally[v.chosenPlayerName] || 0) + 1;
+  });
+
+  const totalVotes = votes.length;
+  const sorted = Object.entries(tally)
+    .map(([playerName, voteCount]) => ({
+      playerName,
+      votes: voteCount,
+      percentage: totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0,
+    }))
+    .sort((a, b) => b.votes - a.votes);
+
+  const top3 = sorted.slice(0, 3);
+  const otherVotes = sorted.slice(3).reduce((sum, item) => sum + item.votes, 0);
+
+  if (top3.length > 1 && top3[0].votes === top3[1].votes && top3[0].votes > 0) {
+    top3[0].percentage += 1;
+  }
+
+  if (otherVotes > 0) {
+    top3.push({
+      playerName: 'Overige spelers',
+      votes: otherVotes,
+      percentage: totalVotes > 0 ? Math.round((otherVotes / totalVotes) * 100) : 0,
+    });
+  }
+
+  return top3;
+}
+
+function computeTop10Results(votes: VoteLike[]) {
+  const tally: Record<string, number> = {};
+  votes.forEach((v) => {
+    if (!v.chosenPlayerName) return;
+    tally[v.chosenPlayerName] = (tally[v.chosenPlayerName] || 0) + 1;
+  });
+
+  const totalVotes = votes.length;
+  const sorted = Object.entries(tally)
+    .map(([playerName, voteCount]) => ({
+      playerName,
+      votes: voteCount,
+      percentage: totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0,
+    }))
+    .sort((a, b) => b.votes - a.votes);
+
+  const top10 = sorted.slice(0, 10);
+  const otherVotes = sorted.slice(10).reduce((sum, item) => sum + item.votes, 0);
+
+  if (top10.length > 1 && top10[0].votes === top10[1].votes && top10[0].votes > 0) {
+    top10[0].percentage += 1;
+  }
+
+  if (otherVotes > 0) {
+    top10.push({
+      playerName: 'Overige spelers',
+      votes: otherVotes,
+      percentage: totalVotes > 0 ? Math.round((otherVotes / totalVotes) * 100) : 0,
+    });
+  }
+
+  return top10;
+}
+
 async function handleRemoteAction(action: string, explicitSessionId?: string | null) {
   const pb = await getServerPocketBase();
 
@@ -59,7 +131,95 @@ async function handleRemoteAction(action: string, explicitSessionId?: string | n
         curEndState.selectedCard = null;
       }
       updateData.endgame_state = curEndState;
-    } else {
+    }
+    // Special handling for Top 3 questions (10/05..10/13): first Next shows results, second Next advances slide
+    else if (currentFase.startsWith('10/') && currentFase !== '10/01') {
+      let top3State: any = null;
+      try {
+        top3State = typeof record.top3_state === 'string'
+          ? JSON.parse(record.top3_state)
+          : record.top3_state;
+      } catch {}
+
+      const curPhase = top3State?.currentQuestion?.phase || 'voting';
+
+      if (curPhase === 'voting') {
+        // Calculate results and transition to 'results' phase! Do NOT change current_fase!
+        const votes = top3State?.currentQuestion?.votes || [];
+        const results = computeTop3Results(votes);
+        const updatedTop3 = {
+          ...(top3State || {}),
+          currentFase,
+          currentQuestion: {
+            ...(top3State?.currentQuestion || {}),
+            phase: 'results',
+            results,
+          }
+        };
+        updateData.top3_state = JSON.stringify(updatedTop3);
+      } else {
+        // In 'results' (or other non-voting) phase: advance to the next slide!
+        const idx = ORDERED_FASES.indexOf(currentFase);
+        const nextFase = (idx !== -1 && idx < ORDERED_FASES.length - 1)
+          ? ORDERED_FASES[idx + 1]
+          : currentFase;
+
+        updateData.current_fase = nextFase;
+
+        if (nextFase.startsWith('10/')) {
+          const qIdx = parseInt(nextFase.split('/')[1] || '0', 10);
+          updateData.top3_state = JSON.stringify({
+            currentFase: nextFase,
+            currentQuestion: { questionIndex: qIdx, phase: 'voting', votes: [], results: [] },
+            allPlayerNames: top3State?.allPlayerNames || []
+          });
+        }
+      }
+    }
+    // Special handling for Top 10 questions (17/05..17/14): first Next shows results, second Next advances slide
+    else if (currentFase.startsWith('17/') && currentFase !== '17/01' && currentFase !== '17/02') {
+      let top10State: any = null;
+      try {
+        top10State = typeof record.top10_state === 'string'
+          ? JSON.parse(record.top10_state)
+          : record.top10_state;
+      } catch {}
+
+      const curPhase = top10State?.currentQuestion?.phase || 'voting';
+
+      if (curPhase === 'voting') {
+        const votes = top10State?.currentQuestion?.votes || [];
+        const results = computeTop10Results(votes);
+        const updatedTop10 = {
+          ...(top10State || {}),
+          currentFase,
+          currentQuestion: {
+            ...(top10State?.currentQuestion || {}),
+            phase: 'results',
+            results,
+          }
+        };
+        updateData.top10_state = JSON.stringify(updatedTop10);
+      } else {
+        const idx = ORDERED_FASES.indexOf(currentFase);
+        const nextFase = (idx !== -1 && idx < ORDERED_FASES.length - 1)
+          ? ORDERED_FASES[idx + 1]
+          : currentFase;
+
+        updateData.current_fase = nextFase;
+
+        if (nextFase.startsWith('17/')) {
+          const qIdx = parseInt(nextFase.split('/')[1] || '0', 10);
+          updateData.top10_state = JSON.stringify({
+            currentFase: nextFase,
+            currentQuestion: { questionIndex: qIdx, phase: 'voting', votes: [], results: [] },
+            allPlayerNames: top10State?.allPlayerNames || []
+          });
+        }
+      }
+    }
+    // Standard progression for other phases (01/*, 07/*, 10/01, 13/*, 17/01, 17/02)
+    else {
       const idx = ORDERED_FASES.indexOf(currentFase);
       const nextFase = (idx !== -1 && idx < ORDERED_FASES.length - 1)
         ? ORDERED_FASES[idx + 1]
@@ -70,18 +230,20 @@ async function handleRemoteAction(action: string, explicitSessionId?: string | n
       // Initialize Top 3 state if entering 10/*
       if (nextFase.startsWith('10/')) {
         const qIdx = parseInt(nextFase.split('/')[1] || '0', 10);
+        const curPhase = nextFase === '10/01' ? 'intro' : 'voting';
         updateData.top3_state = JSON.stringify({
           currentFase: nextFase,
-          currentQuestion: { questionIndex: qIdx, phase: 'voting', votes: [], results: [] }
+          currentQuestion: { questionIndex: qIdx, phase: curPhase, votes: [], results: [] }
         });
       }
 
       // Initialize Top 10 state if entering 17/*
       if (nextFase.startsWith('17/')) {
         const qIdx = parseInt(nextFase.split('/')[1] || '0', 10);
+        const curPhase = (nextFase === '17/01' || nextFase === '17/02') ? 'intro' : 'voting';
         updateData.top10_state = JSON.stringify({
           currentFase: nextFase,
-          currentQuestion: { questionIndex: qIdx, phase: 'voting', votes: [], results: [] }
+          currentQuestion: { questionIndex: qIdx, phase: curPhase, votes: [], results: [] }
         });
       }
 
@@ -107,14 +269,63 @@ async function handleRemoteAction(action: string, explicitSessionId?: string | n
       }
     }
   } else if (action === 'prev') {
-    const idx = ORDERED_FASES.indexOf(currentFase);
-    const prevFase = (idx > 0) ? ORDERED_FASES[idx - 1] : currentFase;
-    updateData.current_fase = prevFase;
+    // If in results phase for Top 3, revert back to voting phase!
+    if (currentFase.startsWith('10/') && currentFase !== '10/01') {
+      let top3State: any = null;
+      try {
+        top3State = typeof record.top3_state === 'string'
+          ? JSON.parse(record.top3_state)
+          : record.top3_state;
+      } catch {}
+
+      if (top3State?.currentQuestion?.phase === 'results') {
+        const updatedTop3 = {
+          ...(top3State || {}),
+          currentQuestion: {
+            ...(top3State?.currentQuestion || {}),
+            phase: 'voting',
+          }
+        };
+        updateData.top3_state = JSON.stringify(updatedTop3);
+      } else {
+        const idx = ORDERED_FASES.indexOf(currentFase);
+        const prevFase = (idx > 0) ? ORDERED_FASES[idx - 1] : currentFase;
+        updateData.current_fase = prevFase;
+      }
+    }
+    // If in results phase for Top 10, revert back to voting phase!
+    else if (currentFase.startsWith('17/') && currentFase !== '17/01' && currentFase !== '17/02') {
+      let top10State: any = null;
+      try {
+        top10State = typeof record.top10_state === 'string'
+          ? JSON.parse(record.top10_state)
+          : record.top10_state;
+      } catch {}
+
+      if (top10State?.currentQuestion?.phase === 'results') {
+        const updatedTop10 = {
+          ...(top10State || {}),
+          currentQuestion: {
+            ...(top10State?.currentQuestion || {}),
+            phase: 'voting',
+          }
+        };
+        updateData.top10_state = JSON.stringify(updatedTop10);
+      } else {
+        const idx = ORDERED_FASES.indexOf(currentFase);
+        const prevFase = (idx > 0) ? ORDERED_FASES[idx - 1] : currentFase;
+        updateData.current_fase = prevFase;
+      }
+    } else {
+      const idx = ORDERED_FASES.indexOf(currentFase);
+      const prevFase = (idx > 0) ? ORDERED_FASES[idx - 1] : currentFase;
+      updateData.current_fase = prevFase;
+    }
   }
 
   const updated = await pb.collection('ranking').update(record.id, updateData, { $autoCancel: false });
 
-  console.log(`[remote] Action: ${action} | From: ${currentFase} -> To: ${updateData.current_fase || currentFase}`);
+  console.log(`[remote] Action: ${action} | From: ${currentFase} -> To: ${updateData.current_fase || currentFase} | Phase update: ${!!(updateData.top3_state || updateData.top10_state)}`);
 
   return NextResponse.json({
     success: true,

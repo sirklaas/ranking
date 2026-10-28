@@ -5,11 +5,15 @@ import RankingSessionForm from '@/components/game/RankingSessionForm';
 import RankingSessionList from '@/components/game/RankingSessionList';
 import { RankingSession } from '@/types';
 import { teamService, faseService, rankingService, motherfileService, MotherfileFases } from '@/lib/pocketbase';
-import { safeJsonStr } from '@/lib/jsonUtils';
+import { safeJsonStr, safeJsonParse } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
+import * as top3Logic from '@/modules/top3/logic';
+import { Top3State } from '@/modules/top3/types';
+import * as top10Logic from '@/modules/top10/logic';
+import { Top10State } from '@/modules/top10/types';
 
-const APP_VERSION = "v9.4.38";
+const APP_VERSION = "v9.4.39";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -746,10 +750,10 @@ export default function PresenterPage() {
     // Replace '/n' or '/N' tokens with new lines
     return text.replace(/\/n/gi, '\n');
   };
-  // Generic Arrow navigation globally
+  // Generic Arrow / Number key navigation globally
   useEffect(() => {
     if (currentView !== 'game') return;
-    const onKey = (e: KeyboardEvent) => {
+    const onKey = async (e: KeyboardEvent) => {
       // Ignore when typing in inputs/textareas/selects or contentEditable
       const target = e.target as HTMLElement | null;
       const tag = (target?.tagName || '').toLowerCase();
@@ -760,17 +764,92 @@ export default function PresenterPage() {
       const isPrev = e.key === 'ArrowLeft' || e.key === '[' || e.key === 'PageUp' || e.key === '2';
       if (!isNext && !isPrev) return;
 
-      // In finale (20/01), ArrowRight is used inside PresenterView to return from card reveal to grid
+      // In finale (20/01), handled internally inside PresenterView
       if (currentFase === '20/01') return;
 
       e.preventDefault();
+
       if (isNext) {
+        // TOP 3: If on question (10/05..10/13) and in 'voting' phase, run Toon Resultaten!
+        if (currentFase.startsWith('10/') && currentFase !== '10/01') {
+          const raw = moduleStates['top3_state'] || (selectedSession?.top3_state as string | undefined);
+          const t3 = safeJsonParse<Top3State>(raw);
+          const curPhase = t3?.currentQuestion?.phase || 'voting';
+
+          if (curPhase === 'voting') {
+            if (selectedSession) {
+              const newState = await top3Logic.showResults(selectedSession.id, t3 || top3Logic.getInitialState());
+              localWriteTs.current = Date.now();
+              setModuleStates((prev) => ({ ...prev, top3_state: JSON.stringify(newState) }));
+            }
+            return;
+          }
+        }
+
+        // TOP 10: If on question (17/05..17/14) and in 'voting' phase, run Toon Resultaten!
+        if (currentFase.startsWith('17/') && currentFase !== '17/01' && currentFase !== '17/02') {
+          const raw = moduleStates['top10_state'] || (selectedSession?.top10_state as string | undefined);
+          const t10 = safeJsonParse<Top10State>(raw);
+          const curPhase = t10?.currentQuestion?.phase || 'voting';
+
+          if (curPhase === 'voting') {
+            if (selectedSession) {
+              const newState = await top10Logic.showResults(selectedSession.id, t10 || top10Logic.getInitialState());
+              localWriteTs.current = Date.now();
+              setModuleStates((prev) => ({ ...prev, top10_state: JSON.stringify(newState) }));
+            }
+            return;
+          }
+        }
+
         let next = getNextFaseGlobal(currentFase);
         setCurrentFase(next);
         if (selectedSession) {
           writeFaseToPB(selectedSession.id, next);
         }
       } else if (isPrev) {
+        // TOP 3: If in 'results' phase, revert to 'voting'!
+        if (currentFase.startsWith('10/') && currentFase !== '10/01') {
+          const raw = moduleStates['top3_state'] || (selectedSession?.top3_state as string | undefined);
+          const t3 = safeJsonParse<Top3State>(raw);
+          if (t3?.currentQuestion?.phase === 'results') {
+            if (selectedSession) {
+              const newState = {
+                ...(t3 || {}),
+                currentQuestion: {
+                  ...(t3?.currentQuestion || {}),
+                  phase: 'voting' as const,
+                }
+              };
+              await top3Logic.persistState(selectedSession.id, newState as Top3State);
+              localWriteTs.current = Date.now();
+              setModuleStates((prev) => ({ ...prev, top3_state: JSON.stringify(newState) }));
+            }
+            return;
+          }
+        }
+
+        // TOP 10: If in 'results' phase, revert to 'voting'!
+        if (currentFase.startsWith('17/') && currentFase !== '17/01' && currentFase !== '17/02') {
+          const raw = moduleStates['top10_state'] || (selectedSession?.top10_state as string | undefined);
+          const t10 = safeJsonParse<Top10State>(raw);
+          if (t10?.currentQuestion?.phase === 'results') {
+            if (selectedSession) {
+              const newState = {
+                ...(t10 || {}),
+                currentQuestion: {
+                  ...(t10?.currentQuestion || {}),
+                  phase: 'voting' as const,
+                }
+              };
+              await top10Logic.persistState(selectedSession.id, newState as Top10State);
+              localWriteTs.current = Date.now();
+              setModuleStates((prev) => ({ ...prev, top10_state: JSON.stringify(newState) }));
+            }
+            return;
+          }
+        }
+
         const prev = getPrevFaseGlobal(currentFase);
         setCurrentFase(prev);
         if (selectedSession) {
@@ -780,18 +859,14 @@ export default function PresenterPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [currentView, currentFase, selectedSession, getNextFaseGlobal, getPrevFaseGlobal, writeFaseToPB]);
+  }, [currentView, currentFase, selectedSession, moduleStates, getNextFaseGlobal, getPrevFaseGlobal, writeFaseToPB]);
 
   // No presenter-side autoplay; Display page handles playback
 
   // No Space shortcut in presentation mode
 
   const renderGameInterface = () => {
-    console.log('renderGameInterface called', { selectedSession, currentView });
-    if (!selectedSession) {
-      console.log('renderGameInterface: No selected session');
-      return null;
-    }
+    if (!selectedSession) return null;
 
     const phaseButtons = [
       { label: '1', name: 'Intro', fases: faseGroups['1'].fases },
@@ -804,88 +879,167 @@ export default function PresenterPage() {
 
     const nextMedia = getNextMedia();
 
-    return (
-      <div className="h-screen bg-gray-100 overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
-        <div style={{ margin: '0 1.5%' }}>
-          {/* Header with game info - Slim padding to fit on MacBook screens without scroll */}
-          <div className="bg-white shadow-md py-2 px-4 md:px-6">
-            <div className="flex justify-between items-center">
-              {/* Left side - Game info in one line */}
-              <div className="flex items-center gap-6">
-                <h1 className="text-2xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
-                <span className="text-lg font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
-                <span className="text-lg font-semibold text-gray-700">{gameTime} [game time]</span>
-                {currentFase === '01/01' && (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleResetGameData}
-                      disabled={isResetting}
-                      className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-lg shadow-md flex items-center gap-2 active:scale-95 transition-all text-base border border-white"
-                      style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
-                      title="Wist alle aangemelde spelers (blauwe stippen op display) en stemmen"
-                    >
-                      <span>🗑️ Reset Game Data (01/01)</span>
-                    </button>
-                    {resetStatus && (
-                      <span className="text-sm font-bold text-green-600 animate-fade-in">{resetStatus}</span>
-                    )}
-                  </div>
-                )}
+    const renderCurrentDisplayBox = () => {
+      const media = getMediaForFase(currentFase);
+      const headingText = getHeadingsSource()[currentFase]?.heading || `Fase ${currentFase}`;
+      return (
+        <div className="w-full flex flex-col items-center justify-center">
+          <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded-xl shadow-lg">
+            <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#1a1a2e' }}>
+              {media?.type === 'video' && media.path ? (
+                <>
+                  <video
+                    key={media.path}
+                    ref={currentVideoRef}
+                    src={media.path}
+                    className="absolute inset-0 w-full h-full object-contain"
+                    preload="auto"
+                    autoPlay
+                    muted={!presenterAudio}
+                    playsInline
+                    onCanPlay={(e) => {
+                      const vid = e.currentTarget;
+                      vid.muted = !presenterAudio;
+                      vid.volume = 1;
+                      if (vid.paused) vid.play().catch(() => {});
+                    }}
+                    onLoadedMetadata={(e) => {
+                      const vid = e.currentTarget;
+                      vid.muted = !presenterAudio;
+                      vid.volume = 1;
+                      if (vid.paused) vid.play().catch(() => {});
+                    }}
+                    onTimeUpdate={(e) => {
+                      const vid = e.currentTarget;
+                      if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
+                        vid.pause();
+                      }
+                    }}
+                    onEnded={(e) => { e.currentTarget.pause(); }}
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPresenterAudio((prev) => {
+                        const next = !prev;
+                        localStorage.setItem('presenter_audio_enabled', String(next));
+                        if (currentVideoRef.current) {
+                          currentVideoRef.current.muted = !next;
+                          currentVideoRef.current.volume = 1;
+                          if (next && currentVideoRef.current.paused) {
+                            currentVideoRef.current.play().catch(() => {});
+                          }
+                        }
+                        return next;
+                      });
+                    }}
+                    className={`absolute top-2 right-2 z-20 px-2.5 py-1 rounded text-xs font-bold transition-all shadow-lg flex items-center gap-1.5 ${
+                      presenterAudio
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white ring-2 ring-emerald-300'
+                        : 'bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-500/50'
+                    }`}
+                    title={presenterAudio ? 'Geluid speelt af via MacBook audio-uitgang' : 'Geluid is gedempt'}
+                  >
+                    <span>{presenterAudio ? '🔊' : '🔇'}</span>
+                    <span>{presenterAudio ? 'Audio: AAN' : 'Audio: UIT'}</span>
+                  </button>
+                </>
+              ) : media?.type === 'image' && media.path ? (
+                <img src={media.path} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
+              ) : null}
+              {/* Heading overlay */}
+              <div className="absolute top-0 left-0 right-0 flex items-center justify-center px-4 text-center" style={{ height: '33%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}>
+                <div className="text-white text-lg md:text-xl whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
+                  {formatHeading(headingText)}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <a
-                  href="/test-phones"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2.5 rounded-lg font-bold shadow-md flex items-center gap-2 text-sm transition-all hover:scale-105 active:scale-95"
-                  title="Open 6 test telefoons matrix in nieuw tabblad"
-                >
-                  📱 6 Test Phones
-                </a>
-                <a
-                  href="/display"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-lg font-bold shadow-md flex items-center gap-2 text-sm transition-all hover:scale-105 active:scale-95"
-                  title="Open Display scherm in nieuw tabblad"
-                >
-                  🖥️ Display
-                </a>
-                <button
-                  onClick={() => setCurrentView('manage')}
-                  className="bg-gray-600 text-white px-5 py-2.5 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-sm"
-                >
-                  ← Setup
-                </button>
-              </div>
+              {/* Fase indicator */}
+              <div className="absolute bottom-1 right-2 text-white/50 text-xs font-mono">{currentFase}</div>
             </div>
           </div>
+          <h3 className="text-base md:text-lg mt-2 text-gray-800 text-center tracking-wide font-medium">Current</h3>
+        </div>
+      );
+    };
 
-          {/* Module-specific controls (resolved from fase registry) - except 20/01 which renders in full grid below */}
-          {currentFase !== '20/01' && (() => {
-            const mod = findFaseModule(currentFase);
-            if (!mod || !selectedSession) return null;
-            const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
-            return (
-              <mod.PresenterView
-                key={mod.stateField || currentFase}
-                faseKey={currentFase}
-                sessionId={selectedSession.id}
-                moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
-                onModuleStateJson={(json) => { if (mod.stateField) { localWriteTs.current = Date.now(); setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); } }}
-                allPlayerNames={allPlayerNames}
-              />
-            );
-          })()}
-          {/* Main content grid */}
-          {currentFase === '20/01' ? (
-            <div className="mt-2 flex gap-3 pr-4" style={{ height: 'calc(100vh - 84px)' }}>
-              <div className="flex-1 h-full rounded-2xl overflow-hidden shadow-2xl">
-                {(() => {
-                  const mod = findFaseModule(currentFase);
-                  if (!mod || !selectedSession) return null;
-                  const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
-                  return (
+    const renderNextDisplayBox = (media: { type: 'video' | 'image', path: string, name: string, heading?: string, fase?: string } | null) => {
+      return (
+        <div className="w-full flex flex-col items-center justify-center">
+          <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded-xl shadow-lg">
+            {renderNextPreview(media)}
+          </div>
+          <h3 className="text-base md:text-lg mt-2 text-gray-800 text-center tracking-wide font-medium">Next</h3>
+        </div>
+      );
+    };
+
+    return (
+      <div className="h-screen w-screen bg-gray-100 flex flex-col overflow-hidden" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
+        {/* Header - Compact single bar */}
+        <header className="shrink-0 bg-white shadow-sm py-2 px-4 md:px-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            {/* Left side */}
+            <div className="flex items-center gap-4 md:gap-6">
+              <h1 className="text-xl md:text-2xl text-gray-900" style={{ fontWeight: 300 }}>{selectedSession.showname || 'Game Title'}</h1>
+              <span className="text-base md:text-lg font-semibold text-gray-700">{currentTime ? currentTime.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '--:--'} [time]</span>
+              <span className="text-base md:text-lg font-semibold text-gray-700">{gameTime} [game time]</span>
+              {currentFase === '01/01' && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleResetGameData}
+                    disabled={isResetting}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1 rounded shadow text-xs md:text-sm border border-white active:scale-95 transition-all"
+                  >
+                    🗑️ Reset Game Data (01/01)
+                  </button>
+                  {resetStatus && (
+                    <span className="text-xs font-bold text-green-600 animate-fade-in">{resetStatus}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right side navigation links */}
+            <div className="flex items-center gap-2.5">
+              <a
+                href="/test-phones"
+                target="_blank"
+                rel="noreferrer"
+                className="bg-orange-600 hover:bg-orange-500 text-white px-3 py-1 rounded font-bold shadow text-xs md:text-sm transition-all active:scale-95"
+              >
+                📱 6 Test Phones
+              </a>
+              <a
+                href="/display"
+                target="_blank"
+                rel="noreferrer"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded font-bold shadow text-xs md:text-sm transition-all active:scale-95"
+              >
+                🖥️ Display
+              </a>
+              <button
+                onClick={() => setCurrentView('manage')}
+                className="bg-gray-600 text-white px-3.5 py-1 rounded hover:bg-gray-700 font-semibold text-xs md:text-sm transition-all active:scale-95"
+              >
+                ← Setup
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Workspace (fills 100% of remaining vertical height) */}
+        <main className="flex-1 min-h-0 flex gap-3 p-3 overflow-hidden">
+          {/* Left content area */}
+          <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden">
+            {(() => {
+              // Finale (20/01)
+              if (currentFase === '20/01') {
+                const mod = findFaseModule(currentFase);
+                if (!mod || !selectedSession) return null;
+                const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
+                return (
+                  <div className="flex-1 min-h-0 h-full rounded-2xl overflow-hidden shadow-2xl">
                     <mod.PresenterView
                       key={mod.stateField || currentFase}
                       faseKey={currentFase}
@@ -894,172 +1048,106 @@ export default function PresenterPage() {
                       onModuleStateJson={(json) => { if (mod.stateField) { localWriteTs.current = Date.now(); setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); } }}
                       allPlayerNames={allPlayerNames}
                     />
-                  );
-                })()}
-              </div>
-              <div className="space-y-3 flex flex-col w-[8%] min-w-[120px]">
-                {phaseButtons.map((phase) => (
-                  <button
-                    key={phase.label}
-                    onClick={() => handlePhaseNavigation(phase.fases[0])}
-                    className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
-                      ? 'bg-orange-600 shadow-lg'
-                      : 'bg-orange-400 hover:bg-orange-500'
-                      }`}
-                  >
-                    <div>{phase.label}</div>
-                    <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : currentFase.startsWith('13/') ? (
-            <div className="mt-4 flex justify-end pr-6">
-              <div className="space-y-3 flex flex-col w-[8%] min-w-[120px]">
-                {phaseButtons.map((phase) => (
-                  <button
-                    key={phase.label}
-                    onClick={() => handlePhaseNavigation(phase.fases[0])}
-                    className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
-                      ? 'bg-orange-600 shadow-lg'
-                      : 'bg-orange-400 hover:bg-orange-500'
-                      }`}
-                  >
-                    <div>{phase.label}</div>
-                    <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div
-              className="grid mt-4 gap-4 pr-6"
-              style={{ gridTemplateColumns: '48% 44% 8%', height: 'calc(100vh - 200px)' }}
-            >
-              {/* Current Display (43%) */}
-              <div className="flex flex-col">
-                {/* Current Display - Left screen (16:9) */}
-                <div>
-                  <div className="relative w-full aspect-[16/9] bg-black overflow-hidden">
-                    {(() => {
-                      const media = getMediaForFase(currentFase);
-                      const headingText = getHeadingsSource()[currentFase]?.heading || `Fase ${currentFase}`;
-                      return (
-                        <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: '#1a1a2e' }}>
-                          {/* Media: video or image */}
-                          {media?.type === 'video' && media.path ? (
-                            <>
-                              <video
-                                key={media.path}
-                                ref={currentVideoRef}
-                                src={media.path}
-                                className="absolute inset-0 w-full h-full object-contain"
-                                preload="auto"
-                                autoPlay
-                                muted={!presenterAudio}
-                                playsInline
-                                onCanPlay={(e) => {
-                                  const vid = e.currentTarget;
-                                  vid.muted = !presenterAudio;
-                                  vid.volume = 1;
-                                  if (vid.paused) {
-                                    vid.play().catch(() => {});
-                                  }
-                                }}
-                                onLoadedMetadata={(e) => {
-                                  const vid = e.currentTarget;
-                                  vid.muted = !presenterAudio;
-                                  vid.volume = 1;
-                                  if (vid.paused) {
-                                    vid.play().catch(() => {});
-                                  }
-                                }}
-                                onTimeUpdate={(e) => {
-                                  const vid = e.currentTarget;
-                                  if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
-                                    vid.pause();
-                                  }
-                                }}
-                                onEnded={(e) => {
-                                  e.currentTarget.pause();
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPresenterAudio((prev) => {
-                                    const next = !prev;
-                                    localStorage.setItem('presenter_audio_enabled', String(next));
-                                    if (currentVideoRef.current) {
-                                      currentVideoRef.current.muted = !next;
-                                      currentVideoRef.current.volume = 1;
-                                      if (next && currentVideoRef.current.paused) {
-                                        currentVideoRef.current.play().catch(() => {});
-                                      }
-                                    }
-                                    return next;
-                                  });
-                                }}
-                                className={`absolute top-2 right-2 z-20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg flex items-center gap-1.5 ${
-                                  presenterAudio
-                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white ring-2 ring-emerald-300'
-                                    : 'bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-500/50'
-                                }`}
-                                title={presenterAudio ? 'Geluid speelt af via MacBook audio-uitgang naar versterker' : 'Geluid is gedempt'}
-                              >
-                                <span>{presenterAudio ? '🔊' : '🔇'}</span>
-                                <span>{presenterAudio ? 'MacBook Audio: AAN' : 'MacBook Audio: UIT'}</span>
-                              </button>
-                            </>
-                          ) : media?.type === 'image' && media.path ? (
-                            <img src={media.path} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />
-                          ) : null}
-                          {/* Heading overlay in top 1/3 */}
-                          <div className="absolute top-0 left-0 right-0 flex items-center justify-center px-4 text-center" style={{ height: '33%', background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}>
-                            <div className="text-white text-xl whitespace-pre-line" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300, textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
-                              {formatHeading(headingText)}
-                            </div>
-                          </div>
-                          {/* Fase indicator */}
-                          <div className="absolute bottom-1 right-2 text-white/50 text-xs" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>{currentFase}</div>
-                        </div>
-                      );
-                    })()}
                   </div>
-                  <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Current</h3>
-                </div>
-              </div>
+                );
+              }
 
-              {/* Next Display (43%) */}
-              <div className="flex flex-col">
-                <div>
-                  <div className="relative w-full aspect-[16/9] bg-black overflow-hidden rounded">
-                    {renderNextPreview(nextMedia)}
+              // Top 3 Questions (10/05..10/13)
+              if (currentFase.startsWith('10/') && currentFase !== '10/01') {
+                const mod = findFaseModule(currentFase);
+                if (!mod || !selectedSession) return null;
+                const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
+                const media = getMediaForFase(currentFase);
+                const heading = getHeadingsSource()[currentFase]?.heading;
+                return (
+                  <div className="flex-1 min-h-0 h-full overflow-hidden">
+                    <mod.PresenterView
+                      key={mod.stateField || currentFase}
+                      faseKey={currentFase}
+                      sessionId={selectedSession.id}
+                      moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+                      onModuleStateJson={(json) => { if (mod.stateField) { localWriteTs.current = Date.now(); setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); } }}
+                      allPlayerNames={allPlayerNames}
+                      heading={heading}
+                      mediaUrl={media?.path}
+                    />
                   </div>
-                  <h3 className="text-xl mt-2 text-gray-900 text-center tracking-wide" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif', fontWeight: 300 }}>Next</h3>
-                </div>
-              </div>
+                );
+              }
 
-              {/* Fases (8%) */}
-              <div className="space-y-3 flex flex-col">
-                {phaseButtons.map((phase) => (
-                  <button
-                    key={phase.label}
-                    onClick={() => handlePhaseNavigation(phase.fases[0])}
-                    className={`w-full h-24 rounded-lg text-3xl font-bold text-white transition-colors flex flex-col items-center justify-center ${phase.fases.includes(currentFase)
-                      ? 'bg-orange-600 shadow-lg'
-                      : 'bg-orange-400 hover:bg-orange-500'
-                      }`}
-                  >
-                    <div>{phase.label}</div>
-                    <div className="text-sm font-normal opacity-90">[{phase.name}]</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+              // Top 10 Questions (17/05..17/14)
+              if (currentFase.startsWith('17/') && currentFase !== '17/01' && currentFase !== '17/02') {
+                const mod = findFaseModule(currentFase);
+                if (!mod || !selectedSession) return null;
+                const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
+                return (
+                  <div className="flex-1 min-h-0 h-full overflow-hidden">
+                    <mod.PresenterView
+                      key={mod.stateField || currentFase}
+                      faseKey={currentFase}
+                      sessionId={selectedSession.id}
+                      moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+                      onModuleStateJson={(json) => { if (mod.stateField) { localWriteTs.current = Date.now(); setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); } }}
+                      allPlayerNames={allPlayerNames}
+                    />
+                  </div>
+                );
+              }
+
+              // Krakende Karakters (13/*)
+              if (currentFase.startsWith('13/')) {
+                const mod = findFaseModule(currentFase);
+                const allPlayerNames = teamService.parsePlayerNames(selectedSession.playernames);
+                return (
+                  <div className="flex-1 min-h-0 h-full flex flex-col gap-3 overflow-hidden">
+                    {mod && (
+                      <div className="shrink-0">
+                        <mod.PresenterView
+                          key={mod.stateField || currentFase}
+                          faseKey={currentFase}
+                          sessionId={selectedSession.id}
+                          moduleStateJson={mod.stateField ? moduleStates[mod.stateField] : undefined}
+                          onModuleStateJson={(json) => { if (mod.stateField) { localWriteTs.current = Date.now(); setModuleStates((prev) => ({ ...prev, [mod.stateField!]: json })); } }}
+                          allPlayerNames={allPlayerNames}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-h-0 grid grid-cols-2 gap-4 items-center">
+                      {renderCurrentDisplayBox()}
+                      {renderNextDisplayBox(nextMedia)}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Default: 01/* (Intro), 07/* (Zitten en Staan), 10/01 (Top 3 trailer), 17/01, 17/02
+              return (
+                <div className="flex-1 min-h-0 grid grid-cols-2 gap-4 items-center">
+                  {renderCurrentDisplayBox()}
+                  {renderNextDisplayBox(nextMedia)}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Right sidebar: 6 Phase buttons that dynamically scale to 100% height */}
+          <aside className="w-24 md:w-28 shrink-0 h-full flex flex-col gap-1.5">
+            {phaseButtons.map((phase) => (
+              <button
+                key={phase.label}
+                onClick={() => handlePhaseNavigation(phase.fases[0])}
+                className={`flex-1 w-full rounded-lg text-2xl md:text-3xl font-bold text-white transition-all flex flex-col items-center justify-center select-none active:scale-95 shadow-sm ${
+                  phase.fases.includes(currentFase)
+                    ? 'bg-orange-600 shadow-md ring-2 ring-orange-400'
+                    : 'bg-orange-400 hover:bg-orange-500'
+                }`}
+              >
+                <div>{phase.label}</div>
+                <div className="text-xs font-normal opacity-90">[{phase.name}]</div>
+              </button>
+            ))}
+          </aside>
+        </main>
       </div>
     );
   };
