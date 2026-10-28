@@ -116,9 +116,19 @@ const PlayerView: React.FC<FaseCommonProps> = ({
           >
             Bedankt voor het spelen!
           </h2>
-          <p className="text-orange-200 text-base mb-6 font-medium">
-            Vond je het leuk? Geef ons dan veul sterren! Scan de QR-code op het grote scherm.
+          <p className="text-orange-200 text-base mb-3 font-medium">
+            Vond je het leuk?
           </p>
+
+          <a
+            href="https://g.page/r/CUozJqhWiBhhEAE/review"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white font-black border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:brightness-110 transition-all text-lg mb-4 drop-shadow-md"
+            style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}
+          >
+            <span>⭐ Ik geef VEUL sterren! ⭐</span>
+          </a>
 
           <div className="w-full flex flex-col items-center text-center">
             <a
