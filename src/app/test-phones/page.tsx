@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { rankingService } from '@/lib/pocketbase';
 
-const APP_VERSION = "v9.4.40";
+const APP_VERSION = "v9.4.41";
 
 function ScaledPhone({
     phoneNum,

@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.40";
+const APP_VERSION = "v9.4.41";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -528,7 +528,7 @@ export default function DisplayPage() {
                   }
                 }}
                 src={currentMedia.url}
-                className="w-full h-full object-contain pointer-events-none"
+                className="w-full h-full object-contain"
                 playsInline
                 autoPlay
                 muted

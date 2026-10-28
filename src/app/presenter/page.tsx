@@ -13,7 +13,7 @@ import { Top3State } from '@/modules/top3/types';
 import * as top10Logic from '@/modules/top10/logic';
 import { Top10State } from '@/modules/top10/types';
 
-const APP_VERSION = "v9.4.40";
+const APP_VERSION = "v9.4.41";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -923,8 +923,7 @@ export default function PresenterPage() {
                       }
                     }}
                     src={media.path}
-                    className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                    style={{ pointerEvents: 'none' }}
+                    className="absolute inset-0 w-full h-full object-contain"
                     preload="auto"
                     autoPlay
                     muted={!presenterAudio}
