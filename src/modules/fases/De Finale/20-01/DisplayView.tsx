@@ -4,6 +4,7 @@ import type { FaseCommonProps } from '@/types/fases';
 import { ENDGAME_CARDS, EndgameState, DEFAULT_ENDGAME_STATE } from './endgameData';
 import CodedEndgameReveal from '@/components/endgame/CodedEndgameReveal';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
+import EndgameHalloweenQR from '@/components/endgame/EndgameHalloweenQR';
 
 const STORAGE_KEY = 'ranking_endgame_state';
 
@@ -435,20 +436,13 @@ const DisplayView: React.FC<FaseCommonProps> = ({
         </div>
       )}
 
-      {/* End Title / End Card with Review QR Code Container */}
+      {/* End Title / End Card with Review QR Code Container (Halloween Animated) */}
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-1000 ${
+        className={`fixed inset-0 z-50 transition-opacity duration-1000 ${
           isEndTitle ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
-        style={{
-          background: 'linear-gradient(135deg, #07060a 0%, #150a24 50%, #0d080c 100%)'
-        }}
       >
-        <img
-          src="/pics/End/end_card_qr.webp"
-          alt="Einde Ranking - Review QR Code"
-          className="w-full h-full object-contain"
-        />
+        {isEndTitle && <EndgameHalloweenQR />}
       </div>
     </div>
   );

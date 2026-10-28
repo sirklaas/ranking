@@ -314,9 +314,13 @@ export default function PlayerPage() {
       if (savedStr) {
         try {
           currentPlayerData = JSON.parse(savedStr);
-          if (currentPlayerData.playerName && currentPlayerData.teamNumber) {
-            setTeamNumber(currentPlayerData.teamNumber);
+          if (currentPlayerData.teamNumber) {
+            setTeamNumber(String(currentPlayerData.teamNumber));
+          }
+          if (currentPlayerData.playerName) {
             setSelectedPlayerName(currentPlayerData.playerName);
+          }
+          if (currentPlayerData.playerName && currentPlayerData.teamNumber) {
             setShowTeamInfo(true);
             setCurrentPhase('complete');
           }
@@ -884,7 +888,8 @@ export default function PlayerPage() {
                         photoShowId = currentSession.photocircle.trim();
                       }
                     }
-                    const photoAppHref = `https://www.pinkmilk.eu/phone/media.html?showId=${photoShowId}&playerName=${encodeURIComponent(selectedPlayerName || '')}&team=${teamNumber || '1'}`;
+                    const cleanTeam = teamNumber && teamNumber !== '0' ? teamNumber : '';
+                    const photoAppHref = `https://www.pinkmilk.eu/phone/media.html?showId=${photoShowId}${selectedPlayerName ? `&playerName=${encodeURIComponent(selectedPlayerName)}` : ''}${cleanTeam ? `&team=${encodeURIComponent(cleanTeam)}` : ''}`;
                     return (
                       <div className="w-full flex flex-col items-center gap-2">
                         <a
@@ -894,7 +899,7 @@ export default function PlayerPage() {
                           className="w-full py-3.5 px-4 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-xl"
                           style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}
                         >
-                          <span>Photo App [ {teamNumber ? `Team ${teamNumber}` : 'Jouw Team'} ]</span>
+                          <span>Photo App{cleanTeam ? ` [ Team ${cleanTeam} ]` : ''}</span>
                           <svg className="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>

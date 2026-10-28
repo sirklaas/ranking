@@ -7,12 +7,16 @@ interface TrailerTitleCardProps {
   title: string;
   subtitle?: string;
   fase?: string;
+  teamNumber?: string | number;
+  playerName?: string;
 }
 
 export default function TrailerTitleCard({
   title,
   subtitle = 'Kijk naar het grote scherm',
   fase,
+  teamNumber: propTeamNumber,
+  playerName: propPlayerName,
 }: TrailerTitleCardProps) {
   const [photoUrl, setPhotoUrl] = useState<string>('https://www.pinkmilk.eu/phone/media.html');
   const [teamNum, setTeamNum] = useState<string>('');
@@ -20,15 +24,35 @@ export default function TrailerTitleCard({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const savedData = JSON.parse(localStorage.getItem('rankingPlayerData') || '{}');
-      const team = savedData.teamNumber || '';
-      const name = savedData.playerName || '';
-      const sessionId = localStorage.getItem('rankingSessionId') || '';
+      const slot = new URLSearchParams(window.location.search).get('slot');
+      const storageKey = slot ? `rankingPlayerData_slot${slot}` : 'rankingPlayerData';
+      const sessionKey = slot ? `rankingSessionId_slot${slot}` : 'rankingSessionId';
 
-      if (team) setTeamNum(team);
+      let savedData: Record<string, any> = {};
+      try {
+        savedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      } catch {}
 
-      const buildUrl = (sId: string) =>
-        `https://www.pinkmilk.eu/phone/media.html?showId=${encodeURIComponent(sId)}&playerName=${encodeURIComponent(name)}&team=${encodeURIComponent(team || '1')}`;
+      const rawTeam = (propTeamNumber !== undefined && propTeamNumber !== null && String(propTeamNumber) !== '0')
+        ? String(propTeamNumber)
+        : (savedData.teamNumber && String(savedData.teamNumber) !== '0' ? String(savedData.teamNumber) : '');
+
+      const cleanTeam = rawTeam.trim();
+      const rawName = propPlayerName || savedData.playerName || '';
+      const cleanName = rawName === 'Speler' ? '' : rawName.trim();
+      const sessionId = localStorage.getItem(sessionKey) || localStorage.getItem('rankingSessionId') || '';
+
+      if (cleanTeam && cleanTeam !== '0') {
+        setTeamNum(cleanTeam);
+      } else {
+        setTeamNum('');
+      }
+
+      const buildUrl = (sId: string) => {
+        const teamParam = cleanTeam && cleanTeam !== '0' ? `&team=${encodeURIComponent(cleanTeam)}` : '';
+        const nameParam = cleanName ? `&playerName=${encodeURIComponent(cleanName)}` : '';
+        return `https://www.pinkmilk.eu/phone/media.html?showId=${encodeURIComponent(sId)}${nameParam}${teamParam}`;
+      };
 
       if (sessionId) {
         setPhotoUrl(buildUrl(sessionId));
@@ -51,7 +75,7 @@ export default function TrailerTitleCard({
         })
         .catch(() => {});
     } catch {}
-  }, []);
+  }, [propTeamNumber, propPlayerName]);
 
   return (
     <div
@@ -141,7 +165,7 @@ export default function TrailerTitleCard({
           className="w-full py-2.5 px-5 rounded-full bg-gradient-to-r from-[#0A1752] to-[#1e2875] text-white font-bold border-2 border-white/80 shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-base sm:text-lg mb-2"
           style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}
         >
-          <span>Photo App {teamNum ? `[ Team ${teamNum} ]` : ''}</span>
+          <span>Photo App{teamNum && teamNum !== '0' ? ` [ Team ${teamNum} ]` : ''}</span>
           <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>

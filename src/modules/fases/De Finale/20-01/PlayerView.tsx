@@ -75,8 +75,37 @@ const PlayerView: React.FC<FaseCommonProps> = ({
     };
   }, [moduleStateJson, localEndgameState]);
 
-  const teamNumber = playerInfo?.teamNumber || 1;
-  const playerName = playerInfo?.playerName || '';
+  // Resolve teamNumber and playerName with slot-aware localStorage fallback
+  const teamNumber = useMemo(() => {
+    if (playerInfo?.teamNumber && playerInfo.teamNumber > 0) {
+      return playerInfo.teamNumber;
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const slot = new URLSearchParams(window.location.search).get('slot');
+        const key = slot ? `rankingPlayerData_slot${slot}` : 'rankingPlayerData';
+        const saved = JSON.parse(localStorage.getItem(key) || '{}');
+        const num = parseInt(saved.teamNumber, 10);
+        if (num > 0) return num;
+      } catch {}
+    }
+    return 0;
+  }, [playerInfo?.teamNumber]);
+
+  const playerName = useMemo(() => {
+    if (playerInfo?.playerName && playerInfo.playerName !== 'Speler') {
+      return playerInfo.playerName;
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const slot = new URLSearchParams(window.location.search).get('slot');
+        const key = slot ? `rankingPlayerData_slot${slot}` : 'rankingPlayerData';
+        const saved = JSON.parse(localStorage.getItem(key) || '{}');
+        if (saved.playerName) return saved.playerName;
+      } catch {}
+    }
+    return playerInfo?.playerName || '';
+  }, [playerInfo?.playerName]);
 
   const activeCard = useMemo(() => {
     if (!state.selectedCard) return null;
@@ -132,13 +161,13 @@ const PlayerView: React.FC<FaseCommonProps> = ({
 
           <div className="w-full flex flex-col items-center text-center">
             <a
-              href={`https://www.pinkmilk.eu/phone/media.html?showId=${encodeURIComponent(sessionId || '')}&playerName=${encodeURIComponent(playerName || '')}&team=${encodeURIComponent(teamNumber || '1')}`}
+              href={`https://www.pinkmilk.eu/phone/media.html?showId=${encodeURIComponent(sessionId || '')}${playerName && playerName !== 'Speler' ? `&playerName=${encodeURIComponent(playerName)}` : ''}${teamNumber ? `&team=${encodeURIComponent(teamNumber)}` : ''}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-3.5 px-6 rounded-full bg-[#0A1752] text-white font-bold border-2 border-white shadow-xl flex items-center justify-center gap-2 active:scale-95 hover:bg-[#08134A] transition-all text-lg"
               style={{ fontFamily: '"Barlow Semi Condensed", sans-serif' }}
             >
-              <span>Photo App {teamNumber ? `[ Team ${teamNumber} ]` : ''}</span>
+              <span>Photo App{teamNumber ? ` [ Team ${teamNumber} ]` : ''}</span>
               <svg className="w-5 h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
@@ -153,7 +182,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({
         </div>
 
         <div className="w-full py-3 px-4 text-center text-xs text-gray-500 border-t border-white/5 flex-shrink-0">
-          Ranking De Finale · Team {teamNumber} ({playerName})
+          Ranking De Finale{teamNumber ? ` · Team ${teamNumber}` : ''}{playerName && playerName !== 'Speler' ? ` (${playerName})` : ''}
         </div>
       </div>
     );
@@ -205,7 +234,7 @@ const PlayerView: React.FC<FaseCommonProps> = ({
 
         {/* Footer */}
         <div className="w-full py-2.5 px-4 text-center text-xs text-gray-500 border-t border-white/5 flex-shrink-0">
-          Ranking De Finale · Team {teamNumber} ({playerName})
+          Ranking De Finale{teamNumber ? ` · Team ${teamNumber}` : ''}{playerName && playerName !== 'Speler' ? ` (${playerName})` : ''}
         </div>
       </div>
     );
@@ -217,6 +246,8 @@ const PlayerView: React.FC<FaseCommonProps> = ({
       title="Fnuikende Finale"
       subtitle="Kijk naar het grote scherm"
       fase="20/01"
+      teamNumber={teamNumber}
+      playerName={playerName}
     />
   );
 };

@@ -1,11 +1,12 @@
 "use client";
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import DisplayVideo from '@/components/common/DisplayVideo';
 import type { FaseCommonProps } from '@/types/fases';
 
 const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, mediaUrl }) => {
   const headingText = heading || 'Zitten en Staan';
   const isVideo = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+
   const [tallies, setTallies] = useState<{ red: number; blue: number }>({ red: 0, blue: 0 });
 
   // Fetch real-time vote tallies for this question - resets to zero immediately on new slide
@@ -36,38 +37,16 @@ const DisplayView: React.FC<FaseCommonProps> = ({ faseKey, sessionId, heading, m
     };
   }, [sessionId, faseKey]);
 
-  // Ensure video on Display is 100% permanently MUTED (Presenter MacBook plays audio to speakers)
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
 
-    v.muted = true;
-    v.volume = 0;
-    v.play().catch(() => {});
-  }, [mediaUrl, faseKey]);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-black select-none" style={{ fontFamily: 'Barlow Semi Condensed, sans-serif' }}>
       {/* Full-screen media - strictly muted on display */}
       {mediaUrl && isVideo ? (
-        <video
-          key={`${faseKey}-${mediaUrl}`}
-          ref={videoRef}
+        <DisplayVideo
+          key={faseKey + '-' + mediaUrl}
           src={mediaUrl}
           className="absolute inset-0 w-full h-full object-contain"
-          playsInline
-          autoPlay
-          muted
-          preload="auto"
-          onTimeUpdate={(e) => {
-            const vid = e.currentTarget;
-            if (vid.duration > 0 && vid.duration - vid.currentTime < 0.2 && !vid.paused) {
-              vid.pause();
-            }
-          }}
-          onEnded={(e) => {
-            e.currentTarget.pause();
-          }}
         />
       ) : mediaUrl ? (
         <img src={mediaUrl} alt={headingText} className="absolute inset-0 w-full h-full object-contain" />

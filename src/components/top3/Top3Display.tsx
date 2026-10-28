@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import DisplayVideo from '@/components/common/DisplayVideo';
 import { Top3State, Top3Result } from '@/modules/top3/types';
 import { getVoterNames } from '@/modules/top3/logic';
 
@@ -473,7 +474,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
 
   // Trigger animation when results phase starts
   const prevPhaseRef = useRef(phase);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+
 
   useEffect(() => {
     if (phase === 'results' && prevPhaseRef.current !== 'results') {
@@ -482,15 +483,7 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
     prevPhaseRef.current = phase;
   }, [phase]);
 
-  // Handle video audio playback - strictly muted on display
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
 
-    v.muted = true;
-    v.volume = 0;
-    v.play().catch(() => {});
-  }, [mediaUrl]);
 
   return (
     <div
@@ -504,23 +497,10 @@ export default function Top3Display({ state, heading, mediaUrl, faseKey }: Top3D
       {mediaUrl && (
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           {/\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl) ? (
-            <video
-              ref={videoRef}
+            <DisplayVideo
+              key={faseKey + '-' + mediaUrl}
               src={mediaUrl}
-              className="w-[100vw] h-[100vh] object-cover"
-              autoPlay
-              muted
-              playsInline
-              onPlay={(e) => {
-                e.currentTarget.muted = true;
-                e.currentTarget.volume = 0;
-              }}
-              onTimeUpdate={(e) => {
-                const vid = e.currentTarget;
-                if (vid.duration - vid.currentTime < 0.2 && !vid.paused) {
-                  vid.pause();
-                }
-              }}
+              className="relative w-[100vw] h-[100vh] object-cover"
             />
           ) : (
             <img src={mediaUrl} alt="Media Background" className="w-[100vw] h-[100vh] object-cover" />

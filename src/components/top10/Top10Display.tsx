@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import DisplayVideo from '@/components/common/DisplayVideo';
 import { Top10State, Top10Result } from '@/modules/top10/types';
 import { getVoterNames, getLiveTally } from '@/modules/top10/logic';
 import * as top10Logic from '@/modules/top10/logic';
@@ -489,7 +490,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
     }, [state, isMatchingFase]);
     const [animateCloud, setAnimateCloud] = useState(false);
     const prevPhaseRef = useRef(phase);
-    const videoRef = useRef<HTMLVideoElement>(null);
+
 
     // Trigger animation when results/voting phase starts
     useEffect(() => {
@@ -499,15 +500,7 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
         prevPhaseRef.current = phase;
     }, [phase]);
 
-    // Video is permanently muted on display (Presenter plays the audio)
-    useEffect(() => {
-        const v = videoRef.current;
-        if (!v) return;
-        v.muted = true;
-        v.volume = 0;
-        v.loop = false;
-        v.play().catch(() => {});
-    }, [mediaUrl]);
+
 
 
     const isVideo = !!mediaUrl && /\.(mp4|mov|avi|m4v|webm)$/i.test(mediaUrl);
@@ -528,26 +521,17 @@ export default function Top10Display({ state, heading, mediaUrl, faseKey, sessio
             {mediaUrl && (
                 <div className="absolute inset-0 z-0 h-full w-full">
                     {isVideo ? (
-                        <video
-                            ref={videoRef}
-                            src={mediaUrl}
-                            autoPlay
-                            muted
-                            playsInline
-                            className="w-full h-full object-cover"
-                            onPlay={(e) => { e.currentTarget.muted = true; e.currentTarget.volume = 0; e.currentTarget.loop = false; }}
-                            onTimeUpdate={(e) => {
-                                const vid = e.currentTarget;
-                                if (vid.duration - vid.currentTime < 0.5 && !vid.paused) {
-                                    vid.pause(); // Freeze on last frame
-                                    // Auto-advance to voting if this was the trailer
-                                    if (faseKey === '17/01' && sessionId) {
-                                        console.log("[Top10Display] Trailer ended, jumping to pukkel...");
-                                        rankingService.updateSession(sessionId, { current_fase: '17/05' });
-                                    }
-                                }
-                            }}
-                        />
+                        <DisplayVideo
+                key={faseKey + '-' + mediaUrl}
+                src={mediaUrl}
+                className="relative w-full h-full object-cover"
+                freezeBeforeEnd={0.5}
+                onFrozen={() => {
+                  if (faseKey === '17/01' && sessionId) {
+                    rankingService.updateSession(sessionId, { current_fase: '17/05' });
+                  }
+                }}
+              />
                     ) : (
                         <img src={mediaUrl} alt={heading || 'Top 10'} className="w-full h-full object-cover" />
                     )}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import DisplayVideo from '@/components/common/DisplayVideo';
 import Image from 'next/image';
 import { rankingService, teamService, motherfileService, faseService } from '@/lib/pocketbase';
 import { RankingSession } from '@/types';
@@ -90,8 +91,8 @@ export default function DisplayPage() {
     | null
     | { url: string; name: string; type: 'video' | 'image'; fallbackLocalUrl?: string }
   >(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const lastPlayedUrl = useRef<string>('');
+
+
   // const [needsInteraction, setNeedsInteraction] = useState(false);
   const [userEnabledSound, setUserEnabledSound] = useState(false);
   const [audioBlocked, setAudioBlocked] = useState(false);
@@ -256,62 +257,6 @@ export default function DisplayPage() {
       document.head.removeChild(link);
     };
   }, [loadSessionData, forceUnlockAudio]);
-
-  // Play video permanently muted (sound is played exclusively by Presenter on MacBook)
-  useEffect(() => {
-    if (!currentMedia || currentMedia.type !== 'video') {
-      lastPlayedUrl.current = '';
-      return;
-    }
-    const v = videoRef.current;
-    if (!v) return;
-    if (currentMedia.url === lastPlayedUrl.current) return;
-    lastPlayedUrl.current = currentMedia.url;
-
-    const startPlayback = () => {
-      v.defaultMuted = true;
-      v.muted = true;
-      v.volume = 0;
-      v.currentTime = 0;
-      const p = v.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch((err) => {
-          console.warn('[Display] Autoplay promise rejected:', err);
-        });
-      }
-    };
-
-    if (v.readyState >= 1) {
-      startPlayback();
-    } else {
-      const onLoaded = () => {
-        v.removeEventListener('loadedmetadata', onLoaded);
-        v.removeEventListener('canplay', onLoaded);
-        startPlayback();
-      };
-      v.addEventListener('loadedmetadata', onLoaded);
-      v.addEventListener('canplay', onLoaded);
-    }
-  }, [currentMedia]);
-
-  // Global click / key interaction unlock for Display
-  useEffect(() => {
-    const handleGesture = () => {
-      const v = videoRef.current;
-      if (v && v.paused) {
-        v.defaultMuted = true;
-        v.muted = true;
-        v.volume = 0;
-        v.play().catch(() => {});
-      }
-    };
-    window.addEventListener('click', handleGesture, { capture: true });
-    window.addEventListener('keydown', handleGesture, { capture: true });
-    return () => {
-      window.removeEventListener('click', handleGesture, { capture: true });
-      window.removeEventListener('keydown', handleGesture, { capture: true });
-    };
-  }, []);
 
   // Poll session state via cached server proxy (never hits PB directly from browser)
   useEffect(() => {
@@ -509,75 +454,18 @@ export default function DisplayPage() {
       {currentMedia && currentMedia.url && allowMediaOverlay && (
         <div
           className="fixed inset-0 z-50 bg-black cursor-default"
-          onClick={() => {
-            const v = videoRef.current;
-            if (v) {
-              v.defaultMuted = true;
-              v.muted = true;
-              v.volume = 0;
-              if (v.paused) v.play().catch(() => {});
-            }
-          }}
+
         >
           {currentMedia.type === 'video' ? (
             <>
-              <video
+              <DisplayVideo
                 key={currentMedia.url}
-                ref={(el) => {
-                  videoRef.current = el;
-                  if (el) {
-                    el.defaultMuted = true;
-                    el.muted = true;
-                    el.volume = 0;
-                  }
-                }}
                 src={currentMedia.url}
-                className="w-full h-full object-contain cursor-default"
-                playsInline
-                autoPlay
-                muted
-                defaultMuted
-                preload="auto"
-                onClick={(e) => {
-                  const v = e.currentTarget;
-                  v.defaultMuted = true;
-                  v.muted = true;
-                  v.volume = 0;
-                  if (v.paused) v.play().catch(() => {});
-                }}
-                onLoadedMetadata={(e) => {
-                  const vid = e.currentTarget;
-                  vid.defaultMuted = true;
-                  vid.muted = true;
-                  vid.volume = 0;
-                  if (vid.paused) {
-                    vid.play().catch((err) => console.warn('[Display] onLoadedMetadata play:', err));
-                  }
-                }}
-                onCanPlay={(e) => {
-                  const vid = e.currentTarget;
-                  vid.defaultMuted = true;
-                  vid.muted = true;
-                  vid.volume = 0;
-                  if (vid.paused) {
-                    vid.play().catch((err) => console.warn('[Display] onCanPlay play:', err));
-                  }
-                }}
-                onPlay={() => console.log('[Display] video play', currentMedia)}
-                onError={(e) => {
-                  console.log('[Display] video error encountered, falling back');
-                  setCurrentMedia((cm) => (cm?.fallbackLocalUrl ? { ...cm, url: cm.fallbackLocalUrl } : cm));
-                }}
-                onTimeUpdate={(e) => {
-                  const vid = e.currentTarget;
-                  // Pause 0.5s before end to freeze on last visible frame (prevent black)
-                  if (vid.duration > 2 && vid.duration - vid.currentTime < 0.5 && !vid.paused) {
-                    vid.pause();
-                  }
-                }}
-                onEnded={(e) => {
-                  e.currentTarget.pause();
-                  console.log('[Display] video ended');
+                className="relative w-full h-full object-contain"
+                freezeBeforeEnd={0.5}
+                onError={() => {
+                  setCurrentMedia((cm) => cm?.fallbackLocalUrl && cm.url !== cm.fallbackLocalUrl
+                    ? { ...cm, url: cm.fallbackLocalUrl } : cm);
                 }}
               />
             </>
