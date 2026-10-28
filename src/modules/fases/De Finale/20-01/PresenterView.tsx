@@ -237,7 +237,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
+      if (e.key === 'ArrowRight' || e.key === '1') {
         e.preventDefault();
         if (state.playbackState === 'trailer') {
           handleReturnToGrid();

@@ -9,7 +9,7 @@ import { safeJsonStr } from '@/lib/jsonUtils';
 import '@/modules/fases/auto-register';
 import { FASES, findFaseModule } from '@/modules/fases';
 
-const APP_VERSION = "v9.4.37";
+const APP_VERSION = "v9.4.38";
 
 export default function PresenterPage() {
   const [currentView, setCurrentView] = useState<'list' | 'create' | 'manage' | 'game'>('list');
@@ -756,8 +756,8 @@ export default function PresenterPage() {
       const isEditable = !!(target && (target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select'));
       if (isEditable) return;
 
-      const isNext = e.key === 'ArrowRight' || e.key === ']' || e.key === 'PageDown';
-      const isPrev = e.key === 'ArrowLeft' || e.key === '[' || e.key === 'PageUp';
+      const isNext = e.key === 'ArrowRight' || e.key === ']' || e.key === 'PageDown' || e.key === '1';
+      const isPrev = e.key === 'ArrowLeft' || e.key === '[' || e.key === 'PageUp' || e.key === '2';
       if (!isNext && !isPrev) return;
 
       // In finale (20/01), ArrowRight is used inside PresenterView to return from card reveal to grid
