@@ -9,7 +9,7 @@ import { FASES, findFaseModule } from '@/modules/fases';
 import { safeJsonStr } from '@/lib/jsonUtils';
 import SpookyTrailerTitle from '@/components/common/SpookyTrailerTitle';
 
-const APP_VERSION = "v9.4.45";
+const APP_VERSION = "v9.4.46";
 
 interface PlayersByTeam {
   [teamNumber: number]: string[];
@@ -263,33 +263,35 @@ export default function DisplayPage() {
       lastPlayedUrl.current = '';
       return;
     }
+    const v = videoRef.current;
+    if (!v) return;
+    if (currentMedia.url === lastPlayedUrl.current) return;
+    lastPlayedUrl.current = currentMedia.url;
 
-    const tryPlay = () => {
-      const v = videoRef.current;
-      if (!v) return;
+    const startPlayback = () => {
       v.defaultMuted = true;
       v.muted = true;
       v.volume = 0;
-      v.setAttribute('muted', '');
-      v.setAttribute('playsinline', '');
-      v.setAttribute('webkit-playsinline', '');
-      v.setAttribute('autoplay', '');
-      if (currentMedia.url !== lastPlayedUrl.current) {
-        lastPlayedUrl.current = currentMedia.url;
-        v.currentTime = 0;
-      }
-      if (v.paused) {
-        v.play().catch(() => {});
+      v.currentTime = 0;
+      const p = v.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch((err) => {
+          console.warn('[Display] Autoplay promise rejected:', err);
+        });
       }
     };
 
-    tryPlay();
-    const t1 = setTimeout(tryPlay, 100);
-    const t2 = setTimeout(tryPlay, 400);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    if (v.readyState >= 1) {
+      startPlayback();
+    } else {
+      const onLoaded = () => {
+        v.removeEventListener('loadedmetadata', onLoaded);
+        v.removeEventListener('canplay', onLoaded);
+        startPlayback();
+      };
+      v.addEventListener('loadedmetadata', onLoaded);
+      v.addEventListener('canplay', onLoaded);
+    }
   }, [currentMedia]);
 
   // Global click / key interaction unlock for Display
@@ -521,21 +523,9 @@ export default function DisplayPage() {
             <>
               <video
                 key={currentMedia.url}
-                ref={(el) => {
-                  videoRef.current = el;
-                  if (el) {
-                    el.defaultMuted = true;
-                    el.muted = true;
-                    el.volume = 0;
-                    el.setAttribute('muted', '');
-                    el.setAttribute('playsinline', '');
-                    el.setAttribute('webkit-playsinline', '');
-                    el.setAttribute('autoplay', '');
-                    if (el.paused) el.play().catch(() => {});
-                  }
-                }}
+                ref={videoRef}
                 src={currentMedia.url}
-                className="w-full h-full object-contain cursor-pointer"
+                className="w-full h-full object-contain cursor-default"
                 playsInline
                 autoPlay
                 muted
@@ -547,24 +537,6 @@ export default function DisplayPage() {
                   v.muted = true;
                   v.volume = 0;
                   if (v.paused) v.play().catch(() => {});
-                }}
-                onCanPlay={(e) => {
-                  const vid = e.currentTarget;
-                  vid.defaultMuted = true;
-                  vid.muted = true;
-                  vid.volume = 0;
-                  if (vid.paused) {
-                    vid.play().catch(() => {});
-                  }
-                }}
-                onLoadedMetadata={(e) => {
-                  const vid = e.currentTarget;
-                  vid.defaultMuted = true;
-                  vid.muted = true;
-                  vid.volume = 0;
-                  if (vid.paused) {
-                    vid.play().catch(() => {});
-                  }
                 }}
                 onPlay={() => console.log('[Display] video play', currentMedia)}
                 onError={(e) => {
