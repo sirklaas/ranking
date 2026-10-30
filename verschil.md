@@ -1,6 +1,6 @@
-# Verschillen Ranking Standaard (`main`) vs. Halloween Editie (`haloween`)
+# Verschillen Ranking Standaard (`main`) vs. Halloween Editie (`halloween`)
 
-Dit document beschrijft alle verschillen tussen de standaard Ranking versie (`origin/main`) en de Halloween editie (`haloween`, versie `v9.4.37`).
+Dit document beschrijft alle verschillen tussen de standaard Ranking versie (`origin/main`) en de Halloween editie (`halloween`, versie `v9.4.37`).
 
 ---
 
@@ -78,7 +78,7 @@ Dit document beschrijft alle verschillen tussen de standaard Ranking versie (`or
 
 ## 2. Ronde-voor-ronde Inhoudelijke Verschillen
 
-| Ronde | Standaard Editie (`main`) | Halloween Editie (`haloween`) |
+| Ronde | Standaard Editie (`main`) | Halloween Editie (`halloween`) |
 | :--- | :--- | :--- |
 | **01: Intro & Onboarding** | Neutrale kleurstelling, standaard Ranking logo en pastel accenten. | Spooky donker thema (`#07060a`), neon-oranje accenten, `CreepyRankingLogo`. Zelfde onboarding flow. |
 | **07: Zitten en Staan** | Trailer: `TrailerZitten.mp4`. Standaard vraagcards. | Trailer: `trailercreepy.m4v` met spookachtige titel *"ZITTEN EN STAAN"*. Vraagteksten zijn identiek (10 stellingen), tellers resetten automatisch per slide naar 0, Display audio gemute. |

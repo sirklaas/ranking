@@ -150,16 +150,16 @@ export const motherfileService = {
     const trailers = ['trailerzitten.mp4', 'trailertop3.mp4', 'top3.mp4', 'krakendekarakters.mp4', 'top10.mp4', 'guiltypleasure.mp4', 'trailercreepy.m4v'];
 
     if (top3HalloweenFiles.includes(lower)) {
-      return `/pics/Top3 Haloween/${webpName}`;
+      return `/pics/Top3 Halloween/${webpName}`;
     }
     if (top10HalloweenFiles.includes(lower)) {
-      return `/pics/Top10Haloween/${webpName}`;
+      return `/pics/Top10Halloween/${webpName}`;
     }
     if (endHalloweenFiles.includes(clean.toLowerCase())) {
-      return `/pics/End Haloween/${clean}`;
+      return `/pics/End Halloween/${clean}`;
     }
     if (trailers.includes(clean.toLowerCase())) {
-      return `/pics/HaloweenTrailer/trailercreepy.m4v`;
+      return `/pics/HalloweenTrailer/trailercreepy.m4v`;
     }
 
     const top3Files = ['andes.webp', 'crypto.webp', 'cry.webp', 'geheim.webp', 'kinderen.webp', 'only.webp', 'parenclub.webp', 'schoonzoon.webp', 'verliefd.webp'];
@@ -176,7 +176,7 @@ export const motherfileService = {
       return `/pics/End/${clean}`;
     }
     if (trailers.includes(clean.toLowerCase())) {
-      return `/pics/HaloweenTrailer/trailercreepy.m4v`;
+      return `/pics/HalloweenTrailer/trailercreepy.m4v`;
     }
 
     return `/pics/${encodeURIComponent(clean)}`;

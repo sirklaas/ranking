@@ -31,10 +31,10 @@ The differences are strictly isolated to:
      * **24 Griezelig Goede Eigenschappen** (Positive traits).
      * **24 Minder Goede Eigenschappen** (Negative traits).
 3. **Media & Assets**:
-   * Top 3 (`public/pics/Top3 Haloween/`: Dracula, Frankenstein, Ghost, Zombie, Mummy, etc.).
-   * Top 10 (`public/pics/Top10Haloween/`: Hannibal, Selfie Monster, 40 Days, etc.).
-   * Trailers (`public/pics/HaloweenTrailer/`: `trailercreepy.m4v`, `top 3.m4v`).
-   * Finale (`public/pics/End Haloween/`).
+   * Top 3 (`public/pics/Top3 Halloween/`: Dracula, Frankenstein, Ghost, Zombie, Mummy, etc.).
+   * Top 10 (`public/pics/Top10Halloween/`: Hannibal, Selfie Monster, 40 Days, etc.).
+   * Trailers (`public/pics/HalloweenTrailer/`: `trailercreepy.m4v`, `top 3.m4v`).
+   * Finale (`public/pics/End Halloween/`).
 4. **Visual Theme & Audio**:
    * Halloween color scheme (dark black/slate `#0f0f12`, pumpkin orange `#ff7518`, neon purple `#9333ea`).
    * Spooky logo & header card.
@@ -51,7 +51,7 @@ The differences are strictly isolated to:
 | **10 De Top 3** | Andes, Crypto, Geheim, etc. | Dracula, Frankenstein, Werewolf, Witch, Zombie, Mummy |
 | **13 Krakende Karakters**| Standard positive/negative traits | 24 Griezelig Goede & 24 Minder Goede traits (from PDF) |
 | **17 Top 10** | Standard 10 cards | Halloween 10 cards (Hannibal, Selfie Monster, etc.) |
-| **20 De Finale** | Standard finale reveal & video | Creepy finale endcards (`public/pics/End Haloween/`) |
+| **20 De Finale** | Standard finale reveal & video | Creepy finale endcards (`public/pics/End Halloween/`) |
 
 ---
 

@@ -12,7 +12,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'betoverd',
     name: 'Betoverd',
-    image: '/pics/End Haloween/betoverd.jpeg',
+    image: '/pics/End Halloween/betoverd.jpeg',
     line1: 'Jammer',
     line2: 'jullie halveren',
     color: '#ff7518',
@@ -20,7 +20,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'vrolijk',
     name: 'Vrolijk',
-    image: '/pics/End Haloween/vrolijk.jpeg',
+    image: '/pics/End Halloween/vrolijk.jpeg',
     line1: 'Lekker',
     line2: '5 munten extra',
     color: '#ff7518',
@@ -28,7 +28,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'ondeugend',
     name: 'Ondeugend',
-    image: '/pics/End Haloween/ondeugend.jpeg',
+    image: '/pics/End Halloween/ondeugend.jpeg',
     line1: 'Geef 1 munt',
     line2: 'aan elk team',
     color: '#ff7518',
@@ -36,7 +36,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'mystiek',
     name: 'Mystiek',
-    image: '/pics/End Haloween/mystiek.jpeg',
+    image: '/pics/End Halloween/mystiek.jpeg',
     line1: 'Krijg 1 munt',
     line2: 'van elk team',
     color: '#ff7518',
@@ -44,7 +44,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'gentle',
     name: 'Gentle',
-    image: '/pics/End Haloween/gentle.jpeg',
+    image: '/pics/End Halloween/gentle.jpeg',
     line1: 'Lever',
     line2: '3 munten in',
     color: '#ff7518',
@@ -52,7 +52,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'elegant',
     name: 'Elegant',
-    image: '/pics/End Haloween/elegant.jpeg',
+    image: '/pics/End Halloween/elegant.jpeg',
     line1: 'Lekker',
     line2: 'jullie verdubbelen',
     color: '#ff7518',
@@ -60,7 +60,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'wijs',
     name: 'Wijs',
-    image: '/pics/End Haloween/wijs.jpeg',
+    image: '/pics/End Halloween/wijs.jpeg',
     line1: 'Lever',
     line2: '7 munten in',
     color: '#ff7518',
@@ -68,7 +68,7 @@ export const ENDGAME_HALLOWEEN_CARDS: EndgameCard[] = [
   {
     id: 'muzikaal',
     name: 'Muzikaal',
-    image: '/pics/End Haloween/muzikaal.jpeg',
+    image: '/pics/End Halloween/muzikaal.jpeg',
     line1: 'Jullie',
     line2: 'ver<span class="large-num">3</span>voudigen',
     color: '#ff7518',

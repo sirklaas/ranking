@@ -287,7 +287,7 @@ const PresenterView: React.FC<FaseCommonProps> = ({
       {/* Hidden audio players */}
       <audio ref={audioPlayerRef} />
       <audio ref={endTitleAudioRef} src="/endgame/Lawineboys.m4a" />
-      <audio ref={trailerAudioRef} src="/pics/HaloweenTrailer/trailercreepy.m4v" />
+      <audio ref={trailerAudioRef} src="/pics/HalloweenTrailer/trailercreepy.m4v" />
 
       {/* Header - Slim single line to preserve vertical space */}
       <div className="flex items-center justify-between gap-3 mb-2 pb-1.5 border-b border-white/10 flex-shrink-0">

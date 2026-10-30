@@ -406,7 +406,7 @@ const DisplayView: React.FC<FaseCommonProps> = ({
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
           <video
             ref={trailerVideoRef}
-            src="/pics/HaloweenTrailer/trailercreepy.m4v"
+            src="/pics/HalloweenTrailer/trailercreepy.m4v"
             className="w-full h-full object-cover"
             playsInline
             autoPlay

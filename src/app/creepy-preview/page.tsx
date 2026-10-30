@@ -161,7 +161,7 @@ export default function CreepyPreviewPage() {
               <video
                 key={playKey}
                 ref={videoRef}
-                src="/pics/HaloweenTrailer/trailercreepy.m4v"
+                src="/pics/HalloweenTrailer/trailercreepy.m4v"
                 className="w-full h-full object-cover"
                 autoPlay
                 playsInline
