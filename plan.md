@@ -1,81 +1,118 @@
-# Creepy Ranking Show (Halloween Edition) — Transition & Handoff Plan
+# Master Plan: Ranking Platform — QDE Migratie, Standaard Engine Upgrade & Merry Christmas Editie
 
-## 1. Executive Summary & Goals
-
-* **Target Date**: Wednesday Booking (Creepy Ranking Show).
-* **Objective**: Transform 90% of the completed **RankingNW** engine into the **Creepy Ranking Show** (Halloween version) with maximum safety and zero risk to the standard Ranking codebase.
-* **Two-Stage Approach**:
-  1. **Stage 1 (Immediate / For Wednesday)**: Work on a dedicated branch (`creepy-ranking`) to ensure a rock-solid, isolated deployment for Wednesday's live show.
-  2. **Stage 2 (Post-Wednesday)**: Merge the Halloween edition into a unified multi-show engine with a dashboard button selector (`Ranking | Creepy Ranking | Christmas Ranking`) on `pnkmilk.db`.
+> **Datum:** 30 oktober 2026  
+> **Doel:** Drieledige transformatie van het Ranking-platform voor maximale stabiliteit, herbruikbaarheid en seizoensthema's.  
+> **Uitvoering:** Gepland voor vannacht.
 
 ---
 
-## 2. Architecture & Handoff Audit
+## 1. De Drie Pijlers van de Operatie
 
-### 2.1 The Unchanged Core (90% Engine)
-These systems require **zero changes** and are inherited directly from RankingNW:
-* **PocketBase Sync**: Real-time subscriptions for phase changes, voting submissions, and scores.
-* **Presenter Interface**: Phase navigation, reveal triggers, timer controls, player management.
-* **Display Interface (Beamer/TV)**: Phase layouts, podium animations, word clouds, charts.
-* **Player Interface (Mobile)**: PIN entry, team selection, interactive voting buttons, live results.
-* **Scoring & Elimination**: Point calculations and ranking tally logic.
-
-### 2.2 The Custom Elements (10% Skin & Content)
-The differences are strictly isolated to:
-1. **Fases / Headings & Questions**:
-   * Zitten en Staan spooky dilemmas.
-   * Top 3 creepy categories.
-   * Top 10 Halloween prompts.
-2. **Krakende Karakters Traits**:
-   * Sourced directly from `public/Creepy ranking 24.pdf`:
-     * **24 Griezelig Goede Eigenschappen** (Positive traits).
-     * **24 Minder Goede Eigenschappen** (Negative traits).
-3. **Media & Assets**:
-   * Top 3 (`public/pics/Top3 Halloween/`: Dracula, Frankenstein, Ghost, Zombie, Mummy, etc.).
-   * Top 10 (`public/pics/Top10Halloween/`: Hannibal, Selfie Monster, 40 Days, etc.).
-   * Trailers (`public/pics/HalloweenTrailer/`: `trailercreepy.m4v`, `top 3.m4v`).
-   * Finale (`public/pics/End Halloween/`).
-4. **Visual Theme & Audio**:
-   * Halloween color scheme (dark black/slate `#0f0f12`, pumpkin orange `#ff7518`, neon purple `#9333ea`).
-   * Spooky logo & header card.
-   * Creepy endcard audio and sfx (`public/endgame/sfx/`).
-
----
-
-## 3. Game Flow Comparison
-
-| Phase Group | Standard RankingNW | Creepy Ranking Show |
-| :--- | :--- | :--- |
-| **01 Intro** | Ranking trailer, standard team names | Creepy intro trailer, spooky team names/yells |
-| **07 Zitten & Staan** | Everyday dilemmas & habits | Halloween & scary habits / creepy dilemmas |
-| **10 De Top 3** | Andes, Crypto, Geheim, etc. | Dracula, Frankenstein, Werewolf, Witch, Zombie, Mummy |
-| **13 Krakende Karakters**| Standard positive/negative traits | 24 Griezelig Goede & 24 Minder Goede traits (from PDF) |
-| **17 Top 10** | Standard 10 cards | Halloween 10 cards (Hannibal, Selfie Monster, etc.) |
-| **20 De Finale** | Standard finale reveal & video | Creepy finale endcards (`public/pics/End Halloween/`) |
-
----
-
-## 4. Rollout Strategy
-
-```mermaid
-flowchart TD
-    A["RankingNW (main) - Rock Solid Baseline"] --> B["Create branch: creepy-ranking"]
-    B --> C["Configure Creepy Assets & fases.json"]
-    B --> D["Inject 24 Creepy Traits into Krakende"]
-    B --> E["Apply Halloween Styling (Orange/Purple)"]
-    C & D & E --> F["Deploy to Vercel (e.g. creepy.pnkmilk.tv)"]
-    F --> G["Wednesday Live Show Execution"]
-    G --> H["Post-Show: Unify into Multi-Theme Dashboard"]
-    H --> I["Dashboard Buttons: Ranking | Creepy | Christmas"]
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        RANKING PLATFORM 2026                           │
+└────────────────────────────────────────────────────────────────────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         ▼                         ▼                         ▼
+   [ PIJLER 1 ]              [ PIJLER 2 ]              [ PIJLER 3 ]
+  Volledig op QDE         Standaard Ranking        Merry Christmas Show
+ (Geen HostSlim meer)     (Engine Sync main)      (Kerst Editie Branch)
 ```
 
 ---
 
-## 5. Risk Assessment & Safety Guardrails
+## Pijler 1: Show Volledig op QDE Draaien (Infrastructuur)
 
-| Risk | Impact | Mitigation |
-| :--- | :--- | :--- |
-| Breaking regular RankingNW before Wednesday | High | Work on isolated `creepy-ranking` branch. No production code on `main` is touched. |
-| Missing Halloween media links | Medium | Verify all paths in `pocketbase.ts` against files in `public/pics/`. |
-| PocketBase schema conflicts | Low | Session format stays compatible; only session name / theme indicator is passed. |
-| Presentation timing lag | Low | Pre-load videos and images locally / in CDN cache before the live event. |
+### 1.1 Doelstelling
+De fatale afhankelijkheid van HostSlim (`103.214.6.202`) definitief beëindigen. Zowel Next.js, PocketBase als alle media/Photo App assets draaien lokaal op **QDE** (`45.148.62.92`). Vercel blijft stand-by als wereldwijde fallback.
+
+### 1.2 Architectuur op QDE
+1. **Next.js Frontend & API:**
+   * Standalone Docker container op QDE (`127.0.0.1:3000`).
+   * Interne connectie naar PocketBase via `http://127.0.0.1:8090` (0 ms latency).
+2. **Media & Photo App Hosting:**
+   * Bestanden gespiegeld van HostSlim naar `/var/www/ranking-media/`.
+   * Geserveerd direct door Nginx met gzip/brotli en HTTP/2 caching.
+3. **Directe Lokale Uploads:**
+   * `src/app/api/ftp-upload/route.ts` geoptimaliseerd: slaat bestanden lokaal op als de app op QDE draait, zonder trage netwerk-FTP.
+4. **DNS Omzetting (DirectAdmin API):**
+   * `halloween.pinkmilk.eu` $\rightarrow$ `45.148.62.92`
+   * `ranking.pinkmilk.eu` $\rightarrow$ `45.148.62.92`
+   * `christmas.pinkmilk.eu` $\rightarrow$ `45.148.62.92`
+5. **Geautomatiseerde Database Backups:**
+   * Dagelijkse SQLite snapshot cronjob van PocketBase naar `/var/backups/pocketbase/`.
+
+*Zie voor het gedetailleerde handoff-draaiboek:* [`show op qde.md`](./show%20op%20qde.md)
+
+---
+
+## Pijler 2: Standaard Ranking (`main`) Upgraden naar de Halloween Engine
+
+### 2.1 Doelstelling
+Alle rotsvaste motor-verbeteringen (versie `v9.4.32` t/m `v9.4.51`) die tijdens de live shows zijn beproefd, doorvoeren in de standaardversie (`origin/main`), **ZONDER** de Halloween graphics, horror-karakters of afwijkende vragen over te nemen.
+
+### 2.2 Wat wél wordt gemigreerd (De "Engine"):
+* **Stem Concurrency Veiligheid (Oplossing A):**
+  * Post-write read verification in `top3-vote` en `top10-vote`.
+  * Automatische retry met jittered backoff (60-180ms) bij gelijktijdige stemmen vanaf meerdere telefoons.
+* **Presenter Viewport Strict No-Scroll:**
+  * `overflow-hidden` constraints op MacBook schermen.
+  * 4x2 grid indeling in De Finale (`grid-cols-4 grid-rows-2`).
+  * Slanke top header en actiebalken; 100% passend op 13", 14" en 16" MacBooks.
+* **Display Audio Beleid (Mute & Zaalgeluid):**
+  * Beamer/TV display video's permanent gedempt (`muted = true`).
+  * Al het geluid (video audio, soundboard, effecten) loopt vanaf de Presenter MacBook naar de versterker.
+  * MacBook Audio knop `[🔊 MacBook Audio: AAN/UIT]` op Presenter.
+* **WebKit / Safari Autoplay Beveiliging:**
+  * Native zwarte Play-knoppen onderdrukt via WebKit pseudo-selectors.
+  * Directe DOM-initialisatie met `defaultMuted` en expliciete HTML-attributen.
+* **Draadloze Flic 2 Remote Trigger:**
+  * Dedicated API endpoint `/api/remote?action=next/prev`.
+  * Toetsenbord-sneltoetsen `'1'` en `'2'`.
+* **Zitten & Staan Stem-API:**
+  * Dedicated server-side route `/api/zitten-vote` inclusief automatische opschoning per slide.
+* **Photo App Teamnummer Resolutie:**
+  * Spelertelefoons tonen dynamisch `[ Team X ]` alleen wanneer een team gekozen is.
+
+### 2.3 Wat strikt STANDAARD blijft (Niet overschrijven!):
+* **Karakters & Finale Kaarten:** De 8 originele gouden/paarse kaarten (`creatief`, `doorzetter`, `wreed`, `dapper`, `bedriegelijk`, `beschermend`, `vreugdevol`, `sinister`).
+* **Vragen & Inhoud (`fases.json`):** De standaard dilemma's en teksten voor De Top 3 en De Top 10.
+* **Trailers & Video's:** `TrailerTop3.mp4`, `Top10.mp4`, `TrailerZitten.mp4`, `KrakendeKarakters.mp4`, `end.m4v`.
+* **Thema & Styling:** Het vertrouwde gouden, paarse en blauwe BrewHouse-kleurenpalet.
+
+---
+
+## Pijler 3: Merry Christmas Ranking Editie
+
+### 3.1 Doelstelling
+Een gloednieuwe, sfeervolle Kerst-editie van Ranking the Starzzz opzetten op een dedicated Git branch `christmas`, aangedreven door exact dezelfde robuuste engine.
+
+### 3.2 Aanwezige Assets (`Merry/`)
+* Trailer video: `Merry/merry-christmas-ranking-show-trailer.mp4`
+* Trailer samenstellingen: `Merry/christmas-ranking-trailer/`
+* Afbeeldingen en elementen: `Merry/christmas-ranking-trailer/assets/`
+
+### 3.3 Kerst Inhoud & Customization
+1. **De Finale Kerstkaarten (8 unieke feestdagen-rollen):**
+   * Bijvoorbeeld: *De Kerstman, De Grinch, Rudolph, De Kerstengel, De Sneeuwpop, De Scrooge, De Feestganger, De Chefkok*.
+   * Elk met feestelijke munten-uitkomsten (halveren, verdubbelen, munten uitdelen).
+2. **Top 3 & Top 10 Kerst-dilemma's:**
+   * Vragen rondom kerstdiners, cadeautjesstress, foute kersttruien, glühwein en goede voornemens.
+3. **Visuele Kerstsfeer:**
+   * Sneeuw- en glinster-effecten op Display (geïnspireerd op de sintels van Halloween).
+   * Feestelijk kleurenpalet: dieprood, dennengroen, warm goud en ijsblauw.
+4. **Domeinen & Deployment:**
+   * `https://christmas.pinkmilk.eu` & `https://kerst.pinkmilk.eu`.
+
+---
+
+## 4. Fasering & Tijdsinschatting voor Vannacht
+
+| Fase | Onderdeel | Geschatte Duur | Risico |
+| :--- | :--- | :--- | :--- |
+| **Fase 1** | QDE Standalone Docker & Media Setup | 30 - 40 min | Laag (QDE draait al) |
+| **Fase 2** | DNS omschakeling naar QDE | 10 min | Laag (Vercel als backup) |
+| **Fase 3** | Engine sync naar Standaard `main` | 30 - 45 min | Laag (strikt engine/geen media) |
+| **Fase 4** | Branch `christmas` opzetten & Merry assets koppelen | 45 - 60 min | Laag (geïsoleerde branch) |
+| **Fase 5** | End-to-end verificatie alle 3 de shows | 20 min | Geen |
